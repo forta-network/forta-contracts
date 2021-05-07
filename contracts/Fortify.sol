@@ -11,14 +11,14 @@ contract Fortify is AccessControlUpgradeable, ERC20PermitUpgradeable, UUPSUpgrad
     bytes32 public constant WHITELISTER_ROLE = keccak256("WHITELISTER_ROLE");
     bytes32 public constant WHITELIST_ROLE   = keccak256("WHITELIST_ROLE");
 
-    function initialize() public initializer {
+    function initialize(address admin) public initializer {
         __ERC20_init("Fortify", "FORT");
         __ERC20Permit_init("Fortify");
-        _setRoleAdmin(UPGRADER_ROLE,    UPGRADER_ROLE);
-        _setRoleAdmin(MINTER_ROLE,      UPGRADER_ROLE);
+        _setRoleAdmin(UPGRADER_ROLE, UPGRADER_ROLE);
+        _setRoleAdmin(MINTER_ROLE, UPGRADER_ROLE);
         _setRoleAdmin(WHITELISTER_ROLE, UPGRADER_ROLE);
-        _setRoleAdmin(WHITELIST_ROLE,   WHITELISTER_ROLE);
-        _setupRole(UPGRADER_ROLE, msg.sender);
+        _setRoleAdmin(WHITELIST_ROLE, WHITELISTER_ROLE);
+        _setupRole(UPGRADER_ROLE, admin);
         _setupRole(WHITELISTER_ROLE, address(this)); // required by spreadWhitelist
     }
 
@@ -36,7 +36,7 @@ contract Fortify is AccessControlUpgradeable, ERC20PermitUpgradeable, UUPSUpgrad
     function _beforeTokenTransfer(address from, address to, uint256 amount)
     internal virtual override
     {
-        require(hasRole(WHITELIST_ROLE, to));
+        require(hasRole(WHITELIST_ROLE, to), "Fortify: receiver is not whitelisted");
         super._beforeTokenTransfer(from, to, amount);
     }
 
