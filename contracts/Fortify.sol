@@ -19,7 +19,7 @@ contract Fortify is AccessControlUpgradeable, ERC20PermitUpgradeable, UUPSUpgrad
         _setRoleAdmin(WHITELISTER_ROLE, UPGRADER_ROLE);
         _setRoleAdmin(WHITELIST_ROLE, WHITELISTER_ROLE);
         _setupRole(UPGRADER_ROLE, admin);
-        _setupRole(UPGRADER_ROLE, address(this)); // required by spreadWhitelist
+        _setupRole(UPGRADER_ROLE, address(this)); // required by grantWhitelister
     }
 
     // Allow minters to mint new tokens
