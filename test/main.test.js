@@ -43,14 +43,14 @@ describe('Fortify', function () {
 
   describe('spread whitelist', function () {
     it('not authorized', async function () {
-      await expect(this.token.connect(this.accounts.nonwhitelist).spreadWhitelist(this.accounts.other.address))
-        .to.be.revertedWith(`AccessControl: account ${this.accounts.nonwhitelist.address.toLowerCase()} is missing role ${this.roles.WHITELIST}`);
+      await expect(this.token.connect(this.accounts.whitelist).grantWhitelister(this.accounts.other.address))
+        .to.be.revertedWith(`AccessControl: account ${this.accounts.whitelist.address.toLowerCase()} is missing role ${this.roles.WHITELISTER}`);
     });
 
     it('authorized', async function () {
-      await expect(this.token.connect(this.accounts.whitelist).spreadWhitelist(this.accounts.other.address))
+      await expect(this.token.connect(this.accounts.whitelister).grantWhitelister(this.accounts.other.address))
         .to.emit(this.token, 'RoleGranted')
-        .withArgs(this.roles.WHITELIST, this.accounts.other.address, this.token.address);
+        .withArgs(this.roles.WHITELISTER, this.accounts.other.address, this.token.address);
     });
   });
 

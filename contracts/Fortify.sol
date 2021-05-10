@@ -19,7 +19,7 @@ contract Fortify is AccessControlUpgradeable, ERC20PermitUpgradeable, UUPSUpgrad
         _setRoleAdmin(WHITELISTER_ROLE, UPGRADER_ROLE);
         _setRoleAdmin(WHITELIST_ROLE, WHITELISTER_ROLE);
         _setupRole(UPGRADER_ROLE, admin);
-        _setupRole(WHITELISTER_ROLE, address(this)); // required by spreadWhitelist
+        _setupRole(UPGRADER_ROLE, address(this)); // required by spreadWhitelist
     }
 
     // Allow minters to mint new tokens
@@ -27,9 +27,9 @@ contract Fortify is AccessControlUpgradeable, ERC20PermitUpgradeable, UUPSUpgrad
         _mint(to, amount);
     }
 
-    // Allow whitelisted users to spread the whitelist
-    function spreadWhitelist(address to) public onlyRole(WHITELIST_ROLE) {
-        this.grantRole(WHITELIST_ROLE, to);
+    // Allow whitelister to assign other whitelisters
+    function grantWhitelister(address to) public onlyRole(WHITELISTER_ROLE) {
+        this.grantRole(WHITELISTER_ROLE, to);
     }
 
     // Only allow transfer to whitelisted accounts
