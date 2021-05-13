@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/contracts/utils/Address.sol";
-import "./vendor/CliffVestingUpgradeable.sol";
+import "./vendor/upgradeable/CliffVestingUpgradeable.sol";
 import "./accesslist/IAccessList.sol";
 
 contract VestingWallet is CliffVestingUpgradeable {
