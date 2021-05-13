@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/contracts/token/ERC20/extensions/draft-ERC20VotesUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "./IFortify.sol";
 
-contract Fortify is AccessControlUpgradeable, ERC20PermitUpgradeable, UUPSUpgradeable {
+contract Fortify is IFortify, AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable {
     bytes32 public constant UPGRADER_ROLE    = keccak256("UPGRADER_ROLE");
     bytes32 public constant MINTER_ROLE      = keccak256("MINTER_ROLE");
     bytes32 public constant WHITELISTER_ROLE = keccak256("WHITELISTER_ROLE");

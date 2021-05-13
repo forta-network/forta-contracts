@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./IAccessList.sol";
 
 contract AccessList is IAccessList, OwnableUpgradeable {
@@ -12,14 +12,14 @@ contract AccessList is IAccessList, OwnableUpgradeable {
     }
 
     function isAuthorized(address target, bytes4 selector) public view virtual override returns (bool) {
-        return getAuthorization(target, selector) || getAuthorization(address(0), selector);
+        return getAccess(target, selector) || getAccess(address(0), selector);
     }
 
-    function getAuthorization(address target, bytes4 selector) public view virtual returns (bool) {
+    function getAccess(address target, bytes4 selector) public view virtual returns (bool) {
         return _authorized[target][selector];
     }
 
-    function getAuthorization(address target, bytes4 selector, bool value) public virtual onlyOwner() returns (bool) {
+    function setAccess(address target, bytes4 selector, bool value) public virtual onlyOwner() returns (bool) {
         return _authorized[target][selector] = value;
     }
 }

@@ -17,8 +17,8 @@
     "url": "https://github.com/OpenZeppelin/Fortify/issues"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.1.0",
-    "@openzeppelin/contracts-upgradeable": "^4.1.0"
+    "@openzeppelin/contracts": "OpenZeppelin/openzeppelin-contracts",
+    "@openzeppelin/contracts-upgradeable": "OpenZeppelin/openzeppelin-contracts-upgradeable"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",

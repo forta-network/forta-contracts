@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/contracts/proxy/Clones.sol";
 import "./VestingWallet.sol";
 
 contract VestingFactory {
@@ -21,7 +21,7 @@ contract VestingFactory {
         uint256 duration_
     ) public returns (address) {
         address instance = Clones.clone(address(template));
-        VestingWallet(instance).initialize(beneficiary_, admin_, start_, cliffDuration_, duration_);
+        VestingWallet(payable(instance)).initialize(beneficiary_, admin_, start_, cliffDuration_, duration_);
         emit NewVesting(beneficiary_, instance);
         return instance;
     }

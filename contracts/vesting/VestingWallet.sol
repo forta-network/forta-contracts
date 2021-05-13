@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/contracts/utils/Address.sol";
 import "./vendor/TokenVestingUpgradeable.sol";
 import "./accesslist/IAccessList.sol";
 
@@ -12,6 +12,8 @@ contract VestingWallet is TokenVestingUpgradeable {
     constructor(address _accesslist) initializer {
         accesslist = IAccessList(_accesslist);
     }
+
+    receive() external payable {}
 
     function initialize(
         address beneficiary_,
@@ -25,7 +27,12 @@ contract VestingWallet is TokenVestingUpgradeable {
 
     function execute(address target, uint256 value, bytes calldata data) external {
         require(_msgSender() == beneficiary(), "VestingWallet: unauthorized caller"); // only beneficiary can trigger
-        require(accesslist.isAuthorized(target, data[0]), "VestingWallet: unauthorized call"); // call must be whitelisted
+        require(accesslist.isAuthorized(target, _extractSelector(data)), "VestingWallet: unauthorized call"); // call must be whitelisted
         Address.functionCallWithValue(target, data, value);
+    }
+
+    function _extractSelector(bytes memory encodedCall) internal pure returns (bytes4 selector) {
+        require(encodedCall.length >= 4);
+        assembly { selector := mload(add(encodedCall, 0x20)) }
     }
 }
