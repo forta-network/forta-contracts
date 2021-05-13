@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/contracts/utils/Address.sol";
-import "./vendor/TokenVestingUpgradeable.sol";
+import "./vendor/CliffVestingUpgradeable.sol";
 import "./accesslist/IAccessList.sol";
 
-contract VestingWallet is TokenVestingUpgradeable {
+contract VestingWallet is CliffVestingUpgradeable {
     IAccessList public immutable accesslist;
 
     // initializer locks instance
@@ -22,7 +22,7 @@ contract VestingWallet is TokenVestingUpgradeable {
         uint256 cliffDuration_,
         uint256 duration_
     ) external initializer {
-        __TokenVesting_init(beneficiary_, admin_, start_, cliffDuration_, duration_);
+        __CliffVesting_init(beneficiary_, admin_, start_, cliffDuration_, duration_);
     }
 
     function execute(address target, uint256 value, bytes calldata data) external {
