@@ -42,15 +42,22 @@ abstract contract RevokableVesting is Ownable, TokenVesting {
         emit TokenVestingRevoked(token);
     }
 
+    function _releasableAmount(address token, uint256 timestamp) internal virtual override view returns (uint256) {
+        if (revoked(token)) {
+            return IERC20(token).balanceOf(address(this));
+        } else {
+            return super._releasableAmount(token, timestamp);
+        }
+    }
+
     /**
      * @dev Calculates the amount that has already vested.
-     * @param token ERC20 token which is being vested
      */
-    function _vestedAmount(address token, uint256 timestamp) internal virtual override view returns (uint256) {
+    function vestedAmount(address token, uint256 timestamp) public virtual override view returns (uint256) {
         if (revoked(token)) {
             return _historicalBalance(token);
         } else {
-            return super._vestedAmount(token, timestamp);
+            return super.vestedAmount(token, timestamp);
         }
     }
 }

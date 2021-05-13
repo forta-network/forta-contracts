@@ -44,39 +44,42 @@ abstract contract TokenVesting is Ownable {
 
     /**
      * @notice Transfers vested tokens to beneficiary.
-     * @param token ERC20 token which is being vested
      */
     function release(address token) public {
-        uint256 unreleased = _vestedAmount(token, block.timestamp) - released(token);
+        uint256 releasable = _releasableAmount(token, block.timestamp);
 
-        require(unreleased > 0, "TokenVesting: no tokens are due");
+        require(releasable > 0, "TokenVesting: no tokens are due");
 
-        _released[token] += unreleased;
+        _released[token] += releasable;
 
-        SafeERC20.safeTransfer(IERC20(token), beneficiary(), unreleased);
+        SafeERC20.safeTransfer(IERC20(token), beneficiary(), releasable);
 
-        emit TokensReleased(token, unreleased);
+        emit TokensReleased(token, releasable);
+    }
+
+    /**
+    * @dev Calculates the amount that has already vested.
+    */
+    function vestedAmount(address token, uint256 timestamp) public virtual view returns (uint256) {
+        return _vestedAmount(token, timestamp);
     }
 
     /**
      * @notice Calculates the historical balance (current balance + already released balance).
-     * @param token ERC20 token which is being vested
      */
-    function _historicalBalance(address token) internal view returns (uint256) {
+    function _historicalBalance(address token) internal virtual view returns (uint256) {
         return IERC20(token).balanceOf(address(this)) + released(token);
     }
 
     /**
      * @notice Calculates the amount that has already vested but hasn't been released yet.
-     * @param token ERC20 token which is being vested
      */
-    function _releasableAmount(address token, uint256 timestamp) internal view returns (uint256) {
+    function _releasableAmount(address token, uint256 timestamp) internal virtual view returns (uint256) {
         return _vestedAmount(token, timestamp) - released(token);
     }
 
     /**
      * @dev Calculates the amount that has already vested.
-     * @param token ERC20 token which is being vested
      */
     function _vestedAmount(address token, uint256 timestamp) internal virtual view returns (uint256) {
         return _historicalBalance(token);
