@@ -1,6 +1,6 @@
 const { ethers, upgrades } = require('hardhat');
 const { expect } = require('chai');
-const { prepare, attach, deploy, deployUpgradeable } = require('./fixture');
+const { prepare } = require('./fixture');
 
 describe('Fortify', function () {
   prepare();

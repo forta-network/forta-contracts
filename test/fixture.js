@@ -27,11 +27,7 @@ function prepare() {
   });
 
   beforeEach(async function () {
-    this.token      = await deployUpgradeable('Fortify', 'uups', this.accounts.upgrader.address);
-    this.accesslist = await deployUpgradeable('AccessList', 'transparent');
-    this.factory    = await deploy('VestingFactory', this.accesslist.address);
-    this.template   = await attach('VestingWallet', await this.factory.template());
-
+    this.token = await deployUpgradeable('Fortify', 'uups', this.accounts.upgrader.address);
     this.roles = {
       UPGRADER:    await this.token.UPGRADER_ROLE(),
       MINTER:      await this.token.MINTER_ROLE(),

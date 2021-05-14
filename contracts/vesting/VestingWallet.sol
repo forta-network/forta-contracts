@@ -1,19 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/contracts/token/ERC20/extensions/draft-IERC20Votes.sol";
+import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "./vendor/upgradeable/CliffVestingUpgradeable.sol";
-import "./accesslist/IAccessList.sol";
 
-contract VestingWallet is CliffVestingUpgradeable {
-    IAccessList public immutable accesslist;
-
-    // initializer locks instance
-    constructor(address _accesslist) initializer {
-        accesslist = IAccessList(_accesslist);
-    }
-
-    receive() external payable {}
+contract VestingWallet is CliffVestingUpgradeable, UUPSUpgradeable {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer
+    {}
 
     function initialize(
         address beneficiary_,
@@ -22,17 +17,17 @@ contract VestingWallet is CliffVestingUpgradeable {
         uint256 cliffDuration_,
         uint256 duration_
     ) external initializer {
+        __Ownable_init();
         __CliffVesting_init(beneficiary_, admin_, start_, cliffDuration_, duration_);
     }
 
-    function execute(address target, uint256 value, bytes calldata data) external {
-        require(_msgSender() == beneficiary(), "VestingWallet: unauthorized caller"); // only beneficiary can trigger
-        require(accesslist.isAuthorized(target, _extractSelector(data)), "VestingWallet: unauthorized call"); // call must be whitelisted
-        Address.functionCallWithValue(target, data, value);
+    function delegate(address token, address delegatee) public {
+        require(beneficiary() == _msgSender(), "VestingWallet: access restricted to beneficiary");
+        IERC20Votes(token).delegate(delegatee);
     }
 
-    function _extractSelector(bytes memory encodedCall) internal pure returns (bytes4 selector) {
-        require(encodedCall.length >= 4);
-        assembly { selector := mload(add(encodedCall, 0x20)) }
-    }
+    // Access control for the upgrade process
+    function _authorizeUpgrade(address newImplementation)
+    internal virtual override onlyOwner()
+    {}
 }
