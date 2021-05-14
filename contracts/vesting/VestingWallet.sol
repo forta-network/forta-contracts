@@ -17,7 +17,6 @@ contract VestingWallet is CliffVestingUpgradeable, UUPSUpgradeable {
         uint256 cliffDuration_,
         uint256 duration_
     ) external initializer {
-        __Ownable_init();
         __CliffVesting_init(beneficiary_, admin_, start_, cliffDuration_, duration_);
     }
 

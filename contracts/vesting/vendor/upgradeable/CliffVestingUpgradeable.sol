@@ -10,7 +10,6 @@ contract CliffVestingUpgradeable is TokenVestingCoreUpgradeable {
     uint256 private _cliff;
 
     function __CliffVesting_init(address beneficiary_, address admin_, uint256 start_, uint256 cliffDuration_, uint256 duration_) internal initializer {
-        __Ownable_init();
         __TokenVestingCore_init(beneficiary_, admin_);
         __CliffVesting_init_unchained(beneficiary_, admin_, start_, cliffDuration_, duration_);
     }
