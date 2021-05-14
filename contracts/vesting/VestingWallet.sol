@@ -16,14 +16,14 @@ contract VestingWallet is CurveVestingUpgradeable, DeadlineVestingUpgradeable, R
     function initialize(
         address beneficiary_,
         address admin_,
-        uint256 start_,
-        uint256 cliffDuration_,
-        uint256 duration_
+        uint256 begin_,
+        uint256 cliff_,
+        uint256 end_
     ) external initializer {
         __TokenVesting_init_unchained(beneficiary_);
         __RevokableVesting_init(admin_);
-        __CurveVesting_init_unchained(start_, duration_, 1); // linear
-        __DeadlineVesting_init_unchained(start_ + cliffDuration_);
+        __CurveVesting_init_unchained(begin_, end_ - begin_, 1); // linear
+        __DeadlineVesting_init_unchained(cliff_);
     }
 
     function vestedAmount(address token, uint256 timestamp) public virtual override(TokenVestingUpgradeable, RevokableVestingUpgradeable) view returns (uint256) {

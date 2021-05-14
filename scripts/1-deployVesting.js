@@ -1,4 +1,9 @@
 const { ethers, upgrades } = require("hardhat");
+const { expect } = require('chai');
+
+function dateToTimestamp(...params) {
+  return (new Date(...params)).getTime() / 1000 | 0
+}
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -7,14 +12,22 @@ async function main() {
 
   const beneficiary   = deployer.address;
   const admin         = ethers.constants.AddressZero;
-  const start         = Date.now() / 1000 | 0;
-  const cliffDuration = 1 * 365 * 86400;
-  const duration      = 4 * 365 * 86400;
+  const begin         = dateToTimestamp('2021-06-01T00:00:00Z')
+  const cliff         = dateToTimestamp('2022-06-01T00:00:00Z')
+  const end           = dateToTimestamp('2025-06-01T00:00:00Z')
 
   const VestingWallet = await ethers.getContractFactory('VestingWallet');
-  const instance = await upgrades.deployProxy(VestingWallet, [ beneficiary, admin, start, cliffDuration, duration ], { kind: 'uups' });
+  const instance = await upgrades.deployProxy(VestingWallet, [ beneficiary, admin, begin, cliff, end ], { kind: 'uups' });
   await instance.deployed();
   console.log(`VestingWallet address: ${instance.address}`);
+
+  // check proper initialization
+  expect(await instance.beneficiary()).to.be.equal(beneficiary);
+  expect(await instance.owner()).to.be.equal(admin);
+  expect(await instance.start()).to.be.equal(begin);
+  expect(await instance.duration()).to.be.equal(end - begin);
+  expect(await instance.curvature()).to.be.equal(1);
+  expect(await instance.deadline()).to.be.equal(cliff);
 }
 
 main()
