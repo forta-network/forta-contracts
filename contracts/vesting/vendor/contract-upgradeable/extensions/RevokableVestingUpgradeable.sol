@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../TokenVesting.sol";
-import "@openzeppelin/contracts/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "../TokenVestingUpgradeable.sol";
 
-abstract contract RevokableVesting is Ownable, TokenVesting {
+abstract contract RevokableVestingUpgradeable is OwnableUpgradeable, TokenVestingUpgradeable {
     mapping (address => bool) private _revoked;
 
     event TokenVestingRevoked(address token);
 
-    constructor (address admin_) {
+    function __RevokableVesting_init(address admin_) public initializer {
+        __Ownable_init();
+        __RevokableVesting_init_unchained(admin_);
+    }
+
+    function __RevokableVesting_init_unchained(address admin_) public initializer {
         if (admin_ == address(0)) {
             renounceOwnership();
         } else {

@@ -2,7 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/contracts/utils/Context.sol";
+import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/contracts/utils/ContextUpgradeable.sol";
 
 /**
  * @title TokenVesting
@@ -10,7 +11,7 @@ import "@openzeppelin/contracts/contracts/utils/Context.sol";
  * typical vesting scheme, with a cliff and vesting period. Optionally revocable by the
  * owner.
  */
-abstract contract TokenVesting is Context {
+abstract contract TokenVestingUpgradeable is Initializable, ContextUpgradeable {
     // beneficiary of tokens after they are released
     address private _beneficiary;
 
@@ -23,13 +24,7 @@ abstract contract TokenVesting is Context {
         _;
     }
 
-    /**
-     * @dev Creates a vesting contract that vests its balance of any ERC20 token to the
-     * beneficiary, gradually in a linear fashion until start + duration. By then all
-     * of the balance will have vested.
-     * @param beneficiary_ address of the beneficiary to whom vested tokens are transferred
-     */
-    constructor (address beneficiary_) {
+    function __TokenVesting_init_unchained(address beneficiary_) public initializer {
         _beneficiary = beneficiary_;
     }
 

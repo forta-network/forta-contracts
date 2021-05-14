@@ -16,7 +16,8 @@ describe('Fortify', function () {
     expect(await vesting.owner()).to.be.equal(this.accounts.upgrader.address);
     expect(await vesting.start()).to.be.equal(start);
     expect(await vesting.duration()).to.be.equal(duration);
-    expect(await vesting.cliff()).to.be.equal(start + cliffDuration);
+    expect(await vesting.curvature()).to.be.equal(1);
+    expect(await vesting.releaseDate()).to.be.equal(start + cliffDuration);
   });
 
   describe('vesting schedule', function () {
@@ -39,7 +40,7 @@ describe('Fortify', function () {
       expect(await this.token.delegates(this.vesting.address)).to.be.equal(ethers.constants.AddressZero);
 
       await expect(this.vesting.delegate(this.token.address, this.accounts.other.address))
-        .to.be.revertedWith(`VestingWallet: access restricted to beneficiary`);
+        .to.be.revertedWith(`TokenVesting: access restricted to beneficiary`);
 
       expect(await this.token.delegates(this.vesting.address)).to.be.equal(ethers.constants.AddressZero);
     });
