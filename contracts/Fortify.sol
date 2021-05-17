@@ -35,17 +35,13 @@ contract Fortify is IFortify, AccessControlUpgradeable, ERC20VotesUpgradeable, U
     }
 
     // Only allow transfer to whitelisted accounts
-    function _beforeTokenTransfer(address from, address to, uint256 amount)
-    internal virtual override
-    {
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         require(hasRole(WHITELIST_ROLE, to), "Fortify: receiver is not whitelisted");
         super._beforeTokenTransfer(from, to, amount);
     }
 
     // Access control for the upgrade process
-    function _authorizeUpgrade(address newImplementation)
-    internal virtual override onlyRole(UPGRADER_ROLE)
-    {
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(UPGRADER_ROLE) {
     }
 
     // Allow the upgrader to set ENS reverse registration
