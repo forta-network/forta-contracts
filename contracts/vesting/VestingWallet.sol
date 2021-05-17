@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/contracts/token/ERC20/extensions/draft-IERC20Votes.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-// import "./vendor/upgradeable-old/CliffVestingUpgradeable.sol";
 import "./vendor/contract-upgradeable/extensions/CurveVestingUpgradeable.sol";
 import "./vendor/contract-upgradeable/extensions/DeadlineVestingUpgradeable.sol";
 import "./vendor/contract-upgradeable/extensions/RevokableVestingUpgradeable.sol";
@@ -22,7 +21,7 @@ contract VestingWallet is CurveVestingUpgradeable, DeadlineVestingUpgradeable, R
     ) external initializer {
         __TokenVesting_init_unchained(beneficiary_);
         __RevokableVesting_init(admin_);
-        __CurveVesting_init_unchained(begin_, end_ - begin_, 1); // linear
+        __CurveVesting_init_unchained(begin_, end_ - begin_, 1); // linear → curve = 1
         __DeadlineVesting_init_unchained(cliff_);
     }
 

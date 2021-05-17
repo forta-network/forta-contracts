@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/token/ERC20/extensions/draft-ERC20VotesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "./tools/ENSReverseRegistration.sol";
 import "./IFortify.sol";
 
 contract Fortify is IFortify, AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable {
@@ -45,5 +46,10 @@ contract Fortify is IFortify, AccessControlUpgradeable, ERC20VotesUpgradeable, U
     function _authorizeUpgrade(address newImplementation)
     internal virtual override onlyRole(UPGRADER_ROLE)
     {
+    }
+
+    // Allow the upgrader to set ENS reverse registration
+    function setName(address ensregistry, string calldata ensname) external onlyRole(UPGRADER_ROLE) {
+        ENSReverseRegistration.setName(ensregistry, ensname);
     }
 }
