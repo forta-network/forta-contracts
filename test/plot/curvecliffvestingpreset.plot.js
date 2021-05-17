@@ -1,18 +1,19 @@
 const { ethers, upgrades } = require('hardhat');
 const { expect } = require('chai');
-const { deploy } = require('./fixture');
+const { deploy } = require('../fixture');
 
 describe('Fortify', function () {
   before(async function () {
-    this.accounts    = await ethers.getSigners();
-    this.admin       = this.accounts.shift();
-    this.beneficiary = this.accounts.shift();
-    this.start       = Date.now() / 1000 | 0 + 3600; // in 1 h
-    this.duration    = 30 * 86400; // 30 days
-    this.deadline    =  7 * 86400; // 7 days
-    this.curvature   = 2;
-    this.vesting     = await deploy('CurveCliffVestingPreset', this.beneficiary.address, this.start, this.duration, this.curvature, this.start + this.deadline);
-    this.token       = await deploy('Fortify');
+    const { timestamp } = await ethers.provider.getBlock('latest');
+    this.accounts       = await ethers.getSigners();
+    this.admin          = this.accounts.shift();
+    this.beneficiary    = this.accounts.shift();
+    this.start          = timestamp + 3600; // in 1 h
+    this.duration       = 30 * 86400; // 30 days
+    this.deadline       =  7 * 86400; // 7 days
+    this.curvature      = 2;
+    this.vesting        = await deploy('CurveCliffVestingPreset', this.beneficiary.address, this.start, this.duration, this.curvature, this.start + this.deadline);
+    this.token          = await deploy('Fortify');
     await this.token.initialize(this.admin.address);
     await this.token.connect(this.admin).grantRole(await this.token.MINTER_ROLE(),      this.admin.address);
     await this.token.connect(this.admin).grantRole(await this.token.WHITELISTER_ROLE(), this.admin.address);
@@ -20,7 +21,7 @@ describe('Fortify', function () {
     await this.token.connect(this.admin).grantRole(await this.token.WHITELIST_ROLE(),   this.vesting.address); // needed for vesting
     await this.token.connect(this.admin).grantRole(await this.token.WHITELIST_ROLE(),   this.beneficiary.address); // needed for release
     await this.token.connect(this.admin).mint(this.vesting.address, ethers.utils.parseEther('100'));
-    this.timesteps   = Array(50).fill().map((_, i) => this.start + i * 86400)
+    this.timesteps = Array(50).fill().map((_, i) => this.start + i * 86400)
   });
 
   it('check planning', async function () {

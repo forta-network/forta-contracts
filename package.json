@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test"
+    "test": "hardhat test test/**.test.js"
   },
   "repository": {
     "type": "git",
