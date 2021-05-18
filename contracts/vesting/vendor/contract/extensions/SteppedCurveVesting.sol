@@ -37,8 +37,16 @@ abstract contract SteppedCurveVesting is TokenVesting {
             uint256 vested = super._vestedAmount(token, timestamp);
             return vested
                 - vested
-                * ((start() + duration() - timestamp) / _stepduration * _stepduration) ** curvature()
+                * stepUp(start() + duration() - timestamp, _stepduration) ** curvature()
                 / duration() ** curvature();
         }
+    }
+
+    // function step(uint256 value, uint256 increment) internal pure returns (uint256) {
+    //     return value / increment * increment;
+    // }
+
+    function stepUp(uint256 value, uint256 increment) internal pure returns (uint256) {
+        return (value / increment * increment) + (value % increment == 0 ? 0 : increment);
     }
 }
