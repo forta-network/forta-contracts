@@ -13,7 +13,7 @@ describe('Fortify', function () {
     this.stepduration   =  1 * 86400; // 1 days
     this.deadline       =  7 * 86400; // 7 days
     this.curvature      = 2;
-    this.vesting        = await deploy('SteppedCurveCliffVestingPreset', this.beneficiary.address, this.start, this.duration, this.stepduration, this.curvature, this.start + this.deadline);
+    this.vesting        = await deploy('SteppedCurveCliffVestingPreset', this.beneficiary.address, this.start, this.duration, this.curvature, this.stepduration, this.start + this.deadline);
     this.token          = await deploy('Fortify');
     await this.token.initialize(this.admin.address);
     await this.token.connect(this.admin).grantRole(await this.token.MINTER_ROLE(),      this.admin.address);
