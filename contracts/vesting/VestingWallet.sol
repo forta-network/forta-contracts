@@ -2,46 +2,106 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/contracts/token/ERC20/extensions/draft-IERC20Votes.sol";
+import "@openzeppelin/contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-import "./vendor/contract-upgradeable/extensions/CurveVestingUpgradeable.sol";
-import "./vendor/contract-upgradeable/extensions/DeadlineVestingUpgradeable.sol";
-import "./vendor/contract-upgradeable/extensions/RevokableVestingUpgradeable.sol";
 
-contract VestingWallet is CurveVestingUpgradeable, DeadlineVestingUpgradeable, RevokableVestingUpgradeable, UUPSUpgradeable {
+contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer
     {}
 
+    mapping (address => uint256) private _released;
+    address private _beneficiary;
+    uint256 private _start;
+    uint256 private _duration;
+
+    event TokensReleased(address token, uint256 amount);
+
+    modifier onlyBeneficiary() {
+        require(beneficiary() == _msgSender(), "TokenVesting: access restricted to beneficiary");
+        _;
+    }
+
     function initialize(
         address beneficiary_,
         address admin_,
-        uint256 begin_,
-        uint256 cliff_,
-        uint256 end_
+        uint256 start_,
+        uint256 duration_
     ) external initializer {
-        __TokenVesting_init_unchained(beneficiary_);
-        __RevokableVesting_init(admin_);
-        __CurveVesting_init_unchained(begin_, end_ - begin_, 1); // linear → curve = 1
-        __DeadlineVesting_init_unchained(cliff_);
+        __Ownable_init();
+        if (admin_ == address(0)) {
+            renounceOwnership();
+        } else {
+            transferOwnership(admin_);
+        }
+
+        _beneficiary = beneficiary_;
+        _start = start_;
+        _duration = duration_;
     }
 
-    function vestedAmount(address token, uint256 timestamp) public virtual override(TokenVestingUpgradeable, RevokableVestingUpgradeable) view returns (uint256) {
-        return super.vestedAmount(token, timestamp);
+    function beneficiary() public view virtual returns (address) {
+        return _beneficiary;
     }
 
-    function _vestedAmount(address token, uint256 timestamp) internal virtual override(TokenVestingUpgradeable, CurveVestingUpgradeable, DeadlineVestingUpgradeable) view returns (uint256) {
-        return super._vestedAmount(token, timestamp);
+    function start() public view virtual returns (uint256) {
+        return _start;
     }
 
-    function _releasableAmount(address token, uint256 timestamp) internal virtual override(TokenVestingUpgradeable, RevokableVestingUpgradeable) view returns (uint256) {
-        return super._releasableAmount(token, timestamp);
+    function duration() public view virtual returns (uint256) {
+        return _duration;
     }
 
+    function released(address token) public view returns (uint256) {
+        return _released[token];
+    }
+
+    /**
+    * @dev Release the tokens that have already vested.
+    */
+    function release(address token) public {
+        uint256 releasable = vestedAmount(token, block.timestamp) - released(token);
+
+        require(releasable > 0, "TokenVesting: no tokens are due");
+
+        _released[token] += releasable;
+
+        SafeERC20.safeTransfer(IERC20(token), beneficiary(), releasable);
+
+        emit TokensReleased(token, releasable);
+    }
+
+    /**
+     * @dev Calculates the amount that has already vested.
+     */
+    function vestedAmount(address token, uint256 timestamp) public virtual view returns (uint256) {
+        if (timestamp < start()) {
+            return 0;
+        } else if (timestamp >= start() + duration()) {
+            return _historicalBalance(token);
+        } else {
+            return _historicalBalance(token) * (timestamp - start()) / duration();
+        }
+    }
+
+    /**
+     * @dev Calculates the historical balance (current balance + already released balance).
+     */
+    function _historicalBalance(address token) private view returns (uint256) {
+        return IERC20(token).balanceOf(address(this)) + released(token);
+    }
+
+    /**
+     * @dev Delegate voting right
+     */
     function delegate(address token, address delegatee) public onlyBeneficiary() {
         IERC20Votes(token).delegate(delegatee);
     }
 
-    // Access control for the upgrade process
+    /**
+     * Access control for the upgrade process
+     */
     function _authorizeUpgrade(address newImplementation)
     internal virtual override onlyOwner()
     {}

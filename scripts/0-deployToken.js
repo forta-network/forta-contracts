@@ -6,7 +6,7 @@ async function main() {
   console.log(`Account balance: ${ethers.utils.formatEther(await deployer.getBalance())} ${ethers.constants.EtherSymbol}`);
 
   const Fortify = await ethers.getContractFactory('Fortify');
-  const instance = await upgrades.deployProxy(Fortify, { kind: 'uups' });
+  const instance = await upgrades.deployProxy(Fortify, [deployer.address], { kind: 'uups' });
   await instance.deployed();
   console.log(`Fortify address: ${instance.address}`);
 

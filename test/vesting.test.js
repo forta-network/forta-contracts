@@ -3,15 +3,14 @@ const { expect } = require('chai');
 const { prepare, deployUpgradeable } = require('./fixture');
 
 
-const begin = Date.now() / 1000 | 0;
-const cliff = begin + 1 * 365 * 86400; // 1 year later
-const end   = begin + 4 * 365 * 86400; // 4 year later
+const start    = Date.now() / 1000 | 0;
+const duration = 4 * 365 * 86400; // 4 years
 
 describe('Fortify', function () {
   prepare();
 
   beforeEach(async function () {
-    this.vesting = await deployUpgradeable('VestingWallet', 'uups', this.accounts.other.address, this.accounts.upgrader.address, begin, cliff, end);
+    this.vesting = await deployUpgradeable('VestingWallet', 'uups', this.accounts.other.address, this.accounts.upgrader.address, start, duration);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.vesting.address);
     await this.token.connect(this.accounts.minter).mint(this.vesting.address, 1);
   });
@@ -19,10 +18,8 @@ describe('Fortify', function () {
   it('create vesting contract', async function () {
     expect(await this.vesting.beneficiary()).to.be.equal(this.accounts.other.address);
     expect(await this.vesting.owner()).to.be.equal(this.accounts.upgrader.address);
-    expect(await this.vesting.start()).to.be.equal(begin);
-    expect(await this.vesting.duration()).to.be.equal(end - begin);
-    expect(await this.vesting.curvature()).to.be.equal(1);
-    expect(await this.vesting.deadline()).to.be.equal(cliff);
+    expect(await this.vesting.start()).to.be.equal(start);
+    expect(await this.vesting.duration()).to.be.equal(duration);
   });
 
   describe('vesting schedule', function () {
