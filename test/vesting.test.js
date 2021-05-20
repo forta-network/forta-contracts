@@ -20,7 +20,7 @@ describe('Fortify', function () {
   prepare();
 
   beforeEach(async function () {
-    this.vesting = await deployUpgradeable('VestingWallet', 'uups', this.accounts.other.address, this.accounts.upgrader.address, start, duration);
+    this.vesting = await deployUpgradeable('VestingWallet', 'uups', this.accounts.other.address, this.accounts.admin.address, start, duration);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.vesting.address);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.other.address);
     await this.token.connect(this.accounts.minter).mint(this.vesting.address, amount);
@@ -28,7 +28,7 @@ describe('Fortify', function () {
 
   it('create vesting contract', async function () {
     expect(await this.vesting.beneficiary()).to.be.equal(this.accounts.other.address);
-    expect(await this.vesting.owner()).to.be.equal(this.accounts.upgrader.address);
+    expect(await this.vesting.owner()).to.be.equal(this.accounts.admin.address);
     expect(await this.vesting.start()).to.be.equal(start);
     expect(await this.vesting.duration()).to.be.equal(duration);
   });
@@ -45,14 +45,15 @@ describe('Fortify', function () {
 
       for (const { timestamp, vested } of schedule) {
         await ethers.provider.send('evm_setNextBlockTimestamp', [ timestamp.toNumber() ]);
-        if (vested.gt(released)) {
-          await expect(this.vesting.release(this.token.address))
-            .to.emit(this.vesting, 'TokensReleased')
-            .withArgs(this.token.address, vested.sub(released))
-            .to.emit(this.token, 'Transfer')
-            .withArgs(this.vesting.address, this.accounts.other.address, vested.sub(released));
-          released = vested;
-        }
+
+        await expect(this.vesting.release(this.token.address))
+          .to.emit(this.vesting, 'TokensReleased')
+          .withArgs(this.token.address, vested.sub(released))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.vesting.address, this.accounts.other.address, vested.sub(released));
+
+        released = vested;
+
         expect(await this.token.balanceOf(this.vesting.address)).to.be.equal(amount.sub(vested));
         expect(await this.token.balanceOf(this.accounts.other.address)).to.be.equal(vested);
       }

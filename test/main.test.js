@@ -6,7 +6,7 @@ describe('Fortify', function () {
   prepare();
 
   it('check deployment', async function () {
-    expect(await this.token.hasRole(this.roles.UPGRADER,    this.accounts.upgrader.address));
+    expect(await this.token.hasRole(this.roles.ADMIN,       this.accounts.admin.address));
     expect(await this.token.hasRole(this.roles.MINTER,      this.accounts.minter.address));
     expect(await this.token.hasRole(this.roles.WHITELISTER, this.accounts.whitelister.address));
   });

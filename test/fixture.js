@@ -18,7 +18,7 @@ async function deployUpgradeable(name, kind, ...params) {
 function prepare() {
   before(async function() {
     this.accounts = await ethers.getSigners();
-    this.accounts.upgrader     = this.accounts.shift();
+    this.accounts.admin        = this.accounts.shift();
     this.accounts.minter       = this.accounts.shift();
     this.accounts.whitelister  = this.accounts.shift();
     this.accounts.whitelist    = this.accounts.shift();
@@ -27,15 +27,15 @@ function prepare() {
   });
 
   beforeEach(async function () {
-    this.token = await deployUpgradeable('Fortify', 'uups', this.accounts.upgrader.address);
+    this.token = await deployUpgradeable('Fortify', 'uups', this.accounts.admin.address);
     this.roles = {
-      UPGRADER:    await this.token.UPGRADER_ROLE(),
+      ADMIN:       await this.token.ADMIN_ROLE(),
       MINTER:      await this.token.MINTER_ROLE(),
       WHITELISTER: await this.token.WHITELISTER_ROLE(),
       WHITELIST:   await this.token.WHITELIST_ROLE(),
     }
-    await this.token.connect(this.accounts.upgrader).grantRole(this.roles.MINTER, this.accounts.minter.address);
-    await this.token.connect(this.accounts.upgrader).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address);
+    await this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address);
+    await this.token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address);
   });
 }

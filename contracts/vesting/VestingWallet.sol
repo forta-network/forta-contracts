@@ -30,6 +30,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
         uint256 duration_
     ) external initializer {
         __Ownable_init();
+        __UUPSUpgradeable_init();
         if (admin_ == address(0)) {
             renounceOwnership();
         } else {
@@ -62,13 +63,8 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     */
     function release(address token) public {
         uint256 releasable = vestedAmount(token, block.timestamp) - released(token);
-
-        require(releasable > 0, "TokenVesting: no tokens are due");
-
         _released[token] += releasable;
-
         SafeERC20.safeTransfer(IERC20(token), beneficiary(), releasable);
-
         emit TokensReleased(token, releasable);
     }
 

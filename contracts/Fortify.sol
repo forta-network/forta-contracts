@@ -8,20 +8,22 @@ import "./tools/ENSReverseRegistration.sol";
 import "./IFortify.sol";
 
 contract Fortify is IFortify, AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable {
-    bytes32 public constant UPGRADER_ROLE    = keccak256("UPGRADER_ROLE");
+    bytes32 public constant ADMIN_ROLE       = keccak256("ADMIN_ROLE");
     bytes32 public constant MINTER_ROLE      = keccak256("MINTER_ROLE");
     bytes32 public constant WHITELISTER_ROLE = keccak256("WHITELISTER_ROLE");
     bytes32 public constant WHITELIST_ROLE   = keccak256("WHITELIST_ROLE");
 
     function initialize(address admin) public initializer {
+        __AccessControl_init();
         __ERC20_init("Fortify", "FORT");
         __ERC20Permit_init("Fortify");
-        _setRoleAdmin(UPGRADER_ROLE, UPGRADER_ROLE);
-        _setRoleAdmin(MINTER_ROLE, UPGRADER_ROLE);
-        _setRoleAdmin(WHITELISTER_ROLE, UPGRADER_ROLE);
+        __UUPSUpgradeable_init();
+        _setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
+        _setRoleAdmin(MINTER_ROLE, ADMIN_ROLE);
+        _setRoleAdmin(WHITELISTER_ROLE, ADMIN_ROLE);
         _setRoleAdmin(WHITELIST_ROLE, WHITELISTER_ROLE);
-        _setupRole(UPGRADER_ROLE, admin);
-        _setupRole(UPGRADER_ROLE, address(this)); // required by grantWhitelister
+        _setupRole(ADMIN_ROLE, admin);
+        _setupRole(ADMIN_ROLE, address(this)); // required by grantWhitelister
     }
 
     // Allow minters to mint new tokens
@@ -41,11 +43,11 @@ contract Fortify is IFortify, AccessControlUpgradeable, ERC20VotesUpgradeable, U
     }
 
     // Access control for the upgrade process
-    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(UPGRADER_ROLE) {
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(ADMIN_ROLE) {
     }
 
     // Allow the upgrader to set ENS reverse registration
-    function setName(address ensregistry, string calldata ensname) external onlyRole(UPGRADER_ROLE) {
+    function setName(address ensregistry, string calldata ensname) external onlyRole(ADMIN_ROLE) {
         ENSReverseRegistration.setName(ensregistry, ensname);
     }
 }
