@@ -15,6 +15,11 @@ async function deployUpgradeable(name, kind, ...params) {
   return await upgrades.deployProxy(Contract, params, { kind }).then(f => f.deployed());
 }
 
+async function performUpgrade(proxy, name) {
+  const Contract = await ethers.getContractFactory(name);
+  return await upgrades.upgradeProxy(proxy.address, Contract, {});
+}
+
 function prepare() {
   before(async function() {
     this.accounts = await ethers.getSigners();
@@ -45,4 +50,5 @@ module.exports = {
   attach,
   deploy,
   deployUpgradeable,
+  performUpgrade,
 }

@@ -1,4 +1,4 @@
-const { ethers, upgrades } = require('hardhat');
+const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('./fixture');
 

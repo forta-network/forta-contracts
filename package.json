@@ -6,7 +6,8 @@
   "license": "MIT",
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test test/**.test.js"
+    "coverage": "hardhat coverage",
+    "test": "hardhat test"
   },
   "repository": {
     "type": "git",
@@ -27,6 +28,7 @@
     "chai": "^4.3.4",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.1.4",
-    "hardhat": "^2.0.10"
+    "hardhat": "^2.0.10",
+    "solidity-coverage": "^0.7.16"
   }
 }

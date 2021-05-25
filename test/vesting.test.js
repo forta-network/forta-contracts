@@ -1,4 +1,4 @@
-const { ethers, upgrades } = require('hardhat');
+const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare, deployUpgradeable } = require('./fixture');
 
@@ -41,8 +41,15 @@ describe('Fortify', function () {
     });
 
     it('execute vesting schedule', async function () {
-      let released = ethers.constants.Zero;
+      //early
+      await expect(this.vesting.release(this.token.address))
+        .to.emit(this.vesting, 'TokensReleased')
+        .withArgs(this.token.address, ethers.constants.Zero)
+        .to.emit(this.token, 'Transfer')
+        .withArgs(this.vesting.address, this.accounts.other.address, ethers.constants.Zero);
 
+      // on schedule
+      let released = ethers.constants.Zero;
       for (const { timestamp, vested } of schedule) {
         await ethers.provider.send('evm_setNextBlockTimestamp', [ timestamp.toNumber() ]);
 
