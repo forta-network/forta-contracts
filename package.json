@@ -27,7 +27,7 @@
     "@openzeppelin/hardhat-upgrades": "^1.7.0",
     "chai": "^4.3.4",
     "ethereum-waffle": "^3.3.0",
-    "ethers": "^5.1.4",
+    "ethers": "^5.3.0",
     "hardhat": "^2.0.10",
     "solidity-coverage": "^0.7.16"
   }
