@@ -1,9 +1,20 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('./fixture');
+const { shouldSupportInterfaces } = require('./shouldSupportInterfaces');
 
 describe('Fortify', function () {
   prepare();
+
+  shouldSupportInterfaces([
+    'AccessControl',
+    'ERC165',
+    'ERC20',
+    'ERC20Metadata',
+    'ERC20Permit',
+    // 'ERC20Votes',
+    'ERC20VotesComp',
+  ]);
 
   it('check deployment', async function () {
     expect(await this.token.hasRole(this.roles.ADMIN,       this.accounts.admin.address));
@@ -50,5 +61,4 @@ describe('Fortify', function () {
       });
     });
   });
-
 });

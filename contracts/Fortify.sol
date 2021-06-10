@@ -13,6 +13,14 @@ contract Fortify is IFortify, AccessControlUpgradeable, ERC20VotesUpgradeable, U
     bytes32 public constant WHITELISTER_ROLE = keccak256("WHITELISTER_ROLE");
     bytes32 public constant WHITELIST_ROLE   = keccak256("WHITELIST_ROLE");
 
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == type(IERC20Upgradeable).interfaceId
+            || interfaceId == type(IERC20MetadataUpgradeable).interfaceId
+            || interfaceId == type(IERC20PermitUpgradeable).interfaceId
+            || interfaceId == type(ERC20VotesUpgradeable).interfaceId
+            || super.supportsInterface(interfaceId);
+    }
+
     function initialize(address admin) public initializer {
         __AccessControl_init();
         __ERC20_init("Fortify", "FORT");
