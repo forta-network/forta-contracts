@@ -64,8 +64,8 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     function release(address token) public {
         uint256 releasable = vestedAmount(token, block.timestamp) - released(token);
         _released[token] += releasable;
-        SafeERC20.safeTransfer(IERC20(token), beneficiary(), releasable);
         emit TokensReleased(token, releasable);
+        SafeERC20.safeTransfer(IERC20(token), beneficiary(), releasable);
     }
 
     /**
