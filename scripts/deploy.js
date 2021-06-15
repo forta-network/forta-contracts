@@ -52,10 +52,12 @@ async function main() {
   /*******************************************************************************************************************
    *                                                  Deploy token                                                   *
    *******************************************************************************************************************/
+  console.log('[1/4] Deploy token...');
   const Fortify = await ethers.getContractFactory('Fortify');
   const fortify = await upgrades.deployProxy(Fortify, [ deployer.address ], { kind: 'uups' });
   await fortify.deployed();
   console.log(`Fortify address: ${fortify.address}`);
+  console.log('[1/4] done.');
 
   /*******************************************************************************************************************
    *                                                   Grant role                                                    *
@@ -65,10 +67,9 @@ async function main() {
   const WHITELISTER_ROLE = await fortify.WHITELISTER_ROLE()
   const WHITELIST_ROLE = await fortify.WHITELIST_ROLE()
 
+  console.log('[2/4] Setup roles...');
   await Promise.all([].concat(
-    // give the deployer right to mint
     fortify.grantRole(MINTER_ROLE, deployer.address),
-    // give the deployer right to whitelist
     fortify.grantRole(WHITELISTER_ROLE, deployer.address),
     // set admins
     RECEIPT.admins.map(address => fortify.grantRole(ADMIN_ROLE, address)),
@@ -78,13 +79,15 @@ async function main() {
     RECEIPT.whitelisters.map(address => fortify.grantRole(WHITELISTER_ROLE, address)),
     // whitelist all beneficiary
     RECEIPT.allocations.map(({ beneficiary }) => beneficiary).unique().map(address => fortify.grantRole(WHITELIST_ROLE, address)),
-  ));
+  )).then(txs => Promise.all(txs.map(({ wait }) => wait())));
+  console.log('[2/4] done.');
 
   /*******************************************************************************************************************
    *                                                   Grant role                                                    *
    *******************************************************************************************************************/
   const VestingWallet = await ethers.getContractFactory('VestingWallet');
 
+  console.log('[3/4] Mint vested allocations...');
   await Promise.all(RECEIPT.allocations.map(async allocation => {
     const beneficiary = allocation.beneficiary;
     const admin       = allocation.upgrader || ethers.constants.AddressZero;
@@ -99,19 +102,54 @@ async function main() {
     // mint allocation
     await fortify.mint(vesting.address, allocation.amount);
 
-    console.log(`New vesting wallet ${vesting.address} (${ethers.utils.formatEther(allocation.amount)} to ${beneficiary})`)
+    console.log(`New vesting wallet ${vesting.address} (${ethers.utils.formatEther(allocation.amount)} to ${beneficiary})`);
+
+    Object.assign(allocation, { vesting });
   }));
+  console.log('[3/4] done.');
 
   /*******************************************************************************************************************
    *                                                     Cleanup                                                     *
    *******************************************************************************************************************/
+  console.log('[4/4] Cleanup...');
   await Promise.all([
     fortify.renounceRole(ADMIN_ROLE, deployer.address),
     fortify.renounceRole(MINTER_ROLE, deployer.address),
     fortify.renounceRole(WHITELISTER_ROLE, deployer.address),
-  ]);
+  ]).then(txs => Promise.all(txs.map(({ wait }) => wait())));
+  console.log('[4/4] done.');
 
-  console.log('done.')
+
+  /*******************************************************************************************************************
+   *                                             Post deployment checks                                              *
+   *******************************************************************************************************************/
+  expect(await fortify.hasRole(ADMIN_ROLE, deployer.address)).to.be.equal(false);
+  expect(await fortify.hasRole(MINTER_ROLE, deployer.address)).to.be.equal(false);
+  expect(await fortify.hasRole(WHITELISTER_ROLE, deployer.address)).to.be.equal(false);
+  for (const address of RECEIPT.admins) {
+    expect(await fortify.hasRole(ADMIN_ROLE, address)).to.be.equal(true);
+  }
+  for (const address of RECEIPT.minters) {
+    expect(await fortify.hasRole(MINTER_ROLE, address)).to.be.equal(true);
+  }
+  for (const address of RECEIPT.whitelisters) {
+    expect(await fortify.hasRole(WHITELISTER_ROLE, address)).to.be.equal(true);
+  }
+  for (const address of RECEIPT.allocations.map(({ beneficiary }) => beneficiary)) {
+    expect(await fortify.hasRole(WHITELIST_ROLE, address)).to.be.equal(true);
+  }
+  for (const allocation of RECEIPT.allocations) {
+    const beneficiary = allocation.beneficiary;
+    const admin       = allocation.upgrader || ethers.constants.AddressZero;
+    const start       = dateToTimestamp(allocation.start);
+    const duration    = dateToTimestamp(allocation.end) - start;
+
+    expect(await fortify.balanceOf(allocation.vesting.address)).to.be.equal(allocation.amount);
+    expect(await allocation.vesting.beneficiary()).to.be.equal(beneficiary);
+    expect(await allocation.vesting.owner()).to.be.equal(admin);
+    expect(await allocation.vesting.start()).to.be.equal(start);
+    expect(await allocation.vesting.duration()).to.be.equal(duration);
+  }
 }
 
 main()
