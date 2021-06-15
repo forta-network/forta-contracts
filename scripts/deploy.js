@@ -205,17 +205,11 @@ async function main() {
     expect(await fortify.hasRole(WHITELIST_ROLE, address)).to.be.equal(true);
   }
   for (const [i, allocation] of Object.entries(CONFIG.allocations)) {
+    const vesting     = VestingWallet.attach(cache.get(`vesting-${i}`));
     const beneficiary = allocation.beneficiary;
     const admin       = allocation.upgrader || ethers.constants.AddressZero;
     const start       = dateToTimestamp(allocation.start);
     const duration    = dateToTimestamp(allocation.end) - start;
-
-    const vesting = await tryFetchProxy(
-      cache,
-      `vesting-${i}`,
-      VestingWallet,
-      [ beneficiary, admin, start, duration ],
-    );
     expect(await fortify.balanceOf(vesting.address)).to.be.equal(allocation.amount);
     expect(await vesting.beneficiary()).to.be.equal(beneficiary);
     expect(await vesting.owner()).to.be.equal(admin);
