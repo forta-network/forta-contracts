@@ -69,6 +69,9 @@ const CONFIG = {
 
 
 async function main() {
+  const Fortify = await ethers.getContractFactory('Fortify');
+  const VestingWallet = await ethers.getContractFactory('VestingWallet');
+
   // wrap signers in NonceManager to avoid nonce issues during concurent tx construction
   const [ deployer ] = await ethers.getSigners().then(signers => signers.map(signer => new NonceManager(signer)));
   deployer.address = await deployer.getAddress();
@@ -102,7 +105,6 @@ async function main() {
    *                                                  Deploy token                                                   *
    *******************************************************************************************************************/
   console.log('[1/4] Deploy token...');
-  const Fortify = await ethers.getContractFactory('Fortify');
   const fortify = await tryFetchProxy(
     cache,
     'fortify',
@@ -142,8 +144,6 @@ async function main() {
     /*****************************************************************************************************************
      *                                              Mint vested tokens                                               *
      *****************************************************************************************************************/
-    const VestingWallet = await ethers.getContractFactory('VestingWallet');
-
     console.log('[3/4] Mint vested allocations...');
     await Promise.all(CONFIG.allocations.map(async (allocation, i) => {
       const beneficiary = allocation.beneficiary;
@@ -171,8 +171,6 @@ async function main() {
         cache.set(`vesting-${i}-mint`, tx.hash);
         console.log(`New vesting wallet ${vesting.address} (${ethers.utils.formatEther(allocation.amount)} to ${beneficiary})`);
       }
-
-      Object.assign(allocation, { vesting });
     }));
     console.log('[3/4] done.');
   }
@@ -206,18 +204,24 @@ async function main() {
   for (const address of CONFIG.allocations.map(({ beneficiary }) => beneficiary)) {
     expect(await fortify.hasRole(WHITELIST_ROLE, address)).to.be.equal(true);
   }
-  // for (const allocation of CONFIG.allocations) {
-  //   const beneficiary = allocation.beneficiary;
-  //   const admin       = allocation.upgrader || ethers.constants.AddressZero;
-  //   const start       = dateToTimestamp(allocation.start);
-  //   const duration    = dateToTimestamp(allocation.end) - start;
-  //
-  //   expect(await fortify.balanceOf(allocation.vesting.address)).to.be.equal(allocation.amount);
-  //   expect(await allocation.vesting.beneficiary()).to.be.equal(beneficiary);
-  //   expect(await allocation.vesting.owner()).to.be.equal(admin);
-  //   expect(await allocation.vesting.start()).to.be.equal(start);
-  //   expect(await allocation.vesting.duration()).to.be.equal(duration);
-  // }
+  for (const [i, allocation] of Object.entries(CONFIG.allocations)) {
+    const beneficiary = allocation.beneficiary;
+    const admin       = allocation.upgrader || ethers.constants.AddressZero;
+    const start       = dateToTimestamp(allocation.start);
+    const duration    = dateToTimestamp(allocation.end) - start;
+
+    const vesting = await tryFetchProxy(
+      cache,
+      `vesting-${i}`,
+      VestingWallet,
+      [ beneficiary, admin, start, duration ],
+    );
+    expect(await fortify.balanceOf(vesting.address)).to.be.equal(allocation.amount);
+    expect(await vesting.beneficiary()).to.be.equal(beneficiary);
+    expect(await vesting.owner()).to.be.equal(admin);
+    expect(await vesting.start()).to.be.equal(start);
+    expect(await vesting.duration()).to.be.equal(duration);
+  }
 }
 
 main()
