@@ -1,4 +1,5 @@
 const { ethers, upgrades } = require('hardhat');
+const { NonceManager } = require('@ethersproject/experimental');
 const { expect } = require('chai');
 
 Array.prototype.unique = function(op = x => x) {
@@ -30,7 +31,9 @@ const RECEIPT = {
 
 
 async function main() {
-  const [ deployer ] = await ethers.getSigners();
+  // wrap signers in NonceManager to avoid nonce issues during concurent tx construction
+  const [ deployer ] = await ethers.getSigners().then(signers => signers.map(signer => new NonceManager(signer)));
+  deployer.address = await deployer.getAddress();
 
   /*******************************************************************************************************************
    *                                                  Sanity check                                                   *
