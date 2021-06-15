@@ -27,6 +27,7 @@
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/hardhat-upgrades": "^1.7.0",
     "chai": "^4.3.4",
+    "conf": "^10.0.1",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.3.0",
     "hardhat": "^2.0.10",
