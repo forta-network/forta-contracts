@@ -47,7 +47,7 @@ contract Fortify is IFortify, AccessControlUpgradeable, ERC20VotesUpgradeable, U
     }
 
     // Allow the upgrader to set ENS reverse registration
-    function setName(address ensregistry, string calldata ensname) external onlyRole(ADMIN_ROLE) {
-        ENSReverseRegistration.setName(ensregistry, ensname);
+    function setName(address ensRegistry, string calldata ensName) external onlyRole(ADMIN_ROLE) {
+        ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 }
