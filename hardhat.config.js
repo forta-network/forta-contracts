@@ -10,7 +10,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: '0.8.4',
+        version: '0.8.6',
         settings: {
           optimizer: {
             enabled: true,
@@ -23,8 +23,8 @@ module.exports = {
   networks: {
 		hardhat: {
 			mining: {
-				// auto: false,
-				// interval: [3000, 6000],
+				auto: false,
+				interval: [3000, 6000],
 			},
 		},
 	},

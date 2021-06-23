@@ -69,13 +69,13 @@ const CONFIG = {
 
 
 async function main() {
-  const Fortify = await ethers.getContractFactory('Fortify');
-  const VestingWallet = await ethers.getContractFactory('VestingWallet');
-
   // wrap signers in NonceManager to avoid nonce issues during concurent tx construction
   const [ deployer ] = await ethers.getSigners().then(signers => signers.map(signer => new NonceManager(signer)));
   deployer.address = await deployer.getAddress();
   console.log(`Deployer address: ${deployer.address}`);
+
+  const Fortify = await ethers.getContractFactory('Fortify').then(contract => contract.connect(deployer));
+  const VestingWallet = await ethers.getContractFactory('VestingWallet').then(contract => contract.connect(deployer));
 
   const { chainId } = await deployer.provider.getNetwork();
   const cache = new Conf({ cwd: __dirname, configName: `.cache-${chainId}` });
@@ -124,12 +124,9 @@ async function main() {
      *                                                  Grant role                                                   *
      *****************************************************************************************************************/
     console.log('[2/4] Setup roles...');
-    await Promise.all([
+    await Promise.all([].concat(
       grantRole(fortify, MINTER_ROLE, deployer.address),
       grantRole(fortify, WHITELISTER_ROLE, deployer.address),
-    ]).then(txs => Promise.all(txs.filter(Boolean).map(({ wait }) => wait())));
-
-    await Promise.all([].concat(
       // set admins
       CONFIG.admins.map(address => grantRole(fortify, ADMIN_ROLE, address)),
       // set minters
