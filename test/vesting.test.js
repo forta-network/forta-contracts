@@ -16,7 +16,7 @@ const schedule = Array(256).fill()
       vested: min(amount.mul(timestamp.sub(start)).div(duration), amount)
   }));
 
-describe('Fortify', function () {
+describe('VestingWallet', function () {
   prepare();
 
   beforeEach(async function () {
@@ -24,6 +24,11 @@ describe('Fortify', function () {
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.vesting.address);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.other.address);
     await this.token.connect(this.accounts.minter).mint(this.vesting.address, amount);
+  });
+
+  it('rejects zero address for beneficiary', async function () {
+    await expect(deployUpgradeable('VestingWallet', 'uups', ethers.constants.AddressZero, this.accounts.admin.address, start, duration))
+      .to.be.revertedWith('VestingWallet: beneficiary is zero address');
   });
 
   it('create vesting contract', async function () {

@@ -29,8 +29,11 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
         uint256 start_,
         uint256 duration_
     ) external initializer {
+        require(beneficiary_ != address(0x0), "VestingWallet: beneficiary is zero address");
+
         __Ownable_init();
         __UUPSUpgradeable_init();
+
         if (admin_ == address(0)) {
             renounceOwnership();
         } else {
