@@ -20,12 +20,26 @@ module.exports = {
       },
     ],
   },
-  networks: {
-		hardhat: {
-			mining: {
-				auto: false,
-				interval: [3000, 6000],
-			},
-		},
-	},
+  networks: {},
 };
+
+module.hardhat = {
+  mining: {
+    auto: false,
+    interval: [3000, 6000],
+  },
+};
+
+if (process.env.RINKEBY_NODE && process.env.MNEMONIC) {
+  module.exports.networks.rinkeby = {
+    url: process.env.RINKEBY_NODE,
+    accounts: [ process.env.MNEMONIC ],
+  };
+}
+
+if (process.env.GOERLI_NODE && process.env.MNEMONIC) {
+  module.exports.networks.goerli = {
+    url: process.env.GOERLI_NODE,
+    accounts: [ process.env.MNEMONIC ],
+  };
+}

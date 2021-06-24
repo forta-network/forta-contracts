@@ -5,9 +5,8 @@ import "@openzeppelin/contracts-upgradeable/contracts/access/AccessControlUpgrad
 import "@openzeppelin/contracts-upgradeable/contracts/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "./tools/ENSReverseRegistration.sol";
-import "./IFortify.sol";
 
-contract Fortify is IFortify, AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable {
+contract Fortify is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable {
     bytes32 public constant ADMIN_ROLE       = keccak256("ADMIN_ROLE");
     bytes32 public constant MINTER_ROLE      = keccak256("MINTER_ROLE");
     bytes32 public constant WHITELISTER_ROLE = keccak256("WHITELISTER_ROLE");

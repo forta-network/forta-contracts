@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/contracts/token/ERC20/extensions/IERC20Votes.sol";
+import "@openzeppelin/contracts/contracts/token/ERC20/extensions/ERC20Votes.sol";
 import "@openzeppelin/contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
@@ -92,7 +92,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
      * @dev Delegate voting right
      */
     function delegate(address token, address delegatee) public onlyBeneficiary() {
-        IERC20Votes(token).delegate(delegatee);
+        ERC20Votes(token).delegate(delegatee);
     }
 
     /**

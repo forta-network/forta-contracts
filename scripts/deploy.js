@@ -41,7 +41,7 @@ async function tryFetchProxy(cache, key, contract, args = [], kind = 'uups') {
 }
 
 function grantRole(accesscontrol, role, account) {
-  return accesscontrol.hasRole(role, account).then(hasRole => hasRole ? null : accesscontrol.grantRole(role, account));
+  return accesscontrol.hasRole(role, account).then(hasRole => hasRole ? null : accesscontrol.grantRole(role, account, { gasLimit: 60000 }));
 }
 
 function renounceRole(accesscontrol, role, account) {
@@ -104,7 +104,7 @@ async function main() {
   /*******************************************************************************************************************
    *                                                  Deploy token                                                   *
    *******************************************************************************************************************/
-  console.log('[1/4] Deploy token...');
+  console.log('[1/5] Deploy token...');
   const fortify = await tryFetchProxy(
     cache,
     'fortify',
@@ -112,7 +112,25 @@ async function main() {
     [ deployer.address ],
   );
   console.log(`Fortify address: ${fortify.address}`);
-  console.log('[1/4] done.');
+  console.log('[1/5] done.');
+
+  /*******************************************************************************************************************
+   *                                             Deploy vesting wallets                                              *
+   *******************************************************************************************************************/
+  console.log('[2/5] Deploy vesting wallets...');
+  const vesting = await Promise.all(CONFIG.allocations.map(async (allocation, i) => {
+    const beneficiary = allocation.beneficiary;
+    const admin       = allocation.upgrader || ethers.constants.AddressZero;
+    const start       = dateToTimestamp(allocation.start);
+    const duration    = dateToTimestamp(allocation.end) - start;
+    return await tryFetchProxy(
+      cache,
+      `vesting-${i}`,
+      VestingWallet,
+      [ beneficiary, admin, start, duration ],
+    );
+  }));
+  console.log('[2/5] done.');
 
   const ADMIN_ROLE = await fortify.ADMIN_ROLE()
   const MINTER_ROLE = await fortify.MINTER_ROLE()
@@ -123,7 +141,7 @@ async function main() {
     /*****************************************************************************************************************
      *                                                  Grant role                                                   *
      *****************************************************************************************************************/
-    console.log('[2/4] Setup roles...');
+    console.log('[3/5] Setup roles...');
     await Promise.all([].concat(
       grantRole(fortify, MINTER_ROLE, deployer.address),
       grantRole(fortify, WHITELISTER_ROLE, deployer.address),
@@ -135,53 +153,39 @@ async function main() {
       CONFIG.whitelisters.map(address => grantRole(fortify, WHITELISTER_ROLE, address)),
       // whitelist all beneficiary
       CONFIG.allocations.map(({ beneficiary }) => beneficiary).unique().map(address => grantRole(fortify, WHITELIST_ROLE, address)),
-    )).then(txs => Promise.all(txs.filter(Boolean).map(({ wait }) => wait())));
-    console.log('[2/4] done.');
+      // whitelist all vesting wallets
+      vesting.map(({ address }) => grantRole(fortify, WHITELIST_ROLE, address)),
+    )).then(txs => Promise.all(txs.filter(Boolean).map(tx => tx.wait())));
+    console.log('[3/5] done.');
 
     /*****************************************************************************************************************
      *                                              Mint vested tokens                                               *
      *****************************************************************************************************************/
-    console.log('[3/4] Mint vested allocations...');
+    console.log('[4/5] Mint vested allocations...');
     await Promise.all(CONFIG.allocations.map(async (allocation, i) => {
-      const beneficiary = allocation.beneficiary;
-      const admin       = allocation.upgrader || ethers.constants.AddressZero;
-      const start       = dateToTimestamp(allocation.start);
-      const duration    = dateToTimestamp(allocation.end) - start;
-
-      // create wallet
-      const vesting = await tryFetchProxy(
-        cache,
-        `vesting-${i}`,
-        VestingWallet,
-        [ beneficiary, admin, start, duration ],
-      );
-
-      // whitelist wallet
-      await grantRole(fortify, WHITELIST_ROLE, vesting.address);
-
       // mint allocation
       const hash = cache.get(`vesting-${i}-mint`)
       if (hash) {
         // TODO: check if tx failled
       } else {
-        const tx = await fortify.mint(vesting.address, allocation.amount);
+        const tx = await fortify.mint(vesting[i].address, allocation.amount);
         cache.set(`vesting-${i}-mint`, tx.hash);
-        console.log(`New vesting wallet ${vesting.address} (${ethers.utils.formatEther(allocation.amount)} to ${beneficiary})`);
+        console.log(`New vesting wallet ${vesting[i].address} (${ethers.utils.formatEther(allocation.amount)} to ${allocation.beneficiary})`);
       }
     }));
-    console.log('[3/4] done.');
+    console.log('[4/5] done.');
   }
 
   /*******************************************************************************************************************
    *                                                     Cleanup                                                     *
    *******************************************************************************************************************/
-  console.log('[4/4] Cleanup...');
+  console.log('[5/5] Cleanup...');
   await Promise.all([
     renounceRole(fortify, ADMIN_ROLE,       deployer.address),
     renounceRole(fortify, MINTER_ROLE,      deployer.address),
     renounceRole(fortify, WHITELISTER_ROLE, deployer.address),
-  ]).then(txs => Promise.all(txs.filter(Boolean).map(({ wait }) => wait())));
-  console.log('[4/4] done.');
+  ]).then(txs => Promise.all(txs.filter(Boolean).map(tx => tx.wait())));
+  console.log('[5/5] done.');
 
   /*******************************************************************************************************************
    *                                             Post deployment checks                                              *
@@ -202,16 +206,15 @@ async function main() {
     expect(await fortify.hasRole(WHITELIST_ROLE, address)).to.be.equal(true);
   }
   for (const [i, allocation] of Object.entries(CONFIG.allocations)) {
-    const vesting     = VestingWallet.attach(cache.get(`vesting-${i}`));
     const beneficiary = allocation.beneficiary;
     const admin       = allocation.upgrader || ethers.constants.AddressZero;
     const start       = dateToTimestamp(allocation.start);
     const duration    = dateToTimestamp(allocation.end) - start;
-    expect(await fortify.balanceOf(vesting.address)).to.be.equal(allocation.amount);
-    expect(await vesting.beneficiary()).to.be.equal(beneficiary);
-    expect(await vesting.owner()).to.be.equal(admin);
-    expect(await vesting.start()).to.be.equal(start);
-    expect(await vesting.duration()).to.be.equal(duration);
+    expect(await fortify.balanceOf(vesting[i].address)).to.be.equal(allocation.amount);
+    expect(await vesting[i].beneficiary()).to.be.equal(beneficiary);
+    expect(await vesting[i].owner()).to.be.equal(admin);
+    expect(await vesting[i].start()).to.be.equal(start);
+    expect(await vesting[i].duration()).to.be.equal(duration);
   }
 }
 
