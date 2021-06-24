@@ -77,7 +77,7 @@ describe('VestingWallet', function () {
       expect(await this.token.delegates(this.vesting.address)).to.be.equal(ethers.constants.AddressZero);
 
       await expect(this.vesting.delegate(this.token.address, this.accounts.other.address))
-        .to.be.revertedWith(`TokenVesting: access restricted to beneficiary`);
+        .to.be.revertedWith(`VestingWallet: access restricted to beneficiary`);
 
       expect(await this.token.delegates(this.vesting.address)).to.be.equal(ethers.constants.AddressZero);
     });

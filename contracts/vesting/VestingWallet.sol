@@ -19,7 +19,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     event TokensReleased(address token, uint256 amount);
 
     modifier onlyBeneficiary() {
-        require(beneficiary() == _msgSender(), "TokenVesting: access restricted to beneficiary");
+        require(beneficiary() == _msgSender(), "VestingWallet: access restricted to beneficiary");
         _;
     }
 
