@@ -59,7 +59,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /**
-    * @dev Release the tokens that have already vested.
+    * @dev Release the tokens that have vested by the specified timestamp.
     */
     function release(address token) public {
         uint256 releasable = vestedAmount(token, block.timestamp) - released(token);
