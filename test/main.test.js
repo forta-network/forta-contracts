@@ -2,7 +2,7 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('./fixture');
 
-describe('Fortify', function () {
+describe('Forta', function () {
   prepare();
 
   it('check deployment', async function () {
@@ -40,7 +40,7 @@ describe('Fortify', function () {
     describe('non-authorized', function () {
       it('to non-whitelisted', async function () {
         await expect(this.token.connect(this.accounts.minter).mint(this.accounts.nonwhitelist.address, 1))
-          .to.be.revertedWith(`Fortify: receiver is not whitelisted`);
+          .to.be.revertedWith(`Forta: receiver is not whitelisted`);
       });
 
       it('to whitelisted', async function () {

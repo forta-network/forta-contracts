@@ -32,7 +32,7 @@ function prepare() {
   });
 
   beforeEach(async function () {
-    this.token = await deployUpgradeable('Fortify', 'uups', this.accounts.admin.address);
+    this.token = await deployUpgradeable('Forta', 'uups', this.accounts.admin.address);
     this.roles = {
       ADMIN:       await this.token.ADMIN_ROLE(),
       MINTER:      await this.token.MINTER_ROLE(),

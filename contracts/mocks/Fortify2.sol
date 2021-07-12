@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../Fortify.sol";
+import "../Forta.sol";
 
-contract Fortify2 is Fortify {
+contract Forta2 is Forta {
     function version() external pure returns (string memory) {
-        return type(Fortify2).name;
+        return type(Forta2).name;
     }
 }

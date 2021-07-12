@@ -2,20 +2,20 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { attach, prepare, deployUpgradeable, performUpgrade } = require('./fixture');
 
-describe('Fortify', function () {
+describe('Forta', function () {
   prepare();
 
   describe('Token update', function () {
     it('authorized', async function () {
-      this.token = await performUpgrade(this.token, 'Fortify2');
-      expect(await this.token.version()).to.be.equal('Fortify2');
+      this.token = await performUpgrade(this.token, 'Forta2');
+      expect(await this.token.version()).to.be.equal('Forta2');
     });
 
     it('unauthorized', async function () {
       const ADMIN_ROLE = await this.token.ADMIN_ROLE();
 
       await this.token.renounceRole(ADMIN_ROLE, this.accounts.admin.address);
-      await expect(performUpgrade(this.token, 'Fortify2'))
+      await expect(performUpgrade(this.token, 'Forta2'))
         .to.be.revertedWith(`AccessControl: account ${this.accounts.admin.address.toLowerCase()} is missing role ${ADMIN_ROLE}`);
     });
   });
