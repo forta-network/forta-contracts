@@ -74,7 +74,7 @@ async function main() {
   deployer.address = await deployer.getAddress();
   console.log(`Deployer address: ${deployer.address}`);
 
-  const Fortify = await ethers.getContractFactory('Fortify').then(contract => contract.connect(deployer));
+  const Forta = await ethers.getContractFactory('Forta').then(contract => contract.connect(deployer));
   const VestingWallet = await ethers.getContractFactory('VestingWallet').then(contract => contract.connect(deployer));
 
   const { chainId } = await deployer.provider.getNetwork();
@@ -105,13 +105,13 @@ async function main() {
    *                                                  Deploy token                                                   *
    *******************************************************************************************************************/
   console.log('[1/5] Deploy token...');
-  const fortify = await tryFetchProxy(
+  const forta = await tryFetchProxy(
     cache,
-    'fortify',
-    Fortify,
+    'forta',
+    Forta,
     [ deployer.address ],
   );
-  console.log(`Fortify address: ${fortify.address}`);
+  console.log(`Forta address: ${forta.address}`);
   console.log('[1/5] done.');
 
   /*******************************************************************************************************************
@@ -132,29 +132,29 @@ async function main() {
   }));
   console.log('[2/5] done.');
 
-  const ADMIN_ROLE = await fortify.ADMIN_ROLE()
-  const MINTER_ROLE = await fortify.MINTER_ROLE()
-  const WHITELISTER_ROLE = await fortify.WHITELISTER_ROLE()
-  const WHITELIST_ROLE = await fortify.WHITELIST_ROLE()
+  const ADMIN_ROLE = await forta.ADMIN_ROLE()
+  const MINTER_ROLE = await forta.MINTER_ROLE()
+  const WHITELISTER_ROLE = await forta.WHITELISTER_ROLE()
+  const WHITELIST_ROLE = await forta.WHITELIST_ROLE()
 
-  if (await fortify.hasRole(ADMIN_ROLE, deployer.address)) {
+  if (await forta.hasRole(ADMIN_ROLE, deployer.address)) {
     /*****************************************************************************************************************
      *                                                  Grant role                                                   *
      *****************************************************************************************************************/
     console.log('[3/5] Setup roles...');
     await Promise.all([].concat(
-      grantRole(fortify, MINTER_ROLE, deployer.address),
-      grantRole(fortify, WHITELISTER_ROLE, deployer.address),
+      grantRole(forta, MINTER_ROLE, deployer.address),
+      grantRole(forta, WHITELISTER_ROLE, deployer.address),
       // set admins
-      CONFIG.admins.map(address => grantRole(fortify, ADMIN_ROLE, address)),
+      CONFIG.admins.map(address => grantRole(forta, ADMIN_ROLE, address)),
       // set minters
-      CONFIG.minters.map(address => grantRole(fortify, MINTER_ROLE, address)),
+      CONFIG.minters.map(address => grantRole(forta, MINTER_ROLE, address)),
       // set whitelisters
-      CONFIG.whitelisters.map(address => grantRole(fortify, WHITELISTER_ROLE, address)),
+      CONFIG.whitelisters.map(address => grantRole(forta, WHITELISTER_ROLE, address)),
       // whitelist all beneficiary
-      CONFIG.allocations.map(({ beneficiary }) => beneficiary).unique().map(address => grantRole(fortify, WHITELIST_ROLE, address)),
+      CONFIG.allocations.map(({ beneficiary }) => beneficiary).unique().map(address => grantRole(forta, WHITELIST_ROLE, address)),
       // whitelist all vesting wallets
-      vesting.map(({ address }) => grantRole(fortify, WHITELIST_ROLE, address)),
+      vesting.map(({ address }) => grantRole(forta, WHITELIST_ROLE, address)),
     )).then(txs => Promise.all(txs.filter(Boolean).map(tx => tx.wait())));
     console.log('[3/5] done.');
 
@@ -168,7 +168,7 @@ async function main() {
       if (hash) {
         // TODO: check if tx failled
       } else {
-        const tx = await fortify.mint(vesting[i].address, allocation.amount);
+        const tx = await forta.mint(vesting[i].address, allocation.amount);
         cache.set(`vesting-${i}-mint`, tx.hash);
         console.log(`New vesting wallet ${vesting[i].address} (${ethers.utils.formatEther(allocation.amount)} to ${allocation.beneficiary})`);
       }
@@ -181,36 +181,36 @@ async function main() {
    *******************************************************************************************************************/
   console.log('[5/5] Cleanup...');
   await Promise.all([
-    renounceRole(fortify, ADMIN_ROLE,       deployer.address),
-    renounceRole(fortify, MINTER_ROLE,      deployer.address),
-    renounceRole(fortify, WHITELISTER_ROLE, deployer.address),
+    renounceRole(forta, ADMIN_ROLE,       deployer.address),
+    renounceRole(forta, MINTER_ROLE,      deployer.address),
+    renounceRole(forta, WHITELISTER_ROLE, deployer.address),
   ]).then(txs => Promise.all(txs.filter(Boolean).map(tx => tx.wait())));
   console.log('[5/5] done.');
 
   /*******************************************************************************************************************
    *                                             Post deployment checks                                              *
    *******************************************************************************************************************/
-  expect(await fortify.hasRole(ADMIN_ROLE, deployer.address)).to.be.equal(false);
-  expect(await fortify.hasRole(MINTER_ROLE, deployer.address)).to.be.equal(false);
-  expect(await fortify.hasRole(WHITELISTER_ROLE, deployer.address)).to.be.equal(false);
+  expect(await forta.hasRole(ADMIN_ROLE, deployer.address)).to.be.equal(false);
+  expect(await forta.hasRole(MINTER_ROLE, deployer.address)).to.be.equal(false);
+  expect(await forta.hasRole(WHITELISTER_ROLE, deployer.address)).to.be.equal(false);
   for (const address of CONFIG.admins) {
-    expect(await fortify.hasRole(ADMIN_ROLE, address)).to.be.equal(true);
+    expect(await forta.hasRole(ADMIN_ROLE, address)).to.be.equal(true);
   }
   for (const address of CONFIG.minters) {
-    expect(await fortify.hasRole(MINTER_ROLE, address)).to.be.equal(true);
+    expect(await forta.hasRole(MINTER_ROLE, address)).to.be.equal(true);
   }
   for (const address of CONFIG.whitelisters) {
-    expect(await fortify.hasRole(WHITELISTER_ROLE, address)).to.be.equal(true);
+    expect(await forta.hasRole(WHITELISTER_ROLE, address)).to.be.equal(true);
   }
   for (const address of CONFIG.allocations.map(({ beneficiary }) => beneficiary)) {
-    expect(await fortify.hasRole(WHITELIST_ROLE, address)).to.be.equal(true);
+    expect(await forta.hasRole(WHITELIST_ROLE, address)).to.be.equal(true);
   }
   for (const [i, allocation] of Object.entries(CONFIG.allocations)) {
     const beneficiary = allocation.beneficiary;
     const admin       = allocation.upgrader || ethers.constants.AddressZero;
     const start       = dateToTimestamp(allocation.start);
     const duration    = dateToTimestamp(allocation.end) - start;
-    expect(await fortify.balanceOf(vesting[i].address)).to.be.equal(allocation.amount);
+    expect(await forta.balanceOf(vesting[i].address)).to.be.equal(allocation.amount);
     expect(await vesting[i].beneficiary()).to.be.equal(beneficiary);
     expect(await vesting[i].owner()).to.be.equal(admin);
     expect(await vesting[i].start()).to.be.equal(start);

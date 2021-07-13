@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/contracts/token/ERC20/extensions/ERC
 import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "./tools/ENSReverseRegistration.sol";
 
-contract Fortify is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable {
+contract Forta is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable {
     bytes32 public constant ADMIN_ROLE       = keccak256("ADMIN_ROLE");
     bytes32 public constant MINTER_ROLE      = keccak256("MINTER_ROLE");
     bytes32 public constant WHITELISTER_ROLE = keccak256("WHITELISTER_ROLE");
@@ -14,8 +14,8 @@ contract Fortify is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgrade
 
     function initialize(address admin) public initializer {
         __AccessControl_init();
-        __ERC20_init("Fortify", "FORT");
-        __ERC20Permit_init("Fortify");
+        __ERC20_init("Forta", "FORT");
+        __ERC20Permit_init("Forta");
         __UUPSUpgradeable_init();
         _setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
         _setRoleAdmin(MINTER_ROLE, ADMIN_ROLE);
@@ -37,7 +37,7 @@ contract Fortify is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgrade
 
     // Only allow transfer to whitelisted accounts
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
-        require(hasRole(WHITELIST_ROLE, to), "Fortify: receiver is not whitelisted");
+        require(hasRole(WHITELIST_ROLE, to), "Forta: receiver is not whitelisted");
         super._beforeTokenTransfer(from, to, amount);
     }
 
