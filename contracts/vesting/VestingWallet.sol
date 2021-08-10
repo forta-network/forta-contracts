@@ -33,7 +33,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     ) external initializer {
         require(beneficiary_ != address(0x0), "VestingWallet: beneficiary is zero address");
         require(start_ <= cliff_, "VestingWallet: cliff is before start");
-        require(cliff_ <= cliff_ + duration_, "VestingWallet: cliff is after end");
+        require(cliff_ <= start_ + duration_, "VestingWallet: cliff is after end");
 
         __Ownable_init();
         __UUPSUpgradeable_init();
