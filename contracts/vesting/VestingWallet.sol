@@ -11,11 +11,11 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     constructor() initializer
     {}
 
-    mapping (address => uint256) private __released;
-    address private __beneficiary;
-    uint256 private __start;
-    uint256 private __cliff;
-    uint256 private __duration;
+    mapping (address => uint256) private _released;
+    address private _beneficiary;
+    uint256 private _start;
+    uint256 private _cliff;
+    uint256 private _duration;
 
     event TokensReleased(address token, uint256 amount);
 
@@ -25,49 +25,49 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function initialize(
-        address _beneficiary,
-        address _admin,
-        uint256 _start,
-        uint256 _cliff,
-        uint256 _duration
+        address beneficiary_,
+        address admin_,
+        uint256 start_,
+        uint256 cliff_,
+        uint256 duration_
     ) external initializer {
-        require(_beneficiary != address(0x0), "VestingWallet: beneficiary is zero address");
-        require(_start <= _cliff, "VestingWallet: cliff is before start");
-        require(_cliff <= _cliff + _duration, "VestingWallet: cliff is after end");
+        require(beneficiary_ != address(0x0), "VestingWallet: beneficiary is zero address");
+        require(start_ <= cliff_, "VestingWallet: cliff is before start");
+        require(cliff_ <= cliff_ + duration_, "VestingWallet: cliff is after end");
 
         __Ownable_init();
         __UUPSUpgradeable_init();
 
-        if (_admin == address(0)) {
+        if (admin_ == address(0)) {
             renounceOwnership();
         } else {
-            transferOwnership(_admin);
+            transferOwnership(admin_);
         }
 
-        __beneficiary = _beneficiary;
-        __start = _start;
-        __cliff = _cliff;
-        __duration = _duration;
+        _beneficiary = beneficiary_;
+        _start = start_;
+        _cliff = cliff_;
+        _duration = duration_;
     }
 
     function beneficiary() public view virtual returns (address) {
-        return __beneficiary;
+        return _beneficiary;
     }
 
     function start() public view virtual returns (uint256) {
-        return __start;
+        return _start;
     }
 
     function cliff() public view virtual returns (uint256) {
-        return __cliff;
+        return _cliff;
     }
 
     function duration() public view virtual returns (uint256) {
-        return __duration;
+        return _duration;
     }
 
     function released(address token) public view returns (uint256) {
-        return __released[token];
+        return _released[token];
     }
 
     /**
@@ -75,7 +75,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     */
     function release(address token) public {
         uint256 releasable = vestedAmount(token, block.timestamp) - released(token);
-        __released[token] += releasable;
+        _released[token] += releasable;
         emit TokensReleased(token, releasable);
         SafeERC20.safeTransfer(IERC20(token), beneficiary(), releasable);
     }
