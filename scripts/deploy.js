@@ -1,8 +1,6 @@
 const { ethers, upgrades } = require('hardhat');
 const { NonceManager } = require('@ethersproject/experimental');
 const { expect } = require('chai');
-const dayjs = require('dayjs');
-dayjs.extend(require('dayjs/plugin/duration'));
 const Conf = require('conf');
 
 
@@ -17,18 +15,25 @@ function dateToTimestamp(...params) {
   return (new Date(...params)).getTime() / 1000 | 0
 }
 
-export function durationToSeconds(duration) {
-  export const durationPattern = /^(\d+) +(second|minute|hour|day|week|month|year)s?$/;
+function durationToSeconds(duration) {
+  const durationPattern = /^(\d+) +(second|minute|hour|day|week|month|year)s?$/;
   const match = duration.match(durationPattern);
 
   if (!match) {
     throw new Error(`Bad duration format (${durationPattern.source})`);
   }
 
-  const value = parseFloat(match[1]);
-  const unit = match[2] + 's';
+  const second = 1;
+  const minute = 60 * second;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const week = 7 * day;
+  const month = 30 * day;
+  const year = 365 * day;
+  const seconds = { second, minute, hour, day, week, month, year };
 
-  return dayjs.duration(value, unit).asSeconds();
+  const value = parseFloat(match[1]);
+  return value * seconds[match[2]];
 }
 
 function expectCache(cache, key, value) {
