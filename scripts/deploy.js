@@ -108,7 +108,7 @@ async function main() {
     CONFIG.allocations.map(({ beneficiary }) => beneficiary).every(ethers.utils.getAddress);
     CONFIG.allocations.map(({ upgrader    }) => upgrader   ).filter(Boolean).every(ethers.utils.getAddress);
     CONFIG.allocations.map(({ start       }) => start      ).every(dateToTimestamp);
-    CONFIG.allocations.map(({ cliff       }) => cliff      ).every(dateToSeconds);
+    CONFIG.allocations.map(({ cliff       }) => cliff      ).every(durationToSeconds);
     CONFIG.allocations.map(({ end         }) => end        ).every(dateToTimestamp);
     CONFIG.allocations.map(({ amount      }) => amount     ).every(ethers.BigNumber.from);
   } catch (e) {
@@ -139,7 +139,7 @@ async function main() {
     const beneficiary = allocation.beneficiary;
     const admin       = allocation.upgrader || ethers.constants.AddressZero;
     const start       = dateToTimestamp(allocation.start);
-    const cliff       = dateToSeconds(allocation.cliff);
+    const cliff       = durationToSeconds(allocation.cliff);
     const end         = dateToTimestamp(allocation.end);
     const duration    = end - start;
     return await tryFetchProxy(
@@ -228,7 +228,7 @@ async function main() {
     const beneficiary = allocation.beneficiary;
     const admin       = allocation.upgrader || ethers.constants.AddressZero;
     const start       = dateToTimestamp(allocation.start);
-    const cliff       = dateToSeconds(allocation.cliff);
+    const cliff       = durationToSeconds(allocation.cliff);
     const end         = dateToTimestamp(allocation.end);
     const duration    = end - start;
     expect(await forta.balanceOf(vesting[i].address)).to.be.equal(allocation.amount);
