@@ -6,7 +6,7 @@ const min = (...args) => args.slice(1).reduce((x,y) => x.lt(y) ? x : y, args[0])
 const max = (...args) => args.slice(1).reduce((x,y) => x.gt(y) ? x : y, args[0]);
 
 const start    = Date.now() / 1000 | 0 + 3600; // in 1 hour
-const cliff    = start + 1 * 365 * 86400; // 1 years
+const cliff    = 1 * 365 * 86400; // 1 years
 const end      = start + 4 * 365 * 86400; // 4 years
 const amount   = ethers.utils.parseEther('100');
 
@@ -14,7 +14,7 @@ const schedule = Array(256).fill()
   .map((_,i) => ethers.BigNumber.from(i).mul(end - start).div(224).add(start))
   .map(timestamp => ({
       timestamp,
-      vested: timestamp < cliff
+      vested: timestamp - start < cliff
         ? ethers.constants.Zero
         : min(amount.mul(timestamp.sub(start)).div(end - start), amount),
   }));
