@@ -23,7 +23,15 @@ describe('Forta', function () {
   describe('Vesting update', function () {
     describe('vesting with admin', function () {
       beforeEach(async function () {
-        this.vesting = await deployUpgradeable('VestingWallet', 'uups', ethers.constants.AddressZero, this.accounts.admin.address, 0, 0);
+        this.vesting = await deployUpgradeable(
+          'VestingWallet',
+          'uups',
+          this.accounts.other.address,
+          this.accounts.admin.address,
+          0,
+          0,
+          0,
+        );
         expect(await this.vesting.owner()).to.be.equal(this.accounts.admin.address);
       });
 
@@ -41,7 +49,15 @@ describe('Forta', function () {
 
     describe('locked vesting', function () {
       beforeEach(async function () {
-        this.vesting = await deployUpgradeable('VestingWallet2', 'uups', ethers.constants.AddressZero, ethers.constants.AddressZero, 0, 0);
+        this.vesting = await deployUpgradeable(
+          'VestingWallet2',
+          'uups',
+          this.accounts.other.address,
+          ethers.constants.AddressZero,
+          0,
+          0,
+          0,
+        );
         expect(await this.vesting.owner()).to.be.equal(ethers.constants.AddressZero);
       });
 

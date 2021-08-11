@@ -6,36 +6,55 @@ const min = (...args) => args.slice(1).reduce((x,y) => x.lt(y) ? x : y, args[0])
 const max = (...args) => args.slice(1).reduce((x,y) => x.gt(y) ? x : y, args[0]);
 
 const start    = Date.now() / 1000 | 0 + 3600; // in 1 hour
-const duration = 4 * 365 * 86400; // 4 years
+const cliff    = 1 * 365 * 86400; // 1 years
+const end      = start + 4 * 365 * 86400; // 4 years
 const amount   = ethers.utils.parseEther('100');
 
 const schedule = Array(256).fill()
-  .map((_,i) => ethers.BigNumber.from(i).mul(duration).div(224).add(start))
+  .map((_,i) => ethers.BigNumber.from(i).mul(end - start).div(224).add(start))
   .map(timestamp => ({
       timestamp,
-      vested: min(amount.mul(timestamp.sub(start)).div(duration), amount)
+      vested: timestamp - start < cliff
+        ? ethers.constants.Zero
+        : min(amount.mul(timestamp.sub(start)).div(end - start), amount),
   }));
 
 describe('VestingWallet', function () {
   prepare();
 
   beforeEach(async function () {
-    this.vesting = await deployUpgradeable('VestingWallet', 'uups', this.accounts.other.address, this.accounts.admin.address, start, duration);
+    this.vesting = await deployUpgradeable(
+      'VestingWallet',
+      'uups',
+      this.accounts.other.address,
+      this.accounts.admin.address,
+      start,
+      cliff,
+      end - start, // duration
+    );
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.vesting.address);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.other.address);
     await this.token.connect(this.accounts.minter).mint(this.vesting.address, amount);
   });
 
   it('rejects zero address for beneficiary', async function () {
-    await expect(deployUpgradeable('VestingWallet', 'uups', ethers.constants.AddressZero, this.accounts.admin.address, start, duration))
-      .to.be.revertedWith('VestingWallet: beneficiary is zero address');
+    await expect(deployUpgradeable(
+      'VestingWallet',
+      'uups',
+      ethers.constants.AddressZero,
+      this.accounts.admin.address,
+      start,
+      cliff,
+      end - start, // duration
+    )).to.be.revertedWith('VestingWallet: beneficiary is zero address');
   });
 
   it('create vesting contract', async function () {
     expect(await this.vesting.beneficiary()).to.be.equal(this.accounts.other.address);
     expect(await this.vesting.owner()).to.be.equal(this.accounts.admin.address);
     expect(await this.vesting.start()).to.be.equal(start);
-    expect(await this.vesting.duration()).to.be.equal(duration);
+    expect(await this.vesting.cliff()).to.be.equal(cliff);
+    expect(await this.vesting.duration()).to.be.equal(end - start);
   });
 
   describe('vesting schedule', function () {

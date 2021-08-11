@@ -15,6 +15,27 @@ function dateToTimestamp(...params) {
   return (new Date(...params)).getTime() / 1000 | 0
 }
 
+function durationToSeconds(duration) {
+  const durationPattern = /^(\d+) +(second|minute|hour|day|week|month|year)s?$/;
+  const match = duration.match(durationPattern);
+
+  if (!match) {
+    throw new Error(`Bad duration format (${durationPattern.source})`);
+  }
+
+  const second = 1;
+  const minute = 60 * second;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const week = 7 * day;
+  const month = 30 * day;
+  const year = 365 * day;
+  const seconds = { second, minute, hour, day, week, month, year };
+
+  const value = parseFloat(match[1]);
+  return value * seconds[match[2]];
+}
+
 function expectCache(cache, key, value) {
   const fromCache = cache.get(key);
   if (fromCache) {
@@ -57,10 +78,10 @@ const CONFIG = {
   minters: [ '0x84b181aE72FDF63Ed5c77B9058D990761Bb3dc44' ],
   whitelisters: [ '0xE6241CfD983cA709b34DCEb3428360C982B0e02B' ],
   allocations: [
-    { beneficiary: '0x60bd5176809828Bd93411BdE9854eEA2d2CEDccf', amount: '100', start: '2021-09-01T00:00:00Z', end: '2025-09-01T00:00:00Z', upgrader: '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' },
-    { beneficiary: '0x603851E164947391aBD62EF98bDA93e206bfBe16', amount: '100', start: '2021-09-01T00:00:00Z', end: '2025-09-01T00:00:00Z', upgrader: '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' },
-    { beneficiary: '0x70ad015c653e9D455Edf43128aCcDa10a094b605', amount: '100', start: '2021-09-01T00:00:00Z', end: '2025-09-01T00:00:00Z', upgrader: '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' },
-    { beneficiary: '0xFd5771b6adbBAEED5bc5858dE3ed38A274d8c109', amount: '100', start: '2021-09-01T00:00:00Z', end: '2025-09-01T00:00:00Z', upgrader: '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' },
+    { beneficiary: '0x60bd5176809828Bd93411BdE9854eEA2d2CEDccf', amount: '100', start: '2021-09-01T00:00:00Z', cliff: '1 year', end: '2025-09-01T00:00:00Z', upgrader: '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' },
+    { beneficiary: '0x603851E164947391aBD62EF98bDA93e206bfBe16', amount: '100', start: '2021-09-01T00:00:00Z', cliff: '1 year', end: '2025-09-01T00:00:00Z', upgrader: '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' },
+    { beneficiary: '0x70ad015c653e9D455Edf43128aCcDa10a094b605', amount: '100', start: '2021-09-01T00:00:00Z', cliff: '1 year', end: '2025-09-01T00:00:00Z', upgrader: '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' },
+    { beneficiary: '0xFd5771b6adbBAEED5bc5858dE3ed38A274d8c109', amount: '100', start: '2021-09-01T00:00:00Z', cliff: '1 year', end: '2025-09-01T00:00:00Z', upgrader: '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' },
   ],
 }
 
@@ -92,6 +113,7 @@ async function main() {
     CONFIG.allocations.map(({ beneficiary }) => beneficiary).every(ethers.utils.getAddress);
     CONFIG.allocations.map(({ upgrader    }) => upgrader   ).filter(Boolean).every(ethers.utils.getAddress);
     CONFIG.allocations.map(({ start       }) => start      ).every(dateToTimestamp);
+    CONFIG.allocations.map(({ cliff       }) => cliff      ).every(durationToSeconds);
     CONFIG.allocations.map(({ end         }) => end        ).every(dateToTimestamp);
     CONFIG.allocations.map(({ amount      }) => amount     ).every(ethers.BigNumber.from);
   } catch (e) {
@@ -122,12 +144,14 @@ async function main() {
     const beneficiary = allocation.beneficiary;
     const admin       = allocation.upgrader || ethers.constants.AddressZero;
     const start       = dateToTimestamp(allocation.start);
-    const duration    = dateToTimestamp(allocation.end) - start;
+    const cliff       = durationToSeconds(allocation.cliff);
+    const end         = dateToTimestamp(allocation.end);
+    const duration    = end - start;
     return await tryFetchProxy(
       cache,
       `vesting-${i}`,
       VestingWallet,
-      [ beneficiary, admin, start, duration ],
+      [ beneficiary, admin, start, cliff, duration ],
     );
   }));
   console.log('[2/5] done.');
@@ -209,12 +233,15 @@ async function main() {
     const beneficiary = allocation.beneficiary;
     const admin       = allocation.upgrader || ethers.constants.AddressZero;
     const start       = dateToTimestamp(allocation.start);
-    const duration    = dateToTimestamp(allocation.end) - start;
+    const cliff       = durationToSeconds(allocation.cliff);
+    const end         = dateToTimestamp(allocation.end);
+    const duration    = end - start;
     expect(await forta.balanceOf(vesting[i].address)).to.be.equal(allocation.amount);
     expect(await vesting[i].beneficiary()).to.be.equal(beneficiary);
     expect(await vesting[i].owner()).to.be.equal(admin);
     expect(await vesting[i].start()).to.be.equal(start);
-    expect(await vesting[i].duration()).to.be.equal(duration);
+    expect(await vesting[i].cliff()).to.be.equal(cliff);
+    expect(await vesting[i].duration()).to.be.equal(end - start);
   }
 }
 

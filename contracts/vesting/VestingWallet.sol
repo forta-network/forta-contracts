@@ -14,6 +14,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     mapping (address => uint256) private _released;
     address private _beneficiary;
     uint256 private _start;
+    uint256 private _cliff;
     uint256 private _duration;
 
     event TokensReleased(address token, uint256 amount);
@@ -23,13 +24,22 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
         _;
     }
 
+    /**
+     * @param beneficiary_ Account that will receive vested tokens.
+     * @param admin_ Account that will be able to upgrade the contract, if a non-zero address.
+     * @param start_ Timestamp when vesting starts (seconds since UNIX epoch).
+     * @param cliff_ Duration of the cliff period (seconds). No tokens will vest before this time passes.
+     * @param duration_ Duration of the entire vesting period (seconds).
+     */
     function initialize(
         address beneficiary_,
         address admin_,
         uint256 start_,
+        uint256 cliff_,
         uint256 duration_
     ) external initializer {
         require(beneficiary_ != address(0x0), "VestingWallet: beneficiary is zero address");
+        require(cliff_ <= duration_, "VestingWallet: duration is shorter than cliff");
 
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -42,6 +52,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
 
         _beneficiary = beneficiary_;
         _start = start_;
+        _cliff = cliff_;
         _duration = duration_;
     }
 
@@ -51,6 +62,10 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
 
     function start() public view virtual returns (uint256) {
         return _start;
+    }
+
+    function cliff() public view virtual returns (uint256) {
+        return _cliff;
     }
 
     function duration() public view virtual returns (uint256) {
@@ -75,7 +90,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
      * @dev Calculates the amount that has already vested.
      */
     function vestedAmount(address token, uint256 timestamp) public virtual view returns (uint256) {
-        if (timestamp < start()) {
+        if (timestamp < start() + cliff()) {
             return 0;
         } else if (timestamp >= start() + duration()) {
             return _historicalBalance(token);
