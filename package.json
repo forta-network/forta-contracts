@@ -18,8 +18,8 @@
     "url": "https://github.com/OpenZeppelin/forta-token/issues"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "OpenZeppelin/openzeppelin-contracts",
-    "@openzeppelin/contracts-upgradeable": "OpenZeppelin/openzeppelin-contracts-upgradeable"
+    "@openzeppelin/contracts": "^4.2.0",
+    "@openzeppelin/contracts-upgradeable": "^4.2.0"
   },
   "devDependencies": {
     "@ethersproject/experimental": "^5.3.0",
