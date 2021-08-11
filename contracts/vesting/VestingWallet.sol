@@ -24,6 +24,13 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
         _;
     }
 
+    /**
+     * @param beneficiary_ Account that will receive vested tokens.
+     * @param admin_ Account that will be able to upgrade the contract, if a non-zero address.
+     * @param start_ Timestamp when vesting starts (seconds since UNIX epoch).
+     * @param cliff_ Duration of the cliff period (seconds). No tokens will vest before this time passes.
+     * @param duration_ Duration of the entire vesting period (seconds).
+     */
     function initialize(
         address beneficiary_,
         address admin_,
