@@ -39,8 +39,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
         uint256 duration_
     ) external initializer {
         require(beneficiary_ != address(0x0), "VestingWallet: beneficiary is zero address");
-        require(start_ <= cliff_, "VestingWallet: cliff is before start");
-        require(cliff_ <= start_ + duration_, "VestingWallet: cliff is after end");
+        require(cliff_ <= duration_, "VestingWallet: cliff is shorter than duration");
 
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -91,7 +90,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
      * @dev Calculates the amount that has already vested.
      */
     function vestedAmount(address token, uint256 timestamp) public virtual view returns (uint256) {
-        if (timestamp < cliff()) {
+        if (timestamp < start() + cliff()) {
             return 0;
         } else if (timestamp >= start() + duration()) {
             return _historicalBalance(token);
