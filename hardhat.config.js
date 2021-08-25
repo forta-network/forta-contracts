@@ -23,7 +23,7 @@ module.exports = {
   networks: {},
 };
 
-module.hardhat = {
+module.exports.networks.hardhat = {
   mining: {
     auto: false,
     interval: [3000, 6000],
