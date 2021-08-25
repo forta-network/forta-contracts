@@ -138,12 +138,22 @@ const CONFIG = {
 
 const TXLimiter = pLimit(4); // maximum 4 simulatenous transactions
 
-function executeInBatchAndWait({ target, relayer, batchsize = 16 }, calldatas) {
+async function executeInBatchAndWait({ target, relayer, batchsize = 16 }, calldatas) {
   return Promise.all(calldatas)
-    .then(calldatas => Promise.all(calldatas.filter(Boolean).chunk(batchsize).map(batch => // split calldatas in chunks of length 'batchsize'
-      TXLimiter(() => relayer.relay(target, batch)) // send batch through the relayer using TXLimiter
-    )))
-    .then(txs => Promise.all(txs.map(tx => tx.wait()))); // wait for all tx to be mined
+    .then(calldatas => calldatas                                                                                              // take all subcalls ...
+      .filter(Boolean)                                                                                                        // ... filter out the empty calls ...
+      .chunk(batchsize)                                                                                                       // ... divide calls in chunks ...
+      .map((batch, i, batches) =>                                                                                             // ... for each chunk ...
+        TXLimiter(async () => {                                                                                               // ... with limited parallelism ...
+          console.log(`- batch #${i+1}/${batches.length} sent: ${batch.length} operation(s)`);
+          const tx      = await relayer.relay(target, batch);                                                                 // ... run the chunk through the relayer
+          const receipt = await tx.wait();                                                                                    // ... wait for the tx to be mined ...
+          console.log(`- batch #${i+1}/${batches.length} mined: ${receipt.transactionHash} (block #${receipt.blockNumber})`);
+          return receipt;                                                                                                     // ... and return the tx receipt
+        })
+      )
+    )
+    .then(promises => Promise.all(promises)); // wait for all receipts to be available
 }
 
 function grantRole(contract, role, account) {
