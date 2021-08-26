@@ -264,6 +264,9 @@ async function main() {
    *                                             Deploy vesting wallets                                              *
    *******************************************************************************************************************/
   console.log(chalk.bold('[3/8] Deploy vesting wallets...'));
+
+  // TODO: prepareImpl to deploy VestingWallet before the proxies
+
   const vesting = await Promise.all(
     CONFIG.allocations
     .filter(({ type }) => type == 'vesting')
