@@ -1,8 +1,8 @@
 const { ethers, upgrades } = require('hardhat');
 const chalk = require('chalk');
+const assert = require('assert');
 const { NonceManager } = require('@ethersproject/experimental');
 
-const { expect, assert } = require('chai');
 
 /*********************************************************************************************************************
  *                                                  Array utilities                                                  *
@@ -48,7 +48,7 @@ class AsyncConf extends Conf {
   async expect(key, value) {
     const fromCache = await this.get(key);
     if (fromCache) {
-      assert.deepEqual(value, fromCache);
+      assert.deepStrictEqual(value, fromCache);
       return false;
     } else {
       await this.set(key, value);
@@ -159,9 +159,9 @@ async function main() {
   console.log('----------------------------------------------------');
 
   // Loading contract artefacts
-  const Forta         = await ethers.getContractFactory('Forta').then(contract => contract.connect(deployer));
-  const VestingWallet = await ethers.getContractFactory('VestingWallet').then(contract => contract.connect(deployer));
-  const BatchRelayer  = await ethers.getContractFactory('BatchRelayer').then(contract => contract.connect(deployer));
+  const Forta         = await ethers.getContractFactory('Forta',         deployer);
+  const VestingWallet = await ethers.getContractFactory('VestingWallet', deployer);
+  const BatchRelayer  = await ethers.getContractFactory('BatchRelayer',  deployer);
 
   // Preparing cache and transaction limiter
   const CACHE = new AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
@@ -296,7 +296,7 @@ async function main() {
   switch(await CACHE.get('step') || 4) {
     // Setup relayer permissions
     case 4:
-      assert(await forta.hasRole(ADMIN_ROLE, relayer.address));
+      assert(await forta.hasRole(ADMIN_ROLE, relayer.address), `Deployer is missing the ADMIN role, which is needed to set permissions`);
 
       console.log(chalk.bold('[4/8] Setup relayer permissions...'));
       await executeInBatchAndWait({ target: forta.address, relayer }, [
@@ -307,8 +307,8 @@ async function main() {
       await CACHE.set('step', 5);
     // Grant role
     case 5:
-      assert(await forta.hasRole(ADMIN_ROLE,       relayer.address));
-      assert(await forta.hasRole(WHITELISTER_ROLE, relayer.address));
+      assert(await forta.hasRole(ADMIN_ROLE,       relayer.address), `Deployer is missing the ADMIN role, which is needed to set permissions`);
+      assert(await forta.hasRole(WHITELISTER_ROLE, relayer.address), `Deployer is missing the WHITELISTER role, which is needed to set permissions`);
 
       console.log(chalk.bold('[5/8] Setup roles...'));
       await executeInBatchAndWait({ target: forta.address, relayer }, [
@@ -328,7 +328,7 @@ async function main() {
 
     // Mint vested tokens
     case 6:
-      assert(await forta.hasRole(MINTER_ROLE, relayer.address));
+      assert(await forta.hasRole(MINTER_ROLE, relayer.address), `Deployer is missing the MINTER_ROLE role, which is needed to set mint allocations`);
 
       console.log(chalk.bold('[6/8] Mint vested allocations...'));
       await executeInBatchAndWait({ target: forta.address, relayer }, [
@@ -372,7 +372,7 @@ async function main() {
   for (const allocation of Object.values(CONFIG.allocations)) {
     switch(allocation.type) {
       case 'direct':
-        assert.deepEqual(await forta.balanceOf(allocation.beneficiary), allocation.amount);
+        assert((await forta.balanceOf(allocation.beneficiary)).eq(allocation.amount), `Wrong balance for direct allocation to ${allocation.beneficiary}`);
         break;
       case 'vesting':
         const beneficiary = allocation.beneficiary;
@@ -382,12 +382,13 @@ async function main() {
         const end         = dateToTimestamp(allocation.end);
         const duration    = end - start;
         const contract    = vesting[beneficiary];
-        assert.deepEqual(await forta.balanceOf(contract.address), allocation.amount);
-        assert.equal(await contract.beneficiary(),            beneficiary);
-        assert.equal(await contract.owner(),                  admin);
-        assert.equal(await contract.start(),                  start);
-        assert.equal(await contract.cliff(),                  cliff);
-        assert.equal(await contract.duration(),               end - start);
+
+        assert((await forta.balanceOf(contract.address)).eq(allocation.amount), `Wrong balance for vested allocation to ${allocation.beneficiary}`);
+        assert((await contract.start()                 ).eq(start),             `Wrong start for vested allocation to ${allocation.beneficiary}`);
+        assert((await contract.cliff()                 ).eq(cliff),             `Wrong cliff for vested allocation to ${allocation.beneficiary}`);
+        assert((await contract.duration()              ).eq(duration),          `Wrong duration for vested allocation to ${allocation.beneficiary}`);
+        assert.strictEqual(await contract.beneficiary(), beneficiary,           `Wrong beneficiary for vested allocation to ${allocation.beneficiary}`);
+        assert.strictEqual(await contract.owner(),       admin,                 `Wrong admin for direct allocation to ${allocation.beneficiary}`);
         break;
     }
   }
