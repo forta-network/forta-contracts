@@ -18,8 +18,8 @@
     "url": "https://github.com/OpenZeppelin/forta-token/issues"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.2.0",
-    "@openzeppelin/contracts-upgradeable": "^4.2.0"
+    "@openzeppelin/contracts": "^4.3.0",
+    "@openzeppelin/contracts-upgradeable": "^4.3.0"
   },
   "devDependencies": {
     "@ethersproject/experimental": "^5.3.0",
@@ -30,7 +30,8 @@
     "conf": "^10.0.1",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.3.0",
-    "hardhat": "^2.0.10",
+    "hardhat": "^2.6.0",
+    "hardhat-gas-reporter": "^1.0.4",
     "solidity-coverage": "^0.7.16"
   }
 }
