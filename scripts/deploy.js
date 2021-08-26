@@ -61,7 +61,7 @@ class AsyncConf extends Conf {
  *                                                    Convertion                                                     *
  *********************************************************************************************************************/
 function dateToTimestamp(...params) {
-  return (new Date(...params)).getTime() / 1000 | 0
+  return Math.floor((new Date(...params)).getTime() / 1000);
 }
 
 function durationToSeconds(duration) {
@@ -213,8 +213,8 @@ async function main() {
     step = 'invalid allocation cliff';
     assert(CONFIG.allocations.every(({ type, cliff }) => type !== 'vesting' || durationToSeconds(cliff)));
 
-    step = 'invalid allocation end';
-    assert(CONFIG.allocations.every(({ type, end }) => type !== 'vesting' || dateToTimestamp(end)));
+    step = 'invalid allocation duration';
+    assert(CONFIG.allocations.every(({ type, duration }) => type !== 'vesting' || durationToSeconds(duration)));
 
     step = 'beneficiary receives multiple allocations of the same type';
     assert(CONFIG.allocations.map(({ type, beneficiary }) => [ type, beneficiary.toLocaleLowerCase() ].join()).every((key, i, array) => array.indexOf(key) === i));
@@ -272,8 +272,7 @@ async function main() {
       const admin       = allocation.upgrader;
       const start       = dateToTimestamp(allocation.start);
       const cliff       = durationToSeconds(allocation.cliff);
-      const end         = dateToTimestamp(allocation.end);
-      const duration    = end - start;
+      const duration    = durationToSeconds(allocation.duration);
 
       return tryFetchProxy(
         CACHE,
@@ -379,8 +378,7 @@ async function main() {
         const admin       = allocation.upgrader;
         const start       = dateToTimestamp(allocation.start);
         const cliff       = durationToSeconds(allocation.cliff);
-        const end         = dateToTimestamp(allocation.end);
-        const duration    = end - start;
+        const duration    = durationToSeconds(allocation.duration);
         const contract    = vesting[beneficiary];
 
         assert((await forta.balanceOf(contract.address)).eq(allocation.amount), `Wrong balance for vested allocation to ${allocation.beneficiary}`);
