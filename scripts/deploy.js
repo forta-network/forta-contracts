@@ -1,4 +1,5 @@
 const { ethers, upgrades } = require('hardhat');
+const chalk = require('chalk');
 const { NonceManager } = require('@ethersproject/experimental');
 
 const { expect, assert } = require('chai');
@@ -103,39 +104,6 @@ async function tryFetchProxy(cache, key, contract, args = [], kind = 'uups') {
 
 
 
-
-
-
-
-
-
-const CONFIG = {
-  admins: [ '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' ],
-  minters: [ '0x84b181aE72FDF63Ed5c77B9058D990761Bb3dc44' ],
-  whitelisters: [ '0xE6241CfD983cA709b34DCEb3428360C982B0e02B' ],
-  allocations: [
-    { beneficiary: '0xEA0C7eE97F3cF1Bb1404488f67adaB1c3C9F15dC', amount: '100', type: 'direct' },
-    { beneficiary: '0x60bd5176809828Bd93411BdE9854eEA2d2CEDccf', amount: '100', type: 'direct' },
-    { beneficiary: '0x60bd5176809828Bd93411BdE9854eEA2d2CEDccf', amount: '100', type: 'vesting', start: '2021-09-01T00:00:00Z', cliff: '1 year', end: '2025-09-01T00:00:00Z', upgrader: '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' },
-    { beneficiary: '0x603851E164947391aBD62EF98bDA93e206bfBe16', amount: '100', type: 'vesting', start: '2021-09-01T00:00:00Z', cliff: '1 year', end: '2025-09-01T00:00:00Z', upgrader: '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' },
-    { beneficiary: '0x70ad015c653e9D455Edf43128aCcDa10a094b605', amount: '100', type: 'vesting', start: '2021-09-01T00:00:00Z', cliff: '1 year', end: '2025-09-01T00:00:00Z', upgrader: '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' },
-    { beneficiary: '0xFd5771b6adbBAEED5bc5858dE3ed38A274d8c109', amount: '100', type: 'vesting', start: '2021-09-01T00:00:00Z', cliff: '1 year', end: '2025-09-01T00:00:00Z', upgrader: '0x9c566D5005E7e96ED964dec9cB7477F246A37A09' },
-  ],
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const TXLimiter = pLimit(4); // maximum 4 simulatenous transactions
 
 async function executeInBatchAndWait({ target, relayer, batchsize = 16 }, calldatas) {
@@ -145,7 +113,7 @@ async function executeInBatchAndWait({ target, relayer, batchsize = 16 }, callda
       .chunk(batchsize)                                                                                                       // ... divide calls in chunks ...
       .map((batch, i, batches) =>                                                                                             // ... for each chunk ...
         TXLimiter(async () => {                                                                                               // ... with limited parallelism ...
-          console.log(`- batch #${i+1}/${batches.length} sent: ${batch.length} operation(s)`);
+          console.log(`- batch #${i+1}/${batches.length} submitted with ${batch.length} operation(s)`);
           const tx      = await relayer.relay(target, batch);                                                                 // ... run the chunk through the relayer
           const receipt = await tx.wait();                                                                                    // ... wait for the tx to be mined ...
           console.log(`- batch #${i+1}/${batches.length} mined: ${receipt.transactionHash} (block #${receipt.blockNumber})`);
@@ -177,13 +145,18 @@ function mint(contract, account, amount) {
 
 async function main() {
 
+  const CONFIG = require('./CONFIG.js');
+
   // wrap signers in NonceManager to avoid nonce issues during concurent tx construction
   const [ deployer ] = await ethers.getSigners().then(signers => signers.map(signer => new NonceManager(signer)));
   deployer.address = await deployer.getAddress();
   const { name, chainId } = await deployer.provider.getNetwork();
 
+  ethers.provider.network.ensAddress = ethers.provider.network.ensAddress || '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
+
   console.log(`Network:  ${name} (${chainId})`);
   console.log(`Deployer: ${deployer.address}`);
+  console.log('----------------------------------------------------');
 
   // Loading contract artefacts
   const Forta         = await ethers.getContractFactory('Forta').then(contract => contract.connect(deployer));
@@ -193,46 +166,85 @@ async function main() {
   // Preparing cache and transaction limiter
   const CACHE = new AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
 
+  /*******************************************************************************************************************
+   *                                                  Sanity check                                                   *
+   *******************************************************************************************************************/
+  console.log(chalk.bold('[0/8] Config sanity check...'));
+  let step;
+  try {
+    step = 'at least one admin is required';
+    assert(CONFIG.admins.length);
+
+    step = 'invalid addresses in the admins';
+    CONFIG.admins = await Promise.all(CONFIG.admins.map(ethers.provider.resolveName));
+    assert(CONFIG.admins.every(ethers.utils.isAddress));
+
+    step = 'invalid addresses in the minters';
+    CONFIG.minters = await Promise.all(CONFIG.minters.map(ethers.provider.resolveName));
+    assert(CONFIG.minters.every(ethers.utils.isAddress));
+
+    step = 'invalid addresses in the whitelisters';
+    CONFIG.whitelisters = await Promise.all(CONFIG.whitelisters.map(ethers.provider.resolveName));
+    assert(CONFIG.whitelisters.every(ethers.utils.isAddress));
+
+    step = 'invalid addresses in the beneficiaries';
+    await Promise.all(CONFIG.allocations.map(async allocation => Object.assign(
+      allocation,
+      { beneficiary: await ethers.provider.resolveName(allocation.beneficiary) },
+    )));
+    assert(CONFIG.allocations.every(({ beneficiary }) => ethers.utils.isAddress(beneficiary)));
+
+    step = 'invalid upgrader address';
+    await Promise.all(CONFIG.allocations.map(async allocation => Object.assign(
+      allocation,
+      { upgrader: await ethers.provider.resolveName(allocation.upgrader || ethers.constants.AddressZero) },
+    )));
+    assert(CONFIG.allocations.every(({ upgrader }) => ethers.utils.isAddress(upgrader)));
+
+    step = 'invalid allocation amount';
+    assert(CONFIG.allocations.every(({ amount }) => ethers.BigNumber.from(amount)));
+
+    step = 'invalid allocation type';
+    assert(CONFIG.allocations.every(({ type }) => [ 'direct', 'vesting' ].includes(type)));
+
+    step = 'invalid allocation start';
+    assert(CONFIG.allocations.every(({ type, start }) => type !== 'vesting' || dateToTimestamp(start)));
+
+    step = 'invalid allocation cliff';
+    assert(CONFIG.allocations.every(({ type, cliff }) => type !== 'vesting' || durationToSeconds(cliff)));
+
+    step = 'invalid allocation end';
+    assert(CONFIG.allocations.every(({ type, end }) => type !== 'vesting' || dateToTimestamp(end)));
+
+    step = 'beneficiary receives multiple allocations of the same type';
+    assert(CONFIG.allocations.map(({ type, beneficiary }) => [ type, beneficiary.toLocaleLowerCase() ].join()).every((key, i, array) => array.indexOf(key) === i));
+
+  } catch (_) {
+    console.error(`Error unsafe configuration: ${step}`);
+    console.error(_);
+    process.exit(1);
+  }
+  console.log(chalk.bold('[0/8] done.'));
+
   await CACHE.expect('deployer', deployer.address);
   await CACHE.expect('CONFIG', JSON.stringify(CONFIG));
 
   /*******************************************************************************************************************
-   *                                                  Sanity check                                                   *
+   *                                                 Deploy relayer                                                  *
    *******************************************************************************************************************/
-  try {
-    assert(CONFIG.admins.length);
-    assert(CONFIG.admins.every(ethers.utils.getAddress));
-    assert(CONFIG.minters.every(ethers.utils.getAddress));
-    assert(CONFIG.whitelisters.every(ethers.utils.getAddress));
-    assert(CONFIG.allocations.every(({ beneficiary    }) => ethers.utils.getAddress(beneficiary)));
-    assert(CONFIG.allocations.every(({ amount         }) => ethers.BigNumber.from(amount)));
-    assert(CONFIG.allocations.every(({ type           }) => [ 'direct', 'vesting' ].includes(type)));
-    assert(CONFIG.allocations.every(({ type, upgrader }) => type !== 'vesting' || type !== 'vesting' || upgrader == undefined || ethers.utils.getAddress(upgrader)));
-    assert(CONFIG.allocations.every(({ type, start    }) => type !== 'vesting' || dateToTimestamp(start)));
-    assert(CONFIG.allocations.every(({ type, cliff    }) => type !== 'vesting' || durationToSeconds(cliff)));
-    assert(CONFIG.allocations.every(({ type, end      }) => type !== 'vesting' || dateToTimestamp(end)));
-    assert(CONFIG.allocations.map(({ type, beneficiary }) => [ type, beneficiary.toLocaleLowerCase() ].join()).every((key, i, array) => array.indexOf(key) === i));
-  } catch (e) {
-    console.error('ERROR: sanity check failled');
-    process.exit(1);
-  }
-
-  /*******************************************************************************************************************
-   *                                                  Deploy token                                                   *
-   *******************************************************************************************************************/
-  console.log('[0/7] Deploy relayer...');
+  console.log(chalk.bold('[1/8] Deploy relayer...'));
   const relayer = await tryFetchContract(
     CACHE,
     'relayer',
     BatchRelayer,
   );
-  console.log(`Relayer address: ${relayer.address}`);
-  console.log('[0/7] done.');
+  console.log(`- Relayer address: ${relayer.address}`);
+  console.log(chalk.bold('[1/8] done.'));
 
   /*******************************************************************************************************************
    *                                                  Deploy token                                                   *
    *******************************************************************************************************************/
-  console.log('[1/7] Deploy token...');
+  console.log(chalk.bold('[2/8] Deploy token...'));
   const forta = await tryFetchProxy(
     CACHE,
     'forta',
@@ -240,8 +252,8 @@ async function main() {
     [ relayer.address ],
     'uups',
   );
-  console.log(`Forta address: ${forta.address}`);
-  console.log('[1/7] done.');
+  console.log(`- Forta address: ${forta.address}`);
+  console.log(chalk.bold('[2/8] done.'));
 
   const ADMIN_ROLE       = await forta.ADMIN_ROLE();
   const MINTER_ROLE      = await forta.MINTER_ROLE();
@@ -251,13 +263,13 @@ async function main() {
   /*******************************************************************************************************************
    *                                             Deploy vesting wallets                                              *
    *******************************************************************************************************************/
-  console.log('[2/7] Deploy vesting wallets...');
+  console.log(chalk.bold('[3/8] Deploy vesting wallets...'));
   const vesting = await Promise.all(
     CONFIG.allocations
     .filter(({ type }) => type == 'vesting')
-    .map(async allocation => TXLimiter(() => {
+    .map((allocation, i, allocations) => TXLimiter(() => {
       const beneficiary = allocation.beneficiary;
-      const admin       = allocation.upgrader || ethers.constants.AddressZero;
+      const admin       = allocation.upgrader;
       const start       = dateToTimestamp(allocation.start);
       const cliff       = durationToSeconds(allocation.cliff);
       const end         = dateToTimestamp(allocation.end);
@@ -270,107 +282,107 @@ async function main() {
         [ beneficiary, admin, start, cliff, duration ],
         'uups',
       ).then(result => {
-        console.log(`VestingWallet for ${allocation.beneficiary} deployed to ${result.address}`);
+        console.log(`- VestingWallet #${i+1}/${allocations.length} for ${allocation.beneficiary} deployed to ${result.address}`);
         return [ allocation.beneficiary, result ];
       });
     }))
   ).then(Object.fromEntries);
-  console.log('[2/7] done.');
+  console.log(chalk.bold('[3/8] done.'));
 
 
   /*****************************************************************************************************************
    *                                 Everything is deployed, lets rock and roll !                                  *
    *****************************************************************************************************************/
-  switch(await CACHE.get('step') || 3) {
+  switch(await CACHE.get('step') || 4) {
     // Setup relayer permissions
-    case 3:
+    case 4:
       assert(await forta.hasRole(ADMIN_ROLE, relayer.address));
 
-      console.log('[3/7] Setup relayer permissions...');
-      await executeInBatchAndWait({ target: forta.address, relayer }, [].concat(
+      console.log(chalk.bold('[4/8] Setup relayer permissions...'));
+      await executeInBatchAndWait({ target: forta.address, relayer }, [
         grantRole(forta, MINTER_ROLE, relayer.address),
         grantRole(forta, WHITELISTER_ROLE, relayer.address),
-        ));
-        console.log('[3/7] done.');
-        await CACHE.set('step', 4);
-
-    // Grant role
-    case 4:
-      assert(await forta.hasRole(MINTER_ROLE,      relayer.address));
-
-      console.log('[4/7] Setup roles...');
-      await executeInBatchAndWait({ target: forta.address, relayer }, [].concat(
-        // set admins
-        CONFIG.admins.map(address => grantRole(forta, ADMIN_ROLE, address)),
-        // set minters
-        CONFIG.minters.map(address => grantRole(forta, MINTER_ROLE, address)),
-        // set whitelisters
-        CONFIG.whitelisters.map(address => grantRole(forta, WHITELISTER_ROLE, address)),
-        // whitelist all beneficiary
-        CONFIG.allocations.map(({ beneficiary }) => beneficiary).unique().map(address => grantRole(forta, WHITELIST_ROLE, address)),
-        // whitelist all vesting wallets
-        Object.values(vesting).map(({ address }) => grantRole(forta, WHITELIST_ROLE, address)),
-      ));
-      console.log('[4/7] done.');
+      ]);
+      console.log(chalk.bold('[4/8] done.'));
       await CACHE.set('step', 5);
-
-    // Mint vested tokens
+    // Grant role
     case 5:
+      assert(await forta.hasRole(ADMIN_ROLE,       relayer.address));
       assert(await forta.hasRole(WHITELISTER_ROLE, relayer.address));
 
-      console.log('[5/7] Mint vested allocations...');
-      await executeInBatchAndWait({ target: forta.address, relayer }, [].concat(
-        CONFIG.allocations.filter(({ type }) => type == 'direct' ).map(allocation => mint(forta,         allocation.beneficiary,          allocation.amount)),
-        CONFIG.allocations.filter(({ type }) => type == 'vesting').map(allocation => mint(forta, vesting[allocation.beneficiary].address, allocation.amount)),
-      ));
-      console.log('[5/7] done.');
+      console.log(chalk.bold('[5/8] Setup roles...'));
+      await executeInBatchAndWait({ target: forta.address, relayer }, [
+        // set admins
+        ...CONFIG.admins.map(address => grantRole(forta, ADMIN_ROLE, address)),
+        // set minters
+        ...CONFIG.minters.map(address => grantRole(forta, MINTER_ROLE, address)),
+        // set whitelisters
+        ...CONFIG.whitelisters.map(address => grantRole(forta, WHITELISTER_ROLE, address)),
+        // whitelist all beneficiary
+        ...CONFIG.allocations.map(({ beneficiary }) => beneficiary).unique().map(address => grantRole(forta, WHITELIST_ROLE, address)),
+        // whitelist all vesting wallets
+        ...Object.values(vesting).map(({ address }) => grantRole(forta, WHITELIST_ROLE, address)),
+      ]);
+      console.log(chalk.bold('[5/8] done.'));
       await CACHE.set('step', 6);
 
-    // Cleanup relayer permissions
+    // Mint vested tokens
     case 6:
-      console.log('[6/7] Cleanup relayer permissions...');
-      await executeInBatchAndWait({ target: forta.address, relayer }, [].concat(
+      assert(await forta.hasRole(MINTER_ROLE, relayer.address));
+
+      console.log(chalk.bold('[6/8] Mint vested allocations...'));
+      await executeInBatchAndWait({ target: forta.address, relayer }, [
+        ...CONFIG.allocations.filter(({ type }) => type == 'direct' ).map(allocation => mint(forta,         allocation.beneficiary,          allocation.amount)),
+        ...CONFIG.allocations.filter(({ type }) => type == 'vesting').map(allocation => mint(forta, vesting[allocation.beneficiary].address, allocation.amount)),
+      ]);
+      console.log(chalk.bold('[6/8] done.'));
+      await CACHE.set('step', 7);
+
+    // Cleanup relayer permissions
+    case 7:
+      console.log(chalk.bold('[7/8] Cleanup relayer permissions...'));
+      await executeInBatchAndWait({ target: forta.address, relayer }, [
         renounceRole(forta, ADMIN_ROLE, relayer.address),
         renounceRole(forta, MINTER_ROLE, relayer.address),
         renounceRole(forta, WHITELISTER_ROLE, relayer.address),
-      ));
-      console.log('[6/7] done.');
-      await CACHE.set('step', 7);
+      ]);
+      console.log(chalk.bold('[7/8] done.'));
+      await CACHE.set('step', 8);
   }
 
   /*******************************************************************************************************************
    *                                             Post deployment checks                                              *
    *******************************************************************************************************************/
-  console.log('[7/7] Running post deployment checks...');
+  console.log(chalk.bold('[8/8] Post deployment checks...'));
   // permissions
-  assert(Promise.all([].concat(
-                                          ({ role: ADMIN_ROLE,       address: deployer.address,       value: false }),
-                                          ({ role: ADMIN_ROLE,       address: relayer.address,        value: false }),
-                                          ({ role: MINTER_ROLE,      address: deployer.address,       value: false }),
-                                          ({ role: MINTER_ROLE,      address: relayer.address,        value: false }),
-                                          ({ role: WHITELISTER_ROLE, address: deployer.address,       value: false }),
-                                          ({ role: WHITELISTER_ROLE, address: relayer.address,        value: false }),
-    CONFIG.admins.map(address          => ({ role: ADMIN_ROLE,       address,                         value: true  })),
-    CONFIG.minters.map(address         => ({ role: MINTER_ROLE,      address,                         value: true  })),
-    CONFIG.whitelisters.map(address    => ({ role: WHITELISTER_ROLE, address,                         value: true  })),
-    CONFIG.allocations.map(allocation  => ({ role: MINTER_ROLE,      address: allocation.beneficiary, value: true  })),
-    Object.values(vesting).map(vesting => ({ role: MINTER_ROLE,      address: vesting.address,        value: true  })),
-  ).map(({ role, address, value }) => forta.hasRole(role, address).then(result => result === value))).then(results => results.every(Boolean)));
+  assert(Promise.all([
+                                             ({ role: ADMIN_ROLE,       address: deployer.address,       value: false }),
+                                             ({ role: ADMIN_ROLE,       address: relayer.address,        value: false }),
+                                             ({ role: MINTER_ROLE,      address: deployer.address,       value: false }),
+                                             ({ role: MINTER_ROLE,      address: relayer.address,        value: false }),
+                                             ({ role: WHITELISTER_ROLE, address: deployer.address,       value: false }),
+                                             ({ role: WHITELISTER_ROLE, address: relayer.address,        value: false }),
+    ...CONFIG.admins.map(address          => ({ role: ADMIN_ROLE,       address,                         value: true  })),
+    ...CONFIG.minters.map(address         => ({ role: MINTER_ROLE,      address,                         value: true  })),
+    ...CONFIG.whitelisters.map(address    => ({ role: WHITELISTER_ROLE, address,                         value: true  })),
+    ...CONFIG.allocations.map(allocation  => ({ role: MINTER_ROLE,      address: allocation.beneficiary, value: true  })),
+    ...Object.values(vesting).map(vesting => ({ role: MINTER_ROLE,      address: vesting.address,        value: true  })),
+  ].map(({ role, address, value }) => forta.hasRole(role, address).then(result => result === value))).then(results => results.every(Boolean)));
   // vesting config
   for (const allocation of Object.values(CONFIG.allocations)) {
     switch(allocation.type) {
       case 'direct':
-        assert.equal(await forta.balanceOf(allocation.beneficiary), allocation.amount);
+        assert.deepEqual(await forta.balanceOf(allocation.beneficiary), allocation.amount);
         break;
       case 'vesting':
         const beneficiary = allocation.beneficiary;
-        const admin       = allocation.upgrader || ethers.constants.AddressZero;
+        const admin       = allocation.upgrader;
         const start       = dateToTimestamp(allocation.start);
         const cliff       = durationToSeconds(allocation.cliff);
         const end         = dateToTimestamp(allocation.end);
         const duration    = end - start;
         const contract    = vesting[beneficiary];
-        assert.equal(await forta.balanceOf(contract.address), allocation.amount);
+        assert.deepEqual(await forta.balanceOf(contract.address), allocation.amount);
         assert.equal(await contract.beneficiary(),            beneficiary);
         assert.equal(await contract.owner(),                  admin);
         assert.equal(await contract.start(),                  start);
@@ -379,7 +391,10 @@ async function main() {
         break;
     }
   }
-  console.log('[7/7] done.');
+  console.log(chalk.bold('[8/8] done.'));
+
+  console.log('----------------------------------------------------');
+  console.log(`Total supply: ${await forta.totalSupply().then(ethers.utils.formatEther)} ${await forta.symbol()}`);
 }
 
 main()
