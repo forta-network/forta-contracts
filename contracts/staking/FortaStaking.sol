@@ -121,13 +121,17 @@ library Distributions {
         uint256 shares = balanceOf(self._shares, account);
         return shares == 0
             ? 0
-            : uint256(int256(shares) * (int256(self._bounty) + totalSupply(self._released)) / int256(totalSupply(self._shares)) - balanceOf(self._released, account));
+            : SafeCast.toUint256(int256(shares)
+            * (SafeCast.toInt256(self._bounty)
+            + totalSupply(self._released))
+            / SafeCast.toInt256(totalSupply(self._shares))
+            - balanceOf(self._released, account));
     }
 
     function release(Splitter storage self, address account) internal returns (uint256) {
         uint256 pending = toRelease(self, account);
         self._bounty -= pending;
-        mint(self._released, account, int256(pending));
+        mint(self._released, account, SafeCast.toInt256(pending));
         return pending;
     }
 

@@ -7,7 +7,7 @@ const { address: subject1 } = ethers.Wallet.createRandom();
 const { address: subject2 } = ethers.Wallet.createRandom();
 const { address: subject3 } = ethers.Wallet.createRandom();
 
-describe('Forta', function () {
+describe('Forta Staking', function () {
   prepare();
 
   beforeEach(async function () {
@@ -70,7 +70,7 @@ describe('Forta', function () {
     expect(await this.staking.totalShares(subject1)).to.be.equal(value.div(2));
   });
 
-  describe('Reward', function () {
+  describe('Rewards', function () {
     it ('fix shares', async function () {
       await this.staking.connect(this.accounts.user1).stake(subject1, '100');
       await this.staking.connect(this.accounts.user2).stake(subject1, '50');
