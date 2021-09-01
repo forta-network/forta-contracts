@@ -48,7 +48,7 @@ function prepare() {
     await this.token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address);
 
-    this.staking = await deployUpgradeable('FortaStaking', 'uups', this.token.address, this.accounts.admin.address);
+    this.staking = await deployUpgradeable('FortaStaking', 'uups', this.token.address, 0, this.accounts.admin.address);
   });
 }
 

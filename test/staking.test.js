@@ -1,4 +1,4 @@
-const { ethers } = require('hardhat');
+const { ethers, network } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('./fixture');
 
@@ -26,48 +26,112 @@ describe('Forta Staking', function () {
     await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
   });
 
-  it('mint & burn shares', async function () {
-    expect(await this.staking.stakeOf(subject1)).to.be.equal('0');
-    expect(await this.staking.totalStake()).to.be.equal('0');
-    expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('0');
-    expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
-    expect(await this.staking.totalShares(subject1)).to.be.equal('0');
+  describe('Stake / Unstake', function () {
+    describe('no delay', function () {
+      it('happy path', async function () {
+        expect(await this.staking.stakeOf(subject1)).to.be.equal('0');
+        expect(await this.staking.totalStake()).to.be.equal('0');
+        expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('0');
+        expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
+        expect(await this.staking.totalShares(subject1)).to.be.equal('0');
 
-    await expect(this.staking.connect(this.accounts.user1).stake(subject1, value))
-      .to.emit(this.token, 'Transfer')
-      .withArgs(this.accounts.user1.address, this.staking.address, value);
+        await expect(this.staking.connect(this.accounts.user1).stake(subject1, value))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.accounts.user1.address, this.staking.address, value);
 
+        expect(await this.staking.stakeOf(subject1)).to.be.equal(value);
+        expect(await this.staking.totalStake()).to.be.equal(value);
+        expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal(value);
+        expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
+        expect(await this.staking.totalShares(subject1)).to.be.equal(value);
 
-    expect(await this.staking.stakeOf(subject1)).to.be.equal(value);
-    expect(await this.staking.totalStake()).to.be.equal(value);
-    expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal(value);
-    expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
-    expect(await this.staking.totalShares(subject1)).to.be.equal(value);
+        await expect(this.staking.connect(this.accounts.user2).stake(subject1, value))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.accounts.user2.address, this.staking.address, value);
 
+        expect(await this.staking.stakeOf(subject1)).to.be.equal(value.mul(2));
+        expect(await this.staking.totalStake()).to.be.equal(value.mul(2));
+        expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal(value);
+        expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal(value);
+        expect(await this.staking.totalShares(subject1)).to.be.equal(value.mul(2));
 
-    await expect(this.staking.connect(this.accounts.user2).stake(subject1, value))
-      .to.emit(this.token, 'Transfer')
-      .withArgs(this.accounts.user2.address, this.staking.address, value);
+        await expect(this.staking.connect(this.accounts.user1).unstake(subject1, value.div(2)))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.staking.address, this.accounts.user1.address, value.div(2));
 
-    expect(await this.staking.stakeOf(subject1)).to.be.equal(value.mul(2));
-    expect(await this.staking.totalStake()).to.be.equal(value.mul(2));
-    expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal(value);
-    expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal(value);
-    expect(await this.staking.totalShares(subject1)).to.be.equal(value.mul(2));
+        await expect(this.staking.connect(this.accounts.user2).unstake(subject1, value))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.staking.address, this.accounts.user2.address, value);
 
-    await expect(this.staking.connect(this.accounts.user1).unstake(subject1, value.div(2)))
-      .to.emit(this.token, 'Transfer')
-      .withArgs(this.staking.address, this.accounts.user1.address, value.div(2));
+        expect(await this.staking.stakeOf(subject1)).to.be.equal(value.div(2));
+        expect(await this.staking.totalStake()).to.be.equal(value.div(2));
+        expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal(value.div(2));
+        expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
+        expect(await this.staking.totalShares(subject1)).to.be.equal(value.div(2));
+      });
+    });
 
-    await expect(this.staking.connect(this.accounts.user2).unstake(subject1, value))
-      .to.emit(this.token, 'Transfer')
-      .withArgs(this.staking.address, this.accounts.user2.address, value);
+    describe('with delay', function () {
+      beforeEach(async function () {
+        await this.staking.setDelay(3600);
+      });
 
-    expect(await this.staking.stakeOf(subject1)).to.be.equal(value.div(2));
-    expect(await this.staking.totalStake()).to.be.equal(value.div(2));
-    expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal(value.div(2));
-    expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
-    expect(await this.staking.totalShares(subject1)).to.be.equal(value.div(2));
+      it('happy path', async function () {
+        expect(await this.staking.stakeOf(subject1)).to.be.equal('0');
+        expect(await this.staking.totalStake()).to.be.equal('0');
+        expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('0');
+        expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
+        expect(await this.staking.totalShares(subject1)).to.be.equal('0');
+
+        await expect(this.staking.connect(this.accounts.user1).stake(subject1, value))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.accounts.user1.address, this.staking.address, value);
+
+        expect(await this.staking.stakeOf(subject1)).to.be.equal(value);
+        expect(await this.staking.totalStake()).to.be.equal(value);
+        expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal(value);
+        expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
+        expect(await this.staking.totalShares(subject1)).to.be.equal(value);
+
+        await expect(this.staking.connect(this.accounts.user2).stake(subject1, value))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.accounts.user2.address, this.staking.address, value);
+
+        expect(await this.staking.stakeOf(subject1)).to.be.equal(value.mul(2));
+        expect(await this.staking.totalStake()).to.be.equal(value.mul(2));
+        expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal(value);
+        expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal(value);
+        expect(await this.staking.totalShares(subject1)).to.be.equal(value.mul(2));
+
+        await expect(this.staking.connect(this.accounts.user1).unstake(subject1, value.div(2))).to.be.reverted;
+        await expect(this.staking.connect(this.accounts.user2).unstake(subject1, value.div(2))).to.be.reverted;
+
+        await this.staking.connect(this.accounts.user1).scheduleUnstake(subject1, value.div(2));
+
+        await expect(this.staking.connect(this.accounts.user1).unstake(subject1, value.div(2))).to.be.reverted;
+        await expect(this.staking.connect(this.accounts.user2).unstake(subject1, value.div(2))).to.be.reverted;
+
+        await network.provider.send('evm_increaseTime', [ 3600 ]);
+
+        await expect(this.staking.connect(this.accounts.user1).unstake(subject1, value.div(2)))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.staking.address, this.accounts.user1.address, value.div(2));
+        await expect(this.staking.connect(this.accounts.user2).unstake(subject1, value.div(2))).to.be.reverted;
+
+        await this.staking.connect(this.accounts.user2).scheduleUnstake(subject1, value);
+        await network.provider.send('evm_increaseTime', [ 3600 ]);
+
+        await expect(this.staking.connect(this.accounts.user2).unstake(subject1, value))
+          .to.emit(this.token, 'Transfer')
+          .withArgs(this.staking.address, this.accounts.user2.address, value);
+
+        expect(await this.staking.stakeOf(subject1)).to.be.equal(value.div(2));
+        expect(await this.staking.totalStake()).to.be.equal(value.div(2));
+        expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal(value.div(2));
+        expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
+        expect(await this.staking.totalShares(subject1)).to.be.equal(value.div(2));
+      });
+    });
   });
 
   describe('Rewards', function () {

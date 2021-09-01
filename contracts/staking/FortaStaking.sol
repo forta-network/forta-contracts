@@ -2,7 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -160,6 +162,12 @@ contract FortaStaking is
 {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.Splitter;
+    using Timers for Timers.Timestamp;
+
+    struct Release {
+        Timers.Timestamp timestamp; // ← underlying time is uint64
+        uint256 value; // TODO: use uint192 to save gas ?
+    }
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
@@ -172,16 +180,22 @@ contract FortaStaking is
     // distribution of subject shares, with integrated reward splitting
     mapping(address => Distributions.Splitter) private _shares;
 
+    // release
+    mapping(address => mapping(address => Release)) private _releases;
+    uint64 private _delay;
+
+
     // TODO: define events
 
 
-    function initialize(IERC20 _underlyingToken, address admin) public initializer {
+    function initialize(IERC20 __underlyingToken, uint64 __delay, address __admin) public initializer {
         __AccessControl_init();
         __UUPSUpgradeable_init();
         _setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
-        _setupRole(ADMIN_ROLE, admin);
+        _setupRole(ADMIN_ROLE, __admin);
 
-        underlyingToken = _underlyingToken;
+        underlyingToken = __underlyingToken;
+        _delay = __delay;
     }
 
     // Accessors
@@ -203,20 +217,46 @@ contract FortaStaking is
 
     // Token transfer (not sure if needed)
     function transfer(address subject, address to, uint256 value) public {
-        _transfer(subject, _msgSender(), to, value);
+        address from = _msgSender();
+
+        _transfer(subject, from, to, value);
+
+        uint256 pendingRelease = _releases[subject][from].value;
+        if (pendingRelease > 0) {
+            uint256 currentShares = sharesOf(subject, from);
+            if (currentShares < pendingRelease) {
+                _releases[subject][from].value = currentShares;
+            }
+        }
     }
 
     // Stake related operations
     function stake(address subject, uint256 baseValue) public returns (uint256) {
+        address staker = _msgSender();
+
         uint256 sharesValue = _shares[subject].totalSupply() == 0 ? baseValue : _baseToShares(subject, baseValue);
-        _deposit(subject, _msgSender(), baseValue);
-        _mint(subject, _msgSender(), sharesValue);
+        _deposit(subject, staker, baseValue);
+        _mint(subject, staker, sharesValue);
         return sharesValue;
     }
 
-    function unstake(address subject, uint256 sharesValue) public returns (uint256) {
-        // TODO: force delay
+    function scheduleUnstake(address subject, uint256 sharesValue) public returns (uint64) {
         address staker = _msgSender();
+
+        uint64 deadline = SafeCast.toUint64(block.timestamp) + _delay;
+        uint256 value = Math.min(sharesValue, sharesOf(subject, staker));
+        _releases[subject][staker].timestamp.setDeadline(deadline);
+        _releases[subject][staker].value = value;
+        return deadline;
+    }
+
+    function unstake(address subject, uint256 sharesValue) public returns (uint256) {
+        address staker = _msgSender();
+
+        if (_delay > 0) {
+            require(_releases[subject][staker].timestamp.isExpired());
+            _releases[subject][staker].value -= sharesValue; // schedule value is in shares, not in base tokens
+        }
 
         uint baseValue = _sharestoBase(subject, sharesValue);
         _burn(subject, staker, sharesValue);
@@ -279,7 +319,11 @@ contract FortaStaking is
     }
 
     // Allow the upgrader to set ENS reverse registration
-    function setName(address ensRegistry, string calldata ensName) external onlyRole(ADMIN_ROLE) {
+    function setName(address ensRegistry, string calldata ensName) public onlyRole(ADMIN_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
+    }
+
+    function setDelay(uint64 newDelay) public onlyRole(ADMIN_ROLE) {
+        _delay = newDelay;
     }
 }
