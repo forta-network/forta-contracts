@@ -137,7 +137,7 @@ library Distributions {
 
     function _vested(Splitter storage self, uint256 amount) private view returns (uint256) {
         uint256 supply = totalSupply(self._shares);
-        return supply > 0 ? amount * _historical(self) / supply : 0;
+        return amount > 0 && supply > 0 ? amount * _historical(self) / supply : 0;
     }
 }
 
