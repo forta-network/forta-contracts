@@ -96,30 +96,28 @@ library Distributions {
     }
 
     function mint(Splitter storage self, address account, uint256 amount) internal {
-        mint(self._released, account, SafeCast.toInt256(_virtualRelease(self, amount)));
+        mint(self._released, account, SafeCast.toInt256(_vested(self, amount)));
         mint(self._shares, account, amount);
     }
 
     function burn(Splitter storage self, address account, uint256 amount) internal {
-        burn(self._released, account, SafeCast.toInt256(_virtualRelease(self, amount)));
+        burn(self._released, account, SafeCast.toInt256(_vested(self, amount)));
         burn(self._shares, account, amount);
     }
 
     function transfer(Splitter storage self, address from, address to, uint256 amount) internal {
-        int256 virtualRelease = SafeCast.toInt256(_virtualRelease(self, amount));
+        int256 virtualRelease = SafeCast.toInt256(_vested(self, amount));
         burn(self._released, from, virtualRelease);
         mint(self._released, to, virtualRelease);
         transfer(self._shares, from, to, amount);
     }
 
     function toRelease(Splitter storage self, address account) internal view returns (uint256) {
-        uint256 shares = balanceOf(self._shares, account);
-        return shares == 0
-            ? 0
-            : SafeCast.toUint256(int256(shares)
-            * (SafeCast.toInt256(self._bounty) + totalSupply(self._released))
-            / SafeCast.toInt256(totalSupply(self._shares))
-            - balanceOf(self._released, account));
+        return SafeCast.toUint256(
+            SafeCast.toInt256(_vested(self, balanceOf(self._shares, account)))
+            -
+            balanceOf(self._released, account)
+        );
     }
 
     function release(Splitter storage self, address account) internal returns (uint256) {
@@ -137,7 +135,7 @@ library Distributions {
         return SafeCast.toUint256(SafeCast.toInt256(self._bounty) + totalSupply(self._released));
     }
 
-    function _virtualRelease(Splitter storage self, uint256 amount) private view returns (uint256) {
+    function _vested(Splitter storage self, uint256 amount) private view returns (uint256) {
         uint256 supply = totalSupply(self._shares);
         return supply > 0 ? amount * _historical(self) / supply : 0;
     }
