@@ -84,7 +84,7 @@ library Distributions {
     struct Splitter {
         Balances _shares;
         SignedBalances _released;
-        uint256  _bounty;
+        uint256 _bounty;
     }
 
     function balanceOf(Splitter storage self, address account) internal view returns (uint256) {
@@ -96,18 +96,12 @@ library Distributions {
     }
 
     function mint(Splitter storage self, address account, uint256 amount) internal {
-        if (totalSupply(self._shares) > 0) {
-            int256 virtualRelease = SafeCast.toInt256(_virtualRelease(self, amount));
-            mint(self._released, account, virtualRelease);
-        }
-
+        mint(self._released, account, SafeCast.toInt256(_virtualRelease(self, amount)));
         mint(self._shares, account, amount);
     }
 
     function burn(Splitter storage self, address account, uint256 amount) internal {
-        int256 virtualRelease = SafeCast.toInt256(_virtualRelease(self, amount));
-        burn(self._released, account, virtualRelease);
-
+        burn(self._released, account, SafeCast.toInt256(_virtualRelease(self, amount)));
         burn(self._shares, account, amount);
     }
 
@@ -115,7 +109,6 @@ library Distributions {
         int256 virtualRelease = SafeCast.toInt256(_virtualRelease(self, amount));
         burn(self._released, from, virtualRelease);
         mint(self._released, to, virtualRelease);
-
         transfer(self._shares, from, to, amount);
     }
 
@@ -124,8 +117,7 @@ library Distributions {
         return shares == 0
             ? 0
             : SafeCast.toUint256(int256(shares)
-            * (SafeCast.toInt256(self._bounty)
-            + totalSupply(self._released))
+            * (SafeCast.toInt256(self._bounty) + totalSupply(self._released))
             / SafeCast.toInt256(totalSupply(self._shares))
             - balanceOf(self._released, account));
     }
@@ -146,7 +138,8 @@ library Distributions {
     }
 
     function _virtualRelease(Splitter storage self, uint256 amount) private view returns (uint256) {
-        return amount * _historical(self) / totalSupply(self._shares);
+        uint256 supply = totalSupply(self._shares);
+        return supply > 0 ? amount * _historical(self) / supply : 0;
     }
 }
 
@@ -170,6 +163,7 @@ contract FortaStaking is
     }
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
     // underlyingToken
     IERC20 public underlyingToken;
@@ -192,6 +186,7 @@ contract FortaStaking is
         __AccessControl_init();
         __UUPSUpgradeable_init();
         _setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
+        _setRoleAdmin(SLASHER_ROLE, ADMIN_ROLE);
         _setupRole(ADMIN_ROLE, __admin);
 
         underlyingToken = __underlyingToken;
@@ -264,7 +259,7 @@ contract FortaStaking is
         return baseValue;
     }
 
-    function seize(address subject, uint256 baseValue) public onlyRole(ADMIN_ROLE) {
+    function slash(address subject, uint256 baseValue) public onlyRole(SLASHER_ROLE) {
         _withdraw(subject, _msgSender(), baseValue); // when value is seized, where do tokens go ?
     }
 
