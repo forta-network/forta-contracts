@@ -12,6 +12,10 @@ contract Forta is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeab
     bytes32 public constant WHITELISTER_ROLE = keccak256("WHITELISTER_ROLE");
     bytes32 public constant WHITELIST_ROLE   = keccak256("WHITELIST_ROLE");
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer
+    {}
+
     function initialize(address admin) public initializer {
         __AccessControl_init();
         __ERC20_init("Forta", "FORT");
