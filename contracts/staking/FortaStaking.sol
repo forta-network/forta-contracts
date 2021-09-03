@@ -179,6 +179,9 @@ contract FortaStaking is
 
     // TODO: define events
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer
+    {}
 
     function initialize(IERC20 __underlyingToken, uint64 __delay, address __admin) public initializer {
         __AccessControl_init();
