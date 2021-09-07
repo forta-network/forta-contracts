@@ -148,7 +148,17 @@ async function main() {
   const CONFIG = require('./CONFIG.js');
 
   // wrap signers in NonceManager to avoid nonce issues during concurent tx construction
-  const [ deployer ] = await ethers.getSigners().then(signers => signers.map(signer => new NonceManager(signer)));
+  // const [ deployer ] = await ethers.getSigners().then(signers => signers.map(signer => new NonceManager(signer)));
+
+  // wrap provider to re-enable maxpriorityfee mechanism
+  const provider = new ethers.providers.FallbackProvider([ ethers.provider ], 1);
+  // create new wallet on top of the wrapped provider
+  const deployer = new NonceManager(
+    ethers.Wallet.fromMnemonic(process.env.MNEMONIC)
+  ).connect(provider);
+  // get nonce using latest
+  await deployer.setTransactionCount(deployer.getTransactionCount('latest'));
+
   deployer.address = await deployer.getAddress();
   const { name, chainId } = await deployer.provider.getNetwork();
 
