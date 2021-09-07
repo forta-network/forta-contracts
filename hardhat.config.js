@@ -5,6 +5,8 @@ require('solidity-coverage');
 require('hardhat-gas-reporter');
 require('@openzeppelin/hardhat-upgrades');
 
+const argv = require('yargs/yargs')().env('').argv;
+
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
@@ -22,46 +24,27 @@ module.exports = {
       },
     ],
   },
-  networks: {
-    hardhat: {
-      accounts: { mnemonic: 'test test test test test test test test test test test junk' },
-    }
-  },
+  networks: { hardhat: {} },
   gasReporter: {
     currency: 'USD',
     coinmarketcap: process.env.COINMARKETCAP,
   },
 };
 
-if (process.env.SLOW) {
-  module.exports.networks.hardhat.mining = {
-    auto: false,
-    interval: [3000, 6000],
-  };
-}
+const accounts = [
+  argv.mnemonic   && { mnemonic: argv.mnemonic },
+  argv.privateKey && [ argv.privateKey ],
+].find(Boolean);
 
-if (process.env.FORK) {
-  module.exports.networks.hardhat.forking = {
-    url: process.env.FORK
-  };
-}
-
-if (process.env.MAINNET_NODE && process.env.MNEMONIC) {
-  module.exports.networks.mainnet = {
-    url: process.env.MAINNET_NODE,
-    accounts: { mnemonic: process.env.MNEMONIC },
-  };
-}
-if (process.env.RINKEBY_NODE && process.env.MNEMONIC) {
-  module.exports.networks.rinkeby = {
-    url: process.env.RINKEBY_NODE,
-    accounts: { mnemonic: process.env.MNEMONIC },
-  };
-}
-
-if (process.env.GOERLI_NODE && process.env.MNEMONIC) {
-  module.exports.networks.goerli = {
-    url: process.env.GOERLI_NODE,
-    accounts: { mnemonic: process.env.MNEMONIC },
-  };
-}
+Object.assign(
+  module.exports.networks,
+  accounts && Object.fromEntries([
+    'mainnet',
+    'ropsten',
+    'rinkeby',
+    'goerli',
+    'kovan',
+  ].map(name => [ name, { url: argv[`${name}Node`], accounts } ]).filter(([, { url} ]) => url)),
+  argv.slow && { hardhat: { mining: { auto: false, interval: [3000, 6000] }}}, // Simulate a slow chain locally
+  argv.fork && { hardhat: { forking: { url: argv.fork }}}, // Simulate a mainnet fork
+);
