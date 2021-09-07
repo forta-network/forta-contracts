@@ -1,3 +1,4 @@
+require('dotenv/config');
 require('@nomiclabs/hardhat-ethers');
 require('@nomiclabs/hardhat-waffle');
 require('solidity-coverage');
@@ -21,7 +22,11 @@ module.exports = {
       },
     ],
   },
-  networks: { hardhat: {}},
+  networks: {
+    hardhat: {
+      accounts: { mnemonic: 'test test test test test test test test test test test junk' },
+    }
+  },
   gasReporter: {
     currency: 'USD',
     coinmarketcap: process.env.COINMARKETCAP,
@@ -44,19 +49,19 @@ if (process.env.FORK) {
 if (process.env.MAINNET_NODE && process.env.MNEMONIC) {
   module.exports.networks.mainnet = {
     url: process.env.MAINNET_NODE,
-    accounts: [ process.env.MNEMONIC ],
+    accounts: { mnemonic: process.env.MNEMONIC },
   };
 }
 if (process.env.RINKEBY_NODE && process.env.MNEMONIC) {
   module.exports.networks.rinkeby = {
     url: process.env.RINKEBY_NODE,
-    accounts: [ process.env.MNEMONIC ],
+    accounts: { mnemonic: process.env.MNEMONIC },
   };
 }
 
 if (process.env.GOERLI_NODE && process.env.MNEMONIC) {
   module.exports.networks.goerli = {
     url: process.env.GOERLI_NODE,
-    accounts: [ process.env.MNEMONIC ],
+    accounts: { mnemonic: process.env.MNEMONIC },
   };
 }

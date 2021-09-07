@@ -88,20 +88,34 @@ function durationToSeconds(duration) {
 /*********************************************************************************************************************
  *                                                Blockchain helpers                                                 *
  *********************************************************************************************************************/
-async function tryFetchContract(cache, key, contract, args = []) {
-  return cache.getFallback(
-    key,
-    () => contract.deploy(...args).then(instance => instance.deployed()).then(({ address }) => address)
-  ).then(address => contract.attach(address));
+function tryFetchContract(cache, key, contract, args = []) {
+  return resumeOrDeploy(cache, key, () => contract.deploy(...args)).then(address => contract.attach(address));
 }
 
-async function tryFetchProxy(cache, key, contract, args = [], kind = 'uups') {
-  return cache.getFallback(
-    key,
-    () => upgrades.deployProxy(contract, args, { kind }).then(instance => instance.deployed()).then(({ address }) => address)
-  ).then(address => contract.attach(address));
+function tryFetchProxy(cache, key, contract, args = [], kind = 'uups') {
+  return resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind })).then(address => contract.attach(address));
 }
 
+async function resumeOrDeploy(cache, key, deploy) {
+
+  let txHash  = await cache.get(`${key}-pending`);
+  let address = await cache.get(key);
+
+  if (!txHash && !address) {
+    txHash = await deploy()
+      .then(tx => tx.deployTransaction.hash);
+    await cache.set(`${key}-pending`, txHash);
+  }
+
+  if (!address) {
+    address = await ethers.provider.getTransaction(txHash)
+      .then(tx => tx.wait())
+      .then(receipt => receipt.contractAddress);
+    await cache.set(key, address);
+  }
+
+  return address;
+}
 
 
 const TXLimiter = pLimit(4); // maximum 4 simulatenous transactions
@@ -147,17 +161,12 @@ async function main() {
 
   const CONFIG = require('./CONFIG.js');
 
-  // wrap signers in NonceManager to avoid nonce issues during concurent tx construction
-  // const [ deployer ] = await ethers.getSigners().then(signers => signers.map(signer => new NonceManager(signer)));
-
   // wrap provider to re-enable maxpriorityfee mechanism
   const provider = new ethers.providers.FallbackProvider([ ethers.provider ], 1);
   // create new wallet on top of the wrapped provider
   const deployer = new NonceManager(
-    ethers.Wallet.fromMnemonic(process.env.MNEMONIC)
+    ethers.Wallet.fromMnemonic(process.env.MNEMONIC || 'test test test test test test test test test test test junk')
   ).connect(provider);
-  // get nonce using latest
-  await deployer.setTransactionCount(deployer.getTransactionCount('latest'));
 
   deployer.address = await deployer.getAddress();
   const { name, chainId } = await deployer.provider.getNetwork();
