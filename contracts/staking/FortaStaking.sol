@@ -303,11 +303,11 @@ contract FortaStaking is
     }
 
     function _baseToShares(address subject, uint256 amount) internal view returns (uint256) {
-        return amount * _shares[subject].totalSupply() / _pools.totalSupply();
+        return amount * _shares[subject].totalSupply() / _pools.balanceOf(subject);
     }
 
     function _sharestoBase(address subject, uint256 amount) internal view returns (uint256) {
-        return amount * _pools.totalSupply() / _shares[subject].totalSupply();
+        return amount * _pools.balanceOf(subject) / _shares[subject].totalSupply();
     }
 
     // Access control for the upgrade process
