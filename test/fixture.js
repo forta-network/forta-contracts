@@ -41,7 +41,7 @@ function prepare() {
     this.token = await deployUpgradeable('Forta', 'uups',
       this.accounts.admin.address
     );
-    this.staking = await deployUpgradeable('FortaStaking', 'uups',
+    this.staking = await deployUpgradeable('FortaStaking2', 'uups',
       this.token.address,
       0,
       this.accounts.treasure.address,
