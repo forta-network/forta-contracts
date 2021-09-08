@@ -88,20 +88,35 @@ function durationToSeconds(duration) {
 /*********************************************************************************************************************
  *                                                Blockchain helpers                                                 *
  *********************************************************************************************************************/
-async function tryFetchContract(cache, key, contract, args = []) {
-  return cache.getFallback(
-    key,
-    () => contract.deploy(...args).then(instance => instance.deployed()).then(({ address }) => address)
-  ).then(address => contract.attach(address));
+function tryFetchContract(cache, key, contract, args = []) {
+  return resumeOrDeploy(cache, key, () => contract.deploy(...args)).then(address => contract.attach(address));
 }
 
-async function tryFetchProxy(cache, key, contract, args = [], kind = 'uups') {
-  return cache.getFallback(
-    key,
-    () => upgrades.deployProxy(contract, args, { kind }).then(instance => instance.deployed()).then(({ address }) => address)
-  ).then(address => contract.attach(address));
+function tryFetchProxy(cache, key, contract, args = [], kind = 'uups') {
+  return resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind })).then(address => contract.attach(address));
 }
 
+async function resumeOrDeploy(cache, key, deploy) {
+
+  let txHash  = await cache.get(`${key}-pending`);
+  let address = await cache.get(key);
+
+  if (!txHash && !address) {
+    const contract = await deploy();
+    txHash = contract.deployTransaction.hash;
+    await cache.set(`${key}-pending`, txHash);
+    await contract.deployed();
+    address = contract.address;
+    await cache.set(key, address);
+  } else if (!address) {
+    address = await ethers.provider.getTransaction(txHash)
+      .then(tx => tx.wait())
+      .then(receipt => receipt.contractAddress);
+    await cache.set(key, address);
+  }
+
+  return address;
+}
 
 
 const TXLimiter = pLimit(4); // maximum 4 simulatenous transactions
@@ -147,8 +162,13 @@ async function main() {
 
   const CONFIG = require('./CONFIG.js');
 
-  // wrap signers in NonceManager to avoid nonce issues during concurent tx construction
-  const [ deployer ] = await ethers.getSigners().then(signers => signers.map(signer => new NonceManager(signer)));
+  // wrap provider to re-enable maxpriorityfee mechanism
+  const provider = new ethers.providers.FallbackProvider([ ethers.provider ], 1);
+  // create new wallet on top of the wrapped provider
+  const deployer = new NonceManager(
+    ethers.Wallet.fromMnemonic(process.env.MNEMONIC || 'test test test test test test test test test test test junk')
+  ).connect(provider);
+
   deployer.address = await deployer.getAddress();
   const { name, chainId } = await deployer.provider.getNetwork();
 
@@ -370,29 +390,38 @@ async function main() {
     ...CONFIG.allocations.map(allocation  => ({ role: MINTER_ROLE,      address: allocation.beneficiary, value: true  })),
     ...Object.values(vesting).map(vesting => ({ role: MINTER_ROLE,      address: vesting.address,        value: true  })),
   ].map(({ role, address, value }) => forta.hasRole(role, address).then(result => result === value))).then(results => results.every(Boolean)));
+
   // vesting config
-  for (const allocation of Object.values(CONFIG.allocations)) {
+  await Promise.all(Object.values(CONFIG.allocations).map(async allocation => {
     switch(allocation.type) {
       case 'direct':
-        assert((await forta.balanceOf(allocation.beneficiary)).eq(allocation.amount), `Wrong balance for direct allocation to ${allocation.beneficiary}`);
+        await Promise.all([
+          forta.balanceOf(allocation.beneficiary),
+        ]).then(([ balance ]) => {
+          assert(balance.eq(allocation.amount), `Wrong balance for direct allocation to ${allocation.beneficiary}`);
+        });
         break;
-      case 'vesting':
-        const beneficiary = allocation.beneficiary;
-        const admin       = allocation.upgrader;
-        const start       = dateToTimestamp(allocation.start);
-        const cliff       = durationToSeconds(allocation.cliff);
-        const duration    = durationToSeconds(allocation.duration);
-        const contract    = vesting[beneficiary];
 
-        assert((await forta.balanceOf(contract.address)).eq(allocation.amount), `Wrong balance for vested allocation to ${allocation.beneficiary}`);
-        assert((await contract.start()                 ).eq(start),             `Wrong start for vested allocation to ${allocation.beneficiary}`);
-        assert((await contract.cliff()                 ).eq(cliff),             `Wrong cliff for vested allocation to ${allocation.beneficiary}`);
-        assert((await contract.duration()              ).eq(duration),          `Wrong duration for vested allocation to ${allocation.beneficiary}`);
-        assert.strictEqual(await contract.beneficiary(), beneficiary,           `Wrong beneficiary for vested allocation to ${allocation.beneficiary}`);
-        assert.strictEqual(await contract.owner(),       admin,                 `Wrong admin for direct allocation to ${allocation.beneficiary}`);
+      case 'vesting':
+        const contract = vesting[allocation.beneficiary];
+        await Promise.all([
+          forta.balanceOf(contract.address),
+          contract.start(),
+          contract.cliff(),
+          contract.duration(),
+          contract.beneficiary(),
+          contract.owner(),
+        ]).then(([ balance, start, cliff, duration, beneficiary, owner]) => {
+          assert(balance.eq(allocation.amount),                       `Wrong balance for vested allocation to ${allocation.beneficiary}`);
+          assert(start.eq(dateToTimestamp(allocation.start)),         `Wrong start for vested allocation to ${allocation.beneficiary}`);
+          assert(cliff.eq(durationToSeconds(allocation.cliff)),       `Wrong cliff for vested allocation to ${allocation.beneficiary}`);
+          assert(duration.eq(durationToSeconds(allocation.duration)), `Wrong duration for vested allocation to ${allocation.beneficiary}`);
+          assert.strictEqual(beneficiary, allocation.beneficiary,     `Wrong beneficiary for vested allocation to ${allocation.beneficiary}`);
+          assert.strictEqual(owner,       allocation.upgrader,        `Wrong admin for direct allocation to ${allocation.beneficiary}`);
+        });
         break;
     }
-  }
+  }));
   console.log(chalk.bold('[8/8] done.'));
 
   console.log('----------------------------------------------------');
