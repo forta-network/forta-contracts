@@ -102,12 +102,13 @@ async function resumeOrDeploy(cache, key, deploy) {
   let address = await cache.get(key);
 
   if (!txHash && !address) {
-    txHash = await deploy()
-      .then(tx => tx.deployTransaction.hash);
+    const contract = await deploy();
+    txHash = contract.deployTransaction.hash;
     await cache.set(`${key}-pending`, txHash);
-  }
-
-  if (!address) {
+    await contract.deployed();
+    address = contract.address;
+    await cache.set(key, address);
+  } else if (!address) {
     address = await ethers.provider.getTransaction(txHash)
       .then(tx => tx.wait())
       .then(receipt => receipt.contractAddress);
