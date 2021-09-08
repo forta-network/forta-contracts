@@ -14,7 +14,6 @@ describe('Forta Staking', function () {
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user2.address);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user3.address);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.minter.address);
-    await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address);
 
     await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('1000'));
     await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, ethers.utils.parseEther('1000'));
@@ -267,7 +266,9 @@ describe('Forta Staking', function () {
       expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('50');
       expect(await this.staking.totalShares(subject1)).to.be.equal('150');
 
-      await this.staking.connect(this.accounts.slasher).slash(subject1, '30');
+      await expect(this.staking.connect(this.accounts.slasher).slash(subject1, '30'))
+        .to.emit(this.token, 'Transfer')
+        .withArgs(this.staking.address, this.accounts.treasure.address, '30');
 
       expect(await this.staking.stakeOf(subject1)).to.be.equal('120');
       expect(await this.staking.totalStake()).to.be.equal('120');
@@ -306,7 +307,9 @@ describe('Forta Staking', function () {
       expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('50');
       expect(await this.staking.totalShares(subject1)).to.be.equal('150');
 
-      await this.staking.connect(this.accounts.slasher).slash(subject1, '30');
+      await expect(this.staking.connect(this.accounts.slasher).slash(subject1, '30'))
+        .to.emit(this.token, 'Transfer')
+        .withArgs(this.staking.address, this.accounts.treasure.address, '30');
 
       expect(await this.staking.stakeOf(subject1)).to.be.equal('120');
       expect(await this.staking.totalStake()).to.be.equal('120');

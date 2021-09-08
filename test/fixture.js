@@ -30,6 +30,7 @@ function prepare() {
     this.accounts.whitelister  = this.accounts.shift();
     this.accounts.whitelist    = this.accounts.shift();
     this.accounts.nonwhitelist = this.accounts.shift();
+    this.accounts.treasure     = this.accounts.shift();
     this.accounts.user1        = this.accounts.shift();
     this.accounts.user2        = this.accounts.shift();
     this.accounts.user3        = this.accounts.shift();
@@ -37,7 +38,16 @@ function prepare() {
   });
 
   beforeEach(async function () {
-    this.token = await deployUpgradeable('Forta', 'uups', this.accounts.admin.address);
+    this.token = await deployUpgradeable('Forta', 'uups',
+      this.accounts.admin.address
+    );
+    this.staking = await deployUpgradeable('FortaStaking', 'uups',
+      this.token.address,
+      0,
+      this.accounts.treasure.address,
+      this.accounts.admin.address
+    );
+
     this.roles = {
       ADMIN:       await this.token.ADMIN_ROLE(),
       MINTER:      await this.token.MINTER_ROLE(),
@@ -47,8 +57,8 @@ function prepare() {
     await this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address);
     await this.token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address);
-
-    this.staking = await deployUpgradeable('FortaStaking', 'uups', this.token.address, 0, this.accounts.admin.address);
+    await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address);
+    await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address);
   });
 }
 
