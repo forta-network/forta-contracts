@@ -193,6 +193,8 @@ contract FortaStaking2 is
 
         for (uint256 i = 0; i < ids.length; ++i) {
             address subject = address(uint160(ids[i]));
+
+            // Rebalance released
             int256 virtualRelease = SafeCast.toInt256(_allocation(subject, amounts[i]));
             if (from != address(0)) {
                 _released[subject].burn(from, virtualRelease);
@@ -201,6 +203,7 @@ contract FortaStaking2 is
                 _released[subject].mint(to, virtualRelease);
             }
 
+            // Cap commit to current balance
             uint256 pendingRelease = _commits[subject][from].value;
             if (pendingRelease > 0) {
                 uint256 currentShares = sharesOf(subject, from) - amounts[i];
