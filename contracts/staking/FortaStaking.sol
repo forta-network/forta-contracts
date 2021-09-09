@@ -14,11 +14,12 @@ import "./Distributions.sol";
 
 contract FortaStaking is
     AccessControlUpgradeable,
+    ERC1155SupplyUpgradeable,
     // MulticallUpgradeable,
     UUPSUpgradeable
 {
     using Distributions for Distributions.Balances;
-    using Distributions for Distributions.Splitter;
+    using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
 
     struct Release {
@@ -33,13 +34,16 @@ contract FortaStaking is
     IERC20 public underlyingToken;
 
     // distribution of underlyingToken between subjects (address)
-    Distributions.Balances private _pools;
+    Distributions.Balances private _stakes;
+    Distributions.Balances private _rewards;
 
     // distribution of subject shares, with integrated reward splitting
-    mapping(address => Distributions.Splitter) private _shares;
+    mapping(address => Distributions.SignedBalances) private _released;
 
-    // release
-    mapping(address => mapping(address => Release)) private _releases;
+    // release commitment
+    mapping(address => mapping(address => Release)) private _commits;
+
+    // unstake delay
     uint64 private _delay;
 
     // treasure for slashing
@@ -64,45 +68,34 @@ contract FortaStaking is
         _treasure = __treasure;
     }
 
+    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlUpgradeable, ERC1155Upgradeable) returns (bool) {
+        return super.supportsInterface(interfaceId);
+    }
+
     // Accessors
     function stakeOf(address subject) public view returns (uint256) {
-        return _pools.balanceOf(subject);
+        return _stakes.balanceOf(subject);
     }
 
     function totalStake() public view returns (uint256) {
-        return _pools.totalSupply();
+        return _stakes.totalSupply();
     }
 
     function sharesOf(address subject, address account) public view returns (uint256) {
-        return _shares[subject].balanceOf(account);
+        return balanceOf(account, uint256(uint160(subject)));
     }
 
     function totalShares(address subject) public view returns (uint256) {
-        return _shares[subject].totalSupply();
-    }
-
-    // Token transfer (not sure if needed)
-    function transfer(address subject, address to, uint256 value) public {
-        address from = _msgSender();
-
-        _transfer(subject, from, to, value);
-
-        uint256 pendingRelease = _releases[subject][from].value;
-        if (pendingRelease > 0) {
-            uint256 currentShares = sharesOf(subject, from);
-            if (currentShares < pendingRelease) {
-                _releases[subject][from].value = currentShares;
-            }
-        }
+        return totalSupply(uint256(uint160(subject)));
     }
 
     // Stake related operations
     function stake(address subject, uint256 baseValue) public returns (uint256) {
         address staker = _msgSender();
 
-        uint256 sharesValue = _shares[subject].totalSupply() == 0 ? baseValue : _baseToShares(subject, baseValue);
+        uint256 sharesValue = totalSupply(uint256(uint160(subject))) == 0 ? baseValue : _baseToShares(subject, baseValue);
         _deposit(subject, staker, baseValue);
-        _mint(subject, staker, sharesValue);
+        _mint(staker, uint256(uint160(subject)), sharesValue, new bytes(0));
         return sharesValue;
     }
 
@@ -111,8 +104,8 @@ contract FortaStaking is
 
         uint64 deadline = SafeCast.toUint64(block.timestamp) + _delay;
         uint256 value = Math.min(sharesValue, sharesOf(subject, staker));
-        _releases[subject][staker].timestamp.setDeadline(deadline);
-        _releases[subject][staker].value = value;
+        _commits[subject][staker].timestamp.setDeadline(deadline);
+        _commits[subject][staker].value = value;
         return deadline;
     }
 
@@ -120,12 +113,12 @@ contract FortaStaking is
         address staker = _msgSender();
 
         if (_delay > 0) {
-            require(_releases[subject][staker].timestamp.isExpired());
-            _releases[subject][staker].value -= sharesValue; // schedule value is in shares, not in base tokens
+            require(_commits[subject][staker].timestamp.isExpired());
+            _commits[subject][staker].value -= sharesValue; // schedule value is in shares, not in base tokens
         }
 
         uint baseValue = _sharestoBase(subject, sharesValue);
-        _burn(subject, staker, sharesValue);
+        _burn(staker, uint256(uint160(subject)), sharesValue);
         _withdraw(subject, staker, baseValue);
         return baseValue;
     }
@@ -139,48 +132,86 @@ contract FortaStaking is
 
     function reward(address subject, uint256 value) public {
         SafeERC20.safeTransferFrom(underlyingToken, _msgSender(), address(this), value);
-        _shares[subject].reward(value);
+        _rewards.mint(subject, value);
     }
 
     function release(address subject, address account) public returns (uint256) {
-        uint256 value = _shares[subject].release(account);
+        uint256 value = toRelease(subject, account);
+
+        _rewards.burn(subject, value);
+        _released[subject].mint(account, SafeCast.toInt256(value));
+
         SafeERC20.safeTransfer(underlyingToken, account, value);
         return value;
     }
 
     function toRelease(address subject, address account) public view returns (uint256) {
-        return _shares[subject].toRelease(account);
+        return SafeCast.toUint256(
+            SafeCast.toInt256(_allocation(subject, balanceOf(account, uint256(uint160(subject)))))
+            -
+            _released[subject].balanceOf( account)
+        );
     }
 
     // Internal helpers
     function _deposit(address subject, address provider, uint256 value) internal {
         SafeERC20.safeTransferFrom(underlyingToken, provider, address(this), value);
-        _pools.mint(subject, value);
+        _stakes.mint(subject, value);
     }
 
     function _withdraw(address subject, address to, uint256 value) internal {
-        _pools.burn(subject, value);
+        _stakes.burn(subject, value);
         SafeERC20.safeTransfer(underlyingToken, to, value);
     }
 
-    function _mint(address subject, address account, uint256 value) internal {
-        _shares[subject].mint(account, value);
-    }
-
-    function _burn(address subject, address account, uint256 value) internal {
-        _shares[subject].burn(account, value);
-    }
-
-    function _transfer(address subject, address from, address to, uint256 value) internal {
-        _shares[subject].transfer(from, to, value);
-    }
-
     function _baseToShares(address subject, uint256 amount) internal view returns (uint256) {
-        return amount * _shares[subject].totalSupply() / _pools.balanceOf(subject);
+        return amount * totalSupply(uint256(uint160(subject))) / _stakes.balanceOf(subject);
     }
 
     function _sharestoBase(address subject, uint256 amount) internal view returns (uint256) {
-        return amount * _pools.balanceOf(subject) / _shares[subject].totalSupply();
+        return amount * _stakes.balanceOf(subject) / totalSupply(uint256(uint160(subject)));
+    }
+
+    function _historical(address subject) private view returns (uint256) {
+        return SafeCast.toUint256(SafeCast.toInt256(_rewards.balanceOf(subject)) + _released[subject].totalSupply());
+    }
+
+    function _allocation(address subject, uint256 amount) private view returns (uint256) {
+        uint256 supply = totalSupply(uint256(uint160(subject)));
+        return amount > 0 && supply > 0 ? amount * _historical(subject) / supply : 0;
+    }
+
+    function _beforeTokenTransfer(
+        address operator,
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    ) internal virtual override {
+        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
+
+        for (uint256 i = 0; i < ids.length; ++i) {
+            address subject = address(uint160(ids[i]));
+
+            // Rebalance released
+            int256 virtualRelease = SafeCast.toInt256(_allocation(subject, amounts[i]));
+            if (from != address(0)) {
+                _released[subject].burn(from, virtualRelease);
+            }
+            if (to != address(0)) {
+                _released[subject].mint(to, virtualRelease);
+            }
+
+            // Cap commit to current balance
+            uint256 pendingRelease = _commits[subject][from].value;
+            if (pendingRelease > 0) {
+                uint256 currentShares = sharesOf(subject, from) - amounts[i];
+                if (currentShares < pendingRelease) {
+                    _commits[subject][from].value = currentShares;
+                }
+            }
+        }
     }
 
     // Access control for the upgrade process
