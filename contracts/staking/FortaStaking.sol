@@ -4,16 +4,16 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
+
+import "../permissions/AccessManaged.sol";
+import "../tools/Distributions.sol";
 import "../tools/ENSReverseRegistration.sol";
 
-import "./Distributions.sol";
-
 contract FortaStaking is
-    AccessControlUpgradeable,
+    AccessManagedUpgradeable,
     ERC1155SupplyUpgradeable,
     // MulticallUpgradeable,
     UUPSUpgradeable
@@ -52,24 +52,22 @@ contract FortaStaking is
 
     // TODO: define events
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer
-    {}
 
-    function initialize(IERC20 __underlyingToken, uint64 __delay, address __treasure, address __admin) public initializer {
-        __AccessControl_init();
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
+
+    function initialize(
+        address __manager,
+        IERC20 __underlyingToken,
+        uint64 __delay,
+        address __treasure
+    ) public initializer {
+        __AccessManaged_init(__manager);
         __UUPSUpgradeable_init();
-        _setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
-        _setRoleAdmin(SLASHER_ROLE, ADMIN_ROLE);
-        _setupRole(ADMIN_ROLE, __admin);
 
         underlyingToken = __underlyingToken;
         _delay = __delay;
         _treasure = __treasure;
-    }
-
-    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlUpgradeable, ERC1155Upgradeable) returns (bool) {
-        return super.supportsInterface(interfaceId);
     }
 
     // Accessors

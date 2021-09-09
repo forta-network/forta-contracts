@@ -254,13 +254,10 @@ describe('Forta Staking', function () {
     });
   });
 
-
   describe('Slashing', function () {
     beforeEach(async function () {
-      const SLASHER_ROLE = await this.staking.SLASHER_ROLE();
-
       this.accounts.slasher = this.accounts.shift();
-      await this.staking.connect(this.accounts.admin).grantRole(SLASHER_ROLE, this.accounts.slasher.address);
+      await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
       await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address);
     });
 
