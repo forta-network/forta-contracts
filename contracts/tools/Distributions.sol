@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-
 library Distributions {
     struct Balances {
         mapping(address => uint256) _balances;
