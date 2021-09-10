@@ -51,6 +51,14 @@ contract FortaStaking is
 
 
     // TODO: define events
+    // - stake → TransferSingle from address(0)
+    // - unstake → TransferSingle to address(0)
+    // - slashing → erc20 movement without share burn → might need a local event
+    // - scheduleUnstake
+    // - reward
+    // - release
+    // - setDelay
+    // - setTreasure
 
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -212,15 +220,6 @@ contract FortaStaking is
         }
     }
 
-    // Access control for the upgrade process
-    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(ADMIN_ROLE) {
-    }
-
-    // Allow the upgrader to set ENS reverse registration
-    function setName(address ensRegistry, string calldata ensName) public onlyRole(ADMIN_ROLE) {
-        ENSReverseRegistration.setName(ensRegistry, ensName);
-    }
-
     // Admin: change unstake delay
     function setDelay(uint64 newDelay) public onlyRole(ADMIN_ROLE) {
         _delay = newDelay;
@@ -229,5 +228,14 @@ contract FortaStaking is
     // Admin: change recipient of slashed funds
     function setTreasure(address newTreasure) public onlyRole(ADMIN_ROLE) {
         _treasure = newTreasure;
+    }
+
+    // Access control for the upgrade process
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(ADMIN_ROLE) {
+    }
+
+    // Allow the upgrader to set ENS reverse registration
+    function setName(address ensRegistry, string calldata ensName) public onlyRole(ADMIN_ROLE) {
+        ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 }
