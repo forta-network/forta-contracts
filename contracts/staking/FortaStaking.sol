@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -22,7 +23,7 @@ contract FortaStaking is
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
 
-    struct Release {
+    struct UnstakeRequest {
         Timers.Timestamp timestamp; // ← underlying time is uint64
         uint256 value; // TODO: use uint192 to save gas ?
     }
@@ -30,24 +31,23 @@ contract FortaStaking is
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
-    // underlyingToken
-    IERC20 public underlyingToken;
+    IERC20 public stakedToken;
 
-    // distribution of underlyingToken between subjects (address)
+    // distribution of baseToken between subjects (address)
     Distributions.Balances private _stakes;
     Distributions.Balances private _rewards;
 
     // distribution of subject shares, with integrated reward splitting
     mapping(address => Distributions.SignedBalances) private _released;
 
-    // release commitment
-    mapping(address => mapping(address => Release)) private _commits;
+    // unstakeRequests, in share token
+    mapping(address => mapping(address => UnstakeRequest)) private _unstakeRequests;
 
     // unstake delay
     uint64 private _delay;
 
-    // treasure for slashing
-    address private _treasure;
+    // treasury for slashing
+    address private _treasury;
 
 
     // TODO: define events
@@ -58,7 +58,7 @@ contract FortaStaking is
     // - reward
     // - release
     // - setDelay
-    // - setTreasure
+    // - setTreasury
 
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -66,16 +66,16 @@ contract FortaStaking is
 
     function initialize(
         address __manager,
-        IERC20 __underlyingToken,
+        IERC20 __stakedToken,
         uint64 __delay,
-        address __treasure
+        address __treasury
     ) public initializer {
         __AccessManaged_init(__manager);
         __UUPSUpgradeable_init();
 
-        underlyingToken = __underlyingToken;
+        stakedToken = __stakedToken;
         _delay = __delay;
-        _treasure = __treasure;
+        _treasury = __treasury;
     }
 
     // Accessors
@@ -96,11 +96,11 @@ contract FortaStaking is
     }
 
     // Stake related operations
-    function stake(address subject, uint256 baseValue) public returns (uint256) {
+    function stake(address subject, uint256 stakeValue) public returns (uint256) {
         address staker = _msgSender();
 
-        uint256 sharesValue = totalSupply(uint256(uint160(subject))) == 0 ? baseValue : _baseToShares(subject, baseValue);
-        _deposit(subject, staker, baseValue);
+        uint256 sharesValue = totalSupply(uint256(uint160(subject))) == 0 ? stakeValue : _stakeToShares(subject, stakeValue);
+        _deposit(subject, staker, stakeValue);
         _mint(staker, uint256(uint160(subject)), sharesValue, new bytes(0));
         return sharesValue;
     }
@@ -110,8 +110,8 @@ contract FortaStaking is
 
         uint64 deadline = SafeCast.toUint64(block.timestamp) + _delay;
         uint256 value = Math.min(sharesValue, sharesOf(subject, staker));
-        _commits[subject][staker].timestamp.setDeadline(deadline);
-        _commits[subject][staker].value = value;
+        _unstakeRequests[subject][staker].timestamp.setDeadline(deadline);
+        _unstakeRequests[subject][staker].value = value;
         return deadline;
     }
 
@@ -119,25 +119,25 @@ contract FortaStaking is
         address staker = _msgSender();
 
         if (_delay > 0) {
-            require(_commits[subject][staker].timestamp.isExpired());
-            _commits[subject][staker].value -= sharesValue; // schedule value is in shares, not in base tokens
+            require(_unstakeRequests[subject][staker].timestamp.isExpired());
+            _unstakeRequests[subject][staker].value -= sharesValue; // schedule value is in shares, not in stake tokens
         }
 
-        uint baseValue = _sharestoBase(subject, sharesValue);
+        uint stakeValue = _sharesToStake(subject, sharesValue);
         _burn(staker, uint256(uint160(subject)), sharesValue);
-        _withdraw(subject, staker, baseValue);
-        return baseValue;
+        _withdraw(subject, staker, stakeValue);
+        return stakeValue;
     }
 
     // function freeze
     // function unfreeze
 
-    function slash(address subject, uint256 baseValue) public onlyRole(SLASHER_ROLE) {
-        _withdraw(subject, _treasure, baseValue);
+    function slash(address subject, uint256 stakeValue) public onlyRole(SLASHER_ROLE) {
+        _withdraw(subject, _treasury, stakeValue);
     }
 
     function reward(address subject, uint256 value) public {
-        SafeERC20.safeTransferFrom(underlyingToken, _msgSender(), address(this), value);
+        SafeERC20.safeTransferFrom(stakedToken, _msgSender(), address(this), value);
         _rewards.mint(subject, value);
     }
 
@@ -147,7 +147,7 @@ contract FortaStaking is
         _rewards.burn(subject, value);
         _released[subject].mint(account, SafeCast.toInt256(value));
 
-        SafeERC20.safeTransfer(underlyingToken, account, value);
+        SafeERC20.safeTransfer(stakedToken, account, value);
         return value;
     }
 
@@ -161,20 +161,20 @@ contract FortaStaking is
 
     // Internal helpers
     function _deposit(address subject, address provider, uint256 value) internal {
-        SafeERC20.safeTransferFrom(underlyingToken, provider, address(this), value);
+        SafeERC20.safeTransferFrom(stakedToken, provider, address(this), value);
         _stakes.mint(subject, value);
     }
 
     function _withdraw(address subject, address to, uint256 value) internal {
         _stakes.burn(subject, value);
-        SafeERC20.safeTransfer(underlyingToken, to, value);
+        SafeERC20.safeTransfer(stakedToken, to, value);
     }
 
-    function _baseToShares(address subject, uint256 amount) internal view returns (uint256) {
+    function _stakeToShares(address subject, uint256 amount) internal view returns (uint256) {
         return amount * totalSupply(uint256(uint160(subject))) / _stakes.balanceOf(subject);
     }
 
-    function _sharestoBase(address subject, uint256 amount) internal view returns (uint256) {
+    function _sharesToStake(address subject, uint256 amount) internal view returns (uint256) {
         return amount * _stakes.balanceOf(subject) / totalSupply(uint256(uint160(subject)));
     }
 
@@ -210,11 +210,11 @@ contract FortaStaking is
             }
 
             // Cap commit to current balance
-            uint256 pendingRelease = _commits[subject][from].value;
+            uint256 pendingRelease = _unstakeRequests[subject][from].value;
             if (pendingRelease > 0) {
                 uint256 currentShares = sharesOf(subject, from) - amounts[i];
                 if (currentShares < pendingRelease) {
-                    _commits[subject][from].value = currentShares;
+                    _unstakeRequests[subject][from].value = currentShares;
                 }
             }
         }
@@ -226,8 +226,8 @@ contract FortaStaking is
     }
 
     // Admin: change recipient of slashed funds
-    function setTreasure(address newTreasure) public onlyRole(ADMIN_ROLE) {
-        _treasure = newTreasure;
+    function setTreasury(address newTreasury) public onlyRole(ADMIN_ROLE) {
+        _treasury = newTreasury;
     }
 
     // Access control for the upgrade process
