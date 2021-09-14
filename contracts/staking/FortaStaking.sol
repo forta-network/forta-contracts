@@ -23,7 +23,7 @@ contract FortaStaking is
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
 
-    struct UnstakeRequest {
+    struct WithdrawalSchedule {
         Timers.Timestamp timestamp; // ← underlying time is uint64
         uint256 value; // TODO: use uint192 to save gas ?
     }
@@ -40,26 +40,25 @@ contract FortaStaking is
     // distribution of subject shares, with integrated reward splitting
     mapping(address => Distributions.SignedBalances) private _released;
 
-    // unstakeRequests, in share token
-    mapping(address => mapping(address => UnstakeRequest)) private _unstakeRequests;
+    // frozen tokens
+    mapping(address => bool) private _frozen;
 
-    // unstake delay
+    // WithdrawalSchedule, in share token
+    mapping(address => mapping(address => WithdrawalSchedule)) private _withdrawalSchedules;
+
+    // withdrawal delay
     uint64 private _delay;
 
     // treasury for slashing
     address private _treasury;
 
-
-    // TODO: define events
-    // - stake → TransferSingle from address(0)
-    // - unstake → TransferSingle to address(0)
-    // - slashing → erc20 movement without share burn → might need a local event
-    // - scheduleUnstake
-    // - reward
-    // - release
-    // - setDelay
-    // - setTreasury
-
+    event WithdrawalSheduled(address indexed subject, address indexed account, uint256 value, uint64 deadline);
+    event Freeze(address indexed subject, bool isFrozen);
+    event Slash(address indexed subject, address indexed by, uint256 value);
+    event Reward(address indexed subject, address indexed from, uint256 value);
+    event Release(address indexed subject, address indexed to, uint256 value);
+    event DelaySet(uint256 newDelay);
+    event TreasurySet(address newTreasury);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -76,27 +75,51 @@ contract FortaStaking is
         stakedToken = __stakedToken;
         _delay = __delay;
         _treasury = __treasury;
+        emit DelaySet(__delay);
+        emit TreasurySet(__treasury);
     }
 
-    // Accessors
+    /**
+     * @dev Get stake of a subject
+     */
     function stakeOf(address subject) public view returns (uint256) {
         return _stakes.balanceOf(subject);
     }
 
+    /**
+     * @dev Get total stake of all subjects
+     */
     function totalStake() public view returns (uint256) {
         return _stakes.totalSupply();
     }
 
+    /**
+     * @dev Get shares of an account on a subject, corresponding to a fraction of the subject stake.
+     */
     function sharesOf(address subject, address account) public view returns (uint256) {
         return balanceOf(account, uint256(uint160(subject)));
     }
 
+    /**
+     * @dev Get the total shares on a subject.
+     */
     function totalShares(address subject) public view returns (uint256) {
         return totalSupply(uint256(uint160(subject)));
     }
 
-    // Stake related operations
-    function stake(address subject, uint256 stakeValue) public returns (uint256) {
+    /**
+     * @dev Is a subject frozen (stake of frozen subject cannot be withdrawn).
+     */
+    function isFrozen(address subject) public view returns (bool) {
+        return _frozen[subject];
+    }
+
+    /**
+     * @dev Deposit `stakeValue` tokens for a given `subject`, and mint the corresponding shares.
+     *
+     * Emits a ERC1155.TransferSingle event.
+     */
+    function deposit(address subject, uint256 stakeValue) public returns (uint256) {
         address staker = _msgSender();
 
         uint256 sharesValue = totalSupply(uint256(uint160(subject))) == 0 ? stakeValue : _stakeToShares(subject, stakeValue);
@@ -105,42 +128,87 @@ contract FortaStaking is
         return sharesValue;
     }
 
-    function scheduleUnstake(address subject, uint256 sharesValue) public returns (uint64) {
+    /**
+     * @dev Schedule the withdrawal of shares.
+     *
+     * Emits a WithdrawalSheduled event.
+     */
+    function scheduleWithdrawal(address subject, uint256 sharesValue) public returns (uint64) {
         address staker = _msgSender();
 
         uint64 deadline = SafeCast.toUint64(block.timestamp) + _delay;
         uint256 value = Math.min(sharesValue, sharesOf(subject, staker));
-        _unstakeRequests[subject][staker].timestamp.setDeadline(deadline);
-        _unstakeRequests[subject][staker].value = value;
+        _withdrawalSchedules[subject][staker].timestamp.setDeadline(deadline);
+        _withdrawalSchedules[subject][staker].value = value;
+
+        emit WithdrawalSheduled(subject, staker, sharesValue, deadline);
+
         return deadline;
     }
 
-    function unstake(address subject, uint256 sharesValue) public returns (uint256) {
+    /**
+     * @dev Burn `sharesValue` shares for a given `subject, and withdraw the corresponding tokens.
+     *
+     * Emits a ERC1155.TransferSingle event.
+     */
+    function withdraw(address subject, uint256 sharesValue) public returns (uint256) {
         address staker = _msgSender();
 
+        require(!isFrozen(subject), "Subject unstaking is currently frozen");
+
         if (_delay > 0) {
-            require(_unstakeRequests[subject][staker].timestamp.isExpired());
-            _unstakeRequests[subject][staker].value -= sharesValue; // schedule value is in shares, not in stake tokens
+            WithdrawalSchedule storage pendingRelease = _withdrawalSchedules[subject][staker];
+
+            require(pendingRelease.timestamp.isExpired());
+            pendingRelease.value -= sharesValue;
+
+            emit WithdrawalSheduled(subject, staker, pendingRelease.value, pendingRelease.timestamp.getDeadline());
         }
 
-        uint stakeValue = _sharesToStake(subject, sharesValue);
+        uint256 stakeValue = _sharesToStake(subject, sharesValue);
         _burn(staker, uint256(uint160(subject)), sharesValue);
         _withdraw(subject, staker, stakeValue);
         return stakeValue;
     }
 
-    // function freeze
-    // function unfreeze
-
-    function slash(address subject, uint256 stakeValue) public onlyRole(SLASHER_ROLE) {
-        _withdraw(subject, _treasury, stakeValue);
+    /**
+     * @dev Freeze/unfreeze a subject stake. Restricted to the `SLASHER_ROLE`.
+     *
+     * Emits a Freeze event.
+     */
+    function freeze(address subject, bool frozen) public onlyRole(SLASHER_ROLE) {
+        _frozen[subject] = frozen;
+        emit Freeze(subject, frozen);
     }
 
+    /**
+     * @dev Slash a fraction of a subject stake, and transfer it to the treasury. Restricted to the `SLASHER_ROLE`.
+     *
+     * Emits a Slashed event.
+     */
+    function slash(address subject, uint256 stakeValue) public onlyRole(SLASHER_ROLE) {
+        _withdraw(subject, _treasury, stakeValue);
+        emit Slash(subject, _msgSender(), stakeValue);
+    }
+
+    /**
+     * @dev Deposit reward value for a given `subject`. The corresponding tokens will be shared amongs the shareholders
+     * of this subject.
+     *
+     * Emits a Reward event.
+     */
     function reward(address subject, uint256 value) public {
         SafeERC20.safeTransferFrom(stakedToken, _msgSender(), address(this), value);
         _rewards.mint(subject, value);
+
+        emit Reward(subject, _msgSender(), value);
     }
 
+    /**
+     * @dev Release owed to a given `subject` shareholder.
+     *
+     * Emits a Release event.
+     */
     function release(address subject, address account) public returns (uint256) {
         uint256 value = toRelease(subject, account);
 
@@ -148,6 +216,9 @@ contract FortaStaking is
         _released[subject].mint(account, SafeCast.toInt256(value));
 
         SafeERC20.safeTransfer(stakedToken, account, value);
+
+        emit Release(subject, account, value);
+
         return value;
     }
 
@@ -178,11 +249,11 @@ contract FortaStaking is
         return amount * _stakes.balanceOf(subject) / totalSupply(uint256(uint160(subject)));
     }
 
-    function _historical(address subject) private view returns (uint256) {
+    function _historical(address subject) internal view returns (uint256) {
         return SafeCast.toUint256(SafeCast.toInt256(_rewards.balanceOf(subject)) + _released[subject].totalSupply());
     }
 
-    function _allocation(address subject, uint256 amount) private view returns (uint256) {
+    function _allocation(address subject, uint256 amount) internal view returns (uint256) {
         uint256 supply = totalSupply(uint256(uint160(subject)));
         return amount > 0 && supply > 0 ? amount * _historical(subject) / supply : 0;
     }
@@ -210,24 +281,27 @@ contract FortaStaking is
             }
 
             // Cap commit to current balance
-            uint256 pendingRelease = _unstakeRequests[subject][from].value;
-            if (pendingRelease > 0) {
+            WithdrawalSchedule storage pendingRelease = _withdrawalSchedules[subject][from];
+            if (pendingRelease.value > 0) {
                 uint256 currentShares = sharesOf(subject, from) - amounts[i];
-                if (currentShares < pendingRelease) {
-                    _unstakeRequests[subject][from].value = currentShares;
+                if (currentShares < pendingRelease.value) {
+                    pendingRelease.value = currentShares;
+                    emit WithdrawalSheduled(subject, from, currentShares, pendingRelease.timestamp.getDeadline());
                 }
             }
         }
     }
 
-    // Admin: change unstake delay
+    // Admin: change withdrawal delay
     function setDelay(uint64 newDelay) public onlyRole(ADMIN_ROLE) {
         _delay = newDelay;
+        emit DelaySet(newDelay);
     }
 
     // Admin: change recipient of slashed funds
     function setTreasury(address newTreasury) public onlyRole(ADMIN_ROLE) {
         _treasury = newTreasury;
+        emit TreasurySet(newTreasury);
     }
 
     // Access control for the upgrade process
