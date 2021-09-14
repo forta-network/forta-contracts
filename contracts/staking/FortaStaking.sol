@@ -52,7 +52,7 @@ contract FortaStaking is
     // treasury for slashing
     address private _treasury;
 
-    event WithdrawalSheduled(address indexed subject, address indexed account, uint256 value, uint64 deadline);
+    event WithdrawalSheduled(address indexed subject, address indexed account, uint256 value);
     event Freeze(address indexed subject, bool isFrozen);
     event Slash(address indexed subject, address indexed by, uint256 value);
     event Reward(address indexed subject, address indexed from, uint256 value);
@@ -141,7 +141,7 @@ contract FortaStaking is
         _withdrawalSchedules[subject][staker].timestamp.setDeadline(deadline);
         _withdrawalSchedules[subject][staker].value = value;
 
-        emit WithdrawalSheduled(subject, staker, sharesValue, deadline);
+        emit WithdrawalSheduled(subject, staker, sharesValue);
 
         return deadline;
     }
@@ -162,7 +162,7 @@ contract FortaStaking is
             require(pendingRelease.timestamp.isExpired());
             pendingRelease.value -= sharesValue;
 
-            emit WithdrawalSheduled(subject, staker, pendingRelease.value, pendingRelease.timestamp.getDeadline());
+            emit WithdrawalSheduled(subject, staker, pendingRelease.value);
         }
 
         uint256 stakeValue = _sharesToStake(subject, sharesValue);
@@ -286,7 +286,7 @@ contract FortaStaking is
                 uint256 currentShares = sharesOf(subject, from) - amounts[i];
                 if (currentShares < pendingRelease.value) {
                     pendingRelease.value = currentShares;
-                    emit WithdrawalSheduled(subject, from, currentShares, pendingRelease.timestamp.getDeadline());
+                    emit WithdrawalSheduled(subject, from, currentShares);
                 }
             }
         }

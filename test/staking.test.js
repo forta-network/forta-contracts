@@ -73,7 +73,8 @@ describe('Forta Staking', function () {
           .to.emit(this.token, 'Transfer')
           .withArgs(this.staking.address, this.accounts.user2.address, '100')
           .to.emit(this.staking, 'TransferSingle')
-          .withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, subject1, '100');
+          .withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, subject1, '100')
+          .to.not.emit(this.staking, 'WithdrawalSheduled');
 
         expect(await this.staking.stakeOf(subject1)).to.be.equal('50');
         expect(await this.staking.totalStake()).to.be.equal('50');
@@ -120,7 +121,9 @@ describe('Forta Staking', function () {
         await expect(this.staking.connect(this.accounts.user1).withdraw(subject1, '50')).to.be.reverted;
         await expect(this.staking.connect(this.accounts.user2).withdraw(subject1, '50')).to.be.reverted;
 
-        await this.staking.connect(this.accounts.user1).scheduleWithdrawal(subject1, '50');
+        await expect(this.staking.connect(this.accounts.user1).scheduleWithdrawal(subject1, '80'))
+          .to.emit(this.staking, 'WithdrawalSheduled')
+          .withArgs(subject1, this.accounts.user1.address, '80');
 
         await expect(this.staking.connect(this.accounts.user1).withdraw(subject1, '50')).to.be.reverted;
         await expect(this.staking.connect(this.accounts.user2).withdraw(subject1, '50')).to.be.reverted;
@@ -129,20 +132,39 @@ describe('Forta Staking', function () {
 
         await expect(this.staking.connect(this.accounts.user1).withdraw(subject1, '50'))
           .to.emit(this.token, 'Transfer')
-          .withArgs(this.staking.address, this.accounts.user1.address, '50');
+          .withArgs(this.staking.address, this.accounts.user1.address, '50')
+          .to.emit(this.staking, 'WithdrawalSheduled')
+          .withArgs(subject1, this.accounts.user1.address, '30');
+
         await expect(this.staking.connect(this.accounts.user2).withdraw(subject1, '50')).to.be.reverted;
 
-        await this.staking.connect(this.accounts.user2).scheduleWithdrawal(subject1, '100');
+        await expect(this.staking.connect(this.accounts.user2).scheduleWithdrawal(subject1, '100'))
+          .to.emit(this.staking, 'WithdrawalSheduled')
+          .withArgs(subject1, this.accounts.user2.address, '100');
+
         await network.provider.send('evm_increaseTime', [ 3600 ]);
 
         await expect(this.staking.connect(this.accounts.user2).withdraw(subject1, '100'))
           .to.emit(this.token, 'Transfer')
-          .withArgs(this.staking.address, this.accounts.user2.address, '100');
+          .withArgs(this.staking.address, this.accounts.user2.address, '100')
+          .to.emit(this.staking, 'WithdrawalSheduled')
+          .withArgs(subject1, this.accounts.user2.address, '0');
+
+        await expect(this.staking.connect(this.accounts.user1).safeTransferFrom(
+          this.accounts.user1.address,
+          this.accounts.user3.address,
+          subject1,
+          '40',
+          '0x',
+        ))
+          .to.emit(this.staking, 'WithdrawalSheduled')
+          .withArgs(subject1, this.accounts.user1.address, '10');
 
         expect(await this.staking.stakeOf(subject1)).to.be.equal('50');
         expect(await this.staking.totalStake()).to.be.equal('50');
-        expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('50');
+        expect(await this.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('10');
         expect(await this.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
+        expect(await this.staking.sharesOf(subject1, this.accounts.user3.address)).to.be.equal('40');
         expect(await this.staking.totalShares(subject1)).to.be.equal('50');
       });
     });
