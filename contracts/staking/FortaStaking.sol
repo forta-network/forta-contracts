@@ -53,7 +53,7 @@ contract FortaStaking is
     address private _treasury;
 
     event WithdrawalSheduled(address indexed subject, address indexed account, uint256 value);
-    event Freeze(address indexed subject, bool isFrozen);
+    event Freeze(address indexed subject, address indexed by, bool isFrozen);
     event Slash(address indexed subject, address indexed by, uint256 value);
     event Reward(address indexed subject, address indexed from, uint256 value);
     event Release(address indexed subject, address indexed to, uint256 value);
@@ -178,7 +178,7 @@ contract FortaStaking is
      */
     function freeze(address subject, bool frozen) public onlyRole(SLASHER_ROLE) {
         _frozen[subject] = frozen;
-        emit Freeze(subject, frozen);
+        emit Freeze(subject, _msgSender(), frozen);
     }
 
     /**

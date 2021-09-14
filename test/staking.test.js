@@ -24,7 +24,7 @@ describe('Forta Staking', function () {
     await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
   });
 
-  describe('Stake / Unstake', function () {
+  describe('Deposit / Withdraw', function () {
     describe('no delay', function () {
       it('happy path', async function () {
         expect(await this.staking.stakeOf(subject1)).to.be.equal('0');
@@ -278,6 +278,41 @@ describe('Forta Staking', function () {
     });
   });
 
+  describe('Freezing', function () {
+    beforeEach(async function () {
+      this.accounts.slasher = this.accounts.shift();
+      await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
+      await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address);
+    });
+
+    it('freeze → withdraw', async function () {
+      await this.staking.connect(this.accounts.user1).deposit(subject1, '100');
+
+      await expect(this.staking.connect(this.accounts.slasher).freeze(subject1, true))
+        .to.emit(this.staking, 'Freeze')
+        .withArgs(subject1, this.accounts.slasher.address, true);
+
+        await expect(this.staking.connect(this.accounts.user1).withdraw(subject1, '100'))
+          .to.be.revertedWith('Subject unstaking is currently frozen');
+    });
+
+    it('freeze → unfreeze → withdraw', async function () {
+      await this.staking.connect(this.accounts.user1).deposit(subject1, '100');
+
+      await expect(this.staking.connect(this.accounts.slasher).freeze(subject1, true))
+        .to.emit(this.staking, 'Freeze')
+        .withArgs(subject1, this.accounts.slasher.address, true);
+
+      await expect(this.staking.connect(this.accounts.slasher).freeze(subject1, false))
+        .to.emit(this.staking, 'Freeze')
+        .withArgs(subject1, this.accounts.slasher.address, false);
+
+      await expect(this.staking.connect(this.accounts.user1).withdraw(subject1, '100'))
+        .to.emit(this.token, 'Transfer')
+        .withArgs(this.staking.address, this.accounts.user1.address, '100');
+    });
+  });
+
   describe('Slashing', function () {
     beforeEach(async function () {
       this.accounts.slasher = this.accounts.shift();
@@ -285,7 +320,7 @@ describe('Forta Staking', function () {
       await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address);
     });
 
-    it('slashing → unstack', async function () {
+    it('slashing → withdraw', async function () {
       await this.staking.connect(this.accounts.user1).deposit(subject1, '100');
       await this.staking.connect(this.accounts.user2).deposit(subject1, '50');
 
@@ -326,7 +361,7 @@ describe('Forta Staking', function () {
       expect(await this.staking.totalShares(subject1)).to.be.equal('0');
     });
 
-    it('slashing → stack', async function () {
+    it('slashing → deposit', async function () {
       await this.staking.connect(this.accounts.user1).deposit(subject1, '100');
       await this.staking.connect(this.accounts.user2).deposit(subject1, '50');
 
