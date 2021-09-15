@@ -53,7 +53,7 @@ contract FortaStaking is
     // treasury for slashing
     address private _treasury;
 
-    event WithdrawalSheduled(address indexed subject, address indexed account, uint256 shares);
+    event WithdrawalSheduled(address indexed subject, address indexed account, uint256 shares, uint64 deadline);
     event Froze(address indexed subject, address indexed by, bool isFrozen);
     event Slashed(address indexed subject, address indexed by, uint256 value);
     event Rewarded(address indexed subject, address indexed from, uint256 value);
@@ -142,11 +142,12 @@ contract FortaStaking is
         address staker = _msgSender();
 
         uint64 deadline = SafeCast.toUint64(block.timestamp) + _withdrawalDelay;
-        uint256 value = Math.min(sharesValue, sharesOf(subject, staker));
+        uint256 value   = Math.min(sharesValue, sharesOf(subject, staker));
+
         _withdrawalSchedules[subject][staker].timer.setDeadline(deadline);
         _withdrawalSchedules[subject][staker].value = value;
 
-        emit WithdrawalSheduled(subject, staker, sharesValue);
+        emit WithdrawalSheduled(subject, staker, value, deadline);
 
         return deadline;
     }
@@ -156,19 +157,19 @@ contract FortaStaking is
      *
      * Emits a ERC1155.TransferSingle event.
      */
-    function withdraw(address subject, uint256 sharesValue) public returns (uint256) {
+    function withdraw(address subject) public returns (uint256) {
         address staker = _msgSender();
 
         require(!isFrozen(subject), "Subject unstaking is currently frozen");
 
-        if (_withdrawalDelay > 0) {
-            WithdrawalSchedule storage pendingWithdrawal = _withdrawalSchedules[subject][staker];
+        WithdrawalSchedule storage pendingWithdrawal = _withdrawalSchedules[subject][staker];
 
-            require(pendingWithdrawal.timer.isExpired());
-            pendingWithdrawal.value -= sharesValue;
+        require(pendingWithdrawal.timer.isExpired(), 'Withdrawal is not ready');
+        uint256 sharesValue = pendingWithdrawal.value;
+        delete pendingWithdrawal.timer;
+        delete pendingWithdrawal.value;
 
-            emit WithdrawalSheduled(subject, staker, pendingWithdrawal.value);
-        }
+        emit WithdrawalSheduled(subject, staker, 0, 0);
 
         uint256 stakeValue = _sharesToStake(subject, sharesValue);
         _burn(staker, _subjectToTokenId(subject), sharesValue);
@@ -306,7 +307,7 @@ contract FortaStaking is
                 uint256 currentShares = sharesOf(subject, from) - amounts[i];
                 if (currentShares < pendingWithdrawal.value) {
                     pendingWithdrawal.value = currentShares;
-                    emit WithdrawalSheduled(subject, from, currentShares);
+                    emit WithdrawalSheduled(subject, from, currentShares, pendingWithdrawal.timer.getDeadline());
                 }
             }
         }
