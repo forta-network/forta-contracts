@@ -27,10 +27,6 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
 
     error MissingRole(bytes32 role, address account);
 
-    // TODO: fix initializer constructor chains ?
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    // constructor() initializer {}
-
     function __AccessManaged_init(address manager) internal initializer {
         accessManager = IAccessControl(manager);
     }
