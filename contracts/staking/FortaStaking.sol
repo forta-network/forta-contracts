@@ -24,7 +24,7 @@ contract FortaStaking is
     using Timers        for Timers.Timestamp;
 
     struct WithdrawalSchedule {
-        Timers.Timestamp timestamp; // ← underlying time is uint64
+        Timers.Timestamp timer; // ← underlying time is uint64
         uint256 value; // TODO: use uint192 to save gas ?
     }
 
@@ -47,7 +47,7 @@ contract FortaStaking is
     mapping(address => mapping(address => WithdrawalSchedule)) private _withdrawalSchedules;
 
     // withdrawal delay
-    uint64 private _delay;
+    uint64 private _withdrawalDelay;
 
     // treasury for slashing
     address private _treasury;
@@ -57,7 +57,7 @@ contract FortaStaking is
     event Slashed(address indexed subject, address indexed by, uint256 value);
     event Rewarded(address indexed subject, address indexed from, uint256 value);
     event Released(address indexed subject, address indexed to, uint256 value);
-    event DelaySet(uint256 newDelay);
+    event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -66,16 +66,16 @@ contract FortaStaking is
     function initialize(
         address __manager,
         IERC20 __stakedToken,
-        uint64 __delay,
+        uint64 __withdrawalDelay,
         address __treasury
     ) public initializer {
         __AccessManaged_init(__manager);
         __UUPSUpgradeable_init();
 
         stakedToken = __stakedToken;
-        _delay = __delay;
+        _withdrawalDelay = __withdrawalDelay;
         _treasury = __treasury;
-        emit DelaySet(__delay);
+        emit DelaySet(__withdrawalDelay);
         emit TreasurySet(__treasury);
     }
 
@@ -99,7 +99,7 @@ contract FortaStaking is
      * NOTE: This is equivalent to getting the ERC1155 balance of `account` with `subject` casted to a uint256 tokenId.
      */
     function sharesOf(address subject, address account) public view returns (uint256) {
-        return balanceOf(account, uint256(uint160(subject)));
+        return balanceOf(account, _subjectToTokenId(subject));
     }
 
     /**
@@ -108,7 +108,7 @@ contract FortaStaking is
      * NOTE: This is equivalent to getting the ERC1155 totalSupply for `subject` casted to a uint256 tokenId.
      */
     function totalShares(address subject) public view returns (uint256) {
-        return totalSupply(uint256(uint160(subject)));
+        return totalSupply(_subjectToTokenId(subject));
     }
 
     /**
@@ -126,9 +126,9 @@ contract FortaStaking is
     function deposit(address subject, uint256 stakeValue) public returns (uint256) {
         address staker = _msgSender();
 
-        uint256 sharesValue = totalSupply(uint256(uint160(subject))) == 0 ? stakeValue : _stakeToShares(subject, stakeValue);
+        uint256 sharesValue = totalShares(subject) == 0 ? stakeValue : _stakeToShares(subject, stakeValue);
         _deposit(subject, staker, stakeValue);
-        _mint(staker, uint256(uint160(subject)), sharesValue, new bytes(0));
+        _mint(staker, _subjectToTokenId(subject), sharesValue, new bytes(0));
         return sharesValue;
     }
 
@@ -140,9 +140,9 @@ contract FortaStaking is
     function scheduleWithdrawal(address subject, uint256 sharesValue) public returns (uint64) {
         address staker = _msgSender();
 
-        uint64 deadline = SafeCast.toUint64(block.timestamp) + _delay;
+        uint64 deadline = SafeCast.toUint64(block.timestamp) + _withdrawalDelay;
         uint256 value = Math.min(sharesValue, sharesOf(subject, staker));
-        _withdrawalSchedules[subject][staker].timestamp.setDeadline(deadline);
+        _withdrawalSchedules[subject][staker].timer.setDeadline(deadline);
         _withdrawalSchedules[subject][staker].value = value;
 
         emit WithdrawalSheduled(subject, staker, sharesValue);
@@ -151,7 +151,7 @@ contract FortaStaking is
     }
 
     /**
-     * @dev Burn `sharesValue` shares for a given `subject, and withdraw the corresponding tokens.
+     * @dev Burn `sharesValue` shares for a given `subject`, and withdraw the corresponding tokens.
      *
      * Emits a ERC1155.TransferSingle event.
      */
@@ -160,17 +160,17 @@ contract FortaStaking is
 
         require(!isFrozen(subject), "Subject unstaking is currently frozen");
 
-        if (_delay > 0) {
+        if (_withdrawalDelay > 0) {
             WithdrawalSchedule storage pendingWithdrawal = _withdrawalSchedules[subject][staker];
 
-            require(pendingWithdrawal.timestamp.isExpired());
+            require(pendingWithdrawal.timer.isExpired());
             pendingWithdrawal.value -= sharesValue;
 
             emit WithdrawalSheduled(subject, staker, pendingWithdrawal.value);
         }
 
         uint256 stakeValue = _sharesToStake(subject, sharesValue);
-        _burn(staker, uint256(uint160(subject)), sharesValue);
+        _burn(staker, _subjectToTokenId(subject), sharesValue);
         _withdraw(subject, staker, stakeValue);
         return stakeValue;
     }
@@ -228,7 +228,7 @@ contract FortaStaking is
 
     function availableReward(address subject, address account) public view returns (uint256) {
         return SafeCast.toUint256(
-            SafeCast.toInt256(_allocation(subject, balanceOf(account, uint256(uint160(subject)))))
+            SafeCast.toInt256(_allocation(subject, balanceOf(account, _subjectToTokenId(subject))))
             -
             _released[subject].balanceOf( account)
         );
@@ -246,11 +246,11 @@ contract FortaStaking is
     }
 
     function _stakeToShares(address subject, uint256 amount) internal view returns (uint256) {
-        return amount * totalSupply(uint256(uint160(subject))) / _stakes.balanceOf(subject);
+        return amount * totalShares(subject) / _stakes.balanceOf(subject);
     }
 
     function _sharesToStake(address subject, uint256 amount) internal view returns (uint256) {
-        return amount * _stakes.balanceOf(subject) / totalSupply(uint256(uint160(subject)));
+        return amount * _stakes.balanceOf(subject) / totalShares(subject);
     }
 
     function _historical(address subject) internal view returns (uint256) {
@@ -258,7 +258,7 @@ contract FortaStaking is
     }
 
     function _allocation(address subject, uint256 amount) internal view returns (uint256) {
-        uint256 supply = totalSupply(uint256(uint160(subject)));
+        uint256 supply = totalShares(subject);
         return amount > 0 && supply > 0 ? amount * _historical(subject) / supply : 0;
     }
 
@@ -273,7 +273,7 @@ contract FortaStaking is
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
 
         for (uint256 i = 0; i < ids.length; ++i) {
-            address subject = address(uint160(ids[i]));
+            address subject = _tokenIdToSubject(ids[i]);
 
             // Rebalance released
             int256 virtualRelease = SafeCast.toInt256(_allocation(subject, amounts[i]));
@@ -297,9 +297,12 @@ contract FortaStaking is
         }
     }
 
+    function _subjectToTokenId(address subject) private pure returns (uint256) { return uint256(uint160(subject)); }
+    function _tokenIdToSubject(uint256 tokenId) private pure returns (address) { return address(uint160(tokenId)); }
+
     // Admin: change withdrawal delay
     function setDelay(uint64 newDelay) public onlyRole(ADMIN_ROLE) {
-        _delay = newDelay;
+        _withdrawalDelay = newDelay;
         emit DelaySet(newDelay);
     }
 
