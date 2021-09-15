@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/interfaces/draft-IERC2612.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
+import "@openzeppelin/contracts/utils/Multicall.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 
 import "../permissions/AccessManaged.sol";
 import "../tools/Distributions.sol";
@@ -16,7 +17,7 @@ import "../tools/ENSReverseRegistration.sol";
 contract FortaStaking is
     AccessManagedUpgradeable,
     ERC1155SupplyUpgradeable,
-    // MulticallUpgradeable,
+    Multicall,
     UUPSUpgradeable
 {
     using Distributions for Distributions.Balances;
@@ -232,6 +233,20 @@ contract FortaStaking is
             -
             _released[subject].balanceOf( account)
         );
+    }
+
+    /**
+     * @dev Relay a ERC2612 permit signature to the staked token. This cal be bundled with a {deposit} or a {reward}
+     * operation using Multicall.
+     */
+    function relayPermit(
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public {
+        IERC2612(address(stakedToken)).permit(_msgSender(), address(this), value, deadline, v, r, s);
     }
 
     // Internal helpers
