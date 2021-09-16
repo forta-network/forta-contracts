@@ -89,6 +89,20 @@ contract FortaStaking is
     }
 
     /**
+     * @dev Get stake locked for withdrawal of a subject
+     */
+    function lockedStakeOf(address subject) public view returns (uint256) {
+        return _lockedStakes.balanceOf(subject);
+    }
+
+    /**
+     * @dev Get total stake locked for withdrawal of all subjects
+     */
+    function totalLockedStake() public view returns (uint256) {
+        return _lockedStakes.totalSupply();
+    }
+
+    /**
      * @dev Get shares of an account on a subject, corresponding to a fraction of the subject stake.
      *
      * NOTE: This is equivalent to getting the ERC1155 balance of `account` with `subject` casted to a uint256 tokenId.
@@ -261,10 +275,6 @@ contract FortaStaking is
     }
 
     // Internal helpers
-    function _deposit(address subject, address provider, uint256 value) internal {
-
-    }
-
     function _historical(address subject) internal view returns (uint256) {
         return SafeCast.toUint256(SafeCast.toInt256(_rewards.balanceOf(subject)) + _released[subject].totalSupply());
     }
