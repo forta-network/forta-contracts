@@ -47,40 +47,36 @@ function prepare() {
       this.accounts.admin.address
     );
 
-    this.staking = await deployUpgradeable('FortaStaking', 'uups',
-      this.access.address,
-      this.token.address,
-      0,
-      this.accounts.treasure.address,
-    );
+    this.modules = await Promise.all(Object.entries({
+      staking:  deployUpgradeable('FortaStaking',    'uups', this.access.address, this.token.address, 0, this.accounts.treasure.address),
+      agents:   deployUpgradeable('AgentRegistry',   'uups', this.access.address, 'Forta Agents',   'FAgents'),
+      scanners: deployUpgradeable('ScannerRegistry', 'uups', this.access.address, 'Forta Scanners', 'FScanners'),
+    }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
-    this.registry = {}
-    this.registry.agents = await deployUpgradeable('AgentRegistry', 'uups',
-      this.access.address,
-      'Forta Agents',
-      'FAgents',
-    );
+    this.roles = await Promise.all(Object.entries({
+      ADMIN:           this.token.ADMIN_ROLE(),
+      MINTER:          this.token.MINTER_ROLE(),
+      WHITELISTER:     this.token.WHITELISTER_ROLE(),
+      WHITELIST:       this.token.WHITELIST_ROLE(),
+      SLASHER:         this.modules.staking.SLASHER_ROLE(),
+      AGENT_MANAGER:   this.modules.agents.AGENT_MANAGER_ROLE(),
+      SCANNER_MANAGER: this.modules.scanners.SCANNER_MANAGER_ROLE(),
+    }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
-    this.roles = await Promise.all([
-      this.token.ADMIN_ROLE().then(ADMIN => ({ ADMIN })),
-      this.token.MINTER_ROLE().then(MINTER => ({ MINTER })),
-      this.token.WHITELISTER_ROLE().then(WHITELISTER => ({ WHITELISTER })),
-      this.token.WHITELIST_ROLE().then(WHITELIST => ({ WHITELIST })),
-      this.staking.SLASHER_ROLE().then(SLASHER => ({ SLASHER })),
-      this.registry.agents.AGENT_MANAGER_ROLE().then(AGENTMANAGER => ({ AGENTMANAGER })),
-    ]).then(entries => Object.assign(...entries));
-
-    // Forta roles are standalone
-    await this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address);
-    await this.token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address);
-    await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address);
-    await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address);
-    await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address);
-
-    // Access manager for the rest of the platform
-    await this.access.setNewRole(this.roles.SLASHER, this.roles.ADMIN);
-    await this.access.setNewRole(this.roles.AGENTMANAGER, this.roles.ADMIN);
-    await this.access.connect(this.accounts.admin).grantRole(this.roles.AGENTMANAGER, this.accounts.manager.address);
+    await Promise.all([
+      // Forta roles are standalone
+      this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
+      this.token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address),
+      this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
+      this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
+      this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.modules.staking.address),
+      // Access manager for the rest of the platform
+      this.access.setNewRole(this.roles.SLASHER,         this.roles.ADMIN),
+      this.access.setNewRole(this.roles.AGENT_MANAGER,   this.roles.ADMIN),
+      this.access.setNewRole(this.roles.SCANNER_MANAGER, this.roles.ADMIN),
+      this.access.connect(this.accounts.admin).grantRole(this.roles.AGENT_MANAGER,   this.accounts.manager.address),
+      this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_MANAGER, this.accounts.manager.address),
+    ]);
   });
 }
 
