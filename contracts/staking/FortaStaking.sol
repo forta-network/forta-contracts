@@ -309,8 +309,7 @@ contract FortaStaking is
                     _released[subject].mint(to, virtualRelease);
                 }
             } else {
-                // TODO: revert?
-                // require(from == address(0) || to == address(0), "withdrawal shares are not transferable");
+                require(from == address(0) || to == address(0), "Withdrawal shares are not transferable");
             }
         }
     }
