@@ -199,16 +199,18 @@ contract FortaStaking is
      *
      * Emits a Slashed event.
      */
-    function slash(address subject, uint256 stakeValue) public onlyRole(SLASHER_ROLE) {
-
-        uint256 slashFromActive = Math.min(stakeValue, _activeStakes.balanceOf(subject));
-        uint256 slashFromLocked = stakeValue - slashFromActive;
+    function slash(address subject, uint256 stakeValue) public onlyRole(SLASHER_ROLE) returns (uint256) {
+        uint256 slashFromActive = Math.min(stakeValue,                   _activeStakes.balanceOf(subject));
+        uint256 slashFromLocked = Math.min(stakeValue - slashFromActive, _lockedStakes.balanceOf(subject));
+        stakeValue = slashFromActive + slashFromLocked;
 
         _activeStakes.burn(subject, slashFromActive);
         _lockedStakes.burn(subject, slashFromLocked);
         SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue);
 
         emit Slashed(subject, _msgSender(), stakeValue);
+
+        return stakeValue;
     }
 
     /**
@@ -301,7 +303,6 @@ contract FortaStaking is
 
                 // Rebalance released
                 int256 virtualRelease = SafeCast.toInt256(_allocation(subject, amounts[i]));
-
                 if (from == address(0)) {
                     _released[subject].mint(to, virtualRelease);
                 } else if (to == address(0)) {

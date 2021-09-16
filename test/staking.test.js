@@ -2,10 +2,11 @@ const { ethers, network } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('./fixture');
 
+const LOCKED_OFFEST = ethers.BigNumber.from(2).pow(160);
 const { address: subject1 } = ethers.Wallet.createRandom();
 const { address: subject2 } = ethers.Wallet.createRandom();
 const { address: subject3 } = ethers.Wallet.createRandom();
-const [ locked1, locked2, locked3 ] = [ subject1, subject2, subject3 ].map(address => ethers.utils.hexlify(ethers.BigNumber.from(address).add(ethers.BigNumber.from(2).pow(160))));
+const [ locked1, locked2, locked3 ] = [ subject1, subject2, subject3 ].map(address => ethers.utils.hexlify(LOCKED_OFFEST.add(ethers.BigNumber.from(address))));
 
 const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
 
