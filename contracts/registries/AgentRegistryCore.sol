@@ -57,6 +57,7 @@ contract AgentRegistryCore is
         _mint(owner, agentId);
         _beforeAgentUpdate(agentId, metadata, chainIds);
         emit AgentUpdated(agentId, metadata, chainIds);
+        _afterAgentUpdate(agentId, metadata, chainIds);
     }
 
     function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds)
@@ -66,6 +67,7 @@ contract AgentRegistryCore is
     {
         _beforeAgentUpdate(agentId, metadata, chainIds);
         emit AgentUpdated(agentId, metadata, chainIds);
+        _afterAgentUpdate(agentId, metadata, chainIds);
     }
 
     /**
@@ -101,9 +103,11 @@ contract AgentRegistryCore is
      * Hook: Agent metadata change (create/update)
      */
     function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {}
+    function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {}
 
     /**
      * Hook: Agent is enabled/disabled
      */
     function _beforeAgentEnable(uint256 agentId, Permission permission, bool enable) internal virtual {}
+    function _afterAgentEnable(uint256 agentId, Permission permission, bool enable) internal virtual {}
 }

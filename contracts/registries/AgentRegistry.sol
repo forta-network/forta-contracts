@@ -41,7 +41,7 @@ contract AgentRegistry is
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 
-    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryEnumerable, AgentRegistryMetadata) {
+    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryEnumerable) {
         super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
     }
 }

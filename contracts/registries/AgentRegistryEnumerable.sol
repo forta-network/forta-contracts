@@ -27,6 +27,8 @@ contract AgentRegistryEnumerable is AgentRegistryMetadata {
     }
 
     function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
+        super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
+
         AgentMetadata memory agent = getAgent(agentId);
 
         if (agent.version == 1) { _allAgents.add(agentId); }
@@ -47,7 +49,5 @@ contract AgentRegistryEnumerable is AgentRegistryMetadata {
                 ++j;
             }
         }
-
-        super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
     }
 }
