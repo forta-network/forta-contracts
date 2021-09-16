@@ -28,11 +28,18 @@ contract AgentRegistry is
         length
     }
 
+    struct AgentMetadata {
+        uint256 version;
+        string metadata;
+        uint256[] chainIds;
+    }
+
     mapping(uint256 => BitMaps.BitMap) private _disabled;
+    mapping(uint256 => AgentMetadata) private _agentMetadata;
     mapping(bytes32 => Timers.Timestamp) private _frontrunProtection;
 
     event AgentCommitted(bytes32 indexed commit, uint64 deadline);
-    event AgentUpdated(uint256 indexed agentId, string metadata, uint256[] chainIds);
+    event AgentUpdated(uint256 indexed agentId, uint256 version, string metadata, uint256[] chainIds);
     event AgentEnabled(uint256 indexed agentId, Slot slot, bool enabled);
 
     modifier onlyOwnerOf(uint256 agentId) {
@@ -66,13 +73,21 @@ contract AgentRegistry is
         require(_frontrunProtection[commit].isExpired(), "Agent commitment is not ready");
 
         _mint(owner, agentId);
-        // TODO: onchain store?
-        emit AgentUpdated(agentId, metadata, chainIds);
+        _setAgent(agentId, metadata, chainIds);
     }
 
     function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds) public onlyOwnerOf(agentId) {
-        // TODO: update onchain store?
-        emit AgentUpdated(agentId, metadata, chainIds);
+        _setAgent(agentId, metadata, chainIds);
+    }
+
+    function getAgent(uint256 agentId) public view returns (AgentMetadata memory) {
+        return _agentMetadata[agentId];
+    }
+
+    function _setAgent(uint256 agentId, string memory metadata, uint256[] calldata chainIds) private {
+        uint256 version = _agentMetadata[agentId].version + 1;
+        _agentMetadata[agentId] = AgentMetadata({ version: version, metadata: metadata, chainIds: chainIds });
+        emit AgentUpdated(agentId, version, metadata, chainIds);
     }
 
     /**
