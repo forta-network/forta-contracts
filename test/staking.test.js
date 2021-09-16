@@ -3,10 +3,11 @@ const { expect } = require('chai');
 const { prepare } = require('./fixture');
 
 const LOCKED_OFFSET = ethers.BigNumber.from(2).pow(160);
-const { address: subject1 } = ethers.Wallet.createRandom();
-const { address: subject2 } = ethers.Wallet.createRandom();
-const { address: subject3 } = ethers.Wallet.createRandom();
-const [ locked1, locked2, locked3 ] = [ subject1, subject2, subject3 ].map(address => ethers.utils.hexlify(LOCKED_OFFSET.add(ethers.BigNumber.from(address))));
+const [
+  [ subject1, locked1 ],
+  [ subject2, locked2 ],
+  [ subject3, locked3 ],
+] = new Array(3).fill().map(() => ethers.Wallet.createRandom()).map(({ address }) => [ address, ethers.utils.hexlify(LOCKED_OFFSET.add(ethers.BigNumber.from(address))) ]);
 
 const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
 
