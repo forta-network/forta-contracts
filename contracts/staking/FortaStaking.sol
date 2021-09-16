@@ -301,12 +301,13 @@ contract FortaStaking is
 
                 // Rebalance released
                 int256 virtualRelease = SafeCast.toInt256(_allocation(subject, amounts[i]));
-                if (from != address(0) && to != address(0)) {
-                    _released[subject].transfer(from, to, virtualRelease);
-                } else if (from != address(0)) {
-                    _released[subject].burn(from, virtualRelease);
-                } else if (to != address(0)) {
+
+                if (from == address(0)) {
                     _released[subject].mint(to, virtualRelease);
+                } else if (to == address(0)) {
+                    _released[subject].burn(from, virtualRelease);
+                } else {
+                    _released[subject].transfer(from, to, virtualRelease);
                 }
             } else {
                 require(from == address(0) || to == address(0), "Withdrawal shares are not transferable");

@@ -481,11 +481,11 @@ describe('Forta Staking', function () {
       expect(await this.modules.staking.balanceOf(this.accounts.user2.address, locked1)).to.be.equal('50');
 
       await expect(this.modules.staking.connect(this.accounts.user1).withdraw(subject1))
-      .to.emit(this.modules.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, '100')
+      .to.emit(this.modules.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, locked1, '100')
       .to.emit(this.token, 'Transfer').withArgs(this.modules.staking.address, this.accounts.user1.address, '60')
 
       await expect(this.modules.staking.connect(this.accounts.user2).withdraw(subject1))
-      .to.emit(this.modules.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, '50')
+      .to.emit(this.modules.staking, 'TransferSingle').withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, locked1, '50')
       .to.emit(this.token, 'Transfer').withArgs(this.modules.staking.address, this.accounts.user2.address, '30')
 
       //TODO: at this point the contract is broken until user2 withdraws his worthless shares, which he has no insentives to do.
