@@ -18,29 +18,25 @@ describe('Forta', function () {
       const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ] ];
 
       await expect(this.registry.agents.createAgent(...args))
-        .to.be.revertedWith('Agent commitment is not ready');
+        .to.be.revertedWith('Commit not ready');
     });
 
     describe('with prepare', async function () {
       it('early', async function () {
         const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ] ];
 
-        const tx       = await this.registry.agents.prepareAgent(prepareCommit(...args));
-        const deadline = await txTimestamp(tx) + 300;
-        await expect(tx)
-        .to.emit(this.registry.agents, 'AgentCommitted').withArgs(prepareCommit(...args), deadline);
+        await expect(this.registry.agents.prepareAgent(prepareCommit(...args)))
+        .to.emit(this.registry.agents, 'AgentCommitted').withArgs(prepareCommit(...args));
 
         await expect(this.registry.agents.createAgent(...args))
-        .to.be.revertedWith('Agent commitment is not ready');
+        .to.be.revertedWith('Commit not ready');
       });
 
       it('on time', async function () {
         const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ] ];
 
-        const tx       = await this.registry.agents.prepareAgent(prepareCommit(...args));
-        const deadline = await txTimestamp(tx) + 300;
-        await expect(tx)
-        .to.emit(this.registry.agents, 'AgentCommitted').withArgs(prepareCommit(...args), deadline);
+        await expect(this.registry.agents.prepareAgent(prepareCommit(...args)))
+        .to.emit(this.registry.agents, 'AgentCommitted').withArgs(prepareCommit(...args));
 
         await network.provider.send('evm_increaseTime', [ 300 ]);
 
@@ -68,10 +64,8 @@ describe('Forta', function () {
       it('unordered chainID', async function () {
         const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1, 42, 3, 4, 5 ] ];
 
-        const tx       = await this.registry.agents.prepareAgent(prepareCommit(...args));
-        const deadline = await txTimestamp(tx) + 300;
-        await expect(tx)
-        .to.emit(this.registry.agents, 'AgentCommitted').withArgs(prepareCommit(...args), deadline);
+        await expect(this.registry.agents.prepareAgent(prepareCommit(...args)))
+        .to.emit(this.registry.agents, 'AgentCommitted').withArgs(prepareCommit(...args));
 
         await network.provider.send('evm_increaseTime', [ 300 ]);
 
@@ -82,10 +76,8 @@ describe('Forta', function () {
       it('update', async function () {
         const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1, 3, 4 ] ];
 
-        const tx       = await this.registry.agents.prepareAgent(prepareCommit(...args));
-        const deadline = await txTimestamp(tx) + 300;
-        await expect(tx)
-        .to.emit(this.registry.agents, 'AgentCommitted').withArgs(prepareCommit(...args), deadline);
+        await expect(this.registry.agents.prepareAgent(prepareCommit(...args)))
+        .to.emit(this.registry.agents, 'AgentCommitted').withArgs(prepareCommit(...args));
 
         await network.provider.send('evm_increaseTime', [ 300 ]);
 
@@ -131,7 +123,7 @@ describe('Forta', function () {
     });
   });
 
-  describe.only('enable and disable', async function () {
+  describe('enable and disable', async function () {
     beforeEach(async function () {
       const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ] ];
       await expect(this.registry.agents.prepareAgent(prepareCommit(...args))).to.be.not.reverted;

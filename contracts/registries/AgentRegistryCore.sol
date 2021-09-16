@@ -7,9 +7,11 @@ import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../permissions/AccessManaged.sol";
+import "../tools/FrontRunningProtection.sol";
 
 contract AgentRegistryCore is
     AccessManagedUpgradeable,
+    FrontRunningProtection,
     ERC721Upgradeable
 {
     using BitMaps for BitMaps.BitMap;
@@ -25,9 +27,8 @@ contract AgentRegistryCore is
     }
 
     mapping(uint256 => BitMaps.BitMap) private _disabled;
-    mapping(bytes32 => Timers.Timestamp) private _frontrunProtection;
 
-    event AgentCommitted(bytes32 indexed commit, uint64 deadline);
+    event AgentCommitted(bytes32 indexed commit);
     event AgentUpdated(uint256 indexed agentId, string metadata, uint256[] chainIds);
     event AgentEnabled(uint256 indexed agentId, Permission permission, bool enabled);
 
@@ -44,22 +45,25 @@ contract AgentRegistryCore is
     }
 
     function prepareAgent(bytes32 commit) public {
-        uint64 deadline = uint64(block.timestamp + 5 minutes);
-        require(_frontrunProtection[commit].isUnset(), "Agent already committed");
-        _frontrunProtection[commit].setDeadline(deadline);
-        emit AgentCommitted(commit, deadline);
+        _frontrunCommit(commit);
+        emit AgentCommitted(commit);
     }
 
-    function createAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds) public onlySorted(chainIds) {
-        bytes32 commit = keccak256(abi.encodePacked(agentId, owner, metadata, chainIds));
-        require(_frontrunProtection[commit].isExpired(), "Agent commitment is not ready");
-
+    function createAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds)
+    public
+        onlySorted(chainIds)
+        frontrunProtected(keccak256(abi.encodePacked(agentId, owner, metadata, chainIds)), 5 minutes)
+    {
         _mint(owner, agentId);
         _beforeAgentUpdate(agentId, metadata, chainIds);
         emit AgentUpdated(agentId, metadata, chainIds);
     }
 
-    function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds) public onlySorted(chainIds) onlyOwnerOf(agentId) {
+    function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds)
+    public
+        onlySorted(chainIds)
+        onlyOwnerOf(agentId)
+    {
         _beforeAgentUpdate(agentId, metadata, chainIds);
         emit AgentUpdated(agentId, metadata, chainIds);
     }
