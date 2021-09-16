@@ -32,9 +32,13 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
     }
 
     modifier onlyRole(bytes32 role) {
-        if (!accessManager.hasRole(role, _msgSender())) {
+        if (!hasRole(role, _msgSender())) {
             revert MissingRole(role, _msgSender());
         }
         _;
+    }
+
+    function hasRole(bytes32 role, address account) internal view returns (bool) {
+        return accessManager.hasRole(role, account);
     }
 }
