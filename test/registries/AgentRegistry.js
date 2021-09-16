@@ -48,6 +48,7 @@ describe('Forta', function () {
         .to.emit(this.registry.agents, 'Transfer').withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
         .to.emit(this.registry.agents, 'AgentUpdated').withArgs(AGENT_ID, 'Metadata1', [ 1 , 3, 4, 5 ]);
 
+        expect(await this.registry.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.registry.agents.getAgent(AGENT_ID).then(agent => [
           agent.version.toNumber(),
           agent.metadata,
@@ -78,7 +79,7 @@ describe('Forta', function () {
         .to.be.revertedWith('Values must be sorted');
       });
 
-      it.only('update', async function () {
+      it('update', async function () {
         const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1, 3, 4 ] ];
 
         const tx       = await this.registry.agents.prepareAgent(prepareCommit(...args));
@@ -92,6 +93,7 @@ describe('Forta', function () {
         .to.emit(this.registry.agents, 'Transfer').withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
         .to.emit(this.registry.agents, 'AgentUpdated').withArgs(AGENT_ID, 'Metadata1', [ 1 , 3, 4 ]);
 
+        expect(await this.registry.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.registry.agents.getAgent(AGENT_ID).then(agent => [
           agent.version.toNumber(),
           agent.metadata,
@@ -110,6 +112,7 @@ describe('Forta', function () {
         await expect(this.registry.agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 'Metadata2', [ 1, 4, 5 ]))
         .to.emit(this.registry.agents, 'AgentUpdated').withArgs(AGENT_ID, 'Metadata2', [ 1, 4, 5 ]);
 
+        expect(await this.registry.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.registry.agents.getAgent(AGENT_ID).then(agent => [
           agent.version.toNumber(),
           agent.metadata,
@@ -128,31 +131,81 @@ describe('Forta', function () {
     });
   });
 
-  // describe('mint', function () {
-  //   describe('non-authorized', function () {
-  //     it('to non-whitelisted', async function () {
-  //       await expect(this.token.connect(this.accounts.whitelister).mint(this.accounts.nonwhitelist.address, 1))
-  //         .to.be.revertedWith(`AccessControl: account ${this.accounts.whitelister.address.toLowerCase()} is missing role ${this.roles.MINTER}`);
-  //     });
+  describe.only('enable and disable', async function () {
+    beforeEach(async function () {
+      const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ] ];
+      await expect(this.registry.agents.prepareAgent(prepareCommit(...args))).to.be.not.reverted;
+      await network.provider.send('evm_increaseTime', [ 300 ]);
+      await expect(this.registry.agents.createAgent(...args)).to.be.not.reverted;
+    });
 
-  //     it('to whitelisted', async function () {
-  //       await expect(this.token.connect(this.accounts.whitelister).mint(this.accounts.whitelist.address, 1))
-  //         .to.be.revertedWith(`AccessControl: account ${this.accounts.whitelister.address.toLowerCase()} is missing role ${this.roles.MINTER}`);
-  //     });
-  //   });
+    describe('manager', async function () {
+      it('disable', async function () {
+        await expect(this.registry.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0))
+        .to.emit(this.registry.agents, 'AgentEnabled').withArgs(AGENT_ID, 0, false);
 
-  //   describe('non-authorized', function () {
-  //     it('to non-whitelisted', async function () {
-  //       await expect(this.token.connect(this.accounts.minter).mint(this.accounts.nonwhitelist.address, 1))
-  //         .to.be.revertedWith(`Forta: receiver is not whitelisted`);
-  //     });
+        expect(await this.registry.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+      });
 
-  //     it('to whitelisted', async function () {
-  //       await expect(this.token.connect(this.accounts.minter).mint(this.accounts.whitelist.address, 1))
-  //         .to.emit(this.token, 'Transfer')
-  //         .withArgs(ethers.constants.AddressZero, this.accounts.whitelist.address, 1);
-  //     });
-  //   });
-  // });
+      it('re-enable', async function () {
+        await expect(this.registry.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0))
+        .to.emit(this.registry.agents, 'AgentEnabled').withArgs(AGENT_ID, 0, false);
+
+        await expect(this.registry.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0))
+        .to.emit(this.registry.agents, 'AgentEnabled').withArgs(AGENT_ID, 0, true);
+
+        expect(await this.registry.agents.isEnabled(AGENT_ID)).to.be.equal(true);
+      });
+
+      it('restricted', async function () {
+        await expect(this.registry.agents.connect(this.accounts.other).disableAgent(AGENT_ID, 0)).to.be.reverted;
+      });
+    });
+
+    describe('owner', async function () {
+      it('disable', async function () {
+        await expect(this.registry.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1))
+        .to.emit(this.registry.agents, 'AgentEnabled').withArgs(AGENT_ID, 1, false);
+
+        expect(await this.registry.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+      });
+
+      it('re-enable', async function () {
+        await expect(this.registry.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1))
+        .to.emit(this.registry.agents, 'AgentEnabled').withArgs(AGENT_ID, 1, false);
+
+        await expect(this.registry.agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1))
+        .to.emit(this.registry.agents, 'AgentEnabled').withArgs(AGENT_ID, 1, true);
+
+        expect(await this.registry.agents.isEnabled(AGENT_ID)).to.be.equal(true);
+      });
+
+      it('restricted', async function () {
+        await expect(this.registry.agents.connect(this.accounts.other).disableAgent(AGENT_ID, 0)).to.be.reverted;
+      });
+    });
+
+    describe('hybrid', async function () {
+      it('owner cannot reenable after admin disable', async function () {
+        await expect(this.registry.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0))
+        .to.emit(this.registry.agents, 'AgentEnabled').withArgs(AGENT_ID, 0, false);
+
+        await expect(this.registry.agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1))
+        .to.emit(this.registry.agents, 'AgentEnabled').withArgs(AGENT_ID, 1, true);
+
+        expect(await this.registry.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+      });
+
+      it('admin cannot reenable after owner disable', async function () {
+        await expect(this.registry.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1))
+        .to.emit(this.registry.agents, 'AgentEnabled').withArgs(AGENT_ID, 1, false);
+
+        await expect(this.registry.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0))
+        .to.emit(this.registry.agents, 'AgentEnabled').withArgs(AGENT_ID, 0, true);
+
+        expect(await this.registry.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+      });
+    });
+  });
 
 });

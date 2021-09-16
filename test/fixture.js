@@ -26,6 +26,7 @@ function prepare() {
   before(async function() {
     this.accounts = await ethers.getSigners();
     this.accounts.admin        = this.accounts.shift();
+    this.accounts.manager      = this.accounts.shift();
     this.accounts.minter       = this.accounts.shift();
     this.accounts.whitelister  = this.accounts.shift();
     this.accounts.whitelist    = this.accounts.shift();
@@ -66,6 +67,7 @@ function prepare() {
       this.token.WHITELISTER_ROLE().then(WHITELISTER => ({ WHITELISTER })),
       this.token.WHITELIST_ROLE().then(WHITELIST => ({ WHITELIST })),
       this.staking.SLASHER_ROLE().then(SLASHER => ({ SLASHER })),
+      this.registry.agents.AGENT_MANAGER_ROLE().then(AGENTMANAGER => ({ AGENTMANAGER })),
     ]).then(entries => Object.assign(...entries));
 
     // Forta roles are standalone
@@ -77,6 +79,8 @@ function prepare() {
 
     // Access manager for the rest of the platform
     await this.access.setNewRole(this.roles.SLASHER, this.roles.ADMIN);
+    await this.access.setNewRole(this.roles.AGENTMANAGER, this.roles.ADMIN);
+    await this.access.connect(this.accounts.admin).grantRole(this.roles.AGENTMANAGER, this.accounts.manager.address);
   });
 }
 

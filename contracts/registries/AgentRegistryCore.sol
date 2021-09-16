@@ -71,13 +71,13 @@ contract AgentRegistryCore is
         return _disabled[agentId]._data[0] == 0; // Permission.length < 256 → we don't have to loop
     }
 
-    function enableAgent(uint256 agentId, Permission permission) public virtual onlyOwnerOf(agentId) {
+    function enableAgent(uint256 agentId, Permission permission) public virtual {
         if (permission == Permission.ADMIN) { require(hasRole(AGENT_MANAGER_ROLE, _msgSender())); }
         if (permission == Permission.OWNER) { require(_msgSender() == ownerOf(agentId)); }
         _enable(agentId, permission, true);
     }
 
-    function disableAgent(uint256 agentId, Permission permission) public virtual onlyOwnerOf(agentId) {
+    function disableAgent(uint256 agentId, Permission permission) public virtual {
         if (permission == Permission.ADMIN) { require(hasRole(AGENT_MANAGER_ROLE, _msgSender())); }
         if (permission == Permission.OWNER) { require(_msgSender() == ownerOf(agentId)); }
         _enable(agentId, permission, false);
@@ -85,7 +85,7 @@ contract AgentRegistryCore is
 
     function _enable(uint256 agentId, Permission permission, bool enable) internal {
         _beforeAgentEnable(agentId, permission, enable);
-        _disabled[agentId].setTo(uint8(permission), enable);
+        _disabled[agentId].setTo(uint8(permission), !enable);
         emit AgentEnabled(agentId, permission, enable);
     }
 
