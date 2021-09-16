@@ -47,6 +47,13 @@ contract AgentRegistry is
         _;
     }
 
+    modifier onlySorted(uint256[] memory array) {
+        for (uint256 i = 1; i < array.length; ++i ) {
+            require(array[i] > array[i-1], "Values must be sorted");
+        }
+        _;
+    }
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -60,6 +67,10 @@ contract AgentRegistry is
         __UUPSUpgradeable_init();
     }
 
+    function getAgent(uint256 agentId) public view returns (AgentMetadata memory) {
+        return _agentMetadata[agentId];
+    }
+
     function prepareAgent(bytes32 commit) public {
         uint64 deadline = uint64(block.timestamp + 5 minutes);
 
@@ -68,7 +79,7 @@ contract AgentRegistry is
         emit AgentCommitted(commit, deadline);
     }
 
-    function addAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds) public {
+    function addAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds) public onlySorted(chainIds) {
         bytes32 commit = keccak256(abi.encodePacked(agentId, owner, metadata, chainIds));
         require(_frontrunProtection[commit].isExpired(), "Agent commitment is not ready");
 
@@ -76,18 +87,14 @@ contract AgentRegistry is
         _setAgent(agentId, metadata, chainIds);
     }
 
-    function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds) public onlyOwnerOf(agentId) {
+    function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds) public onlySorted(chainIds) onlyOwnerOf(agentId) {
         _setAgent(agentId, metadata, chainIds);
     }
 
-    function getAgent(uint256 agentId) public view returns (AgentMetadata memory) {
-        return _agentMetadata[agentId];
-    }
-
-    function _setAgent(uint256 agentId, string memory metadata, uint256[] calldata chainIds) private {
+    function _setAgent(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
         uint256 version = _agentMetadata[agentId].version + 1;
-        _agentMetadata[agentId] = AgentMetadata({ version: version, metadata: metadata, chainIds: chainIds });
-        emit AgentUpdated(agentId, version, metadata, chainIds);
+        _agentMetadata[agentId] = AgentMetadata({ version: version, metadata: newMetadata, chainIds: newChainIds });
+        emit AgentUpdated(agentId, version, newMetadata, newChainIds);
     }
 
     /**
