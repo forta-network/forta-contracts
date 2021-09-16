@@ -1,6 +1,6 @@
 const { ethers, network } = require('hardhat');
 const { expect } = require('chai');
-const { prepare } = require('./fixture');
+const { prepare } = require('../fixture');
 
 const { address: subject1 } = ethers.Wallet.createRandom();
 const { address: subject2 } = ethers.Wallet.createRandom();

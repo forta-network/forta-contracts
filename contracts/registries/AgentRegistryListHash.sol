@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./AgentRegistryCore.sol";
+import "./AgentRegistryMetadata.sol";
 
-contract AgentRegistryListHash is AgentRegistryCore {
+contract AgentRegistryListHash is AgentRegistryMetadata {
     bytes32 _agentListHash;
 
     function getAgentListHash() public view returns (bytes32) {
@@ -19,12 +19,12 @@ contract AgentRegistryListHash is AgentRegistryCore {
         _agentListHash ^= oldHash ^ newHash;
     }
 
-    function _beforeAgentEnable(uint256 agentId, Slot slot, bool enable) internal virtual override {
-        super._beforeAgentEnable(agentId, slot, enable);
+    function _beforeAgentEnable(uint256 agentId, Permission permission, bool enable) internal virtual override {
+        super._beforeAgentEnable(agentId, permission, enable);
 
         uint256 disable = _getDisableFlags(agentId);
         bytes32 oldHash = keccak256(abi.encodePacked(agentId, disable));
-        bytes32 newHash = keccak256(abi.encodePacked(agentId, disable ^ (1 << uint8(slot))));
+        bytes32 newHash = keccak256(abi.encodePacked(agentId, disable ^ (1 << uint8(permission))));
         _agentListHash ^= oldHash ^ newHash;
     }
 }

@@ -50,5 +50,4 @@ describe('Forta', function () {
       });
     });
   });
-
 });

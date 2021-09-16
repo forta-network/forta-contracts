@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "./AgentRegistryCore.sol";
+import "./AgentRegistryMetadata.sol";
 
-contract AgentRegistryEnumerable is AgentRegistryCore {
+contract AgentRegistryEnumerable is AgentRegistryMetadata {
     using EnumerableSet for EnumerableSet.UintSet;
 
     EnumerableSet.UintSet private _allAgents;
@@ -27,29 +27,27 @@ contract AgentRegistryEnumerable is AgentRegistryCore {
     }
 
     function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
-        super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
-
         AgentMetadata memory agent = getAgent(agentId);
 
-        if (agent.version == 1) {
-            _allAgents.add(agentId);
-        }
+        if (agent.version == 1) { _allAgents.add(agentId); }
 
         uint256 i = 0;
         uint256 j = 0;
-        while (i < agent.chainIds.length && j < newChainIds.length) {
+        while (i < agent.chainIds.length || j < newChainIds.length) {
             if (i == agent.chainIds.length) { // no more old chains, just add the remaining new chains
                 _chainAgents[newChainIds[j++]].add(agentId);
             } else if (j == newChainIds.length) { // no more new chain, just remove the remaining old chains
                 _chainAgents[agent.chainIds[i++]].remove(agentId);
-            } else if (agent.chainIds[i] < newChainIds[i]) { // old chain smaller, remove if
+            } else if (agent.chainIds[i] < newChainIds[j]) { // old chain smaller, remove if
                 _chainAgents[agent.chainIds[i++]].remove(agentId);
-            } else if (agent.chainIds[i] > newChainIds[i]) { // new chain smaller, add it
+            } else if (agent.chainIds[i] > newChainIds[j]) { // new chain smaller, add it
                 _chainAgents[newChainIds[j++]].add(agentId);
             } else { // chainIds are the same do nothing
                 ++i;
                 ++j;
             }
         }
+
+        super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
     }
 }

@@ -53,6 +53,13 @@ function prepare() {
       this.accounts.treasure.address,
     );
 
+    this.registry = {}
+    this.registry.agents = await deployUpgradeable('AgentRegistry', 'uups',
+      this.access.address,
+      'Forta Agents',
+      'FAgents',
+    );
+
     this.roles = await Promise.all([
       this.token.ADMIN_ROLE().then(ADMIN => ({ ADMIN })),
       this.token.MINTER_ROLE().then(MINTER => ({ MINTER })),

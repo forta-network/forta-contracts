@@ -18,25 +18,18 @@ contract AgentRegistryCore is
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant AGENT_MANAGER_ROLE = keccak256("AGENT_MANAGER_ROLE");
 
-    enum Slot {
-        OWNER,
+    enum Permission {
         ADMIN,
+        OWNER,
         length
     }
 
-    struct AgentMetadata {
-        uint256 version;
-        string metadata;
-        uint256[] chainIds;
-    }
-
     mapping(uint256 => BitMaps.BitMap) private _disabled;
-    mapping(uint256 => AgentMetadata) private _agentMetadata;
     mapping(bytes32 => Timers.Timestamp) private _frontrunProtection;
 
     event AgentCommitted(bytes32 indexed commit, uint64 deadline);
-    event AgentUpdated(uint256 indexed agentId, uint256 version, string metadata, uint256[] chainIds);
-    event AgentEnabled(uint256 indexed agentId, Slot slot, bool enabled);
+    event AgentUpdated(uint256 indexed agentId, string metadata, uint256[] chainIds);
+    event AgentEnabled(uint256 indexed agentId, Permission permission, bool enabled);
 
     modifier onlyOwnerOf(uint256 agentId) {
         require(_msgSender() == ownerOf(agentId), "Restricted to agent owner");
@@ -50,13 +43,8 @@ contract AgentRegistryCore is
         _;
     }
 
-    function getAgent(uint256 agentId) public view returns (AgentMetadata memory) {
-        return _agentMetadata[agentId];
-    }
-
     function prepareAgent(bytes32 commit) public {
         uint64 deadline = uint64(block.timestamp + 5 minutes);
-
         require(_frontrunProtection[commit].isUnset(), "Agent already committed");
         _frontrunProtection[commit].setDeadline(deadline);
         emit AgentCommitted(commit, deadline);
@@ -67,44 +55,38 @@ contract AgentRegistryCore is
         require(_frontrunProtection[commit].isExpired(), "Agent commitment is not ready");
 
         _mint(owner, agentId);
-        _setAgent(agentId, metadata, chainIds);
+        _beforeAgentUpdate(agentId, metadata, chainIds);
+        emit AgentUpdated(agentId, metadata, chainIds);
     }
 
     function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds) public onlySorted(chainIds) onlyOwnerOf(agentId) {
-        _setAgent(agentId, metadata, chainIds);
-    }
-
-    function _setAgent(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal {
-        _beforeAgentUpdate(agentId, newMetadata, newChainIds);
-
-        uint256 version = _agentMetadata[agentId].version + 1;
-        _agentMetadata[agentId] = AgentMetadata({ version: version, metadata: newMetadata, chainIds: newChainIds });
-        emit AgentUpdated(agentId, version, newMetadata, newChainIds);
+        _beforeAgentUpdate(agentId, metadata, chainIds);
+        emit AgentUpdated(agentId, metadata, chainIds);
     }
 
     /**
      * @dev Enable/Disable agent
      */
     function isEnabled(uint256 agentId) public view virtual returns (bool) {
-        return _disabled[agentId]._data[0] == 0; // Slot.length < 256 → we don't have to loop
+        return _disabled[agentId]._data[0] == 0; // Permission.length < 256 → we don't have to loop
     }
 
-    function enableAgent(uint256 agentId, Slot slot) public virtual onlyOwnerOf(agentId) {
-        if (slot == Slot.OWNER) { require(_msgSender() == ownerOf(agentId)); }
-        if (slot == Slot.ADMIN) { require(hasRole(AGENT_MANAGER_ROLE, _msgSender())); }
-        _enable(agentId, slot, true);
+    function enableAgent(uint256 agentId, Permission permission) public virtual onlyOwnerOf(agentId) {
+        if (permission == Permission.ADMIN) { require(hasRole(AGENT_MANAGER_ROLE, _msgSender())); }
+        if (permission == Permission.OWNER) { require(_msgSender() == ownerOf(agentId)); }
+        _enable(agentId, permission, true);
     }
 
-    function disableAgent(uint256 agentId, Slot slot) public virtual onlyOwnerOf(agentId) {
-        if (slot == Slot.OWNER) { require(_msgSender() == ownerOf(agentId)); }
-        if (slot == Slot.ADMIN) { require(hasRole(AGENT_MANAGER_ROLE, _msgSender())); }
-        _enable(agentId, slot, false);
+    function disableAgent(uint256 agentId, Permission permission) public virtual onlyOwnerOf(agentId) {
+        if (permission == Permission.ADMIN) { require(hasRole(AGENT_MANAGER_ROLE, _msgSender())); }
+        if (permission == Permission.OWNER) { require(_msgSender() == ownerOf(agentId)); }
+        _enable(agentId, permission, false);
     }
 
-    function _enable(uint256 agentId, Slot slot, bool enable) internal {
-        _beforeAgentEnable(agentId, slot, enable);
-        _disabled[agentId].setTo(uint8(slot), enable);
-        emit AgentEnabled(agentId, slot, enable);
+    function _enable(uint256 agentId, Permission permission, bool enable) internal {
+        _beforeAgentEnable(agentId, permission, enable);
+        _disabled[agentId].setTo(uint8(permission), enable);
+        emit AgentEnabled(agentId, permission, enable);
     }
 
     function _getDisableFlags(uint256 agentId) internal view returns (uint256) {
@@ -119,5 +101,5 @@ contract AgentRegistryCore is
     /**
      * Hook: Agent is enabled/disabled
      */
-    function _beforeAgentEnable(uint256 agentId, Slot slot, bool enable) internal virtual {}
+    function _beforeAgentEnable(uint256 agentId, Permission permission, bool enable) internal virtual {}
 }

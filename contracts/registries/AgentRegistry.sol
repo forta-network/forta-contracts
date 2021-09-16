@@ -6,13 +6,12 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../tools/ENSReverseRegistration.sol";
 
 import "./AgentRegistryCore.sol";
+import "./AgentRegistryMetadata.sol";
 import "./AgentRegistryEnumerable.sol";
-import "./AgentRegistryListHash.sol";
 
 contract AgentRegistry is
-    AgentRegistryCore,
+    AgentRegistryMetadata,
     AgentRegistryEnumerable,
-    AgentRegistryListHash,
     Multicall,
     UUPSUpgradeable
 {
@@ -42,11 +41,7 @@ contract AgentRegistry is
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 
-    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryEnumerable, AgentRegistryListHash) {
+    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryEnumerable, AgentRegistryMetadata) {
         super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
-    }
-
-    function _beforeAgentEnable(uint256 agentId, Slot slot, bool enable) internal virtual override(AgentRegistryCore, AgentRegistryListHash) {
-        super._beforeAgentEnable(agentId, slot, enable);
     }
 }
