@@ -320,23 +320,22 @@ contract FortaStaking is
     function _sharesToSubject(uint256 tokenId) private pure returns (address) { return address(uint160(tokenId));            }
 
     function _stakeToActiveShares(address subject, uint256 amount) internal view returns (uint256) {
-        return totalSupply(_subjectToActive(subject)) == 0
-            ? amount
-            : amount * totalSupply(_subjectToActive(subject)) / _activeStakes.balanceOf(subject);
+        uint256 activeStake = _activeStakes.balanceOf(subject);
+        return activeStake == 0 ? amount : amount * totalSupply(_subjectToActive(subject)) / activeStake;
     }
 
     function _stakeToLockedShares(address subject, uint256 amount) internal view returns (uint256) {
-        return totalSupply(_subjectToLocked(subject)) == 0
-            ? amount
-            : amount * totalSupply(_subjectToLocked(subject)) / _lockedStakes.balanceOf(subject);
+        uint256 lockedStake = _lockedStakes.balanceOf(subject);
+        return lockedStake == 0 ? amount : amount * totalSupply(_subjectToLocked(subject)) / lockedStake;
     }
-
 
     function _activeSharesToStake(address subject, uint256 amount) internal view returns (uint256) {
-        return amount * _activeStakes.balanceOf(subject) / totalSupply(_subjectToActive(subject));
+        uint256 activeSupply = totalSupply(_subjectToActive(subject));
+        return activeSupply == 0 ? 0 : amount * _activeStakes.balanceOf(subject) / activeSupply;
     }
     function _lockedSharesToStake(address subject, uint256 amount) internal view returns (uint256) {
-        return amount * _lockedStakes.balanceOf(subject) / totalSupply(_subjectToLocked(subject));
+        uint256 lockedSupply = totalSupply(_subjectToLocked(subject));
+        return lockedSupply == 0 ? 0 : amount * _lockedStakes.balanceOf(subject) / lockedSupply;
     }
 
     // Admin: change withdrawal delay

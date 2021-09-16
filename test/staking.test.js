@@ -457,7 +457,38 @@ describe('Forta Staking', function () {
       expect(await this.modules.staking.totalShares(subject1)).to.be.equal('0');
     });
 
-    it.skip('initiate → slashing → withdraw', async function () {
+    it('initiate → slashing → withdraw', async function () {
+      await expect(this.modules.staking.connect(this.accounts.user1).deposit(subject1, '100')).to.be.not.reverted;
+      await expect(this.modules.staking.connect(this.accounts.user2).deposit(subject1, '100')).to.be.not.reverted;
+      await expect(this.modules.staking.connect(this.accounts.user1).initiateWithdrawal(subject1, '100')).to.be.not.reverted;
+      await expect(this.modules.staking.connect(this.accounts.user2).initiateWithdrawal(subject1, '50')).to.be.not.reverted;
+
+      expect(await this.modules.staking.stakeOf(subject1)).to.be.equal('50');
+      expect(await this.modules.staking.lockedStakeOf(subject1)).to.be.equal('150');
+      expect(await this.modules.staking.balanceOf(this.accounts.user1.address, subject1)).to.be.equal('0');
+      expect(await this.modules.staking.balanceOf(this.accounts.user2.address, subject1)).to.be.equal('50');
+      expect(await this.modules.staking.balanceOf(this.accounts.user1.address, locked1)).to.be.equal('100');
+      expect(await this.modules.staking.balanceOf(this.accounts.user2.address, locked1)).to.be.equal('50');
+
+      await expect(this.modules.staking.connect(this.accounts.slasher).slash(subject1, '110'))
+      .to.emit(this.token, 'Transfer').withArgs(this.modules.staking.address, this.accounts.treasure.address, '110');
+
+      expect(await this.modules.staking.stakeOf(subject1)).to.be.equal('0');
+      expect(await this.modules.staking.lockedStakeOf(subject1)).to.be.equal('90');
+      expect(await this.modules.staking.balanceOf(this.accounts.user1.address, subject1)).to.be.equal('0');
+      expect(await this.modules.staking.balanceOf(this.accounts.user2.address, subject1)).to.be.equal('50');
+      expect(await this.modules.staking.balanceOf(this.accounts.user1.address, locked1)).to.be.equal('100');
+      expect(await this.modules.staking.balanceOf(this.accounts.user2.address, locked1)).to.be.equal('50');
+
+      await expect(this.modules.staking.connect(this.accounts.user1).withdraw(subject1))
+      .to.emit(this.modules.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, '100')
+      .to.emit(this.token, 'Transfer').withArgs(this.modules.staking.address, this.accounts.user1.address, '60')
+
+      await expect(this.modules.staking.connect(this.accounts.user2).withdraw(subject1))
+      .to.emit(this.modules.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, '50')
+      .to.emit(this.token, 'Transfer').withArgs(this.modules.staking.address, this.accounts.user2.address, '30')
+
+      //TODO: at this point the contract is broken until user2 withdraws his worthless shares, which he has no insentives to do.
     });
   });
 });
