@@ -329,17 +329,10 @@ async function main() {
       await CACHE.set('step', 5);
     // Grant role
     case 5:
-      assert(await forta.hasRole(ADMIN_ROLE,       relayer.address), `Deployer is missing the ADMIN role, which is needed to set permissions`);
       assert(await forta.hasRole(WHITELISTER_ROLE, relayer.address), `Deployer is missing the WHITELISTER role, which is needed to set permissions`);
 
       console.log(chalk.bold('[5/8] Setup roles...'));
       await executeInBatchAndWait({ target: forta.address, relayer }, [
-        // set admins
-        ...CONFIG.admins.map(address => grantRole(forta, ADMIN_ROLE, address)),
-        // set minters
-        ...CONFIG.minters.map(address => grantRole(forta, MINTER_ROLE, address)),
-        // set whitelisters
-        ...CONFIG.whitelisters.map(address => grantRole(forta, WHITELISTER_ROLE, address)),
         // whitelist all beneficiary
         ...CONFIG.allocations.map(({ beneficiary }) => beneficiary).unique().map(address => grantRole(forta, WHITELIST_ROLE, address)),
         // whitelist all vesting wallets
@@ -364,7 +357,6 @@ async function main() {
     case 7:
       console.log(chalk.bold('[7/8] Cleanup relayer permissions...'));
       await executeInBatchAndWait({ target: forta.address, relayer }, [
-        renounceRole(forta, ADMIN_ROLE, relayer.address),
         renounceRole(forta, MINTER_ROLE, relayer.address),
         renounceRole(forta, WHITELISTER_ROLE, relayer.address),
       ]);
