@@ -20,9 +20,6 @@ contract AccessManager is AccessControlUpgradeable, UUPSUpgradeable, Multicall {
     }
 
     function setNewRole(bytes32 role, bytes32 admin) external onlyRole(ADMIN_ROLE) {
-        // TODO: do we want this check, they make assignment definitive
-        require(getRoleAdmin(admin) != bytes32(0)); // admin exists
-        require(getRoleAdmin(role)  == bytes32(0)); // role doesnt exist
         _setRoleAdmin(role, admin);
     }
 

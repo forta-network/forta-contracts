@@ -4,9 +4,9 @@ const { prepare } = require('../fixture');
 
 const LOCKED_OFFSET = ethers.BigNumber.from(2).pow(160);
 const [
-  [ subject1, locked1 ],
-  [ subject2, locked2 ],
-  [ subject3, locked3 ],
+  [ subject1, inactive1 ],
+  [ subject2, inactive2 ],
+  [ subject3, inactive3 ],
 ] = new Array(3).fill().map(() => ethers.Wallet.createRandom()).map(({ address }) => [ address, ethers.utils.hexlify(LOCKED_OFFSET.add(ethers.BigNumber.from(address))) ]);
 
 const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
@@ -32,8 +32,8 @@ describe('Forta Staking', function () {
   describe('Deposit / Withdraw', function () {
     describe('no delay', function () {
       it('happy path', async function () {
-        expect(await this.components.staking.stakeOf(subject1)).to.be.equal('0');
-        expect(await this.components.staking.totalStake()).to.be.equal('0');
+        expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('0');
+        expect(await this.components.staking.totalActiveStake()).to.be.equal('0');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('0');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
         expect(await this.components.staking.totalShares(subject1)).to.be.equal('0');
@@ -42,8 +42,8 @@ describe('Forta Staking', function () {
         .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.components.staking.address, '100')
         .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, subject1, '100');
 
-        expect(await this.components.staking.stakeOf(subject1)).to.be.equal('100');
-        expect(await this.components.staking.totalStake()).to.be.equal('100');
+        expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('100');
+        expect(await this.components.staking.totalActiveStake()).to.be.equal('100');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('100');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
         expect(await this.components.staking.totalShares(subject1)).to.be.equal('100');
@@ -52,8 +52,8 @@ describe('Forta Staking', function () {
         .to.emit(this.token, 'Transfer').withArgs(this.accounts.user2.address, this.components.staking.address, '100')
         .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user2.address, ethers.constants.AddressZero, this.accounts.user2.address, subject1, '100');
 
-        expect(await this.components.staking.stakeOf(subject1)).to.be.equal('200');
-        expect(await this.components.staking.totalStake()).to.be.equal('200');
+        expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('200');
+        expect(await this.components.staking.totalActiveStake()).to.be.equal('200');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('100');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('100');
         expect(await this.components.staking.totalShares(subject1)).to.be.equal('200');
@@ -65,15 +65,15 @@ describe('Forta Staking', function () {
         await expect(tx1)
         .to.emit(this.components.staking, 'WithdrawalInitiated').withArgs(subject1, this.accounts.user1.address, await txTimestamp(tx1))
         .to.emit(this.components.staking, 'TransferSingle')/*.withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, subject1, '50')*/
-        .to.emit(this.components.staking, 'TransferSingle')/*.withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, locked1, '50')*/
+        .to.emit(this.components.staking, 'TransferSingle')/*.withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, inactive1, '50')*/
 
         await expect(this.components.staking.connect(this.accounts.user1).withdraw(subject1))
         .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user1.address, '50')
-        .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, locked1, '50')
+        .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, inactive1, '50')
         .to.emit(this.components.staking, 'WithdrawalInitiated').withArgs(subject1, this.accounts.user1.address, 0);
 
-        expect(await this.components.staking.stakeOf(subject1)).to.be.equal('150');
-        expect(await this.components.staking.totalStake()).to.be.equal('150');
+        expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('150');
+        expect(await this.components.staking.totalActiveStake()).to.be.equal('150');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('50');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('100');
         expect(await this.components.staking.totalShares(subject1)).to.be.equal('150');
@@ -85,15 +85,15 @@ describe('Forta Staking', function () {
         await expect(tx2)
         .to.emit(this.components.staking, 'WithdrawalInitiated').withArgs(subject1, this.accounts.user2.address, await txTimestamp(tx2))
         .to.emit(this.components.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, subject1, '100')*/
-        .to.emit(this.components.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, ethers.constants.AddressZero, this.accounts.user2.address, locked1, '100')*/
+        .to.emit(this.components.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, ethers.constants.AddressZero, this.accounts.user2.address, inactive1, '100')*/
 
         await expect(this.components.staking.connect(this.accounts.user2).withdraw(subject1))
         .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user2.address, '100')
-        .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, locked1, '100')
+        .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, inactive1, '100')
         .to.emit(this.components.staking, 'WithdrawalInitiated').withArgs(subject1, this.accounts.user2.address, 0);
 
-        expect(await this.components.staking.stakeOf(subject1)).to.be.equal('50');
-        expect(await this.components.staking.totalStake()).to.be.equal('50');
+        expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('50');
+        expect(await this.components.staking.totalActiveStake()).to.be.equal('50');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('50');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
         expect(await this.components.staking.totalShares(subject1)).to.be.equal('50');
@@ -110,8 +110,8 @@ describe('Forta Staking', function () {
       });
 
       it('happy path', async function () {
-        expect(await this.components.staking.stakeOf(subject1)).to.be.equal('0');
-        expect(await this.components.staking.totalStake()).to.be.equal('0');
+        expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('0');
+        expect(await this.components.staking.totalActiveStake()).to.be.equal('0');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('0');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
         expect(await this.components.staking.totalShares(subject1)).to.be.equal('0');
@@ -120,8 +120,8 @@ describe('Forta Staking', function () {
         .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.components.staking.address, '100')
         .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, subject1, '100');
 
-        expect(await this.components.staking.stakeOf(subject1)).to.be.equal('100');
-        expect(await this.components.staking.totalStake()).to.be.equal('100');
+        expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('100');
+        expect(await this.components.staking.totalActiveStake()).to.be.equal('100');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('100');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
         expect(await this.components.staking.totalShares(subject1)).to.be.equal('100');
@@ -130,8 +130,8 @@ describe('Forta Staking', function () {
         .to.emit(this.token, 'Transfer').withArgs(this.accounts.user2.address, this.components.staking.address, '100')
         .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user2.address, ethers.constants.AddressZero, this.accounts.user2.address, subject1, '100');
 
-        expect(await this.components.staking.stakeOf(subject1)).to.be.equal('200');
-        expect(await this.components.staking.totalStake()).to.be.equal('200');
+        expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('200');
+        expect(await this.components.staking.totalActiveStake()).to.be.equal('200');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('100');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('100');
         expect(await this.components.staking.totalShares(subject1)).to.be.equal('200');
@@ -143,7 +143,7 @@ describe('Forta Staking', function () {
         await expect(tx1)
         .to.emit(this.components.staking, 'WithdrawalInitiated').withArgs(subject1, this.accounts.user1.address, await txTimestamp(tx1) + 3600)
         .to.emit(this.components.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, subject1, '100')*/
-        .to.emit(this.components.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, ethers.constants.AddressZero, this.accounts.user2.address, locked1, '100')*/
+        .to.emit(this.components.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, ethers.constants.AddressZero, this.accounts.user2.address, inactive1, '100')*/
 
         await expect(this.components.staking.connect(this.accounts.user1).withdraw(subject1)).to.be.reverted;
 
@@ -151,11 +151,11 @@ describe('Forta Staking', function () {
 
         await expect(this.components.staking.connect(this.accounts.user1).withdraw(subject1))
         .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user1.address, '50')
-        .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, locked1, '50')
+        .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, inactive1, '50')
         .to.emit(this.components.staking, 'WithdrawalInitiated').withArgs(subject1, this.accounts.user1.address, 0);
 
-        expect(await this.components.staking.stakeOf(subject1)).to.be.equal('150');
-        expect(await this.components.staking.totalStake()).to.be.equal('150');
+        expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('150');
+        expect(await this.components.staking.totalActiveStake()).to.be.equal('150');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('50');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('100');
         expect(await this.components.staking.totalShares(subject1)).to.be.equal('150');
@@ -167,7 +167,7 @@ describe('Forta Staking', function () {
         await expect(tx2)
         .to.emit(this.components.staking, 'WithdrawalInitiated').withArgs(subject1, this.accounts.user2.address, await txTimestamp(tx2) + 3600)
         .to.emit(this.components.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, subject1, '100')*/
-        .to.emit(this.components.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, ethers.constants.AddressZero, this.accounts.user2.address, locked1, '100')*/
+        .to.emit(this.components.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, ethers.constants.AddressZero, this.accounts.user2.address, inactive1, '100')*/
 
         await expect(this.components.staking.connect(this.accounts.user2).withdraw(subject1)).to.be.reverted;
 
@@ -175,11 +175,11 @@ describe('Forta Staking', function () {
 
         await expect(this.components.staking.connect(this.accounts.user2).withdraw(subject1))
         .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user2.address, '100')
-        .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, locked1, '100')
+        .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, inactive1, '100')
         .to.emit(this.components.staking, 'WithdrawalInitiated').withArgs(subject1, this.accounts.user2.address, 0);
 
-        expect(await this.components.staking.stakeOf(subject1)).to.be.equal('50');
-        expect(await this.components.staking.totalStake()).to.be.equal('50');
+        expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('50');
+        expect(await this.components.staking.totalActiveStake()).to.be.equal('50');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('50');
         expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
         expect(await this.components.staking.totalShares(subject1)).to.be.equal('50');
@@ -362,8 +362,8 @@ describe('Forta Staking', function () {
       await expect(this.components.staking.connect(this.accounts.user1).deposit(subject1, '100')).to.be.not.reverted;
       await expect(this.components.staking.connect(this.accounts.user2).deposit(subject1, '50')).to.be.not.reverted;
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('150');
-      expect(await this.components.staking.totalStake()).to.be.equal('150');
+      expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('150');
+      expect(await this.components.staking.totalActiveStake()).to.be.equal('150');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('100');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('50');
       expect(await this.components.staking.totalShares(subject1)).to.be.equal('150');
@@ -371,8 +371,8 @@ describe('Forta Staking', function () {
       await expect(this.components.staking.connect(this.accounts.slasher).slash(subject1, '30'))
       .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.treasure.address, '30');
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('120');
-      expect(await this.components.staking.totalStake()).to.be.equal('120');
+      expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('120');
+      expect(await this.components.staking.totalActiveStake()).to.be.equal('120');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('100');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('50');
       expect(await this.components.staking.totalShares(subject1)).to.be.equal('150');
@@ -381,8 +381,8 @@ describe('Forta Staking', function () {
       await expect(this.components.staking.connect(this.accounts.user1).withdraw(subject1))
       .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user1.address, '80');
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('40');
-      expect(await this.components.staking.totalStake()).to.be.equal('40');
+      expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('40');
+      expect(await this.components.staking.totalActiveStake()).to.be.equal('40');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('0');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('50');
       expect(await this.components.staking.totalShares(subject1)).to.be.equal('50');
@@ -391,8 +391,8 @@ describe('Forta Staking', function () {
       await expect(this.components.staking.connect(this.accounts.user2).withdraw(subject1))
       .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user2.address, '40');
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('0');
-      expect(await this.components.staking.totalStake()).to.be.equal('0');
+      expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('0');
+      expect(await this.components.staking.totalActiveStake()).to.be.equal('0');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('0');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
       expect(await this.components.staking.totalShares(subject1)).to.be.equal('0');
@@ -402,8 +402,8 @@ describe('Forta Staking', function () {
       await expect(this.components.staking.connect(this.accounts.user1).deposit(subject1, '100')).to.be.not.reverted;
       await expect(this.components.staking.connect(this.accounts.user2).deposit(subject1, '50')).to.be.not.reverted;
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('150');
-      expect(await this.components.staking.totalStake()).to.be.equal('150');
+      expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('150');
+      expect(await this.components.staking.totalActiveStake()).to.be.equal('150');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('100');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('50');
       expect(await this.components.staking.totalShares(subject1)).to.be.equal('150');
@@ -411,16 +411,16 @@ describe('Forta Staking', function () {
       await expect(this.components.staking.connect(this.accounts.slasher).slash(subject1, '30'))
       .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.treasure.address, '30');
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('120');
-      expect(await this.components.staking.totalStake()).to.be.equal('120');
+      expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('120');
+      expect(await this.components.staking.totalActiveStake()).to.be.equal('120');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('100');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('50');
       expect(await this.components.staking.totalShares(subject1)).to.be.equal('150');
 
       await expect(this.components.staking.connect(this.accounts.user3).deposit(subject1, '60')).to.be.not.reverted;
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('180');
-      expect(await this.components.staking.totalStake()).to.be.equal('180');
+      expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('180');
+      expect(await this.components.staking.totalActiveStake()).to.be.equal('180');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('100');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('50');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user3.address)).to.be.equal('75');
@@ -430,8 +430,8 @@ describe('Forta Staking', function () {
       await expect(this.components.staking.connect(this.accounts.user1).withdraw(subject1))
       .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user1.address, '80');
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('100');
-      expect(await this.components.staking.totalStake()).to.be.equal('100');
+      expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('100');
+      expect(await this.components.staking.totalActiveStake()).to.be.equal('100');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('0');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('50');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user3.address)).to.be.equal('75');
@@ -441,8 +441,8 @@ describe('Forta Staking', function () {
       await expect(this.components.staking.connect(this.accounts.user2).withdraw(subject1))
       .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user2.address, '40');
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('60');
-      expect(await this.components.staking.totalStake()).to.be.equal('60');
+      expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('60');
+      expect(await this.components.staking.totalActiveStake()).to.be.equal('60');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('0');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user3.address)).to.be.equal('75');
@@ -452,8 +452,8 @@ describe('Forta Staking', function () {
       await expect(this.components.staking.connect(this.accounts.user3).withdraw(subject1))
       .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user3.address, '60');
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('0');
-      expect(await this.components.staking.totalStake()).to.be.equal('0');
+      expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('0');
+      expect(await this.components.staking.totalActiveStake()).to.be.equal('0');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user1.address)).to.be.equal('0');
       expect(await this.components.staking.sharesOf(subject1, this.accounts.user2.address)).to.be.equal('0');
       expect(await this.components.staking.totalShares(subject1)).to.be.equal('0');
@@ -465,29 +465,29 @@ describe('Forta Staking', function () {
       await expect(this.components.staking.connect(this.accounts.user1).initiateWithdrawal(subject1, '100')).to.be.not.reverted;
       await expect(this.components.staking.connect(this.accounts.user2).initiateWithdrawal(subject1, '50')).to.be.not.reverted;
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('50');
-      expect(await this.components.staking.lockedStakeOf(subject1)).to.be.equal('150');
+      expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('50');
+      expect(await this.components.staking.inactiveStakeFor(subject1)).to.be.equal('150');
       expect(await this.components.staking.balanceOf(this.accounts.user1.address, subject1)).to.be.equal('0');
       expect(await this.components.staking.balanceOf(this.accounts.user2.address, subject1)).to.be.equal('50');
-      expect(await this.components.staking.balanceOf(this.accounts.user1.address, locked1)).to.be.equal('100');
-      expect(await this.components.staking.balanceOf(this.accounts.user2.address, locked1)).to.be.equal('50');
+      expect(await this.components.staking.balanceOf(this.accounts.user1.address, inactive1)).to.be.equal('100');
+      expect(await this.components.staking.balanceOf(this.accounts.user2.address, inactive1)).to.be.equal('50');
 
       await expect(this.components.staking.connect(this.accounts.slasher).slash(subject1, '120'))
       .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.treasure.address, '120');
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('20');
-      expect(await this.components.staking.lockedStakeOf(subject1)).to.be.equal('60');
+      expect(await this.components.staking.activeStakeFor(subject1)).to.be.equal('20');
+      expect(await this.components.staking.inactiveStakeFor(subject1)).to.be.equal('60');
       expect(await this.components.staking.balanceOf(this.accounts.user1.address, subject1)).to.be.equal('0');
       expect(await this.components.staking.balanceOf(this.accounts.user2.address, subject1)).to.be.equal('50');
-      expect(await this.components.staking.balanceOf(this.accounts.user1.address, locked1)).to.be.equal('100');
-      expect(await this.components.staking.balanceOf(this.accounts.user2.address, locked1)).to.be.equal('50');
+      expect(await this.components.staking.balanceOf(this.accounts.user1.address, inactive1)).to.be.equal('100');
+      expect(await this.components.staking.balanceOf(this.accounts.user2.address, inactive1)).to.be.equal('50');
 
       await expect(this.components.staking.connect(this.accounts.user1).withdraw(subject1))
-      .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, locked1, '100')
+      .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, inactive1, '100')
       .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user1.address, '40')
 
       await expect(this.components.staking.connect(this.accounts.user2).withdraw(subject1))
-      .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, locked1, '50')
+      .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, inactive1, '50')
       .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user2.address, '20')
     });
   });
