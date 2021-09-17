@@ -15,11 +15,11 @@ contract BaseComponent is
     UUPSUpgradeable
 {
     // Access control for the upgrade process
-    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(ADMIN_ROLE) {
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(DEFAULT_ADMIN_ROLE) {
     }
 
     // Allow the upgrader to set ENS reverse registration
-    function setName(address ensRegistry, string calldata ensName) public onlyRole(ADMIN_ROLE) {
+    function setName(address ensRegistry, string calldata ensName) public onlyRole(DEFAULT_ADMIN_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 }

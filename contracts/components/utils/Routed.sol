@@ -16,11 +16,12 @@ abstract contract RoutedUpgradeable is AccessManagedUpgradeable {
 
     function _emitHook(bytes memory data) internal {
         if (address(_router) != address(0)) {
-            _router.hookHandler(data);
+            try _router.hookHandler(data) {}
+            catch {}
         }
     }
 
-    function setRouter(address newRouter) public onlyRole(ADMIN_ROLE) {
+    function setRouter(address newRouter) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _router = IRouter(newRouter);
         emit RouterUpdated(newRouter);
     }

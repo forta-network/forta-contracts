@@ -63,12 +63,13 @@ function prepare() {
     this.sink = await deploy('Sink');
 
     this.roles = await Promise.all(Object.entries({
-      ADMIN:        this.token.ADMIN_ROLE(),
-      MINTER:       this.token.MINTER_ROLE(),
-      WHITELISTER:  this.token.WHITELISTER_ROLE(),
-      WHITELIST:    this.token.WHITELIST_ROLE(),
-      ROUTER_ADMIN: this.router.ROUTER_ADMIN(),
-      SLASHER:      this.components.staking.SLASHER_ROLE(),
+      ADMIN:         this.token.ADMIN_ROLE(),
+      MINTER:        this.token.MINTER_ROLE(),
+      WHITELISTER:   this.token.WHITELISTER_ROLE(),
+      WHITELIST:     this.token.WHITELIST_ROLE(),
+      DEFAULT_ADMIN: this.access.DEFAULT_ADMIN_ROLE(),
+      ROUTER_ADMIN:  this.router.ROUTER_ADMIN(),
+      SLASHER:       this.components.staking.SLASHER_ROLE(),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
     await Promise.all([
@@ -79,8 +80,8 @@ function prepare() {
       this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
       this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.components.staking.address),
       // Access manager for the rest of the platform
-      this.access.setNewRole(this.roles.SLASHER,      this.roles.ADMIN),
-      this.access.setNewRole(this.roles.ROUTER_ADMIN, this.roles.ADMIN),
+      this.access.setNewRole(this.roles.SLASHER,      this.roles.DEFAULT_ADMIN),
+      this.access.setNewRole(this.roles.ROUTER_ADMIN, this.roles.DEFAULT_ADMIN),
     ]);
   });
 }

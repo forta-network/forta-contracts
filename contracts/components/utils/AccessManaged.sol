@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
 abstract contract AccessManagedUpgradeable is ContextUpgradeable {
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant DEFAULT_ADMIN_ROLE = bytes32(0);
 
     IAccessControl private _accessManager;
 
@@ -24,7 +24,7 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
         emit AccessManagerUpdated(manager);
     }
 
-    function setAccessManager(address newManager) public onlyRole(ADMIN_ROLE) {
+    function setAccessManager(address newManager) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _accessManager = IAccessControl(newManager);
         emit AccessManagerUpdated(newManager);
     }

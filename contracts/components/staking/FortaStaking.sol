@@ -10,6 +10,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Supp
 
 import "../BaseComponent.sol";
 import "../../tools/Distributions.sol";
+import "../../tools/FullMath.sol";
 
 contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     using Distributions for Distributions.Balances;
@@ -175,8 +176,8 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         uint64 deadline = SafeCast.toUint64(block.timestamp) + _withdrawalDelay;
         _lockingDelay[subject][staker].setDeadline(deadline);
 
-        uint256 activeShares = Math.min(sharesValue, sharesOf(subject, staker));
-        uint256 stakeValue   = _activeSharesToStake(subject, activeShares);
+        uint256 activeShares   = Math.min(sharesValue, sharesOf(subject, staker));
+        uint256 stakeValue     = _activeSharesToStake(subject, activeShares);
         uint256 inactiveShares = _stakeToInactiveShares(subject, stakeValue);
 
         _activeStake.burn(subject, stakeValue);
@@ -207,7 +208,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         emit WithdrawalInitiated(subject, staker, 0);
 
         uint256 inactiveShares = inactiveSharesOf(subject, staker);
-        uint256 stakeValue   = _inactiveSharesToStake(subject, inactiveShares);
+        uint256 stakeValue     = _inactiveSharesToStake(subject, inactiveShares);
 
         _inactiveStake.burn(subject, stakeValue);
         _burn(staker, _subjectToInactive(subject), inactiveShares);
@@ -222,11 +223,12 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      * Emits a Slashed event.
      */
     function slash(address subject, uint256 stakeValue) public onlyRole(SLASHER_ROLE) returns (uint256) {
-        uint256 activeStake     = _activeStake.balanceOf(subject);
+        uint256 activeStake       = _activeStake.balanceOf(subject);
         uint256 inactiveStake     = _inactiveStake.balanceOf(subject);
-        uint256 slashFromActive = Math.min(activeStake, stakeValue * activeStake / (activeStake + inactiveStake));
-        uint256 slashFromInactive = Math.min(inactiveStake, stakeValue - slashFromActive);
-        stakeValue              = slashFromActive + slashFromInactive;
+        // if active/inactive stake is not 0, then prevent slashing it down to 0 (leave at least 1 wei) so shares can be priced.
+        uint256 slashFromActive   = Math.min(activeStake   == 0 ? 0 : activeStake   - 1, FullMath.mulDiv(activeStake, activeStake + inactiveStake, stakeValue));
+        uint256 slashFromInactive = Math.min(inactiveStake == 0 ? 0 : inactiveStake - 1, stakeValue - slashFromActive);
+        stakeValue                = slashFromActive + slashFromInactive;
 
         _activeStake.burn(subject, slashFromActive);
         _inactiveStake.burn(subject, slashFromInactive);
@@ -282,7 +284,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
     function availableReward(address subject, address account) public view returns (uint256) {
         return SafeCast.toUint256(
-            SafeCast.toInt256(_allocation(subject, sharesOf(subject, account)))
+            SafeCast.toInt256(_historicalRewardFraction(subject, sharesOf(subject, account)))
             -
             _released[subject].balanceOf( account)
         );
@@ -303,13 +305,13 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     }
 
     // Internal helpers
-    function _historical(address subject) internal view returns (uint256) {
+    function _totalHistoricalReward(address subject) internal view returns (uint256) {
         return SafeCast.toUint256(SafeCast.toInt256(_rewards.balanceOf(subject)) + _released[subject].totalSupply());
     }
 
-    function _allocation(address subject, uint256 amount) internal view returns (uint256) {
+    function _historicalRewardFraction(address subject, uint256 amount) internal view returns (uint256) {
         uint256 supply = totalShares(subject);
-        return amount > 0 && supply > 0 ? amount * _historical(subject) / supply : 0;
+        return amount > 0 && supply > 0 ? FullMath.mulDiv(amount, supply, _totalHistoricalReward(subject)) : 0;
     }
 
     function _beforeTokenTransfer(
@@ -330,7 +332,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
                 // Mint, burn, or transfer of subject shares would by default affect the distribution of the
                 // currently available reward for the subject. We create a "virtual release" that should preserve
                 // reward distribution as it was prior to the transfer.
-                int256 virtualRelease = SafeCast.toInt256(_allocation(subject, amounts[i]));
+                int256 virtualRelease = SafeCast.toInt256(_historicalRewardFraction(subject, amounts[i]));
                 if (from == address(0)) {
                     _released[subject].mint(to, virtualRelease);
                 } else if (to == address(0)) {
@@ -345,37 +347,37 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     }
 
     // Conversions
-    function _subjectToActive(address subject) private pure returns (uint256) { return uint256(uint160(subject));            }
+    function _subjectToActive(address subject) private pure returns (uint256) { return uint256(uint160(subject)); }
     function _subjectToInactive(address subject) private pure returns (uint256) { return uint256(uint160(subject)) | 2 ** 160; }
-    function _sharesToSubject(uint256 tokenId) private pure returns (address) { return address(uint160(tokenId));            }
+    function _sharesToSubject(uint256 tokenId) private pure returns (address) { return address(uint160(tokenId)); }
 
     function _stakeToActiveShares(address subject, uint256 amount) internal view returns (uint256) {
         uint256 activeStake = _activeStake.balanceOf(subject);
-        return activeStake == 0 ? amount : amount * totalShares(subject) / activeStake;
+        return activeStake == 0 ? amount : FullMath.mulDiv(amount, activeStake, totalShares(subject));
     }
 
     function _stakeToInactiveShares(address subject, uint256 amount) internal view returns (uint256) {
         uint256 inactiveStake = _inactiveStake.balanceOf(subject);
-        return inactiveStake == 0 ? amount : amount * totalInactiveShares(subject) / inactiveStake;
+        return inactiveStake == 0 ? amount : FullMath.mulDiv(amount, inactiveStake, totalInactiveShares(subject));
     }
 
     function _activeSharesToStake(address subject, uint256 amount) internal view returns (uint256) {
         uint256 activeSupply = totalShares(subject);
-        return activeSupply == 0 ? 0 : amount * _activeStake.balanceOf(subject) / activeSupply;
+        return activeSupply == 0 ? 0 : FullMath.mulDiv(amount, activeSupply, _activeStake.balanceOf(subject));
     }
     function _inactiveSharesToStake(address subject, uint256 amount) internal view returns (uint256) {
         uint256 inactiveSupply = totalInactiveShares(subject);
-        return inactiveSupply == 0 ? 0 : amount * _inactiveStake.balanceOf(subject) / inactiveSupply;
+        return inactiveSupply == 0 ? 0 : FullMath.mulDiv(amount, inactiveSupply, _inactiveStake.balanceOf(subject));
     }
 
     // Admin: change withdrawal delay
-    function setDelay(uint64 newDelay) public onlyRole(ADMIN_ROLE) {
+    function setDelay(uint64 newDelay) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _withdrawalDelay = newDelay;
         emit DelaySet(newDelay);
     }
 
     // Admin: change recipient of slashed funds
-    function setTreasury(address newTreasury) public onlyRole(ADMIN_ROLE) {
+    function setTreasury(address newTreasury) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _treasury = newTreasury;
         emit TreasurySet(newTreasury);
     }
