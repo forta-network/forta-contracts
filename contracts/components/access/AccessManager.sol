@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/utils/Multicall.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "../tools/ENSReverseRegistration.sol";
+import "../BaseComponent.sol";
 
-contract AccessManager is AccessControlUpgradeable, UUPSUpgradeable {
+contract AccessManager is AccessControlUpgradeable, UUPSUpgradeable, Multicall {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -29,7 +30,7 @@ contract AccessManager is AccessControlUpgradeable, UUPSUpgradeable {
     }
 
     // Allow the upgrader to set ENS reverse registration
-    function setName(address ensRegistry, string calldata ensName) external onlyRole(ADMIN_ROLE) {
+    function setName(address ensRegistry, string calldata ensName) public onlyRole(ADMIN_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 }

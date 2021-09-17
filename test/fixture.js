@@ -46,16 +46,29 @@ function prepare() {
       this.accounts.admin.address
     );
 
-    this.modules = await Promise.all(Object.entries({
-      staking:  deployUpgradeable('FortaStaking', 'uups', this.access.address, this.token.address, 0, this.accounts.treasure.address),
+    this.router = await deployUpgradeable('Router', 'uups',
+      this.access.address
+    );
+
+    this.components = await Promise.all(Object.entries({
+      staking:  deployUpgradeable('FortaStaking', 'uups',
+        this.access.address,
+        this.router.address,
+        this.token.address,
+        0,
+        this.accounts.treasure.address,
+      ),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
+    this.sink = await deploy('Sink');
+
     this.roles = await Promise.all(Object.entries({
-      ADMIN:       this.token.ADMIN_ROLE(),
-      MINTER:      this.token.MINTER_ROLE(),
-      WHITELISTER: this.token.WHITELISTER_ROLE(),
-      WHITELIST:   this.token.WHITELIST_ROLE(),
-      SLASHER:     this.modules.staking.SLASHER_ROLE(),
+      ADMIN:        this.token.ADMIN_ROLE(),
+      MINTER:       this.token.MINTER_ROLE(),
+      WHITELISTER:  this.token.WHITELISTER_ROLE(),
+      WHITELIST:    this.token.WHITELIST_ROLE(),
+      ROUTER_ADMIN: this.router.ROUTER_ADMIN(),
+      SLASHER:      this.components.staking.SLASHER_ROLE(),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
     await Promise.all([
@@ -64,9 +77,10 @@ function prepare() {
       this.token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address),
       this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
       this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
-      this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.modules.staking.address),
+      this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.components.staking.address),
       // Access manager for the rest of the platform
-      this.access.setNewRole(this.roles.SLASHER, this.roles.ADMIN),
+      this.access.setNewRole(this.roles.SLASHER,      this.roles.ADMIN),
+      this.access.setNewRole(this.roles.ROUTER_ADMIN, this.roles.ADMIN),
     ]);
   });
 }

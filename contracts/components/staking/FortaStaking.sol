@@ -10,21 +10,20 @@ import "@openzeppelin/contracts/utils/Multicall.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-import "../permissions/AccessManaged.sol";
-import "../tools/Distributions.sol";
-import "../tools/ENSReverseRegistration.sol";
+import "../BaseComponent.sol";
+import "../access/AccessManaged.sol";
+import "../router/Routed.sol";
+import "../../tools/Distributions.sol";
+import "../../tools/ENSReverseRegistration.sol";
 
 contract FortaStaking is
-    AccessManagedUpgradeable,
-    ERC1155SupplyUpgradeable,
-    Multicall,
-    UUPSUpgradeable
+    BaseComponent,
+    ERC1155SupplyUpgradeable
 {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
 
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
     IERC20 public stakedToken;
@@ -60,11 +59,13 @@ contract FortaStaking is
 
     function initialize(
         address __manager,
+        address __router,
         IERC20 __stakedToken,
         uint64 __withdrawalDelay,
         address __treasury
     ) public initializer {
         __AccessManaged_init(__manager);
+        __Routed_init(__router);
         __UUPSUpgradeable_init();
 
         stakedToken = __stakedToken;
@@ -141,6 +142,8 @@ contract FortaStaking is
         _activeStakes.mint(subject, stakeValue);
         _mint(staker, _subjectToActive(subject), sharesValue, new bytes(0));
 
+        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(address)", subject));
+
         return sharesValue;
     }
 
@@ -165,6 +168,8 @@ contract FortaStaking is
         _mint(staker, _subjectToLocked(subject), lockedShares, new bytes(0));
 
         emit WithdrawalInitiated(subject, staker, deadline);
+
+        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(address)", subject));
 
         return deadline;
     }
@@ -209,6 +214,8 @@ contract FortaStaking is
         SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue);
 
         emit Slashed(subject, _msgSender(), stakeValue);
+
+        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(address)", subject));
 
         return stakeValue;
     }
@@ -350,14 +357,5 @@ contract FortaStaking is
     function setTreasury(address newTreasury) public onlyRole(ADMIN_ROLE) {
         _treasury = newTreasury;
         emit TreasurySet(newTreasury);
-    }
-
-    // Access control for the upgrade process
-    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(ADMIN_ROLE) {
-    }
-
-    // Allow the upgrader to set ENS reverse registration
-    function setName(address ensRegistry, string calldata ensName) public onlyRole(ADMIN_ROLE) {
-        ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 }
