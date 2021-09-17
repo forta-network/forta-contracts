@@ -197,9 +197,11 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      * Emits a Slashed event.
      */
     function slash(address subject, uint256 stakeValue) public onlyRole(SLASHER_ROLE) returns (uint256) {
-        uint256 slashFromActive = Math.min(stakeValue,                   _activeStakes.balanceOf(subject));
-        uint256 slashFromLocked = Math.min(stakeValue - slashFromActive, _lockedStakes.balanceOf(subject));
-        stakeValue = slashFromActive + slashFromLocked;
+        uint256 activeStake     = _activeStakes.balanceOf(subject);
+        uint256 lockedStake     = _lockedStakes.balanceOf(subject);
+        uint256 slashFromActive = Math.min(activeStake, stakeValue * activeStake / (activeStake + lockedStake));
+        uint256 slashFromLocked = Math.min(lockedStake, stakeValue - slashFromActive);
+        stakeValue              = slashFromActive + slashFromLocked;
 
         _activeStakes.burn(subject, slashFromActive);
         _lockedStakes.burn(subject, slashFromLocked);

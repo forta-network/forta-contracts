@@ -472,11 +472,11 @@ describe('Forta Staking', function () {
       expect(await this.components.staking.balanceOf(this.accounts.user1.address, locked1)).to.be.equal('100');
       expect(await this.components.staking.balanceOf(this.accounts.user2.address, locked1)).to.be.equal('50');
 
-      await expect(this.components.staking.connect(this.accounts.slasher).slash(subject1, '110'))
-      .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.treasure.address, '110');
+      await expect(this.components.staking.connect(this.accounts.slasher).slash(subject1, '120'))
+      .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.treasure.address, '120');
 
-      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('0');
-      expect(await this.components.staking.lockedStakeOf(subject1)).to.be.equal('90');
+      expect(await this.components.staking.stakeOf(subject1)).to.be.equal('20');
+      expect(await this.components.staking.lockedStakeOf(subject1)).to.be.equal('60');
       expect(await this.components.staking.balanceOf(this.accounts.user1.address, subject1)).to.be.equal('0');
       expect(await this.components.staking.balanceOf(this.accounts.user2.address, subject1)).to.be.equal('50');
       expect(await this.components.staking.balanceOf(this.accounts.user1.address, locked1)).to.be.equal('100');
@@ -484,13 +484,11 @@ describe('Forta Staking', function () {
 
       await expect(this.components.staking.connect(this.accounts.user1).withdraw(subject1))
       .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, locked1, '100')
-      .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user1.address, '60')
+      .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user1.address, '40')
 
       await expect(this.components.staking.connect(this.accounts.user2).withdraw(subject1))
       .to.emit(this.components.staking, 'TransferSingle').withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, locked1, '50')
-      .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user2.address, '30')
-
-      //TODO: at this point the contract is broken until user2 withdraws his worthless shares, which he has no insentives to do.
+      .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.user2.address, '20')
     });
   });
 
