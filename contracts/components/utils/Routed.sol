@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../access/AccessManaged.sol";
-import "./IRouter.sol";
+import "./AccessManaged.sol";
+import "../router/IRouter.sol";
 
 abstract contract Routed is AccessManaged {
     IRouter private _router;

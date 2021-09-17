@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
-import "./IRouter.sol";
 import "../BaseComponent.sol";
+import "./IRouter.sol";
 
 contract Router is IRouter, BaseComponent {
     using EnumerableSet for EnumerableSet.AddressSet;

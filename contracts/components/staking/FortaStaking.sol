@@ -11,10 +11,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Supp
 import "../BaseComponent.sol";
 import "../../tools/Distributions.sol";
 
-contract FortaStaking is
-    BaseComponent,
-    ERC1155SupplyUpgradeable
-{
+contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
