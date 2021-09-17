@@ -41,11 +41,3 @@ contract Router is IRouter, BaseComponent {
         emit RoutingUpdated(sig, target, enable);
     }
 }
-
-contract Sink {
-    event GotSignal(bytes data);
-
-    fallback() external payable {
-        emit GotSignal(msg.data);
-    }
-}
