@@ -17,8 +17,8 @@ jobs:
         id: cache
         with:
           path: '**/node_modules'
-          key: npm-${{ hashFiles('**/package-lock.json') }}
+          key: npm-${{ hashFiles('**/yarn.lock') }}
           restore-keys: npm-
-      - run: npm ci
+      - run: yarn
         if: steps.cache.outputs.cache-hit != 'true'
       - run: npm run test
