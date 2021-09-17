@@ -6,15 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
-import "@openzeppelin/contracts/utils/Multicall.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import "../BaseComponent.sol";
-import "../access/AccessManaged.sol";
-import "../router/Routed.sol";
 import "../../tools/Distributions.sol";
-import "../../tools/ENSReverseRegistration.sol";
 
 contract FortaStaking is
     BaseComponent,
