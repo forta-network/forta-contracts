@@ -42,6 +42,10 @@ function prepare() {
       this.accounts.admin.address
     );
 
+    this.otherToken = await deployUpgradeable('Forta', 'uups',
+      this.accounts.admin.address
+    );
+
     this.access = await deployUpgradeable('AccessManager', 'uups',
       this.accounts.admin.address
     );
@@ -82,6 +86,11 @@ function prepare() {
       this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
       this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
       this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.components.staking.address),
+      this.otherToken.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
+      this.otherToken.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address),
+      this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
+      this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
+      this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.components.staking.address),
     ]);
   });
 }

@@ -492,6 +492,56 @@ describe('Forta Staking', function () {
     });
   });
 
+  describe('token sweeping', async function () {
+    beforeEach(async function () {
+      this.accounts.slasher = this.accounts.shift();
+      this.accounts.sweeper = this.accounts.shift();
+      await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
+      await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SWEEPER, this.accounts.sweeper.address)).to.be.not.reverted;
+      await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.sweeper.address)).to.be.not.reverted;
+      await expect(this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.sweeper.address)).to.be.not.reverted;
+
+      await expect(this.components.staking.connect(this.accounts.user1).deposit(subject1, '100')).to.be.not.reverted;
+      await expect(this.components.staking.connect(this.accounts.user1).initiateWithdrawal(subject1, '50')).to.be.not.reverted;
+      await expect(this.components.staking.connect(this.accounts.user2).deposit(subject1, '100')).to.be.not.reverted;
+      await expect(this.components.staking.connect(this.accounts.user3).reward(subject1, '100'))
+      await expect(this.components.staking.connect(this.accounts.slasher).slash(subject1, '120')).to.be.not.reverted
+    });
+
+    it('sweep unrelated token', async function () {
+      await expect(this.otherToken.connect(this.accounts.minter).mint(this.components.staking.address, '42')).to.be.not.reverted;
+
+      expect(await this.token.balanceOf(this.components.staking.address)).to.be.equal('180');
+      expect(await this.otherToken.balanceOf(this.components.staking.address)).to.be.equal('42');
+
+      await expect(this.components.staking.connect(this.accounts.user1).sweep(this.otherToken.address, this.accounts.user1.address))
+      .to.be.revertedWith(`MissingRole("${this.roles.SWEEPER}", "${this.accounts.user1.address}")`);
+
+      await expect(this.components.staking.connect(this.accounts.sweeper).sweep(this.otherToken.address, this.accounts.sweeper.address))
+      .to.emit(this.otherToken, 'Transfer').withArgs(this.components.staking.address, this.accounts.sweeper.address, '42');
+
+      expect(await this.token.balanceOf(this.components.staking.address)).to.be.equal('180');
+      expect(await this.otherToken.balanceOf(this.components.staking.address)).to.be.equal('0');
+
+    });
+
+    it('sweep staked token', async function () {
+      expect(await this.token.balanceOf(this.components.staking.address)).to.be.equal('180');
+
+      await expect(this.token.connect(this.accounts.user3).transfer(this.components.staking.address, '17')).to.be.not.reverted;
+
+      expect(await this.token.balanceOf(this.components.staking.address)).to.be.equal('197');
+
+      await expect(this.components.staking.connect(this.accounts.user1).sweep(this.token.address, this.accounts.user1.address))
+      .to.be.revertedWith(`MissingRole("${this.roles.SWEEPER}", "${this.accounts.user1.address}")`);
+
+      await expect(this.components.staking.connect(this.accounts.sweeper).sweep(this.token.address, this.accounts.sweeper.address))
+      .to.emit(this.token, 'Transfer').withArgs(this.components.staking.address, this.accounts.sweeper.address, '17');
+
+      expect(await this.token.balanceOf(this.components.staking.address)).to.be.equal('180');
+    });
+  });
+
   describe('signals routing', async function () {
     beforeEach(async function () {
       this.signature = ethers.utils.id("hook_afterStakeChanged(address)").slice(0,10);

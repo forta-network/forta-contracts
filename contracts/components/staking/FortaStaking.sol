@@ -269,7 +269,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      * @dev Sweep all token that might be mistakenly sent to the contract. This covers both unrelated tokens and staked
      * tokens that would be sent through a direct transfer.
      */
-    function sweep(IERC20 token, address recipient) public onlyRole(SWEEPER_ROLE) {
+    function sweep(IERC20 token, address recipient) public onlyRole(SWEEPER_ROLE) returns (uint256) {
         uint256 amount = token.balanceOf(address(this));
 
         if (token == stakedToken) {
@@ -279,6 +279,8 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         }
 
         token.transfer(recipient, amount);
+
+        return amount;
     }
 
     /**
@@ -299,6 +301,9 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         return value;
     }
 
+    /**
+     * @dev TODO
+     */
     function availableReward(address subject, address account) public view returns (uint256) {
         return SafeCast.toUint256(
             SafeCast.toInt256(_historicalRewardFraction(subject, sharesOf(subject, account)))
