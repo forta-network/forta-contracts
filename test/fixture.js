@@ -67,31 +67,35 @@ function prepare() {
     this.sink = await deploy('Sink');
 
     this.roles = await Promise.all(Object.entries({
+      // Forta
       ADMIN:         this.token.ADMIN_ROLE(),
       MINTER:        this.token.MINTER_ROLE(),
       WHITELISTER:   this.token.WHITELISTER_ROLE(),
       WHITELIST:     this.token.WHITELIST_ROLE(),
-      DEFAULT_ADMIN: this.access.DEFAULT_ADMIN_ROLE(),
-      ROUTER_ADMIN:  this.router.ROUTER_ADMIN(),
-      UPGRADER:      this.components.staking.UPGRADER_ROLE(),
-      ENS_MANAGER:   this.components.staking.ENS_MANAGER_ROLE(),
-      SLASHER:       this.components.staking.SLASHER_ROLE(),
-      SWEEPER:       this.components.staking.SWEEPER_ROLE(),
+      // AccessManager / AccessManaged roles
+      DEFAULT_ADMIN: ethers.constants.HashZero,
+      ENS_MANAGER:   ethers.utils.id('ENS_MANAGER_ROLE'),
+      ROUTER_ADMIN:  ethers.utils.id('ROUTER_ADMIN_ROLE'),
+      UPGRADER:      ethers.utils.id('UPGRADER_ROLE'),
+      SLASHER:       ethers.utils.id('SLASHER_ROLE'),
+      SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
-    await Promise.all([
+    await Promise.all([].concat(
       // Forta roles are standalone
-      this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
-      this.token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address),
-      this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
-      this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
-      this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.components.staking.address),
-      this.otherToken.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
-      this.otherToken.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address),
-      this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
-      this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
-      this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.components.staking.address),
-    ]);
+      [ this.token, this.otherToken ].flatMap(token => [
+        token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
+        token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address),
+        token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
+        token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
+        token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.components.staking.address),
+      ]),
+      // AccessManager roles
+      [
+        this.access.connect(this.accounts.admin).grantRole(this.roles.ENS_MANAGER, this.accounts.admin.address),
+        this.access.connect(this.accounts.admin).grantRole(this.roles.UPGRADER,    this.accounts.admin.address),
+      ],
+    ));
   });
 }
 

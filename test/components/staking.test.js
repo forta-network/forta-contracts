@@ -7,7 +7,7 @@ const [
   [ subject1, inactive1 ],
   [ subject2, inactive2 ],
   [ subject3, inactive3 ],
-] = new Array(3).fill().map(() => ethers.Wallet.createRandom()).map(({ address }) => [ address, ethers.utils.hexlify(LOCKED_OFFSET.add(ethers.BigNumber.from(address))) ]);
+] = new Array(3).fill().map(() => ethers.Wallet.createRandom()).map(({ address }) => [ address, ethers.utils.hexlify(LOCKED_OFFSET.or(ethers.BigNumber.from(address))) ]);
 
 const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
 
@@ -106,7 +106,7 @@ describe('Forta Staking', function () {
     describe('with delay', function () {
       beforeEach(async function () {
         await expect(this.components.staking.setDelay(3600))
-          .to.emit(this.components.staking, 'DelaySet').withArgs(3600)
+        .to.emit(this.components.staking, 'DelaySet').withArgs(3600)
       });
 
       it('happy path', async function () {

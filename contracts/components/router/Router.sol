@@ -3,13 +3,11 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import "../BaseComponent.sol";
 import "./IRouter.sol";
+import "../BaseComponent.sol";
 
 contract Router is IRouter, BaseComponent {
     using EnumerableSet for EnumerableSet.AddressSet;
-
-    bytes32 public constant ROUTER_ADMIN = keccak256("ROUTER_ADMIN");
 
     mapping(bytes4 => EnumerableSet.AddressSet) private _routingTable;
 
@@ -34,7 +32,7 @@ contract Router is IRouter, BaseComponent {
         }
     }
 
-    function setRoutingTable(bytes4 sig, address target, bool enable) external onlyRole(ROUTER_ADMIN) {
+    function setRoutingTable(bytes4 sig, address target, bool enable) external onlyRole(ROUTER_ADMIN_ROLE) {
         if (enable) {
             _routingTable[sig].add(target);
         } else {

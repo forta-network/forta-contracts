@@ -12,13 +12,32 @@ import "../BaseComponent.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
 
+/**
+ * @dev This is a generic staking contract for the Forta platform. It allows any account to deposit ERC20 tokens to
+ * delegate their "power" by staking on behalf of a particular subject. The subject can be scanner, or any other actor
+ * in the Forta ecosystem, who need to lock assets in order to contribute to the system.
+ *
+ * Stakers take risks with their funds, as bad action from a subject can lead to slashing of the funds. In the
+ * meantime, stakers are elligible to rewards. Rewards distributed to a particular subject stakers are distributed
+ * following to each staker's share in the subject.
+ *
+ * Stakers can withdraw their funds, following a withdrawal delay. During the withdrawal delay, funds are no longer
+ * counting counting toward the active stake of a subject, but are still slashable.
+ *
+ * The SLASHER_ROLE should be bigen to a future smart contract that will be in charge of resolving disputes.
+ *
+ * Stakers receive ERC1155 shares in exchange for their stake, making the active stake transferable. When a withdrawal
+ * is initiated, similar the ERC1155 tokens representing the (transferable) active shares are burned in exchange for
+ * non-transferable ERC1155 tokens representing the inactives shares.
+ *
+ * ERC1155 shares representing active stake are transferable, and can be used in an AMM. Their value is however subject
+ * to quick devaluation in case of slashing event for the corresponding subject. Thus, trading of such shares should be
+ * be done very carefully.
+ */
 contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
-
-    bytes32 public constant SWEEPER_ROLE = keccak256("SWEEPER_ROLE");
-    bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
     IERC20 public stakedToken;
 
@@ -284,7 +303,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     }
 
     /**
-     * @dev Release owed to a given `subject` shareholder.
+     * @dev Release reward owed by given `account` for its current or past share for a given `subject`.
      *
      * Emits a Release event.
      */
@@ -302,7 +321,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     }
 
     /**
-     * @dev TODO
+     * @dev Amount of reward tokens owed by given `account` for its current or past share for a given `subject`.
      */
     function availableReward(address subject, address account) public view returns (uint256) {
         return SafeCast.toUint256(
