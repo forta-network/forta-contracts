@@ -17,6 +17,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
 
+    bytes32 public constant SWEEPER_ROLE = keccak256("SWEEPER_ROLE");
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
     IERC20 public stakedToken;
@@ -262,6 +263,22 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         _rewards.mint(subject, value);
 
         emit Rewarded(subject, _msgSender(), value);
+    }
+
+    /**
+     * @dev Sweep all token that might be mistakenly sent to the contract. This covers both unrelated tokens and staked
+     * tokens that would be sent through a direct transfer.
+     */
+    function sweep(IERC20 token, address recipient) public onlyRole(SWEEPER_ROLE) {
+        uint256 amount = token.balanceOf(address(this));
+
+        if (token == stakedToken) {
+            amount -= totalActiveStake();
+            amount -= totalInactiveStake();
+            amount -= _rewards.totalSupply();
+        }
+
+        token.transfer(recipient, amount);
     }
 
     /**

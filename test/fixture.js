@@ -69,7 +69,10 @@ function prepare() {
       WHITELIST:     this.token.WHITELIST_ROLE(),
       DEFAULT_ADMIN: this.access.DEFAULT_ADMIN_ROLE(),
       ROUTER_ADMIN:  this.router.ROUTER_ADMIN(),
+      UPGRADER:      this.components.staking.UPGRADER_ROLE(),
+      ENS_MANAGER:   this.components.staking.ENS_MANAGER_ROLE(),
       SLASHER:       this.components.staking.SLASHER_ROLE(),
+      SWEEPER:       this.components.staking.SWEEPER_ROLE(),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
     await Promise.all([
@@ -79,9 +82,6 @@ function prepare() {
       this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
       this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
       this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.components.staking.address),
-      // Access manager for the rest of the platform
-      this.access.setNewRole(this.roles.SLASHER,      this.roles.DEFAULT_ADMIN),
-      this.access.setNewRole(this.roles.ROUTER_ADMIN, this.roles.DEFAULT_ADMIN),
     ]);
   });
 }
