@@ -7,6 +7,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import "../BaseComponent.sol";
 
+// This cannot be BaseComponent, because BaseComponent is AccessManagedUpgradeable
 contract AccessManager is AccessControlUpgradeable, UUPSUpgradeable, Multicall {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}

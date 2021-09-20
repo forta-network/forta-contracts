@@ -13,7 +13,7 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
     error MissingRole(bytes32 role, address account);
 
     modifier onlyRole(bytes32 role) {
-        if (!_accessManager.hasRole(role, _msgSender())) {
+        if (!hasRole(role, _msgSender())) {
             revert MissingRole(role, _msgSender());
         }
         _;
@@ -22,6 +22,10 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
     function __AccessManaged_init(address manager) internal initializer {
         _accessManager = IAccessControl(manager);
         emit AccessManagerUpdated(manager);
+    }
+
+    function hasRole(bytes32 role, address account) internal view returns (bool) {
+        return _accessManager.hasRole(role, account);
     }
 
     function setAccessManager(address newManager) public onlyRole(DEFAULT_ADMIN_ROLE) {

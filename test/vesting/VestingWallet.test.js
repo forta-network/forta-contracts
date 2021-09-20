@@ -1,6 +1,6 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
-const { prepare, deployUpgradeable } = require('./fixture');
+const { prepare, deployUpgradeable } = require('../fixture');
 
 const min = (...args) => args.slice(1).reduce((x,y) => x.lt(y) ? x : y, args[0]);
 const max = (...args) => args.slice(1).reduce((x,y) => x.gt(y) ? x : y, args[0]);

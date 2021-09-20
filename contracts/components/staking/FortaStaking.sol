@@ -85,6 +85,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
+        __ERC1155_init("");
 
         stakedToken = __stakedToken;
         _withdrawalDelay = __withdrawalDelay;
@@ -421,5 +422,9 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     function setTreasury(address newTreasury) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _treasury = newTreasury;
         emit TreasurySet(newTreasury);
+    }
+
+    function setURI(string memory newUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setURI(newUri);
     }
 }
