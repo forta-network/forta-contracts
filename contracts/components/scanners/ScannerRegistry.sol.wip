@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/Multicall.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-import "../tools/ENSReverseRegistration.sol";
+import "../BaseComponent.sol";
 
 import "./ScannerRegistryCore.sol";
 
@@ -24,20 +24,8 @@ contract ScannerRegistry is
         string calldata __symbol
     ) public initializer {
         __AccessManaged_init(__manager);
-        __ERC721_init(__name, __symbol);
+        __Routed_init(__router);
         __UUPSUpgradeable_init();
-    }
-
-    /**
-     * @dev Administration: access control for the upgrade process
-     */
-    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(ADMIN_ROLE) {
-    }
-
-    /**
-     * @dev Administration: allow the upgrader to set ENS reverse registration
-     */
-    function setName(address ensRegistry, string calldata ensName) public onlyRole(ADMIN_ROLE) {
-        ENSReverseRegistration.setName(ensRegistry, ensName);
+        __ERC721_init(__name, __symbol);
     }
 }

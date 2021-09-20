@@ -23,8 +23,8 @@ function performUpgrade(proxy, name) {
 }
 
 function prepare() {
-  before(async function() {
-    this.accounts = await ethers.getSigners();
+  beforeEach(async function () {
+    this.accounts              = await ethers.getSigners();
     this.accounts.admin        = this.accounts.shift();
     this.accounts.manager      = this.accounts.shift();
     this.accounts.minter       = this.accounts.shift();
@@ -36,10 +36,12 @@ function prepare() {
     this.accounts.user2        = this.accounts.shift();
     this.accounts.user3        = this.accounts.shift();
     this.accounts.other        = this.accounts.shift();
-  });
 
-  beforeEach(async function () {
     this.token = await deployUpgradeable('Forta', 'uups',
+      this.accounts.admin.address
+    );
+
+    this.otherToken = await deployUpgradeable('Forta', 'uups',
       this.accounts.admin.address
     );
 
@@ -47,36 +49,52 @@ function prepare() {
       this.accounts.admin.address
     );
 
-    this.modules = await Promise.all(Object.entries({
-      staking:  deployUpgradeable('FortaStaking',    'uups', this.access.address, this.token.address, 0, this.accounts.treasure.address),
-      agents:   deployUpgradeable('AgentRegistry',   'uups', this.access.address, 'Forta Agents',   'FAgents'),
-      scanners: deployUpgradeable('ScannerRegistry', 'uups', this.access.address, 'Forta Scanners', 'FScanners'),
+    this.router = await deployUpgradeable('Router', 'uups',
+      this.access.address
+    );
+
+    this.components = await Promise.all(Object.entries({
+      staking:  deployUpgradeable('FortaStaking',    'uups', this.access.address, this.router.address, this.token.address, 0, this.accounts.treasure.address),
+      agents:   deployUpgradeable('AgentRegistry',   'uups', this.access.address, this.router.address, 'Forta Agents', 'FAgents'),
+      // scanners: deployUpgradeable('ScannerRegistry', 'uups', this.access.address, this.router.address, 'Forta Scanners', 'FScanners'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
+
+    this.sink = await deploy('Sink');
 
     this.roles = await Promise.all(Object.entries({
-      ADMIN:           this.token.ADMIN_ROLE(),
-      MINTER:          this.token.MINTER_ROLE(),
-      WHITELISTER:     this.token.WHITELISTER_ROLE(),
-      WHITELIST:       this.token.WHITELIST_ROLE(),
-      SLASHER:         this.modules.staking.SLASHER_ROLE(),
-      AGENT_MANAGER:   this.modules.agents.AGENT_MANAGER_ROLE(),
-      SCANNER_MANAGER: this.modules.scanners.SCANNER_MANAGER_ROLE(),
+      // Forta
+      ADMIN:         this.token.ADMIN_ROLE(),
+      MINTER:        this.token.MINTER_ROLE(),
+      WHITELISTER:   this.token.WHITELISTER_ROLE(),
+      WHITELIST:     this.token.WHITELIST_ROLE(),
+      // AccessManager / AccessManaged roles
+      DEFAULT_ADMIN: ethers.constants.HashZero,
+      ROUTER_ADMIN:  ethers.utils.id('ROUTER_ADMIN_ROLE'),
+      ENS_MANAGER:   ethers.utils.id('ENS_MANAGER_ROLE'),
+      UPGRADER:      ethers.utils.id('UPGRADER_ROLE'),
+      AGENT_ADMIN:   ethers.utils.id('AGENT_ADMIN_ROLE'),
+      SCANNER_ADMIN: ethers.utils.id('SCANNER_ADMIN_ROLE'),
+      SLASHER:       ethers.utils.id('SLASHER_ROLE'),
+      SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
-    await Promise.all([
+    await Promise.all([].concat(
       // Forta roles are standalone
-      this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
-      this.token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address),
-      this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
-      this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
-      this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.modules.staking.address),
-      // Access manager for the rest of the platform
-      this.access.setNewRole(this.roles.SLASHER,         this.roles.ADMIN),
-      this.access.setNewRole(this.roles.AGENT_MANAGER,   this.roles.ADMIN),
-      this.access.setNewRole(this.roles.SCANNER_MANAGER, this.roles.ADMIN),
-      this.access.connect(this.accounts.admin).grantRole(this.roles.AGENT_MANAGER,   this.accounts.manager.address),
-      this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_MANAGER, this.accounts.manager.address),
-    ]);
+      [ this.token, this.otherToken ].flatMap(token => [
+        token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
+        token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address),
+        token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
+        token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
+        token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.components.staking.address),
+      ]),
+      // AccessManager roles
+      [
+        this.access.connect(this.accounts.admin).grantRole(this.roles.ENS_MANAGER,   this.accounts.admin.address),
+        this.access.connect(this.accounts.admin).grantRole(this.roles.UPGRADER,      this.accounts.admin.address),
+        this.access.connect(this.accounts.admin).grantRole(this.roles.AGENT_ADMIN,   this.accounts.manager.address),
+        this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN, this.accounts.manager.address),
+      ],
+    ));
   });
 }
 

@@ -17,8 +17,8 @@ contract AgentRegistryMetadata is AgentRegistryCore {
         return _agentMetadata[agentId];
     }
 
-    function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
-        super._afterAgentUpdate(agentId, newMetadata, newChainIds);
+    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
+        super._agentUpdate(agentId, newMetadata, newChainIds);
 
         uint256 version = _agentMetadata[agentId].version + 1;
         _agentMetadata[agentId] = AgentMetadata({ version: version, metadata: newMetadata, chainIds: newChainIds });

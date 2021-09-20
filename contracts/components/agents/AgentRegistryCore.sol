@@ -5,18 +5,16 @@ import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
-import "../permissions/AccessManaged.sol";
-import "../tools/FrontRunningProtection.sol";
+import "../BaseComponent.sol";
+import "../../tools/FrontRunningProtection.sol";
 
 contract AgentRegistryCore is
-    AccessManagedUpgradeable,
+    BaseComponent,
     FrontRunningProtection,
     ERC721Upgradeable
 {
     using BitMaps for BitMaps.BitMap;
     using Timers for Timers.Timestamp;
-
-    bytes32 public constant AGENT_MANAGER_ROLE = keccak256("AGENT_MANAGER_ROLE");
 
     enum Permission {
         ADMIN,
@@ -54,7 +52,7 @@ contract AgentRegistryCore is
     {
         _mint(owner, agentId);
         _beforeAgentUpdate(agentId, metadata, chainIds);
-        emit AgentUpdated(agentId, metadata, chainIds);
+        _agentUpdate(agentId, metadata, chainIds);
         _afterAgentUpdate(agentId, metadata, chainIds);
     }
 
@@ -64,7 +62,7 @@ contract AgentRegistryCore is
         onlyOwnerOf(agentId)
     {
         _beforeAgentUpdate(agentId, metadata, chainIds);
-        emit AgentUpdated(agentId, metadata, chainIds);
+        _agentUpdate(agentId, metadata, chainIds);
         _afterAgentUpdate(agentId, metadata, chainIds);
     }
 
@@ -76,21 +74,21 @@ contract AgentRegistryCore is
     }
 
     function enableAgent(uint256 agentId, Permission permission) public virtual {
-        if (permission == Permission.ADMIN) { require(hasRole(AGENT_MANAGER_ROLE, _msgSender())); }
+        if (permission == Permission.ADMIN) { require(hasRole(AGENT_ADMIN_ROLE, _msgSender())); }
         if (permission == Permission.OWNER) { require(_msgSender() == ownerOf(agentId)); }
         _enable(agentId, permission, true);
     }
 
     function disableAgent(uint256 agentId, Permission permission) public virtual {
-        if (permission == Permission.ADMIN) { require(hasRole(AGENT_MANAGER_ROLE, _msgSender())); }
+        if (permission == Permission.ADMIN) { require(hasRole(AGENT_ADMIN_ROLE, _msgSender())); }
         if (permission == Permission.OWNER) { require(_msgSender() == ownerOf(agentId)); }
         _enable(agentId, permission, false);
     }
 
     function _enable(uint256 agentId, Permission permission, bool enable) internal {
         _beforeAgentEnable(agentId, permission, enable);
-        _disabled[agentId].setTo(uint8(permission), !enable);
-        emit AgentEnabled(agentId, permission, enable);
+        _agentEnable(agentId, permission, enable);
+        _afterAgentEnable(agentId, permission, enable);
     }
 
     function _getDisableFlags(uint256 agentId) internal view returns (uint256) {
@@ -100,12 +98,29 @@ contract AgentRegistryCore is
     /**
      * Hook: Agent metadata change (create/update)
      */
-    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {}
-    function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {}
+    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
+    }
+
+    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
+        emit AgentUpdated(agentId, newMetadata, newChainIds);
+    }
+
+    function _afterAgentUpdate(uint256 agentId, string memory /*newMetadata*/, uint256[] calldata /*newChainIds*/) internal virtual {
+        _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256)", agentId));
+    }
 
     /**
      * Hook: Agent is enabled/disabled
      */
-    function _beforeAgentEnable(uint256 agentId, Permission permission, bool enable) internal virtual {}
-    function _afterAgentEnable(uint256 agentId, Permission permission, bool enable) internal virtual {}
+    function _beforeAgentEnable(uint256 agentId, Permission permission, bool enable) internal virtual {
+    }
+
+    function _agentEnable(uint256 agentId, Permission permission, bool enable) internal virtual {
+        _disabled[agentId].setTo(uint8(permission), !enable);
+        emit AgentEnabled(agentId, permission, enable);
+    }
+
+    function _afterAgentEnable(uint256 agentId, Permission /*permission*/, bool /*enable*/) internal virtual {
+        _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256)", agentId));
+    }
 }
