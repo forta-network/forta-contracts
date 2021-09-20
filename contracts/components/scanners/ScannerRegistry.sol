@@ -8,18 +8,14 @@ import "../BaseComponent.sol";
 
 import "./ScannerRegistryCore.sol";
 
-contract ScannerRegistry is
-    ScannerRegistryCore,
-    Multicall,
-    UUPSUpgradeable
+contract ScannerRegistry is BaseComponent, ScannerRegistryCore
 {
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
     function initialize(
         address __manager,
+        address __router,
         string calldata __name,
         string calldata __symbol
     ) public initializer {

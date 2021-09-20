@@ -1,20 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponent.sol";
 import "../../tools/FrontRunningProtection.sol";
 
-contract AgentRegistryCore is
-    BaseComponent,
-    FrontRunningProtection,
-    ERC721Upgradeable
-{
+contract AgentRegistryCore is BaseComponent, FrontRunningProtection, ERC721Upgradeable {
     using BitMaps for BitMaps.BitMap;
-    using Timers for Timers.Timestamp;
 
     enum Permission {
         ADMIN,

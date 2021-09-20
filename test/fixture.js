@@ -56,7 +56,7 @@ function prepare() {
     this.components = await Promise.all(Object.entries({
       staking:  deployUpgradeable('FortaStaking',    'uups', this.access.address, this.router.address, this.token.address, 0, this.accounts.treasure.address),
       agents:   deployUpgradeable('AgentRegistry',   'uups', this.access.address, this.router.address, 'Forta Agents', 'FAgents'),
-      // scanners: deployUpgradeable('ScannerRegistry', 'uups', this.access.address, this.router.address, 'Forta Scanners', 'FScanners'),
+      scanners: deployUpgradeable('ScannerRegistry', 'uups', this.access.address, this.router.address, 'Forta Scanners', 'FScanners'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
     this.sink = await deploy('Sink');
