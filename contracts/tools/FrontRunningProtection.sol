@@ -6,7 +6,7 @@ contract FrontRunningProtection {
 
     modifier frontrunProtected(bytes32 commit, uint256 duration) {
         uint256 timestamp = _commits[commit];
-        require(timestamp != 0 && timestamp + duration <= block.timestamp, "Commit not ready");
+        require(duration == 0 || (timestamp != 0 && timestamp + duration <= block.timestamp), "Commit not ready");
         delete _commits[commit];
         _;
     }

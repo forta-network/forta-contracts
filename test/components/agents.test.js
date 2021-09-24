@@ -14,7 +14,7 @@ describe('Agent Registry', function () {
   prepare();
 
   describe('create and update', function () {
-    it('missing prepare', async function () {
+    it.skip('missing prepare', async function () {
       const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ] ];
 
       await expect(this.components.agents.createAgent(...args))
@@ -22,7 +22,7 @@ describe('Agent Registry', function () {
     });
 
     describe('with prepare', async function () {
-      it('early', async function () {
+      it.skip('early', async function () {
         const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ] ];
 
         await expect(this.components.agents.prepareAgent(prepareCommit(...args)))

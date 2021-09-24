@@ -11,7 +11,7 @@ contract AgentRegistryMetadata is AgentRegistryCore {
     }
 
     mapping(uint256 => AgentMetadata) private _agentMetadata;
-
+    mapping(bytes32 => bool) private _agentMetadataUniqueness;
 
     function getAgent(uint256 agentId) public view returns (AgentMetadata memory) {
         return _agentMetadata[agentId];
@@ -19,6 +19,12 @@ contract AgentRegistryMetadata is AgentRegistryCore {
 
     function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
         super._agentUpdate(agentId, newMetadata, newChainIds);
+
+        bytes32 oldHash = keccak256(bytes(_agentMetadata[agentId].metadata));
+        bytes32 newHash = keccak256(bytes(newMetadata));
+        require(!_agentMetadataUniqueness[newHash], "Error: metadata should be a unique property");
+        _agentMetadataUniqueness[newHash] = true;
+        _agentMetadataUniqueness[oldHash] = false;
 
         uint256 version = _agentMetadata[agentId].version + 1;
         _agentMetadata[agentId] = AgentMetadata({ version: version, metadata: newMetadata, chainIds: newChainIds });

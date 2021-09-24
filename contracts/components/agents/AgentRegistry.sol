@@ -4,10 +4,15 @@ pragma solidity ^0.8.0;
 import "../BaseComponent.sol";
 
 import "./AgentRegistryCore.sol";
-import "./AgentRegistryMetadata.sol";
 import "./AgentRegistryEnumerable.sol";
+import "./AgentRegistryEnable.sol";
+import "./AgentRegistryMetadata.sol";
 
-contract AgentRegistry is BaseComponent, AgentRegistryMetadata, AgentRegistryEnumerable
+contract AgentRegistry is
+    BaseComponent,
+    AgentRegistryEnable,
+    AgentRegistryMetadata,
+    AgentRegistryEnumerable
 {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -26,5 +31,9 @@ contract AgentRegistry is BaseComponent, AgentRegistryMetadata, AgentRegistryEnu
 
     function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryEnumerable) {
         super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
+    }
+
+    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
+        super._agentUpdate(agentId, newMetadata, newChainIds);
     }
 }

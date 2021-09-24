@@ -37,30 +37,34 @@ function prepare() {
     this.accounts.user3        = this.accounts.shift();
     this.accounts.other        = this.accounts.shift();
 
-    this.token = await deployUpgradeable('Forta', 'uups',
-      this.accounts.admin.address
-    );
+    this.components = {}
 
-    this.otherToken = await deployUpgradeable('Forta', 'uups',
-      this.accounts.admin.address
-    );
+    // This #1
+    Object.assign(this, await Promise.all(Object.entries({
+      token:      deployUpgradeable('Forta',         'uups', this.accounts.admin.address),
+      otherToken: deployUpgradeable('Forta',         'uups', this.accounts.admin.address),
+      access:     deployUpgradeable('AccessManager', 'uups', this.accounts.admin.address),
+      sink:       deploy('Sink'),
+    }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
-    this.access = await deployUpgradeable('AccessManager', 'uups',
-      this.accounts.admin.address
-    );
+    // This #2
+    Object.assign(this, await Promise.all(Object.entries({
+      router:     deployUpgradeable('Router',        'uups', this.access.address),
+    }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
-    this.router = await deployUpgradeable('Router', 'uups',
-      this.access.address
-    );
-
-    this.components = await Promise.all(Object.entries({
+    // Components #1
+    Object.assign(this.components, await Promise.all(Object.entries({
       staking:  deployUpgradeable('FortaStaking',    'uups', this.access.address, this.router.address, this.token.address, 0, this.accounts.treasure.address),
       agents:   deployUpgradeable('AgentRegistry',   'uups', this.access.address, this.router.address, 'Forta Agents', 'FAgents'),
       scanners: deployUpgradeable('ScannerRegistry', 'uups', this.access.address, this.router.address, 'Forta Scanners', 'FScanners'),
-    }).map(entry => Promise.all(entry))).then(Object.fromEntries);
+    }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
-    this.sink = await deploy('Sink');
+    // Components #2
+    Object.assign(this.components, await Promise.all(Object.entries({
+      alerts:   deployUpgradeable('Alerts', 'uups', this.access.address, this.router.address, this.components.scanners.address),
+    }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
+    // Roles dictionnary
     this.roles = await Promise.all(Object.entries({
       // Forta
       ADMIN:         this.token.ADMIN_ROLE(),
@@ -78,6 +82,7 @@ function prepare() {
       SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
+    // Setup roles
     await Promise.all([].concat(
       // Forta roles are standalone
       [ this.token, this.otherToken ].flatMap(token => [
