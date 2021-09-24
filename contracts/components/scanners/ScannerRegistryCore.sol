@@ -24,6 +24,7 @@ contract ScannerRegistryCore is BaseComponent, ERC721Upgradeable
     mapping(uint256 => EnumerableSet.AddressSet) private _managers;
 
     event ScannerEnabled(uint256 indexed scanner, Permission permission, bool enabled);
+    event ManagerEnabled(uint256 indexed scanner, address indexed manager, bool enabled);
 
     modifier onlyOwnerOf(uint256 scannerId) {
         require(_msgSender() == ownerOf(scannerId), "Restricted to scanner owner");
@@ -42,12 +43,28 @@ contract ScannerRegistryCore is BaseComponent, ERC721Upgradeable
         _emitHook(abi.encodeWithSignature("hook_afterScannerRegistered(uint256)", scannerId));
     }
 
+    /**
+     * @dev Managers
+     */
+    function isManager(uint256 scannerId, address manager) public view virtual returns (bool) {
+        return _managers[scannerId].contains(manager);
+    }
+
+    function getManagerCount(uint256 scannerId) public view virtual returns (uint256) {
+        return _managers[scannerId].length();
+    }
+
+    function getManagerAt(uint256 scannerId, uint256 index) public view virtual returns (address) {
+        return _managers[scannerId].at(index);
+    }
+
     function setManager(uint256 scannerId, address manager, bool enable) public onlyOwnerOf(scannerId) {
         if (enable) {
             _managers[scannerId].add(manager);
         } else {
             _managers[scannerId].remove(manager);
         }
+        emit ManagerEnabled(scannerId, manager, enable);
     }
 
     /**
