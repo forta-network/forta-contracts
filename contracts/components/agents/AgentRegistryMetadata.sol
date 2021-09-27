@@ -13,8 +13,12 @@ contract AgentRegistryMetadata is AgentRegistryCore {
     mapping(uint256 => AgentMetadata) private _agentMetadata;
     mapping(bytes32 => bool) private _agentMetadataUniqueness;
 
-    function getAgent(uint256 agentId) public view returns (AgentMetadata memory) {
-        return _agentMetadata[agentId];
+    function getAgent(uint256 agentId) public view returns (uint256 version, string memory metadata, uint256[] memory chainIds) {
+        return (
+            _agentMetadata[agentId].version,
+            _agentMetadata[agentId].metadata,
+            _agentMetadata[agentId].chainIds
+        );
     }
 
     function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {

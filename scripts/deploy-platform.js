@@ -110,27 +110,25 @@ async function main() {
 
     console.log('[5] roles fetched')
 
-    // Setup roles
-    const txs = await Promise.all([
+    // Setup roles #1
+    await Promise.all([ deployer.address, '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242' ].flatMap(target => [
         // Forta roles are standalone
-        !(await contracts.token.hasRole(roles.MINTER,         deployer.address))                             && contracts.token.connect(deployer).grantRole(roles.MINTER,         deployer.address),
-        !(await contracts.token.hasRole(roles.WHITELISTER,    deployer.address))                             && contracts.token.connect(deployer).grantRole(roles.WHITELISTER,    deployer.address),
-        !(await contracts.token.hasRole(roles.WHITELIST,      deployer.address))                             && contracts.token.connect(deployer).grantRole(roles.WHITELIST,      deployer.address),
-        !(await contracts.token.hasRole(roles.MINTER,         '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242')) && contracts.token.connect(deployer).grantRole(roles.MINTER,         '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242'),
-        !(await contracts.token.hasRole(roles.WHITELISTER,    '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242')) && contracts.token.connect(deployer).grantRole(roles.WHITELISTER,    '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242'),
-        !(await contracts.token.hasRole(roles.WHITELIST,      '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242')) && contracts.token.connect(deployer).grantRole(roles.WHITELIST,      '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242'),
-        !(await contracts.token.hasRole(roles.WHITELIST,      contracts.staking.address))                    && contracts.token.connect(deployer).grantRole(roles.WHITELIST,      contracts.staking.address),
+        !(await contracts.token.hasRole(roles.MINTER,         target)) && contracts.token.connect(deployer).grantRole(roles.MINTER,         target),
+        !(await contracts.token.hasRole(roles.WHITELISTER,    target)) && contracts.token.connect(deployer).grantRole(roles.WHITELISTER,    target),
         // AccessManager roles
-        !(await contracts.access.hasRole(roles.ENS_MANAGER,   deployer.address))                             && contracts.access.connect(deployer).grantRole(roles.ENS_MANAGER,   deployer.address),
-        !(await contracts.access.hasRole(roles.UPGRADER,      deployer.address))                             && contracts.access.connect(deployer).grantRole(roles.UPGRADER,      deployer.address),
-        !(await contracts.access.hasRole(roles.AGENT_ADMIN,   deployer.address))                             && contracts.access.connect(deployer).grantRole(roles.AGENT_ADMIN,   deployer.address),
-        !(await contracts.access.hasRole(roles.SCANNER_ADMIN, deployer.address))                             && contracts.access.connect(deployer).grantRole(roles.SCANNER_ADMIN, deployer.address),
-        !(await contracts.access.hasRole(roles.ENS_MANAGER,   '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242')) && contracts.access.connect(deployer).grantRole(roles.ENS_MANAGER,   '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242'),
-        !(await contracts.access.hasRole(roles.UPGRADER,      '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242')) && contracts.access.connect(deployer).grantRole(roles.UPGRADER,      '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242'),
-        !(await contracts.access.hasRole(roles.AGENT_ADMIN,   '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242')) && contracts.access.connect(deployer).grantRole(roles.AGENT_ADMIN,   '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242'),
-        !(await contracts.access.hasRole(roles.SCANNER_ADMIN, '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242')) && contracts.access.connect(deployer).grantRole(roles.SCANNER_ADMIN, '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242'),
-        // Whitelist staking contract
-    ].filter(Boolean)).then(txs => txs.map(tx => tx.wait()));
+        !(await contracts.access.hasRole(roles.ENS_MANAGER,   target)) && contracts.access.connect(deployer).grantRole(roles.ENS_MANAGER,   target),
+        !(await contracts.access.hasRole(roles.UPGRADER,      target)) && contracts.access.connect(deployer).grantRole(roles.UPGRADER,      target),
+        !(await contracts.access.hasRole(roles.AGENT_ADMIN,   target)) && contracts.access.connect(deployer).grantRole(roles.AGENT_ADMIN,   target),
+        !(await contracts.access.hasRole(roles.SCANNER_ADMIN, target)) && contracts.access.connect(deployer).grantRole(roles.SCANNER_ADMIN, target),
+    ]).filter(Boolean).map(txPromise => txPromise.then(tx => tx.wait())));
+
+    // Setup roles #2 (need to be whitelister to whitelist)
+    await Promise.all([].concat(
+        !(await contracts.token.hasRole(roles.WHITELIST, contracts.staking.address)) && contracts.token.connect(deployer).grantRole(roles.WHITELIST, contracts.staking.address),
+        [ deployer.address, '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242' ].flatMap(target => [
+            !(await contracts.token.hasRole(roles.WHITELIST, target)) && contracts.token.connect(deployer).grantRole(roles.WHITELIST, target),
+        ]),
+    ).filter(Boolean).map(txPromise => txPromise.then(tx => tx.wait())));
 
     console.log('[6] roles granted')
 

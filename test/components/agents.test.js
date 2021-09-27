@@ -35,6 +35,13 @@ describe('Agent Registry', function () {
       it('on time', async function () {
         const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ] ];
 
+        expect(await this.components.agents.getAgentCount()).to.be.equal('0');
+        expect(await this.components.agents.getAgentCountByChain(1)).to.be.equal('0');
+        expect(await this.components.agents.getAgentCountByChain(2)).to.be.equal('0');
+        expect(await this.components.agents.getAgentCountByChain(3)).to.be.equal('0');
+        expect(await this.components.agents.getAgentCountByChain(4)).to.be.equal('0');
+        expect(await this.components.agents.getAgentCountByChain(5)).to.be.equal('0');
+
         await expect(this.components.agents.prepareAgent(prepareCommit(...args)))
         .to.emit(this.components.agents, 'AgentCommitted').withArgs(prepareCommit(...args));
 
@@ -54,11 +61,17 @@ describe('Agent Registry', function () {
           args[2],
           args[3],
         ]);
+        expect(await this.components.agents.getAgentCount()).to.be.equal('1');
         expect(await this.components.agents.getAgentCountByChain(1)).to.be.equal('1');
         expect(await this.components.agents.getAgentCountByChain(2)).to.be.equal('0');
         expect(await this.components.agents.getAgentCountByChain(3)).to.be.equal('1');
         expect(await this.components.agents.getAgentCountByChain(4)).to.be.equal('1');
         expect(await this.components.agents.getAgentCountByChain(5)).to.be.equal('1');
+        expect(await this.components.agents.getAgentByIndex(0)).to.be.equal(AGENT_ID);
+        expect(await this.components.agents.getAgentByChainAndIndex(1, 0)).to.be.equal(AGENT_ID);
+        expect(await this.components.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
+        expect(await this.components.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
+        expect(await this.components.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
       });
 
       it('unordered chainID', async function () {
@@ -75,6 +88,13 @@ describe('Agent Registry', function () {
 
       it('update', async function () {
         const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1, 3, 4 ] ];
+
+        expect(await this.components.agents.getAgentCount()).to.be.equal('0');
+        expect(await this.components.agents.getAgentCountByChain(1)).to.be.equal('0');
+        expect(await this.components.agents.getAgentCountByChain(2)).to.be.equal('0');
+        expect(await this.components.agents.getAgentCountByChain(3)).to.be.equal('0');
+        expect(await this.components.agents.getAgentCountByChain(4)).to.be.equal('0');
+        expect(await this.components.agents.getAgentCountByChain(5)).to.be.equal('0');
 
         await expect(this.components.agents.prepareAgent(prepareCommit(...args)))
         .to.emit(this.components.agents, 'AgentCommitted').withArgs(prepareCommit(...args));
@@ -95,11 +115,16 @@ describe('Agent Registry', function () {
           'Metadata1',
           [ 1, 3, 4 ],
         ]);
+        expect(await this.components.agents.getAgentCount()).to.be.equal('1');
         expect(await this.components.agents.getAgentCountByChain(1)).to.be.equal('1');
         expect(await this.components.agents.getAgentCountByChain(2)).to.be.equal('0');
         expect(await this.components.agents.getAgentCountByChain(3)).to.be.equal('1');
         expect(await this.components.agents.getAgentCountByChain(4)).to.be.equal('1');
         expect(await this.components.agents.getAgentCountByChain(5)).to.be.equal('0');
+        expect(await this.components.agents.getAgentByIndex(0)).to.be.equal(AGENT_ID);
+        expect(await this.components.agents.getAgentByChainAndIndex(1, 0)).to.be.equal(AGENT_ID);
+        expect(await this.components.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
+        expect(await this.components.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
 
         await expect(this.components.agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 'Metadata2', [ 1, 4, 5 ]))
         .to.emit(this.components.agents, 'AgentUpdated').withArgs(AGENT_ID, 'Metadata2', [ 1, 4, 5 ]);
@@ -114,11 +139,16 @@ describe('Agent Registry', function () {
           'Metadata2',
           [ 1, 4, 5 ],
         ]);
+        expect(await this.components.agents.getAgentCount()).to.be.equal('1');
         expect(await this.components.agents.getAgentCountByChain(1)).to.be.equal('1');
         expect(await this.components.agents.getAgentCountByChain(2)).to.be.equal('0');
         expect(await this.components.agents.getAgentCountByChain(3)).to.be.equal('0');
         expect(await this.components.agents.getAgentCountByChain(4)).to.be.equal('1');
         expect(await this.components.agents.getAgentCountByChain(5)).to.be.equal('1');
+        expect(await this.components.agents.getAgentByIndex(0)).to.be.equal(AGENT_ID);
+        expect(await this.components.agents.getAgentByChainAndIndex(1, 0)).to.be.equal(AGENT_ID);
+        expect(await this.components.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
+        expect(await this.components.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
       });
     });
   });

@@ -1,8 +1,10 @@
 const { ethers, upgrades } = require('hardhat');
 
+upgrades.silenceWarnings();
+
 function attach(name, ...params) {
   return ethers.getContractFactory(name)
-    .then(contract => Contract.attach(...params));
+    .then(contract => contract.attach(...params));
 }
 
 function deploy(name, ...params) {
@@ -13,7 +15,7 @@ function deploy(name, ...params) {
 
 function deployUpgradeable(name, kind, ...params) {
   return ethers.getContractFactory(name)
-    .then(contract => upgrades.deployProxy(contract, params, { kind }))
+    .then(contract => upgrades.deployProxy(contract, params, { kind, unsafeAllow: 'delegatecall' }))
     .then(f => f.deployed());
 }
 
