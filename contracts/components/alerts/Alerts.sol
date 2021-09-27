@@ -7,15 +7,6 @@ import "../scanners/ScannerRegistry.sol";
 contract Alerts is BaseComponent {
     ScannerRegistry public scannerRegistry;
 
-    modifier onlyValidScanner() {
-        require(scannerRegistry.ownerOf(uint256(uint160(_msgSender()))) != address(0), "Scanner does not exist");
-        //TODO this will validate stake requirements
-        _;
-    }
-
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
-
     event AlertBatch(
         bytes32 indexed alertsId,
         address indexed scanner,
@@ -28,6 +19,15 @@ contract Alerts is BaseComponent {
     );
 
     event ScannerRegistryChanged(address from, address to, address by);
+
+    modifier onlyValidScanner() {
+        require(scannerRegistry.ownerOf(uint256(uint160(_msgSender()))) != address(0), "Scanner does not exist");
+        //TODO this will validate stake requirements
+        _;
+    }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
 
     function initialize(
         address __manager,
@@ -72,4 +72,6 @@ contract Alerts is BaseComponent {
 
         scannerRegistry = ScannerRegistry(newScannerRegistry);
     }
+
+    uint256[49] private __gap;
 }

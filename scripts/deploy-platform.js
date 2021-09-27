@@ -1,7 +1,5 @@
 const { ethers, upgrades } = require('hardhat');
 const { NonceManager } = require('@ethersproject/experimental');
-// const chalk = require('chalk');
-// const assert = require('assert');
 
 
 
@@ -55,10 +53,14 @@ async function main() {
         access:   deployUpgradeable('AccessManager',   'uups', deployer.address),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
+    console.log('[1] token & access deployed')
+
     // This #2
     Object.assign(contracts, await Promise.all(Object.entries({
         router:   deployUpgradeable('Router',          'uups', contracts.access.address),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries));
+
+    console.log('[2] router deployed')
 
     // Components #1
     Object.assign(contracts, await Promise.all(Object.entries({
@@ -67,10 +69,14 @@ async function main() {
         scanners: deployUpgradeable('ScannerRegistry', 'uups', contracts.access.address, contracts.router.address, 'Forta Scanners', 'FScanners'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
+    console.log('[3] staking, agents & scanners deployed')
+
     // Components #2
     Object.assign(contracts, await Promise.all(Object.entries({
         alerts:   deployUpgradeable('Alerts',          'uups', contracts.access.address, contracts.router.address, contracts.scanners.address),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries));
+
+    console.log('[4] alerts deployed')
 
     // Roles dictionnary
     const roles = await Promise.all(Object.entries({
@@ -90,20 +96,32 @@ async function main() {
         SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
-    // Setup roles
-    await Promise.all([
-        // Forta roles are standalone
-        contracts.token.connect(deployer).grantRole(roles.MINTER,        deployer.address),
-        contracts.token.connect(deployer).grantRole(roles.WHITELISTER,   deployer.address),
-        contracts.token.connect(deployer).grantRole(roles.WHITELIST,     contracts.staking.address),
-        // AccessManager roles
-        contracts.access.connect(deployer).grantRole(roles.ENS_MANAGER,   deployer.address),
-        contracts.access.connect(deployer).grantRole(roles.UPGRADER,      deployer.address),
-        contracts.access.connect(deployer).grantRole(roles.AGENT_ADMIN,   deployer.address),
-        contracts.access.connect(deployer).grantRole(roles.SCANNER_ADMIN, deployer.address),
-    ]);
+    console.log('[5] roles fetched')
 
-    Object.entries(contracts).forEach(([ name, { address}]) => console.log(`- ${name}: ${address}`));
+    // Setup roles
+    await Promise.all([].concat(
+        [
+            deployer.address,
+            '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242'
+        ].flatMap(target => [
+            // Forta roles are standalone
+            contracts.token.connect(deployer).grantRole(roles.MINTER,        target),
+            contracts.token.connect(deployer).grantRole(roles.WHITELISTER,   target),
+            contracts.token.connect(deployer).grantRole(roles.WHITELIST,     target),
+            // AccessManager roles
+            contracts.access.connect(deployer).grantRole(roles.ENS_MANAGER,   target),
+            contracts.access.connect(deployer).grantRole(roles.UPGRADER,      target),
+            contracts.access.connect(deployer).grantRole(roles.AGENT_ADMIN,   target),
+            contracts.access.connect(deployer).grantRole(roles.SCANNER_ADMIN, target),
+        ]),
+        contracts.token.connect(deployer).grantRole(roles.WHITELIST, contracts.staking.address),
+    ));
+
+    console.log('[6] roles granted')
+
+    await Promise.all(Object.entries(contracts).map(([ name, { address }]) => upgrades.erc1967.getImplementationAddress(address).then(implementation =>
+        console.log(`[${name.padEnd(8)}] addr: ${address} impl: ${implementation}`)
+    )));
 }
 
 main()

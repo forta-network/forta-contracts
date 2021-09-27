@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/Multicall.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-
 import "../BaseComponent.sol";
 
 import "./ScannerRegistryCore.sol";
+import "./ScannerRegistryManaged.sol";
+import "./ScannerRegistryEnable.sol";
 
-contract ScannerRegistry is BaseComponent, ScannerRegistryCore
+contract ScannerRegistry is
+    BaseComponent,
+    ScannerRegistryCore,
+    ScannerRegistryManaged,
+    ScannerRegistryEnable
 {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -24,4 +27,6 @@ contract ScannerRegistry is BaseComponent, ScannerRegistryCore
         __UUPSUpgradeable_init();
         __ERC721_init(__name, __symbol);
     }
+
+    uint256[50] private __gap;
 }

@@ -3,9 +3,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
-import "./ScannerRegistryCore.sol";
+import "./ScannerRegistryManaged.sol";
 
-contract ScannerRegistryEnable is ScannerRegistryCore {
+contract ScannerRegistryEnable is ScannerRegistryManaged {
     using BitMaps for BitMaps.BitMap;
 
     enum Permission {
@@ -27,7 +27,7 @@ contract ScannerRegistryEnable is ScannerRegistryCore {
         return _disabled[scannerId]._data[0] == 0; // Permission.length < 256 → we don't have to loop
     }
 
-    function enableAgent(uint256 scannerId, Permission permission) public virtual {
+    function enableScanner(uint256 scannerId, Permission permission) public virtual {
         if (permission == Permission.ADMIN)   { require(hasRole(AGENT_ADMIN_ROLE, _msgSender())); }
         if (permission == Permission.SELF)    { require(uint256(uint160(_msgSender())) == scannerId); }
         if (permission == Permission.OWNER)   { require(_msgSender() == ownerOf(scannerId)); }
@@ -35,7 +35,7 @@ contract ScannerRegistryEnable is ScannerRegistryCore {
         _enable(scannerId, permission, true);
     }
 
-    function disableAgent(uint256 scannerId, Permission permission) public virtual {
+    function disableScanner(uint256 scannerId, Permission permission) public virtual {
         if (permission == Permission.ADMIN)   { require(hasRole(AGENT_ADMIN_ROLE, _msgSender())); }
         if (permission == Permission.SELF)    { require(uint256(uint160(_msgSender())) == scannerId); }
         if (permission == Permission.OWNER)   { require(_msgSender() == ownerOf(scannerId)); }
@@ -67,4 +67,6 @@ contract ScannerRegistryEnable is ScannerRegistryCore {
     function _afterScannerEnable(uint256 scannerId, Permission /*permission*/, bool /*enable*/) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256)", scannerId));
     }
+
+    uint256[49] private __gap;
 }

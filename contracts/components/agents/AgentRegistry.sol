@@ -4,12 +4,13 @@ pragma solidity ^0.8.0;
 import "../BaseComponent.sol";
 
 import "./AgentRegistryCore.sol";
-import "./AgentRegistryEnumerable.sol";
 import "./AgentRegistryEnable.sol";
+import "./AgentRegistryEnumerable.sol";
 import "./AgentRegistryMetadata.sol";
 
 contract AgentRegistry is
     BaseComponent,
+    AgentRegistryCore,
     AgentRegistryEnable,
     AgentRegistryMetadata,
     AgentRegistryEnumerable
@@ -36,4 +37,6 @@ contract AgentRegistry is
     function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
         super._agentUpdate(agentId, newMetadata, newChainIds);
     }
+
+    uint256[50] private __gap;
 }

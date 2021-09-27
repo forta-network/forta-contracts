@@ -50,4 +50,6 @@ contract AgentRegistryEnumerable is AgentRegistryMetadata {
             }
         }
     }
+
+    uint256[48] private __gap;
 }

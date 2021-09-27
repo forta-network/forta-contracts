@@ -61,4 +61,6 @@ contract AgentRegistryCore is BaseComponent, FrontRunningProtection, ERC721Upgra
     function _afterAgentUpdate(uint256 agentId, string memory /*newMetadata*/, uint256[] calldata /*newChainIds*/) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256)", agentId));
     }
+
+    uint256[50] private __gap;
 }

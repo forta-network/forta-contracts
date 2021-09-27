@@ -29,4 +29,6 @@ contract AgentRegistryMetadata is AgentRegistryCore {
         uint256 version = _agentMetadata[agentId].version + 1;
         _agentMetadata[agentId] = AgentMetadata({ version: version, metadata: newMetadata, chainIds: newChainIds });
     }
+
+    uint256[48] private __gap;
 }

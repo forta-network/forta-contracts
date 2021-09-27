@@ -427,4 +427,6 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     function setURI(string memory newUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setURI(newUri);
     }
+
+    uint256[41] private __gap;
 }

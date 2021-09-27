@@ -29,4 +29,6 @@ contract AccessManager is AccessControlUpgradeable, UUPSUpgradeable, Multicall {
     function setName(address ensRegistry, string calldata ensName) public onlyRole(DEFAULT_ADMIN_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
+
+    uint256[50] private __gap;
 }

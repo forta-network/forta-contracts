@@ -27,4 +27,6 @@ contract AgentRegistryListHash is AgentRegistryMetadata {
         bytes32 newHash = keccak256(abi.encodePacked(agentId, disable ^ (1 << uint8(permission))));
         _agentListHash ^= oldHash ^ newHash;
     }
+
+    uint256[49] private __gap;
 }

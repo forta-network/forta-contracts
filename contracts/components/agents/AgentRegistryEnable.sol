@@ -61,4 +61,6 @@ contract AgentRegistryEnable is AgentRegistryCore {
     function _afterAgentEnable(uint256 agentId, Permission /*permission*/, bool /*enable*/) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256)", agentId));
     }
+
+    uint256[49] private __gap;
 }

@@ -40,4 +40,6 @@ contract Router is IRouter, BaseComponent {
         }
         emit RoutingUpdated(sig, target, enable);
     }
+
+    uint256[49] private __gap;
 }

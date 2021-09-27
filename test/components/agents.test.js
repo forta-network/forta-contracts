@@ -173,7 +173,7 @@ describe('Agent Registry', function () {
       });
 
       it('restricted', async function () {
-        await expect(this.components.agents.connect(this.accounts.other).disableAgent(AGENT_ID, 0)).to.be.reverted;
+        await expect(this.components.agents.connect(this.accounts.other).disableAgent(AGENT_ID, 1)).to.be.reverted;
       });
     });
 

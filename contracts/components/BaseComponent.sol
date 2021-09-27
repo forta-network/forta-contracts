@@ -32,4 +32,6 @@ abstract contract BaseComponent is
     function setName(address ensRegistry, string calldata ensName) public onlyRole(ENS_MANAGER_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
+
+    uint256[50] private __gap;
 }
