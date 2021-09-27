@@ -1,6 +1,7 @@
 require('dotenv/config');
 require('@nomiclabs/hardhat-ethers');
 require('@nomiclabs/hardhat-waffle');
+require('@nomiclabs/hardhat-etherscan');
 require('solidity-coverage');
 require('hardhat-gas-reporter');
 require('@openzeppelin/hardhat-upgrades');
@@ -25,6 +26,9 @@ module.exports = {
     ],
   },
   networks: { hardhat: {} },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN,
+  },
   gasReporter: {
     currency: 'USD',
     coinmarketcap: process.env.COINMARKETCAP,
