@@ -26,12 +26,14 @@ contract AgentRegistryEnable is AgentRegistryCore {
     }
 
     function enableAgent(uint256 agentId, Permission permission) public virtual {
+        require(permission < Permission.length, "invalid permission slot");
         if (permission == Permission.ADMIN) { require(hasRole(AGENT_ADMIN_ROLE, _msgSender())); }
         if (permission == Permission.OWNER) { require(_msgSender() == ownerOf(agentId)); }
         _enable(agentId, permission, true);
     }
 
     function disableAgent(uint256 agentId, Permission permission) public virtual {
+        require(permission < Permission.length, "invalid permission slot");
         if (permission == Permission.ADMIN) { require(hasRole(AGENT_ADMIN_ROLE, _msgSender())); }
         if (permission == Permission.OWNER) { require(_msgSender() == ownerOf(agentId)); }
         _enable(agentId, permission, false);

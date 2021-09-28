@@ -28,6 +28,7 @@ contract ScannerRegistryEnable is ScannerRegistryManaged {
     }
 
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
+        require(permission < Permission.length, "invalid permission slot");
         if (permission == Permission.ADMIN)   { require(hasRole(AGENT_ADMIN_ROLE, _msgSender())); }
         if (permission == Permission.SELF)    { require(uint256(uint160(_msgSender())) == scannerId); }
         if (permission == Permission.OWNER)   { require(_msgSender() == ownerOf(scannerId)); }
@@ -36,6 +37,7 @@ contract ScannerRegistryEnable is ScannerRegistryManaged {
     }
 
     function disableScanner(uint256 scannerId, Permission permission) public virtual {
+        require(permission < Permission.length, "invalid permission slot");
         if (permission == Permission.ADMIN)   { require(hasRole(AGENT_ADMIN_ROLE, _msgSender())); }
         if (permission == Permission.SELF)    { require(uint256(uint160(_msgSender())) == scannerId); }
         if (permission == Permission.OWNER)   { require(_msgSender() == ownerOf(scannerId)); }
