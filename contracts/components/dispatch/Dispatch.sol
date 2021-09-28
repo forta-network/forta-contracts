@@ -16,6 +16,9 @@ contract Dispatch is BaseComponent {
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
 
+    event Link(uint256 agentId, uint256 scannerId, bool enable);
+
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -61,6 +64,8 @@ contract Dispatch is BaseComponent {
 
         scannerToAgents[scannerId].add(agentId);
         agentToScanners[agentId].add(scannerId);
+
+        emit Link(agentId, scannerId, true);
     }
 
     function unlink(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
@@ -69,6 +74,8 @@ contract Dispatch is BaseComponent {
 
         scannerToAgents[scannerId].remove(agentId);
         agentToScanners[agentId].remove(scannerId);
+
+        emit Link(agentId, scannerId, false);
     }
 
     function setAgentRegistry(address newAgentRegistry) public onlyRole(DEFAULT_ADMIN_ROLE) {
