@@ -61,31 +61,40 @@ async function main() {
 
     // This #1
     Object.assign(contracts, await Promise.all(Object.entries({
-        token:    attach('Forta',           '0x848F1fF1fa76Dc882Ca2F3521265ba3F27e42158'), // deployUpgradeable('Forta',           'uups', deployer.address),
-        access:   attach('AccessManager',   '0xb4457590d9f1e03bef165cc94ed82c63a1e5bb4d'), // deployUpgradeable('AccessManager',   'uups', deployer.address),
+        // token:    attach('Forta',           '0x848F1fF1fa76Dc882Ca2F3521265ba3F27e42158'),
+        // access:   attach('AccessManager',   '0xb4457590d9f1e03bef165cc94ed82c63a1e5bb4d'),
+        token:    deployUpgradeable('Forta',           'uups', deployer.address),
+        access:   deployUpgradeable('AccessManager',   'uups', deployer.address),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
     console.log('[1] token & access deployed')
 
     // This #2
     Object.assign(contracts, await Promise.all(Object.entries({
-        router:   attach('Router',          '0x779f6Fa8826f013Ce7580B8e815a4257DaaaC8E2'), // deployUpgradeable('Router',          'uups', contracts.access.address),
+        // router:   attach('Router',          '0x779f6Fa8826f013Ce7580B8e815a4257DaaaC8E2'),
+        router:   deployUpgradeable('Router',          'uups', contracts.access.address),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
     console.log('[2] router deployed')
 
     // Components #1
     Object.assign(contracts, await Promise.all(Object.entries({
-        staking:  attach('FortaStaking',    '0x2EB0de54842A3FaaD9C7724f68363b11eb72b4dB'), // deployUpgradeable('FortaStaking',    'uups', contracts.access.address, contracts.router.address, contracts.token.address, 0, deployer.address),
-        agents:   attach('AgentRegistry',   '0xa3a0ea252d3cf18b30c3ada0e013671beedb4262'), // deployUpgradeable('AgentRegistry',   'uups', contracts.access.address, contracts.router.address, 'Forta Agents',   'FAgents'  ),
-        scanners: attach('ScannerRegistry', '0x65F22a702F88B53883A89F772449c7667DB9ab9C'), // deployUpgradeable('ScannerRegistry', 'uups', contracts.access.address, contracts.router.address, 'Forta Scanners', 'FScanners'),
+        // staking:  attach('FortaStaking',    '0x2EB0de54842A3FaaD9C7724f68363b11eb72b4dB'),
+        // agents:   attach('AgentRegistry',   '0xa3a0ea252d3cf18b30c3ada0e013671beedb4262'),
+        // scanners: attach('ScannerRegistry', '0x65F22a702F88B53883A89F772449c7667DB9ab9C'),
+        staking:  deployUpgradeable('FortaStaking',    'uups', contracts.access.address, contracts.router.address, contracts.token.address, 0, deployer.address),
+        agents:   deployUpgradeable('AgentRegistry',   'uups', contracts.access.address, contracts.router.address, 'Forta Agents',   'FAgents'  ),
+        scanners: deployUpgradeable('ScannerRegistry', 'uups', contracts.access.address, contracts.router.address, 'Forta Scanners', 'FScanners'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
     console.log('[3] staking, agents & scanners deployed')
 
     // Components #2
     Object.assign(contracts, await Promise.all(Object.entries({
-        alerts:   attach('Alerts',          '0xC0556fC048B0F189F412DBba536aBD1a4ebD1349'), // deployUpgradeable('Alerts',          'uups', contracts.access.address, contracts.router.address, contracts.scanners.address),
+        // dispatch: attach('Dispatch',        '0x77Db997b9Ad5e14386aB367fa47de073b3743248'),
+        // alerts:   attach('Alerts',          '0xC0556fC048B0F189F412DBba536aBD1a4ebD1349'),
+        dispatch: deployUpgradeable('Dispatch',        'uups', contracts.access.address, contracts.router.address, contracts.agents.address, contracts.scanners.address),
+        alerts:   deployUpgradeable('Alerts',          'uups', contracts.access.address, contracts.router.address, contracts.scanners.address),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
     console.log('[4] alerts deployed')
@@ -104,6 +113,7 @@ async function main() {
         UPGRADER:      ethers.utils.id('UPGRADER_ROLE'),
         AGENT_ADMIN:   ethers.utils.id('AGENT_ADMIN_ROLE'),
         SCANNER_ADMIN: ethers.utils.id('SCANNER_ADMIN_ROLE'),
+        DISPATCHER:    ethers.utils.id('DISPATCHER_ROLE'),
         SLASHER:       ethers.utils.id('SLASHER_ROLE'),
         SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
@@ -111,25 +121,30 @@ async function main() {
     console.log('[5] roles fetched')
 
     // Setup roles #1
-    await Promise.all([ deployer.address, '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242' ].flatMap(target => [
-        // Forta roles are standalone
-        !(await contracts.token.hasRole(roles.MINTER,         target)) && contracts.token.connect(deployer).grantRole(roles.MINTER,         target),
-        !(await contracts.token.hasRole(roles.WHITELISTER,    target)) && contracts.token.connect(deployer).grantRole(roles.WHITELISTER,    target),
-        // AccessManager roles
-        !(await contracts.access.hasRole(roles.ENS_MANAGER,   target)) && contracts.access.connect(deployer).grantRole(roles.ENS_MANAGER,   target),
-        !(await contracts.access.hasRole(roles.UPGRADER,      target)) && contracts.access.connect(deployer).grantRole(roles.UPGRADER,      target),
-        !(await contracts.access.hasRole(roles.AGENT_ADMIN,   target)) && contracts.access.connect(deployer).grantRole(roles.AGENT_ADMIN,   target),
-        !(await contracts.access.hasRole(roles.SCANNER_ADMIN, target)) && contracts.access.connect(deployer).grantRole(roles.SCANNER_ADMIN, target),
-    ]).filter(Boolean).map(txPromise => txPromise.then(tx => tx.wait())));
-
-    // Setup roles #2 (need to be whitelister to whitelist)
-    await Promise.all([].concat(
-        !(await contracts.token.hasRole(roles.WHITELIST, contracts.staking.address)) && contracts.token.connect(deployer).grantRole(roles.WHITELIST, contracts.staking.address),
+    await Promise.all(
         [ deployer.address, '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242' ].flatMap(target => [
-            !(await contracts.token.hasRole(roles.WHITELIST, target)) && contracts.token.connect(deployer).grantRole(roles.WHITELIST, target),
-        ]),
-    ).filter(Boolean).map(txPromise => txPromise.then(tx => tx.wait())));
-
+            // Forta roles are standalone
+            contracts.token.hasRole(roles.MINTER,         target).then(value => value ? undefined : contracts.token.connect(deployer).grantRole(roles.MINTER,         target)),
+            contracts.token.hasRole(roles.WHITELISTER,    target).then(value => value ? undefined : contracts.token.connect(deployer).grantRole(roles.WHITELISTER,    target)),
+            // AccessManager roles
+            contracts.access.hasRole(roles.ENS_MANAGER,   target).then(value => value ? undefined : contracts.access.connect(deployer).grantRole(roles.ENS_MANAGER,   target)),
+            contracts.access.hasRole(roles.UPGRADER,      target).then(value => value ? undefined : contracts.access.connect(deployer).grantRole(roles.UPGRADER,      target)),
+            contracts.access.hasRole(roles.AGENT_ADMIN,   target).then(value => value ? undefined : contracts.access.connect(deployer).grantRole(roles.AGENT_ADMIN,   target)),
+            contracts.access.hasRole(roles.SCANNER_ADMIN, target).then(value => value ? undefined : contracts.access.connect(deployer).grantRole(roles.SCANNER_ADMIN, target)),
+            contracts.access.hasRole(roles.DISPATCHER,    target).then(value => value ? undefined : contracts.access.connect(deployer).grantRole(roles.DISPATCHER,    target)),
+        ])
+        .map(txPromise => txPromise && txPromise.then(tx => tx && tx.wait()))
+    );
+    // Setup roles #2 (need to be whitelister to whitelist)
+    await Promise.all(
+        [].concat(
+            contracts.token.hasRole(roles.WHITELIST, contracts.staking.address).then(value => value ? undefined : contracts.token.connect(deployer).grantRole(roles.WHITELIST, contracts.staking.address)),
+            [ deployer.address, '0x8eedf056dE8d0B0fd282Cc0d7333488Cc5B5D242' ].flatMap(target => [
+                contracts.token.hasRole(roles.WHITELIST, target).then(value => value ? undefined : contracts.token.connect(deployer).grantRole(roles.WHITELIST, target)),
+            ]),
+        )
+        .map(txPromise => txPromise && txPromise.then(tx => tx && tx.wait()))
+    );
     console.log('[6] roles granted')
 
     await Promise.all(Object.entries(contracts).map(([ name, { address }]) => upgrades.erc1967.getImplementationAddress(address).then(implementation =>

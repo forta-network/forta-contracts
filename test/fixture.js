@@ -63,7 +63,8 @@ function prepare() {
 
     // Components #2
     Object.assign(this.components, await Promise.all(Object.entries({
-      alerts:   deployUpgradeable('Alerts', 'uups', this.access.address, this.router.address, this.components.scanners.address),
+      dispatch: deployUpgradeable('Dispatch',        'uups', this.access.address, this.router.address, this.components.agents.address, this.components.scanners.address),
+      alerts:   deployUpgradeable('Alerts',          'uups', this.access.address, this.router.address, this.components.scanners.address),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
     // Roles dictionnary
@@ -80,6 +81,7 @@ function prepare() {
       UPGRADER:      ethers.utils.id('UPGRADER_ROLE'),
       AGENT_ADMIN:   ethers.utils.id('AGENT_ADMIN_ROLE'),
       SCANNER_ADMIN: ethers.utils.id('SCANNER_ADMIN_ROLE'),
+      DISPATCHER:    ethers.utils.id('DISPATCHER_ROLE'),
       SLASHER:       ethers.utils.id('SLASHER_ROLE'),
       SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
@@ -96,10 +98,11 @@ function prepare() {
       ]),
       // AccessManager roles
       [
-        this.access.connect(this.accounts.admin).grantRole(this.roles.ENS_MANAGER,   this.accounts.admin.address),
-        this.access.connect(this.accounts.admin).grantRole(this.roles.UPGRADER,      this.accounts.admin.address),
-        this.access.connect(this.accounts.admin).grantRole(this.roles.AGENT_ADMIN,   this.accounts.manager.address),
-        this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN, this.accounts.manager.address),
+        this.access.connect(this.accounts.admin).grantRole(this.roles.ENS_MANAGER,     this.accounts.admin.address),
+        this.access.connect(this.accounts.admin).grantRole(this.roles.UPGRADER,        this.accounts.admin.address),
+        this.access.connect(this.accounts.admin).grantRole(this.roles.AGENT_ADMIN,     this.accounts.manager.address),
+        this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN,   this.accounts.manager.address),
+        this.access.connect(this.accounts.admin).grantRole(this.roles.DISPATCHER_ROLE, this.accounts.manager.address),
       ],
     ));
   });

@@ -94,7 +94,7 @@ describe('Scanner Registry', function () {
     });
   });
 
-  describe.only('enable and disable', async function () {
+  describe('enable and disable', async function () {
     beforeEach(async function () {
       await expect(this.components.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address)).to.be.not.reverted;
     });
