@@ -54,8 +54,19 @@ contract Dispatch is BaseComponent {
         return scannerToAgents[scannerId].at(pos);
     }
 
+    function agentRefAt(uint256 scannerId, uint256 pos) external view returns (uint256 agentId, bool enabled, uint256 version, string memory metadata, uint256[] memory chainIds) {
+        agentId = agentsAt(scannerId, pos);
+        enabled = _agents.isEnabled(agentId);
+        (version, metadata, chainIds) = _agents.getAgent(agentId);
+    }
+
     function scannersAt(uint256 agentId, uint256 pos) public view returns (uint256) {
         return agentToScanners[agentId].at(pos);
+    }
+
+    function scannerRefAt(uint256 agentId, uint256 pos) external view returns (uint256 scannerId, bool enabled) {
+        scannerId = agentsAt(agentId, pos);
+        enabled   = _scanners.isEnabled(agentId);
     }
 
     function link(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
@@ -86,6 +97,20 @@ contract Dispatch is BaseComponent {
         _scanners = ScannerRegistry(newScannerRegistry);
     }
 
+    function agentHash(uint256 agentId) external view returns (uint256 length, bytes32 manifest) {
+        uint256[] memory scanners = agentToScanners[agentId].values();
+        bool[]    memory enabled = new bool[](scanners.length);
+
+        for (uint256 i = 0; i < scanners.length; ++i) {
+            enabled[i] = _scanners.isEnabled(scanners[i]);
+        }
+
+        return (
+            scanners.length,
+            keccak256(abi.encodePacked(scanners, enabled))
+        );
+    }
+
     function scannerHash(uint256 scannerId) external view returns (uint256 length, bytes32 manifest) {
         uint256[] memory agents  = scannerToAgents[scannerId].values();
         uint256[] memory version = new uint256[](agents.length);
@@ -100,12 +125,6 @@ contract Dispatch is BaseComponent {
             agents.length,
             keccak256(abi.encodePacked(agents, version, enabled))
         );
-    }
-
-    function scannerRefAt(uint256 scannerId, uint256 pos) external view returns (uint256 agentId, bool enabled, uint256 version, string memory metadata, uint256[] memory chainIds) {
-        agentId = agentsAt(scannerId, pos);
-        enabled = _agents.isEnabled(agentId);
-        (version, metadata, chainIds) = _agents.getAgent(agentId);
     }
 
     uint256[48] private __gap;
