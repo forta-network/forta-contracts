@@ -40,8 +40,9 @@ contract AgentRegistryCore is BaseComponent, FrontRunningProtection, ERC721Upgra
 
     function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds)
     public
-        onlySorted(chainIds)
         onlyOwnerOf(agentId)
+        onlySorted(chainIds)
+        frontrunProtected(keccak256(abi.encodePacked(agentId, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
     {
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);
