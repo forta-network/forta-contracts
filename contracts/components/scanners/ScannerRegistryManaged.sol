@@ -10,7 +10,7 @@ contract ScannerRegistryManaged is ScannerRegistryCore {
 
     mapping(uint256 => EnumerableSet.AddressSet) private _managers;
 
-    event ManagerEnabled(uint256 indexed scanner, address indexed manager, bool enabled);
+    event ManagerEnabled(uint256 indexed scannerId, address indexed manager, bool enabled);
 
     modifier onlyManagerOf(uint256 scannerId) {
         require(_managers[scannerId].contains(_msgSender()), "Restricted to scanner owner");

@@ -18,7 +18,7 @@ contract ScannerRegistryEnable is ScannerRegistryManaged {
 
     mapping(uint256 => BitMaps.BitMap) private _disabled;
 
-    event ScannerEnabled(uint256 indexed scanner, Permission permission, bool enabled);
+    event ScannerEnabled(uint256 indexed scannerId, Permission permission, bool enabled);
 
     /**
      * @dev Enable/Disable scaner
