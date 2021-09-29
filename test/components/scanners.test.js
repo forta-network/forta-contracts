@@ -3,9 +3,6 @@ const { expect } = require('chai');
 const { prepare } = require('../fixture');
 
 
-const SCANNER_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
-
-
 const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
 const prepareCommit = (...args)  => ethers.utils.solidityKeccak256([ 'bytes32', 'address', 'string', 'uint256[]' ], args);
 

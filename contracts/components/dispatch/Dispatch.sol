@@ -86,5 +86,27 @@ contract Dispatch is BaseComponent {
         _scanners = ScannerRegistry(newScannerRegistry);
     }
 
+    function scannerHash(uint256 scannerId) external view returns (uint256 length, bytes32 manifest) {
+        uint256[] memory agents  = scannerToAgents[scannerId].values();
+        uint256[] memory version = new uint256[](agents.length);
+        bool[]    memory enabled = new bool[](agents.length);
+
+        for (uint256 i = 0; i < agents.length; ++i) {
+            (version[i],,) = _agents.getAgent(agents[i]);
+            enabled[i]     = _agents.isEnabled(agents[i]);
+        }
+
+        return (
+            agents.length,
+            keccak256(abi.encodePacked(agents, version, enabled))
+        );
+    }
+
+    function scannerRefAt(uint256 scannerId, uint256 pos) external view returns (uint256 agentId, bool enabled, uint256 version, string memory metadata, uint256[] memory chainIds) {
+        agentId = agentsAt(scannerId, pos);
+        enabled = _agents.isEnabled(agentId);
+        (version, metadata, chainIds) = _agents.getAgent(agentId);
+    }
+
     uint256[48] private __gap;
 }
