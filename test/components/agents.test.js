@@ -47,9 +47,9 @@ describe('Agent Registry', function () {
 
         await network.provider.send('evm_increaseTime', [ 300 ]);
 
-        await expect(this.components.agents.createAgent(...args))
+        await expect(this.components.agents.connect(this.accounts.other).createAgent(...args))
         .to.emit(this.components.agents, 'Transfer').withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
-        .to.emit(this.components.agents, 'AgentUpdated').withArgs(AGENT_ID, 'Metadata1', [ 1 , 3, 4, 5 ]);
+        .to.emit(this.components.agents, 'AgentUpdated').withArgs(AGENT_ID, this.accounts.other.address, 'Metadata1', [ 1 , 3, 4, 5 ]);
 
         expect(await this.components.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.components.agents.getAgent(AGENT_ID).then(agent => [
@@ -101,9 +101,9 @@ describe('Agent Registry', function () {
 
         await network.provider.send('evm_increaseTime', [ 300 ]);
 
-        await expect(this.components.agents.createAgent(...args))
+        await expect(this.components.agents.connect(this.accounts.other).createAgent(...args))
         .to.emit(this.components.agents, 'Transfer').withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
-        .to.emit(this.components.agents, 'AgentUpdated').withArgs(AGENT_ID, 'Metadata1', [ 1 , 3, 4 ]);
+        .to.emit(this.components.agents, 'AgentUpdated').withArgs(AGENT_ID, this.accounts.other.address, 'Metadata1', [ 1 , 3, 4 ]);
 
         expect(await this.components.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.components.agents.getAgent(AGENT_ID).then(agent => [
@@ -127,7 +127,7 @@ describe('Agent Registry', function () {
         expect(await this.components.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
 
         await expect(this.components.agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 'Metadata2', [ 1, 4, 5 ]))
-        .to.emit(this.components.agents, 'AgentUpdated').withArgs(AGENT_ID, 'Metadata2', [ 1, 4, 5 ]);
+        .to.emit(this.components.agents, 'AgentUpdated').withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata2', [ 1, 4, 5 ]);
 
         expect(await this.components.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.components.agents.getAgent(AGENT_ID).then(agent => [

@@ -8,7 +8,7 @@ import "../../tools/FrontRunningProtection.sol";
 
 contract AgentRegistryCore is BaseComponent, FrontRunningProtection, ERC721Upgradeable {
     event AgentCommitted(bytes32 indexed commit);
-    event AgentUpdated(uint256 indexed agentId, string metadata, uint256[] chainIds);
+    event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
 
     modifier onlyOwnerOf(uint256 agentId) {
         require(_msgSender() == ownerOf(agentId), "Restricted to agent owner");
@@ -56,7 +56,7 @@ contract AgentRegistryCore is BaseComponent, FrontRunningProtection, ERC721Upgra
     }
 
     function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
-        emit AgentUpdated(agentId, newMetadata, newChainIds);
+        emit AgentUpdated(agentId, _msgSender(), newMetadata, newChainIds);
     }
 
     function _afterAgentUpdate(uint256 agentId, string memory /*newMetadata*/, uint256[] calldata /*newChainIds*/) internal virtual {

@@ -58,9 +58,9 @@ async function main() {
     // await performUpgrade({ address: '0xa3a0ea252d3cf18b30c3ada0e013671beedb4262' }, 'AgentRegistry');
     // await performUpgrade({ address: '0x65F22a702F88B53883A89F772449c7667DB9ab9C' }, 'ScannerRegistry');
     // await performUpgrade({ address: '0x77Db997b9Ad5e14386aB367fa47de073b3743248' }, 'Dispatch');
-    // await upgrades.erc1967.getImplementationAddress('0xa3a0ea252d3cf18b30c3ada0e013671beedb4262').then(console.log);
+    await upgrades.erc1967.getImplementationAddress('0xa3a0ea252d3cf18b30c3ada0e013671beedb4262').then(console.log);
     // await upgrades.erc1967.getImplementationAddress('0x65F22a702F88B53883A89F772449c7667DB9ab9C').then(console.log);
-    await upgrades.erc1967.getImplementationAddress('0x77Db997b9Ad5e14386aB367fa47de073b3743248').then(console.log);
+    // await upgrades.erc1967.getImplementationAddress('0x77Db997b9Ad5e14386aB367fa47de073b3743248').then(console.log);
 
     console.log('done');
 }
