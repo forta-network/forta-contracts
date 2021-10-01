@@ -14,7 +14,7 @@ contract ScannerRegistryCore is
         _;
     }
 
-    function adminRegister(uint256 scannerId, address owner) public onlyRole(AGENT_ADMIN_ROLE) {
+    function adminRegister(uint256 scannerId, address owner) public onlyRole(SCANNER_ADMIN_ROLE) {
         _mint(owner, scannerId);
         _emitHook(abi.encodeWithSignature("hook_afterScannerRegistered(uint256)", scannerId));
     }
