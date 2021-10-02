@@ -26,6 +26,9 @@ module.exports = {
     ],
   },
   networks: { hardhat: {} },
+	mocha: {
+    timeout: 60000,
+  },
   etherscan: {
     apiKey: process.env.ETHERSCAN,
   },

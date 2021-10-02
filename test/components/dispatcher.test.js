@@ -16,7 +16,6 @@ describe('Dispatcher', function () {
     this.AGENT_ID   = ethers.utils.hexlify(ethers.utils.randomBytes(32));
     await expect(this.components.agents.createAgent(this.AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ])).to.be.not.reverted
     await expect(this.components.scanners.connect(this.accounts.manager).adminRegister(this.SCANNER_ID, this.accounts.user1.address)).to.be.not.reverted
-
   });
 
   it('protected', async function () {
@@ -73,5 +72,20 @@ describe('Dispatcher', function () {
     await expect(this.components.agents.connect(this.accounts.user1).updateAgent(this.AGENT_ID, 'Metadata2', [ 1 ])).to.be.not.reverted;
 
     expect(await this.components.dispatch.scannerHash(this.SCANNER_ID)).to.not.be.deep.equal(hashBefore);
+  });
+
+  it('gas estimation', async function () {
+    for (const i in Array(10).fill()) {
+      for (const j in Array(10).fill()) {
+        const agent   = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+        await expect(this.components.agents.createAgent(agent, this.accounts.user1.address, `Agent ${i*10+j}`, [ 1 ])).to.be.not.reverted
+        await expect(this.components.dispatch.connect(this.accounts.manager).link(agent, this.SCANNER_ID)).to.be.not.reverted;
+      }
+
+      await Promise.all([
+        this.components.dispatch.agentsFor(this.SCANNER_ID),
+        this.components.dispatch.estimateGas.scannerHash(this.SCANNER_ID),
+      ]).then(([ count, cost ]) => console.log(`scannerHash gas cost with ${count.toString()} agents: ${cost.toString()}`));
+    }
   });
 });
