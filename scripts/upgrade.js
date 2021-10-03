@@ -55,14 +55,52 @@ async function main() {
         .then(contract => upgrades.upgradeProxy(proxy.address, contract, { unsafeAllow: 'delegatecall' }));
     }
 
-    // await performUpgrade({ address: '0xa3a0ea252d3cf18b30c3ada0e013671beedb4262' }, 'AgentRegistry');
-    // await performUpgrade({ address: '0x65F22a702F88B53883A89F772449c7667DB9ab9C' }, 'ScannerRegistry');
-    // await performUpgrade({ address: '0x77Db997b9Ad5e14386aB367fa47de073b3743248' }, 'Dispatch');
-    await upgrades.erc1967.getImplementationAddress('0xa3a0ea252d3cf18b30c3ada0e013671beedb4262').then(console.log);
-    // await upgrades.erc1967.getImplementationAddress('0x65F22a702F88B53883A89F772449c7667DB9ab9C').then(console.log);
-    // await upgrades.erc1967.getImplementationAddress('0x77Db997b9Ad5e14386aB367fa47de073b3743248').then(console.log);
+    const contracts = await  Promise.all(Object.entries({
+        token:    attach('Forta',           'forta.eth'),
+        access:   attach('AccessManager',   'accessmanager.forta.eth'),
+        router:   attach('Router',          'router.forta.eth'),
+        staking:  attach('FortaStaking',    'staking.forta.eth'),
+        agents:   attach('AgentRegistry',   'agents.registries.forta.eth'),
+        scanners: attach('ScannerRegistry', 'scanners.registries.forta.eth'),
+        dispatch: attach('Dispatch',        'dispatch.forta.eth'),
+        alerts:   attach('Alerts',          'alerts.forta.eth'),
+    }).map(entry => Promise.all(entry))).then(Object.fromEntries);
+
+    const roles = await Promise.all(Object.entries({
+        // Forta
+        ADMIN:         contracts.token.ADMIN_ROLE(),
+        MINTER:        contracts.token.MINTER_ROLE(),
+        WHITELISTER:   contracts.token.WHITELISTER_ROLE(),
+        WHITELIST:     contracts.token.WHITELIST_ROLE(),
+        // AccessManager / AccessManaged roles
+        DEFAULT_ADMIN: ethers.constants.HashZero,
+        ROUTER_ADMIN:  ethers.utils.id('ROUTER_ADMIN_ROLE'),
+        ENS_MANAGER:   ethers.utils.id('ENS_MANAGER_ROLE'),
+        UPGRADER:      ethers.utils.id('UPGRADER_ROLE'),
+        AGENT_ADMIN:   ethers.utils.id('AGENT_ADMIN_ROLE'),
+        SCANNER_ADMIN: ethers.utils.id('SCANNER_ADMIN_ROLE'),
+        DISPATCHER:    ethers.utils.id('DISPATCHER_ROLE'),
+        SLASHER:       ethers.utils.id('SLASHER_ROLE'),
+        SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
+    }).map(entry => Promise.all(entry))).then(Object.fromEntries);
+
+
+    // await contracts.access.grantRole(roles.DISPATCHER, '0x9e857a04ebde96351878ddf3ad40164ff68c1ee1').then(tx => tx.wait());
+    // await Promise.all(Object.values(contracts).map(contract => contract.setName(ethers.provider.network.ensAddress, contract.address).then(tx => tx.wait())));
+
+    // await ethers.provider.resolveName(contracts.agents).then(address => performUpgrade({ address }, 'AgentRegistry'));
+    // await ethers.provider.resolveName(contracts.scanner).then(address => performUpgrade({ address }, 'ScannerRegistry'));
+    // await ethers.provider.resolveName(contracts.dispatch).then(address => performUpgrade({ address }, 'Dispatch'));
 
     console.log('done');
+
+    await Promise.all(
+        Object.entries(contracts).map(([ name, contracts ]) => ethers.provider.resolveName(contracts.address)
+        .then(address => upgrades.erc1967.getImplementationAddress(address).then(implementation => [ name, { ens: contracts.address, address, implementation} ])))
+    )
+    .then(Object.fromEntries)
+    .then(result => JSON.stringify(result, 0, 4))
+    .then(console.log);
 }
 
 main()
