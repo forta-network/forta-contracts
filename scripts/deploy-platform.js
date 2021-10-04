@@ -61,8 +61,8 @@ async function main() {
 
     // This #1
     Object.assign(contracts, await Promise.all(Object.entries({
-        token:    attach('Forta',           '0x848F1fF1fa76Dc882Ca2F3521265ba3F27e42158'),
-        access:   attach('AccessManager',   '0xb4457590d9f1e03bef165cc94ed82c63a1e5bb4d'),
+        token:    attach('Forta',           'forta.eth'),
+        access:   attach('AccessManager',   'accessmanager.forta.eth'),
         // token:    deployUpgradeable('Forta',           'uups', deployer.address),
         // access:   deployUpgradeable('AccessManager',   'uups', deployer.address),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries));
@@ -71,17 +71,17 @@ async function main() {
 
     // This #2
     Object.assign(contracts, await Promise.all(Object.entries({
-        // router:   attach('Router',          '0x779f6Fa8826f013Ce7580B8e815a4257DaaaC8E2'),
-        router:   deployUpgradeable('Router',          'uups', contracts.access.address),
+        router:   attach('Router',          'router.forta.eth'),
+        // router:   deployUpgradeable('Router',          'uups', contracts.access.address),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
     console.log('[2] router deployed')
 
     // Components #1
     Object.assign(contracts, await Promise.all(Object.entries({
-        staking:  attach('FortaStaking',    '0x2EB0de54842A3FaaD9C7724f68363b11eb72b4dB'),
-        agents:   attach('AgentRegistry',   '0xa3a0ea252d3cf18b30c3ada0e013671beedb4262'),
-        scanners: attach('ScannerRegistry', '0x65F22a702F88B53883A89F772449c7667DB9ab9C'),
+        staking:  attach('FortaStaking',    'staking.forta.eth'),
+        agents:   attach('AgentRegistry',   'agents.registries.forta.eth'),
+        scanners: attach('ScannerRegistry', 'scanners.registries.forta.eth'),
         // staking:  deployUpgradeable('FortaStaking',    'uups', contracts.access.address, contracts.router.address, contracts.token.address, 0, deployer.address),
         // agents:   deployUpgradeable('AgentRegistry',   'uups', contracts.access.address, contracts.router.address, 'Forta Agents',   'FAgents'  ),
         // scanners: deployUpgradeable('ScannerRegistry', 'uups', contracts.access.address, contracts.router.address, 'Forta Scanners', 'FScanners'),
@@ -91,8 +91,8 @@ async function main() {
 
     // Components #2
     Object.assign(contracts, await Promise.all(Object.entries({
-        dispatch: attach('Dispatch',        '0x77Db997b9Ad5e14386aB367fa47de073b3743248'),
-        alerts:   attach('Alerts',          '0xC0556fC048B0F189F412DBba536aBD1a4ebD1349'),
+        dispatch: attach('Dispatch',        'dispatch.forta.eth'),
+        alerts:   attach('Alerts',          'alerts.forta.eth'),
         // dispatch: deployUpgradeable('Dispatch',        'uups', contracts.access.address, contracts.router.address, contracts.agents.address, contracts.scanners.address),
         // alerts:   deployUpgradeable('Alerts',          'uups', contracts.access.address, contracts.router.address, contracts.scanners.address),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries));

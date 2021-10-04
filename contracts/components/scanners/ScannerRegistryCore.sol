@@ -16,16 +16,16 @@ contract ScannerRegistryCore is
         _;
     }
 
-    function adminRegister(uint256 scannerId, address owner, uint256 chainId) public onlyRole(SCANNER_ADMIN_ROLE) {
-        _mint(owner, scannerId);
-
-        _beforeScannerUpdate(scannerId, chainId);
-        _scannerUpdate(scannerId, chainId);
-        _afterScannerUpdate(scannerId, chainId);
+    function adminRegister(address scanner, address owner, uint256 chainId) public onlyRole(SCANNER_ADMIN_ROLE) {
+        _register(scanner, owner, chainId);
     }
 
     function register(address owner, uint256 chainId) public {
-        uint256 scannerId = uint256(uint160(_msgSender()));
+        _register(_msgSender(), owner, chainId);
+    }
+
+    function _register(address scanner, address owner, uint256 chainId) public {
+        uint256 scannerId = uint256(uint160(scanner));
         _mint(owner, scannerId);
 
         _beforeScannerUpdate(scannerId, chainId);

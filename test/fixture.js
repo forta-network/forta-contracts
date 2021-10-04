@@ -21,7 +21,7 @@ function deployUpgradeable(name, kind, ...params) {
 
 function performUpgrade(proxy, name) {
   return ethers.getContractFactory(name)
-    .then(contract => upgrades.upgradeProxy(proxy.address, contract, {}));
+    .then(contract => upgrades.upgradeProxy(proxy.address, contract, { unsafeAllow: 'delegatecall' }));
 }
 
 function prepare() {

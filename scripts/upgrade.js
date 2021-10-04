@@ -88,9 +88,13 @@ async function main() {
     // await contracts.access.grantRole(roles.DISPATCHER, '0x9e857a04ebde96351878ddf3ad40164ff68c1ee1').then(tx => tx.wait());
     // await Promise.all(Object.values(contracts).map(contract => contract.setName(ethers.provider.network.ensAddress, contract.address).then(tx => tx.wait())));
 
-    // await ethers.provider.resolveName(contracts.agents.address).then(address => performUpgrade({ address }, 'AgentRegistry', {}));
+    // await ethers.provider.resolveName(contracts.access.address  ).then(address => performUpgrade({ address }, 'AccessManager',   {}));
+    // await ethers.provider.resolveName(contracts.router.address  ).then(address => performUpgrade({ address }, 'Router',          {}));
+    // await ethers.provider.resolveName(contracts.staking.address ).then(address => performUpgrade({ address }, 'FortaStaking',    {}));
+    // await ethers.provider.resolveName(contracts.agents.address  ).then(address => performUpgrade({ address }, 'AgentRegistry',   {}));
     // await ethers.provider.resolveName(contracts.scanners.address).then(address => performUpgrade({ address }, 'ScannerRegistry', {}));
-    // await ethers.provider.resolveName(contracts.dispatch.address).then(address => performUpgrade({ address }, 'Dispatch', {}));
+    // await ethers.provider.resolveName(contracts.dispatch.address).then(address => performUpgrade({ address }, 'Dispatch',        {}));
+    // await ethers.provider.resolveName(contracts.alerts.address  ).then(address => performUpgrade({ address }, 'Alerts',          {}));
 
     console.log('done');
 
