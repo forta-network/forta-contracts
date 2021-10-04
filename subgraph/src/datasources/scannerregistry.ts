@@ -59,18 +59,19 @@ export function handleScannerEnabled(event: ScannerEnabledEvent): void {
     let scanner = fetchScanner(event.params.scannerId)
     let mask  = 1 << event.params.permission
 
-    scanner.disableFlags = event.params.enabled
+    scanner.disableFlags = event.params.value
         ? scanner.disableFlags || mask
         : scanner.disableFlags && ~mask
 
-    scanner.enabled = scanner.disableFlags == 0
+    scanner.enabled = event.params.enabled
     scanner.save()
 
     let ev = new ScannerEnabled(events.id(event))
     ev.transaction = transactions.log(event).id
     ev.timestamp   = event.block.timestamp
     ev.scanner     = scanner.id
-    ev.permission  = event.params.permission
     ev.enabled     = event.params.enabled
+    ev.permission  = event.params.permission
+    ev.value       = event.params.value
     ev.save()
 }

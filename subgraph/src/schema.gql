@@ -82,8 +82,9 @@ type AgentEnabled implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	agent:                        Agent!
-	permission:                   Int!
 	enabled:                      Boolean!
+	permission:                   Int!
+	value:                        Boolean!
 }
 
 type ScannerTransfer implements Event @entity {
@@ -100,8 +101,9 @@ type ScannerEnabled implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	scanner:                      Scanner!
-	permission:                   Int!
 	enabled:                      Boolean!
+	permission:                   Int!
+	value:                        Boolean!
 }
 
 type ScannerManagerEnabled implements Event @entity {

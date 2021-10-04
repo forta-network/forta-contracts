@@ -54,18 +54,19 @@ export function handleAgentEnabled(event: AgentEnabledEvent): void {
     let agent = fetchAgent(event.params.agentId)
     let mask  = 1 << event.params.permission
 
-    agent.disableFlags = event.params.enabled
+    agent.disableFlags = event.params.value
         ? agent.disableFlags || mask
         : agent.disableFlags && ~mask
 
-    agent.enabled = agent.disableFlags == 0
+    agent.enabled =event.params.enabled
     agent.save()
 
     let ev = new AgentEnabled(events.id(event))
     ev.transaction = transactions.log(event).id
     ev.timestamp   = event.block.timestamp
     ev.agent       = agent.id
-    ev.permission  = event.params.permission
     ev.enabled     = event.params.enabled
+    ev.permission  = event.params.permission
+    ev.value       = event.params.value
     ev.save()
 }

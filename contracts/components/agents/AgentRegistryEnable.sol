@@ -16,7 +16,7 @@ contract AgentRegistryEnable is AgentRegistryCore {
 
     mapping(uint256 => BitMaps.BitMap) private _disabled;
 
-    event AgentEnabled(uint256 indexed agentId, Permission permission, bool enabled);
+    event AgentEnabled(uint256 indexed agentId, bool indexed enabled, Permission permission, bool value);
 
     /**
      * @dev Enable/Disable agent
@@ -52,15 +52,15 @@ contract AgentRegistryEnable is AgentRegistryCore {
     /**
      * Hook: Agent is enabled/disabled
      */
-    function _beforeAgentEnable(uint256 agentId, Permission permission, bool enable) internal virtual {
+    function _beforeAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
     }
 
-    function _agentEnable(uint256 agentId, Permission permission, bool enable) internal virtual {
-        _disabled[agentId].setTo(uint8(permission), !enable);
-        emit AgentEnabled(agentId, permission, enable);
+    function _agentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
+        _disabled[agentId].setTo(uint8(permission), !value);
+        emit AgentEnabled(agentId, isEnabled(agentId), permission, value);
     }
 
-    function _afterAgentEnable(uint256 agentId, Permission permission, bool enable) internal virtual {
+    function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256)", agentId));
     }
 

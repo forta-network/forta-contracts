@@ -18,7 +18,7 @@ contract ScannerRegistryEnable is ScannerRegistryManaged {
 
     mapping(uint256 => BitMaps.BitMap) private _disabled;
 
-    event ScannerEnabled(uint256 indexed scannerId, Permission permission, bool enabled);
+    event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, Permission permission, bool value);
 
     /**
      * @dev Enable/Disable scaner
@@ -58,15 +58,15 @@ contract ScannerRegistryEnable is ScannerRegistryManaged {
     /**
      * Hook: Scanner is enabled/disabled
      */
-    function _beforeScannerEnable(uint256 scannerId, Permission permission, bool enable) internal virtual {
+    function _beforeScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
     }
 
-    function _scannerEnable(uint256 scannerId, Permission permission, bool enable) internal virtual {
-        _disabled[scannerId].setTo(uint8(permission), !enable);
-        emit ScannerEnabled(scannerId, permission, enable);
+    function _scannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
+        _disabled[scannerId].setTo(uint8(permission), !value);
+        emit ScannerEnabled(scannerId, isEnabled(scannerId), permission, value);
     }
 
-    function _afterScannerEnable(uint256 scannerId, Permission permission, bool enable) internal virtual {
+    function _afterScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256)", scannerId));
     }
 

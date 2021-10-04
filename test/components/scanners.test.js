@@ -107,7 +107,7 @@ describe('Scanner Registry', function () {
         const SCANNER_ID = this.accounts.scanner.address;
 
         await expect(this.components.scanners.connect(this.accounts.manager).disableScanner(SCANNER_ID, 0))
-        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, 0, false);
+        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, false, 0, false);
 
         expect(await this.components.scanners.isEnabled(SCANNER_ID)).to.be.equal(false);
       });
@@ -116,10 +116,10 @@ describe('Scanner Registry', function () {
         const SCANNER_ID = this.accounts.scanner.address;
 
         await expect(this.components.scanners.connect(this.accounts.manager).disableScanner(SCANNER_ID, 0))
-        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, 0, false);
+        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, false, 0, false);
 
         await expect(this.components.scanners.connect(this.accounts.manager).enableScanner(SCANNER_ID, 0))
-        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, 0, true);
+        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, true, 0, true);
 
         expect(await this.components.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
       });
@@ -136,7 +136,7 @@ describe('Scanner Registry', function () {
         const SCANNER_ID = this.accounts.scanner.address;
 
         await expect(this.components.scanners.connect(this.accounts.scanner).disableScanner(SCANNER_ID, 1))
-        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, 1, false);
+        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, false, 1, false);
 
         expect(await this.components.scanners.isEnabled(SCANNER_ID)).to.be.equal(false);
       });
@@ -145,10 +145,10 @@ describe('Scanner Registry', function () {
         const SCANNER_ID = this.accounts.scanner.address;
 
         await expect(this.components.scanners.connect(this.accounts.scanner).disableScanner(SCANNER_ID, 1))
-        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, 1, false);
+        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, false, 1, false);
 
         await expect(this.components.scanners.connect(this.accounts.scanner).enableScanner(SCANNER_ID, 1))
-        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, 1, true);
+        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, true, 1, true);
 
         expect(await this.components.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
       });
@@ -165,7 +165,7 @@ describe('Scanner Registry', function () {
         const SCANNER_ID = this.accounts.scanner.address;
 
         await expect(this.components.scanners.connect(this.accounts.user1).disableScanner(SCANNER_ID, 2))
-        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, 2, false);
+        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, false, 2, false);
 
         expect(await this.components.scanners.isEnabled(SCANNER_ID)).to.be.equal(false);
       });
@@ -174,10 +174,10 @@ describe('Scanner Registry', function () {
         const SCANNER_ID = this.accounts.scanner.address;
 
         await expect(this.components.scanners.connect(this.accounts.user1).disableScanner(SCANNER_ID, 2))
-        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, 2, false);
+        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, false, 2, false);
 
         await expect(this.components.scanners.connect(this.accounts.user1).enableScanner(SCANNER_ID, 2))
-        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, 2, true);
+        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, true, 2, true);
 
         expect(await this.components.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
       });
@@ -198,7 +198,7 @@ describe('Scanner Registry', function () {
         const SCANNER_ID = this.accounts.scanner.address;
 
         await expect(this.components.scanners.connect(this.accounts.user2).disableScanner(SCANNER_ID, 3))
-        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, 3, false);
+        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, false, 3, false);
 
         expect(await this.components.scanners.isEnabled(SCANNER_ID)).to.be.equal(false);
       });
@@ -207,10 +207,10 @@ describe('Scanner Registry', function () {
         const SCANNER_ID = this.accounts.scanner.address;
 
         await expect(this.components.scanners.connect(this.accounts.user2).disableScanner(SCANNER_ID, 3))
-        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, 3, false);
+        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, false, 3, false);
 
         await expect(this.components.scanners.connect(this.accounts.user2).enableScanner(SCANNER_ID, 3))
-        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, 3, true);
+        .to.emit(this.components.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, true, 3, true);
 
         expect(await this.components.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
       });

@@ -30,8 +30,8 @@ contract ScannerRegistry is
         __ERC721_init(__name, __symbol);
     }
 
-    function _scannerUpdate(uint256 agentId, uint256 chainId) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) {
-        super._scannerUpdate(agentId, chainId);
+    function _scannerUpdate(uint256 scannerId, uint256 chainId) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) {
+        super._scannerUpdate(scannerId, chainId);
     }
 
     uint256[50] private __gap;

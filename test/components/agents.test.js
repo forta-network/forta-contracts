@@ -164,17 +164,17 @@ describe('Agent Registry', function () {
     describe('manager', async function () {
       it('disable', async function () {
         await expect(this.components.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0))
-        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, 0, false);
+        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
 
         expect(await this.components.agents.isEnabled(AGENT_ID)).to.be.equal(false);
       });
 
       it('re-enable', async function () {
         await expect(this.components.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0))
-        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, 0, false);
+        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
 
         await expect(this.components.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0))
-        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, 0, true);
+        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 0, true);
 
         expect(await this.components.agents.isEnabled(AGENT_ID)).to.be.equal(true);
       });
@@ -187,17 +187,17 @@ describe('Agent Registry', function () {
     describe('owner', async function () {
       it('disable', async function () {
         await expect(this.components.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1))
-        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, 1, false);
+        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
 
         expect(await this.components.agents.isEnabled(AGENT_ID)).to.be.equal(false);
       });
 
       it('re-enable', async function () {
         await expect(this.components.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1))
-        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, 1, false);
+        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
 
         await expect(this.components.agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1))
-        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, 1, true);
+        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 1, true);
 
         expect(await this.components.agents.isEnabled(AGENT_ID)).to.be.equal(true);
       });
@@ -210,20 +210,20 @@ describe('Agent Registry', function () {
     describe('hybrid', async function () {
       it('owner cannot reenable after admin disable', async function () {
         await expect(this.components.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0))
-        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, 0, false);
+        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
 
         await expect(this.components.agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1))
-        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, 1, true);
+        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, true);
 
         expect(await this.components.agents.isEnabled(AGENT_ID)).to.be.equal(false);
       });
 
       it('admin cannot reenable after owner disable', async function () {
         await expect(this.components.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1))
-        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, 1, false);
+        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
 
         await expect(this.components.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0))
-        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, 0, true);
+        .to.emit(this.components.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, true);
 
         expect(await this.components.agents.isEnabled(AGENT_ID)).to.be.equal(false);
       });

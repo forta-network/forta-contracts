@@ -22,7 +22,7 @@ dataSources:
           # file: ../artifacts/contracts/components/agents/AgentRegistry.sol/AgentRegistry.json
           file: ./abi/AgentRegistry.json
       eventHandlers:
-        - event: AgentEnabled(indexed uint256,uint8,bool)
+        - event: AgentEnabled(indexed uint256,indexed bool,uint8,bool)
           handler: handleAgentEnabled
         - event: AgentUpdated(indexed uint256,indexed address,string,uint256[])
           handler: handleAgentUpdated
@@ -52,7 +52,7 @@ dataSources:
       eventHandlers:
         - event: ManagerEnabled(indexed uint256,indexed address,bool)
           handler: handleManagerEnabled
-        - event: ScannerEnabled(indexed uint256,uint8,bool)
+        - event: ScannerEnabled(indexed uint256,indexed bool,uint8,bool)
           handler: handleScannerEnabled
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer

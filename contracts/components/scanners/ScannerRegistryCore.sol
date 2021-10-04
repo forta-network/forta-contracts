@@ -9,7 +9,7 @@ contract ScannerRegistryCore is
     BaseComponent,
     ERC721Upgradeable
 {
-    event ScannerUpdated(uint256 indexed agentId, uint256 indexed chainId);
+    event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId);
 
     modifier onlyOwnerOf(uint256 scannerId) {
         require(_msgSender() == ownerOf(scannerId), "Restricted to scanner owner");
