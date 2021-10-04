@@ -15,7 +15,7 @@ describe('Dispatcher', function () {
     this.SCANNER_ID = this.accounts.scanner.address;
     this.AGENT_ID   = ethers.utils.hexlify(ethers.utils.randomBytes(32));
     await expect(this.components.agents.createAgent(this.AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ])).to.be.not.reverted
-    await expect(this.components.scanners.connect(this.accounts.manager).adminRegister(this.SCANNER_ID, this.accounts.user1.address)).to.be.not.reverted
+    await expect(this.components.scanners.connect(this.accounts.manager).adminRegister(this.SCANNER_ID, this.accounts.user1.address, 1)).to.be.not.reverted
   });
 
   it('protected', async function () {

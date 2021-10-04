@@ -66,7 +66,7 @@ contract ScannerRegistryEnable is ScannerRegistryManaged {
         emit ScannerEnabled(scannerId, permission, enable);
     }
 
-    function _afterScannerEnable(uint256 scannerId, Permission /*permission*/, bool /*enable*/) internal virtual {
+    function _afterScannerEnable(uint256 scannerId, Permission permission, bool enable) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256)", scannerId));
     }
 

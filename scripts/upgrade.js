@@ -50,9 +50,9 @@ async function main() {
         .then(f => f.deployed());
     }
 
-    function performUpgrade(proxy, name) {
+    function performUpgrade(proxy, name, opts = {}) {
         return getFactory(name)
-        .then(contract => upgrades.upgradeProxy(proxy.address, contract, { unsafeAllow: 'delegatecall' }));
+        .then(contract => upgrades.upgradeProxy(proxy.address, contract, { unsafeAllow: 'delegatecall', ...opts }));
     }
 
     const contracts = await Promise.all(Object.entries({
@@ -88,9 +88,9 @@ async function main() {
     // await contracts.access.grantRole(roles.DISPATCHER, '0x9e857a04ebde96351878ddf3ad40164ff68c1ee1').then(tx => tx.wait());
     // await Promise.all(Object.values(contracts).map(contract => contract.setName(ethers.provider.network.ensAddress, contract.address).then(tx => tx.wait())));
 
-    // await ethers.provider.resolveName(contracts.agents).then(address => performUpgrade({ address }, 'AgentRegistry'));
-    // await ethers.provider.resolveName(contracts.scanner).then(address => performUpgrade({ address }, 'ScannerRegistry'));
-    // await ethers.provider.resolveName(contracts.dispatch).then(address => performUpgrade({ address }, 'Dispatch'));
+    // await ethers.provider.resolveName(contracts.agents.address).then(address => performUpgrade({ address }, 'AgentRegistry', {}));
+    // await ethers.provider.resolveName(contracts.scanners.address).then(address => performUpgrade({ address }, 'ScannerRegistry', {}));
+    // await ethers.provider.resolveName(contracts.dispatch.address).then(address => performUpgrade({ address }, 'Dispatch', {}));
 
     console.log('done');
 

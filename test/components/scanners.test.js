@@ -17,8 +17,11 @@ describe('Scanner Registry', function () {
   it('register', async function () {
     const SCANNER_ID = this.accounts.scanner.address;
 
-    await expect(this.components.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address))
+    await expect(this.components.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1))
     .to.emit(this.components.scanners, 'Transfer').withArgs(ethers.constants.AddressZero, this.accounts.user1.address, SCANNER_ID)
+    .to.emit(this.components.scanners, 'ScannerUpdated').withArgs(SCANNER_ID, 1);
+
+    expect(await this.components.scanners.getScanner(SCANNER_ID)).to.be.equal(1);
 
     expect(await this.components.scanners.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
   });
@@ -26,8 +29,11 @@ describe('Scanner Registry', function () {
   it('admin register', async function () {
     const SCANNER_ID = this.accounts.scanner.address;
 
-    await expect(this.components.scanners.connect(this.accounts.manager).adminRegister(SCANNER_ID, this.accounts.user1.address))
+    await expect(this.components.scanners.connect(this.accounts.manager).adminRegister(SCANNER_ID, this.accounts.user1.address, 1))
     .to.emit(this.components.scanners, 'Transfer').withArgs(ethers.constants.AddressZero, this.accounts.user1.address, SCANNER_ID)
+    .to.emit(this.components.scanners, 'ScannerUpdated').withArgs(SCANNER_ID, 1);
+
+    expect(await this.components.scanners.getScanner(SCANNER_ID)).to.be.equal(1);
 
     expect(await this.components.scanners.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
   });
@@ -35,13 +41,13 @@ describe('Scanner Registry', function () {
   it('admin register - pretected', async function () {
     const SCANNER_ID = this.accounts.scanner.address;
 
-    await expect(this.components.scanners.connect(this.accounts.user1).adminRegister(SCANNER_ID, this.accounts.user1.address))
-    .to.be.revertedWith(`MissingRole("${this.roles.AGENT_ADMIN}", "${this.accounts.user1.address}")`);
+    await expect(this.components.scanners.connect(this.accounts.user1).adminRegister(SCANNER_ID, this.accounts.user1.address, 1))
+    .to.be.revertedWith(`MissingRole("${this.roles.SCANNER_ADMIN}", "${this.accounts.user1.address}")`);
   });
 
   describe('managers', function () {
     beforeEach(async function () {
-      await expect(this.components.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address)).to.be.not.reverted;
+      await expect(this.components.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1)).to.be.not.reverted;
     });
 
     it('add manager', async function () {
@@ -93,7 +99,7 @@ describe('Scanner Registry', function () {
 
   describe('enable and disable', async function () {
     beforeEach(async function () {
-      await expect(this.components.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address)).to.be.not.reverted;
+      await expect(this.components.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1)).to.be.not.reverted;
     });
 
     describe('manager', async function () {

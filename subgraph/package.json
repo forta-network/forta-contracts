@@ -9,7 +9,7 @@
     "prepare:codegen": "graph codegen subgraph.yaml",
     "prepare:compile": "graph build subgraph.yaml",
     "prepare": "yarn prepare:schema && yarn prepare:codegen && yarn prepare:compile",
-    "deploy": "graph deploy --debug --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ amxx/sandbox subgraph.yaml"
+    "deploy": "graph deploy --debug --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ amxx/forta-goerli subgraph.yaml"
   },
   "repository": {
     "type": "git",

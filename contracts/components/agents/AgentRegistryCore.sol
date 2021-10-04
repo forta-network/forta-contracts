@@ -6,7 +6,11 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "../BaseComponent.sol";
 import "../../tools/FrontRunningProtection.sol";
 
-contract AgentRegistryCore is BaseComponent, FrontRunningProtection, ERC721Upgradeable {
+contract AgentRegistryCore is
+    BaseComponent,
+    FrontRunningProtection,
+    ERC721Upgradeable
+{
     event AgentCommitted(bytes32 indexed commit);
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
 
@@ -59,7 +63,7 @@ contract AgentRegistryCore is BaseComponent, FrontRunningProtection, ERC721Upgra
         emit AgentUpdated(agentId, _msgSender(), newMetadata, newChainIds);
     }
 
-    function _afterAgentUpdate(uint256 agentId, string memory /*newMetadata*/, uint256[] calldata /*newChainIds*/) internal virtual {
+    function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256)", agentId));
     }
 

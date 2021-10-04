@@ -6,12 +6,14 @@ import "../BaseComponent.sol";
 import "./ScannerRegistryCore.sol";
 import "./ScannerRegistryManaged.sol";
 import "./ScannerRegistryEnable.sol";
+import "./ScannerRegistryMetadata.sol";
 
 contract ScannerRegistry is
     BaseComponent,
     ScannerRegistryCore,
     ScannerRegistryManaged,
-    ScannerRegistryEnable
+    ScannerRegistryEnable,
+    ScannerRegistryMetadata
 {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -26,6 +28,10 @@ contract ScannerRegistry is
         __Routed_init(__router);
         __UUPSUpgradeable_init();
         __ERC721_init(__name, __symbol);
+    }
+
+    function _scannerUpdate(uint256 agentId, uint256 chainId) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) {
+        super._scannerUpdate(agentId, chainId);
     }
 
     uint256[50] private __gap;
