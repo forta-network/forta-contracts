@@ -55,7 +55,7 @@ async function main() {
         .then(contract => upgrades.upgradeProxy(proxy.address, contract, { unsafeAllow: 'delegatecall' }));
     }
 
-    const contracts = await  Promise.all(Object.entries({
+    const contracts = await Promise.all(Object.entries({
         token:    attach('Forta',           'forta.eth'),
         access:   attach('AccessManager',   'accessmanager.forta.eth'),
         router:   attach('Router',          'router.forta.eth'),

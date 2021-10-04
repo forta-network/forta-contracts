@@ -44,6 +44,7 @@ export function handleAgentUpdated(event: AgentUpdatedEvent): void {
     ev.transaction = transactions.log(event).id
     ev.timestamp   = event.block.timestamp
     ev.agent       = agent.id
+    ev.by          = fetchAccount(event.params.by).id
     ev.metadata    = event.params.metadata
     ev.chains      = event.params.chainIds
     ev.save()

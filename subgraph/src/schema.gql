@@ -6,6 +6,7 @@ type Account @entity {
 	managerOf:                    [ScannerManager!]! @derivedFrom(field: "account")
 	agentTransferFromEvents:      [AgentTransfer!]! @derivedFrom(field: "from")
 	agentTransferToEvents:        [AgentTransfer!]! @derivedFrom(field: "to")
+	agentUpdatedEvents:           [AgentUpdated!]! @derivedFrom(field: "by")
 	scannerTransferFromEvents:    [ScannerTransfer!]! @derivedFrom(field: "from")
 	scannerTransferToEvents:      [ScannerTransfer!]! @derivedFrom(field: "to")
 	scannerManagerEnabledEvents:  [ScannerManagerEnabled!]! @derivedFrom(field: "manager")
@@ -71,6 +72,7 @@ type AgentUpdated implements Event @entity {
 	transaction:                  Transaction!
 	timestamp:                    BigInt!
 	agent:                        Agent!
+	by:                           Account!
 	metadata:                     String!
 	chains:                       [BigInt!]!
 }

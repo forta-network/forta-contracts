@@ -24,7 +24,7 @@ dataSources:
       eventHandlers:
         - event: AgentEnabled(indexed uint256,uint8,bool)
           handler: handleAgentEnabled
-        - event: AgentUpdated(indexed uint256,string,uint256[])
+        - event: AgentUpdated(indexed uint256,indexed address,string,uint256[])
           handler: handleAgentUpdated
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer
