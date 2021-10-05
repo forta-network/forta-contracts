@@ -2,7 +2,7 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { attach, prepare, deployUpgradeable, performUpgrade } = require('./fixture');
 
-describe('Forta', function () {
+describe('Forta upgrade', function () {
   prepare();
 
   describe('Token update', function () {

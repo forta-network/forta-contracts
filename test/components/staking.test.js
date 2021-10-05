@@ -320,7 +320,7 @@ describe('Forta Staking', function () {
 
   describe('Freezing', function () {
     beforeEach(async function () {
-      this.accounts.slasher = this.accounts.shift();
+      this.accounts.getAccount('slasher');
       await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
       await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;
     });
@@ -353,7 +353,7 @@ describe('Forta Staking', function () {
 
   describe('Slashing', function () {
     beforeEach(async function () {
-      this.accounts.slasher = this.accounts.shift();
+      this.accounts.getAccount('slasher');
       await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
       await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;
     });
@@ -494,8 +494,8 @@ describe('Forta Staking', function () {
 
   describe('token sweeping', async function () {
     beforeEach(async function () {
-      this.accounts.slasher = this.accounts.shift();
-      this.accounts.sweeper = this.accounts.shift();
+      this.accounts.getAccount('slasher');
+      this.accounts.getAccount('sweeper');
       await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
       await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SWEEPER, this.accounts.sweeper.address)).to.be.not.reverted;
       await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.sweeper.address)).to.be.not.reverted;
@@ -546,7 +546,7 @@ describe('Forta Staking', function () {
     beforeEach(async function () {
       this.signature = ethers.utils.id("hook_afterStakeChanged(address)").slice(0,10);
 
-      this.accounts.slasher = this.accounts.shift();
+      this.accounts.getAccount('slasher');
       await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
       await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.ROUTER_ADMIN, this.accounts.admin.address)).to.be.not.reverted;
       await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;

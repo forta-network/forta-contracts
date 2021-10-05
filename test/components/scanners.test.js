@@ -11,7 +11,7 @@ describe('Scanner Registry', function () {
   prepare();
 
   beforeEach(async function () {
-    this.accounts.scanner = this.accounts.shift();
+    this.accounts.getAccount('scanner');
   });
 
   it('register', async function () {
