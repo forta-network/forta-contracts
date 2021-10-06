@@ -16,7 +16,7 @@ contract AgentRegistry is
     AgentRegistryEnumerable
 {
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
+    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
     function initialize(
         address __manager,
@@ -36,6 +36,14 @@ contract AgentRegistry is
 
     function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
         super._agentUpdate(agentId, newMetadata, newChainIds);
+    }
+
+    function _msgSender() internal view virtual override(BaseComponent, AgentRegistryCore) returns (address sender) {
+        return super._msgSender();
+    }
+
+    function _msgData() internal view virtual override(BaseComponent, AgentRegistryCore) returns (bytes calldata) {
+        return super._msgData();
     }
 
     uint256[50] private __gap;

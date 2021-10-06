@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "./ScannerRegistryCore.sol";
 
-contract ScannerRegistryManaged is ScannerRegistryCore {
+abstract contract ScannerRegistryManaged is ScannerRegistryCore {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     mapping(uint256 => EnumerableSet.AddressSet) private _managers;

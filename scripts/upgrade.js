@@ -28,42 +28,43 @@ async function main() {
     console.log('----------------------------------------------------');
 
 
-
     function getFactory(name) {
         return ethers.getContractFactory(name, deployer);
     }
 
-    function attach(name, ...params) {
+    function attach(name, address) {
         return getFactory(name)
-        .then(contract => contract.attach(...params));
+        .then(contract => contract.attach(address));
     }
 
-    function deploy(name, ...params) {
+    function deploy(name, params = []) {
         return getFactory(name)
         .then(contract => contract.deploy(...params))
         .then(f => f.deployed());
     }
 
-    function deployUpgradeable(name, kind, ...params) {
+    function deployUpgradeable(name, kind, params = [], opts = {}) {
         return getFactory(name)
-        .then(contract => upgrades.deployProxy(contract, params, { kind, unsafeAllow: 'delegatecall' }))
+        .then(contract => upgrades.deployProxy(contract, params, { kind, ...opts }))
         .then(f => f.deployed());
     }
 
     function performUpgrade(proxy, name, opts = {}) {
         return getFactory(name)
-        .then(contract => upgrades.upgradeProxy(proxy.address, contract, { unsafeAllow: 'delegatecall', ...opts }));
+        .then(contract => upgrades.upgradeProxy(proxy.address, contract, opts));
     }
 
     const contracts = await Promise.all(Object.entries({
-        token:    attach('Forta',           'forta.eth'),
-        access:   attach('AccessManager',   'accessmanager.forta.eth'),
-        router:   attach('Router',          'router.forta.eth'),
-        staking:  attach('FortaStaking',    'staking.forta.eth'),
-        agents:   attach('AgentRegistry',   'agents.registries.forta.eth'),
-        scanners: attach('ScannerRegistry', 'scanners.registries.forta.eth'),
-        dispatch: attach('Dispatch',        'dispatch.forta.eth'),
-        alerts:   attach('Alerts',          'alerts.forta.eth'),
+        token:     attach('Forta',           'forta.eth'),
+        forwarder: attach('Forwarder',       'forwarder.forta.eth'),
+        access:    attach('AccessManager',   'accessmanager.forta.eth'),
+        router:    attach('Router',          'router.forta.eth'),
+        staking:   attach('FortaStaking',    'staking.forta.eth'),
+        agents:    attach('AgentRegistry',   'agents.registries.forta.eth'),
+        scanners:  attach('ScannerRegistry', 'scanners.registries.forta.eth'),
+        dispatch:  attach('Dispatch',        'dispatch.forta.eth'),
+        alerts:    attach('Alerts',          'alerts.forta.eth'),
+        alerts:    attach('Alerts',          'alerts.forta.eth'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
     const roles = await Promise.all(Object.entries({
@@ -84,23 +85,25 @@ async function main() {
         SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
-
     // await contracts.access.grantRole(roles.DISPATCHER, '0x9e857a04ebde96351878ddf3ad40164ff68c1ee1').then(tx => tx.wait());
     // await Promise.all(Object.values(contracts).map(contract => contract.setName(ethers.provider.network.ensAddress, contract.address).then(tx => tx.wait())));
 
-    // await ethers.provider.resolveName(contracts.access.address  ).then(address => performUpgrade({ address }, 'AccessManager',   {}));
-    // await ethers.provider.resolveName(contracts.router.address  ).then(address => performUpgrade({ address }, 'Router',          {}));
-    // await ethers.provider.resolveName(contracts.staking.address ).then(address => performUpgrade({ address }, 'FortaStaking',    {}));
-    // await ethers.provider.resolveName(contracts.agents.address  ).then(address => performUpgrade({ address }, 'AgentRegistry',   {}));
-    // await ethers.provider.resolveName(contracts.scanners.address).then(address => performUpgrade({ address }, 'ScannerRegistry', {}));
-    // await ethers.provider.resolveName(contracts.dispatch.address).then(address => performUpgrade({ address }, 'Dispatch',        {}));
-    // await ethers.provider.resolveName(contracts.alerts.address  ).then(address => performUpgrade({ address }, 'Alerts',          {}));
+    // await ethers.provider.resolveName(contracts.access.address  ).then(address => performUpgrade({ address }, 'AccessManager',   { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' }));
+    // await ethers.provider.resolveName(contracts.router.address  ).then(address => performUpgrade({ address }, 'Router',          { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' }));
+    // await ethers.provider.resolveName(contracts.staking.address ).then(address => performUpgrade({ address }, 'FortaStaking',    { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' }));
+    // await ethers.provider.resolveName(contracts.agents.address  ).then(address => performUpgrade({ address }, 'AgentRegistry',   { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' }));
+    // await ethers.provider.resolveName(contracts.scanners.address).then(address => performUpgrade({ address }, 'ScannerRegistry', { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' }));
+    // await ethers.provider.resolveName(contracts.dispatch.address).then(address => performUpgrade({ address }, 'Dispatch',        { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' }));
+    // await ethers.provider.resolveName(contracts.alerts.address  ).then(address => performUpgrade({ address }, 'Alerts',          { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' }));
 
     console.log('done');
 
     await Promise.all(
         Object.entries(contracts).map(([ name, contracts ]) => ethers.provider.resolveName(contracts.address)
-        .then(address => upgrades.erc1967.getImplementationAddress(address).then(implementation => [ name, { ens: contracts.address, address, implementation} ])))
+        .then(address => upgrades.erc1967.getImplementationAddress(address)
+            .then(implementation => [ name, { ens: contracts.address, address, implementation} ])
+            .catch(() => [ name, { ens: contracts.address, address } ])
+        ))
     )
     .then(Object.fromEntries)
     .then(result => JSON.stringify(result, 0, 4))

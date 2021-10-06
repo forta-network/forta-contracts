@@ -6,11 +6,12 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../Roles.sol";
 import "../utils/AccessManaged.sol";
+import "../utils/ForwardedContext.sol";
 import "../../tools/ENSReverseRegistration.sol";
 import "./IRouter.sol";
 
 // This should be BaseComponent, because BaseComponent is Routed
-contract Router is IRouter, AccessManagedUpgradeable, UUPSUpgradeable, Multicall {
+contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgradeable, Multicall {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     mapping(bytes4 => EnumerableSet.AddressSet) private _routingTable;
@@ -18,7 +19,7 @@ contract Router is IRouter, AccessManagedUpgradeable, UUPSUpgradeable, Multicall
     event RoutingUpdated(bytes4 indexed sig, address indexed target, bool enable);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
+    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
     function initialize(address __manager) public initializer {
         __AccessManaged_init(__manager);
@@ -53,6 +54,14 @@ contract Router is IRouter, AccessManagedUpgradeable, UUPSUpgradeable, Multicall
     // Allow the upgrader to set ENS reverse registration
     function setName(address ensRegistry, string calldata ensName) public onlyRole(DEFAULT_ADMIN_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
+    }
+
+    function _msgSender() internal view virtual override(ContextUpgradeable, ForwardedContext) returns (address sender) {
+        return super._msgSender();
+    }
+
+    function _msgData() internal view virtual override(ContextUpgradeable, ForwardedContext) returns (bytes calldata) {
+        return super._msgData();
     }
 
     uint256[49] private __gap;

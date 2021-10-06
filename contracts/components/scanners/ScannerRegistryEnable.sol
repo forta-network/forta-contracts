@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./ScannerRegistryManaged.sol";
 
-contract ScannerRegistryEnable is ScannerRegistryManaged {
+abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
     using BitMaps for BitMaps.BitMap;
 
     enum Permission {

@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./ScannerRegistryCore.sol";
 
-contract ScannerRegistryMetadata is ScannerRegistryCore {
+abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
     struct ScannerMetadata {
         uint256 chainId;
     }

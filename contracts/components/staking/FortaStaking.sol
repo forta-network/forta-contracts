@@ -73,7 +73,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     event TreasurySet(address newTreasury);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
+    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
     function initialize(
         address __manager,
@@ -426,6 +426,14 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
     function setURI(string memory newUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setURI(newUri);
+    }
+
+    function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponent) returns (address sender) {
+        return super._msgSender();
+    }
+
+    function _msgData() internal view virtual override(ContextUpgradeable, BaseComponent) returns (bytes calldata) {
+        return super._msgData();
     }
 
     uint256[41] private __gap;

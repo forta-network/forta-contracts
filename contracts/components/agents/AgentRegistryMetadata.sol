@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./AgentRegistryCore.sol";
 
-contract AgentRegistryMetadata is AgentRegistryCore {
+abstract contract AgentRegistryMetadata is AgentRegistryCore {
     struct AgentMetadata {
         uint256 version;
         string metadata;

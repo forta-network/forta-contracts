@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./AgentRegistryMetadata.sol";
 
-contract AgentRegistryEnumerable is AgentRegistryMetadata {
+abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
     using EnumerableSet for EnumerableSet.UintSet;
 
     EnumerableSet.UintSet private _allAgents;

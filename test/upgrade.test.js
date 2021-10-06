@@ -26,23 +26,30 @@ describe('Forta upgrade', function () {
         this.vesting = await deployUpgradeable(
           'VestingWallet',
           'uups',
-          this.accounts.other.address,
-          this.accounts.admin.address,
-          0,
-          0,
-          0,
+          [
+            this.accounts.other.address,
+            this.accounts.admin.address,
+            0,
+            0,
+            0,
+          ],
+          { unsafeAllow: 'delegatecall' },
         );
         expect(await this.vesting.owner()).to.be.equal(this.accounts.admin.address);
       });
 
       it('authorized', async function () {
-        this.vesting = await performUpgrade(this.vesting, 'VestingWallet2');
+        this.vesting = await performUpgrade(
+          this.vesting,
+          'VestingWallet2',
+          { unsafeAllow: 'delegatecall' },
+        );
         expect(await this.vesting.version()).to.be.equal('VestingWallet2');
       });
 
       it('unauthorized', async function () {
         await this.vesting.transferOwnership(this.accounts.other.address);
-        await expect(performUpgrade(this.vesting, 'VestingWallet2'))
+        await expect(performUpgrade(this.vesting, 'VestingWallet2', { unsafeAllow: 'delegatecall' }))
           .to.be.revertedWith(`Ownable: caller is not the owner`);
       });
     });
@@ -52,17 +59,20 @@ describe('Forta upgrade', function () {
         this.vesting = await deployUpgradeable(
           'VestingWallet2',
           'uups',
-          this.accounts.other.address,
-          ethers.constants.AddressZero,
-          0,
-          0,
-          0,
+          [
+            this.accounts.other.address,
+            ethers.constants.AddressZero,
+            0,
+            0,
+            0,
+          ],
+          { unsafeAllow: 'delegatecall' },
         );
         expect(await this.vesting.owner()).to.be.equal(ethers.constants.AddressZero);
       });
 
       it('unauthorized', async function () {
-        await expect(performUpgrade(this.vesting, 'VestingWallet2'))
+        await expect(performUpgrade(this.vesting, 'VestingWallet2', { unsafeAllow: 'delegatecall' }))
           .to.be.revertedWith(`Ownable: caller is not the owner`);
       });
     });

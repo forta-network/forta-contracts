@@ -5,7 +5,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponent.sol";
 
-contract ScannerRegistryCore is
+abstract contract ScannerRegistryCore is
     BaseComponent,
     ERC721Upgradeable
 {
@@ -45,6 +45,14 @@ contract ScannerRegistryCore is
 
     function _afterScannerUpdate(uint256 scannerId, uint256 chainId) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterScannerUpdate(uint256)", scannerId));
+    }
+
+    function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponent) returns (address sender) {
+        return super._msgSender();
+    }
+
+    function _msgData() internal view virtual override(ContextUpgradeable, BaseComponent) returns (bytes calldata) {
+        return super._msgData();
     }
 
     uint256[50] private __gap;

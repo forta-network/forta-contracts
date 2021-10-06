@@ -18,9 +18,8 @@ contract Dispatch is BaseComponent {
 
     event Link(uint256 agentId, uint256 scannerId, bool enable);
 
-
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
+    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
     function initialize(
         address __manager,

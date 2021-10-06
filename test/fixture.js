@@ -2,26 +2,26 @@ const { ethers, upgrades } = require('hardhat');
 
 upgrades.silenceWarnings();
 
-function attach(name, ...params) {
+function attach(name, address) {
   return ethers.getContractFactory(name)
-    .then(contract => contract.attach(...params));
+    .then(contract => contract.attach(address));
 }
 
-function deploy(name, ...params) {
+function deploy(name, params = []) {
   return ethers.getContractFactory(name)
     .then(contract => contract.deploy(...params))
     .then(f => f.deployed());
 }
 
-function deployUpgradeable(name, kind, ...params) {
+function deployUpgradeable(name, kind, params = [], opts = {}) {
   return ethers.getContractFactory(name)
-    .then(contract => upgrades.deployProxy(contract, params, { kind, unsafeAllow: 'delegatecall' }))
+    .then(contract => upgrades.deployProxy(contract, params, { kind, ...opts }))
     .then(f => f.deployed());
 }
 
-function performUpgrade(proxy, name) {
+function performUpgrade(proxy, name, opts = {}) {
   return ethers.getContractFactory(name)
-    .then(contract => upgrades.upgradeProxy(proxy.address, contract, { unsafeAllow: 'delegatecall' }));
+    .then(contract => upgrades.upgradeProxy(proxy.address, contract, opts));
 }
 
 async function migrate() {
@@ -33,30 +33,78 @@ async function migrate() {
   // Deploy contracts
   const contracts = { components: {} };
 
+  // Deploy contracts #0
+  Object.assign(contracts, await Promise.all(Object.entries({
+    forwarder:  deploy('Forwarder'),
+  }).map(entry => Promise.all(entry))).then(Object.fromEntries));
+
   // Deploy contracts #1
   Object.assign(contracts, await Promise.all(Object.entries({
-    token:      deployUpgradeable('Forta',         'uups', accounts.admin.address),
-    otherToken: deployUpgradeable('Forta',         'uups', accounts.admin.address),
-    access:     deployUpgradeable('AccessManager', 'uups', accounts.admin.address),
-    sink:       deploy('Sink'),
+    token: deployUpgradeable(
+      'Forta',
+      'uups',
+      [ accounts.admin.address ],
+    ),
+    otherToken: deployUpgradeable(
+      'Forta',
+      'uups',
+      [ accounts.admin.address ],
+    ),
+    access: deployUpgradeable(
+      'AccessManager',
+      'uups',
+      [ accounts.admin.address ],
+      { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' }
+    ),
+    sink: deploy('Sink'),
   }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
   // Deploy contracts #2
   Object.assign(contracts, await Promise.all(Object.entries({
-    router:     deployUpgradeable('Router',        'uups', contracts.access.address),
+    router: deployUpgradeable(
+      'Router',
+      'uups',
+      [ contracts.access.address ],
+      { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
+    ),
   }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
   // Deploy contracts #3.1 - components
   Object.assign(contracts.components, await Promise.all(Object.entries({
-    staking:  deployUpgradeable('FortaStaking',    'uups', contracts.access.address, contracts.router.address, contracts.token.address, 0, accounts.treasure.address),
-    agents:   deployUpgradeable('AgentRegistry',   'uups', contracts.access.address, contracts.router.address, 'Forta Agents', 'FAgents'),
-    scanners: deployUpgradeable('ScannerRegistry', 'uups', contracts.access.address, contracts.router.address, 'Forta Scanners', 'FScanners'),
+    staking: deployUpgradeable(
+      'FortaStaking',
+      'uups',
+      [ contracts.access.address, contracts.router.address, contracts.token.address, 0, accounts.treasure.address ],
+      { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
+    ),
+    agents: deployUpgradeable(
+      'AgentRegistry',
+      'uups',
+      [ contracts.access.address, contracts.router.address, 'Forta Agents', 'FAgents' ],
+      { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
+    ),
+    scanners: deployUpgradeable(
+      'ScannerRegistry',
+      'uups',
+      [ contracts.access.address, contracts.router.address, 'Forta Scanners', 'FScanners' ],
+      { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
+    ),
   }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
   // Deploy contracts #3.2 - components
   Object.assign(contracts.components, await Promise.all(Object.entries({
-    dispatch: deployUpgradeable('Dispatch',        'uups', contracts.access.address, contracts.router.address, contracts.components.agents.address, contracts.components.scanners.address),
-    alerts:   deployUpgradeable('Alerts',          'uups', contracts.access.address, contracts.router.address, contracts.components.scanners.address),
+    dispatch: deployUpgradeable(
+      'Dispatch',
+      'uups',
+      [ contracts.access.address, contracts.router.address, contracts.components.agents.address, contracts.components.scanners.address],
+      { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
+    ),
+    alerts: deployUpgradeable(
+      'Alerts',
+      'uups',
+      [ contracts.access.address, contracts.router.address, contracts.components.scanners.address],
+      { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
+    ),
   }).map(entry => Promise.all(entry))).then(Object.fromEntries));
 
   // Roles dictionnary

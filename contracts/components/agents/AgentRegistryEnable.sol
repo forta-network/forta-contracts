@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./AgentRegistryCore.sol";
 
-contract AgentRegistryEnable is AgentRegistryCore {
+abstract contract AgentRegistryEnable is AgentRegistryCore {
     using BitMaps for BitMaps.BitMap;
 
     enum Permission {

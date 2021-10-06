@@ -16,7 +16,7 @@ contract ScannerRegistry is
     ScannerRegistryMetadata
 {
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
+    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
     function initialize(
         address __manager,
@@ -32,6 +32,14 @@ contract ScannerRegistry is
 
     function _scannerUpdate(uint256 scannerId, uint256 chainId) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) {
         super._scannerUpdate(scannerId, chainId);
+    }
+
+    function _msgSender() internal view virtual override(BaseComponent, ScannerRegistryCore) returns (address sender) {
+        return super._msgSender();
+    }
+
+    function _msgData() internal view virtual override(BaseComponent, ScannerRegistryCore) returns (bytes calldata) {
+        return super._msgData();
     }
 
     uint256[50] private __gap;

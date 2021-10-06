@@ -26,11 +26,14 @@ describe('VestingWallet', function () {
     this.vesting = await deployUpgradeable(
       'VestingWallet',
       'uups',
-      this.accounts.other.address,
-      this.accounts.admin.address,
-      this.start,
-      this.cliff,
-      this.end - this.start, // duration
+      [
+        this.accounts.other.address,
+        this.accounts.admin.address,
+        this.start,
+        this.cliff,
+        this.end - this.start, // duration
+      ],
+      { unsafeAllow: 'delegatecall' },
     );
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.vesting.address);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.other.address);
@@ -41,11 +44,14 @@ describe('VestingWallet', function () {
     await expect(deployUpgradeable(
       'VestingWallet',
       'uups',
-      ethers.constants.AddressZero,
-      this.accounts.admin.address,
-      this.start,
-      this.cliff,
-      this.end - this.start, // duration
+      [
+        ethers.constants.AddressZero,
+        this.accounts.admin.address,
+        this.start,
+        this.cliff,
+        this.end - this.start, // duration
+      ],
+      { unsafeAllow: 'delegatecall' },
     )).to.be.revertedWith('VestingWallet: beneficiary is zero address');
   });
 
