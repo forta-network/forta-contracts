@@ -19,10 +19,7 @@ abstract contract ForwardedContext is ContextUpgradeable {
 
     function _msgSender() internal view virtual override returns (address sender) {
         if (isTrustedForwarder(msg.sender)) {
-            // The assembly code is more direct than the Solidity version using `abi.decode`.
-            assembly {
-                sender := shr(96, calldataload(sub(calldatasize(), 20)))
-            }
+            return address(bytes20(msg.data[msg.data.length - 20: msg.data.length]));
         } else {
             return super._msgSender();
         }
