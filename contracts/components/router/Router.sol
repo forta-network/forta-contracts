@@ -48,7 +48,7 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
 
 
     // Access control for the upgrade process
-    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(DEFAULT_ADMIN_ROLE) {
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(UPGRADER_ROLE) {
     }
 
     // Allow the upgrader to set ENS reverse registration

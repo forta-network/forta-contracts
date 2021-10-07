@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/Multicall.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "../Roles.sol";
 import "../utils/ForwardedContext.sol";
 import "../../tools/ENSReverseRegistration.sol";
 
@@ -23,7 +24,7 @@ contract AccessManager is ForwardedContext, AccessControlUpgradeable, UUPSUpgrad
     }
 
     // Access control for the upgrade process
-    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(DEFAULT_ADMIN_ROLE) {
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(UPGRADER_ROLE) {
     }
 
     // Allow the upgrader to set ENS reverse registration
