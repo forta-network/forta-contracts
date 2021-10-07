@@ -1,4 +1,32 @@
+const { ethers, upgrades } = require('hardhat');
+
 const migrate = require('../scripts/deploy-platform');
+
+function getFactory(name) {
+  return ethers.getContractFactory(name);
+}
+
+function attach(factory, address) {
+  return (typeof factory === 'string' ? getFactory(factory) : Promise.resolve(factory))
+  .then(contract => contract.attach(address));
+}
+
+function deploy(factory, params = []) {
+  return (typeof factory === 'string' ? getFactory(factory) : Promise.resolve(factory))
+  .then(contract => contract.deploy(...params))
+  .then(f => f.deployed());
+}
+
+function deployUpgradeable(factory, kind, params = [], opts = {}) {
+  return (typeof factory === 'string' ? getFactory(factory) : Promise.resolve(factory))
+  .then(contract => upgrades.deployProxy(contract, params, { kind, ...opts }))
+  .then(f => f.deployed());
+}
+
+function performUpgrade(proxy, factory, opts = {}) {
+  return (typeof factory === 'string' ? getFactory(factory) : Promise.resolve(factory))
+  .then(contract => upgrades.upgradeProxy(proxy.address, contract, opts));
+}
 
 function prepare() {
   before(async function() {
@@ -20,11 +48,11 @@ function prepare() {
     ].map(name => this.accounts.getAccount(name));
 
     // migrate
-    await migrate({ deployer: this.accounts.admin }).then(env => Object.assign(this, env));
+    await migrate({ force: true, deployer: this.accounts.admin }).then(env => Object.assign(this, env));
 
     // mock contracts
-    this.contracts.sink       = await migrate.deploy('Sink');
-    this.contracts.otherToken = await migrate.deployUpgradeable('Forta', 'uups', [ this.deployer.address ]);
+    this.contracts.sink       = await deploy('Sink');
+    this.contracts.otherToken = await deployUpgradeable('Forta', 'uups', [ this.deployer.address ]);
 
     // Set admin as default signer for all contracts
     Object.assign(this, this.contracts);
@@ -63,9 +91,9 @@ function prepare() {
 
 module.exports = {
   prepare,
-  getFactory:        migrate.getFactory,
-  attach:            migrate.attach,
-  deploy:            migrate.deploy,
-  deployUpgradeable: migrate.deployUpgradeable,
-  performUpgrade:    migrate.performUpgrade,
+  getFactory,
+  attach,
+  deploy,
+  deployUpgradeable,
+  performUpgrade,
 }

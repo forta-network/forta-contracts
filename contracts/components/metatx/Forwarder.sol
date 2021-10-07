@@ -33,11 +33,12 @@ contract Forwarder is EIP712WithNonce {
         uint256 value;
         uint256 gas;
         uint256 nonce;
+        uint256 deadline;
         bytes   data;
     }
 
     bytes32 private constant _TYPEHASH =
-        keccak256("ForwardRequest(address from,address to,uint256 value,uint256 gas,uint256 nonce,bytes data)");
+        keccak256("ForwardRequest(address from,address to,uint256 value,uint256 gas,uint256 nonce,uint256 deadline,bytes data)");
 
     constructor() EIP712("Forwarder", "1") {}
 
@@ -49,9 +50,14 @@ contract Forwarder is EIP712WithNonce {
         _verifyAndConsumeNonce(req.from, req.nonce); // revert if failure
 
         require(
+            req.deadline == 0 || req.deadline > block.timestamp,
+            "Forwarder: deadline expired"
+        );
+
+        require(
             SignatureChecker.isValidSignatureNow(
                 req.from,
-                _hashTypedDataV4(keccak256(abi.encode(_TYPEHASH, req.from, req.to, req.value, req.gas, req.nonce, keccak256(req.data)))),
+                _hashTypedDataV4(keccak256(abi.encode(_TYPEHASH, req.from, req.to, req.value, req.gas, req.nonce, req.deadline, keccak256(req.data)))),
                 signature
             ),
             "Forwarder: signature does not match request"
