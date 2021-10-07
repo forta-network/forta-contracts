@@ -1,16 +1,13 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
-const { prepare, getFactory, attach, deployUpgradeable, performUpgrade } = require('./fixture');
+const { prepare, deployUpgradeable, performUpgrade } = require('./fixture');
 
 describe('Forta upgrade', function () {
   prepare();
 
   describe('Token update', function () {
     it('authorized', async function () {
-      this.token = await performUpgrade(
-        this.token,
-        getFactory('Forta2').then(factory => factory.connect(this.accounts.admin)),
-      );
+      this.token = await performUpgrade(this.token, 'Forta2');
       expect(await this.token.version()).to.be.equal('Forta2');
     });
 
@@ -18,10 +15,8 @@ describe('Forta upgrade', function () {
       const ADMIN_ROLE = await this.token.ADMIN_ROLE();
 
       await this.token.renounceRole(ADMIN_ROLE, this.accounts.admin.address);
-      await expect(performUpgrade(
-        this.token,
-        getFactory('Forta2').then(factory => factory.connect(this.accounts.admin)),
-      )).to.be.revertedWith(`AccessControl: account ${this.accounts.admin.address.toLowerCase()} is missing role ${ADMIN_ROLE}`);
+      await expect(performUpgrade(this.token, 'Forta2'))
+      .to.be.revertedWith(`AccessControl: account ${this.accounts.admin.address.toLowerCase()} is missing role ${ADMIN_ROLE}`);
     });
   });
 
@@ -29,7 +24,7 @@ describe('Forta upgrade', function () {
     describe('vesting with admin', function () {
       beforeEach(async function () {
         this.vesting = await deployUpgradeable(
-          getFactory('VestingWallet').then(factory => factory.connect(this.accounts.admin)),
+          'VestingWallet',
           'uups',
           [
             this.accounts.other.address,
@@ -44,28 +39,21 @@ describe('Forta upgrade', function () {
       });
 
       it('authorized', async function () {
-        this.vesting = await performUpgrade(
-          this.vesting,
-          getFactory('VestingWallet2').then(factory => factory.connect(this.accounts.admin)),
-          { unsafeAllow: 'delegatecall' },
-        );
+        this.vesting = await performUpgrade(this.vesting, 'VestingWallet2', { unsafeAllow: 'delegatecall' });
         expect(await this.vesting.version()).to.be.equal('VestingWallet2');
       });
 
       it('unauthorized', async function () {
         await this.vesting.transferOwnership(this.accounts.other.address);
-        await expect(performUpgrade(
-          this.vesting,
-          getFactory('VestingWallet2').then(factory => factory.connect(this.accounts.admin)),
-          { unsafeAllow: 'delegatecall' },
-        )).to.be.revertedWith(`Ownable: caller is not the owner`);
+        await expect(performUpgrade(this.vesting, 'VestingWallet2', { unsafeAllow: 'delegatecall' }))
+        .to.be.revertedWith(`Ownable: caller is not the owner`);
       });
     });
 
     describe('locked vesting', function () {
       beforeEach(async function () {
         this.vesting = await deployUpgradeable(
-          getFactory('VestingWallet2').then(factory => factory.connect(this.accounts.admin)),
+          'VestingWallet2',
           'uups',
           [
             this.accounts.other.address,
@@ -80,11 +68,8 @@ describe('Forta upgrade', function () {
       });
 
       it('unauthorized', async function () {
-        await expect(performUpgrade(
-          this.vesting,
-          getFactory('VestingWallet2').then(factory => factory.connect(this.accounts.admin)),
-          { unsafeAllow: 'delegatecall' },
-        )).to.be.revertedWith(`Ownable: caller is not the owner`);
+        await expect(performUpgrade(this.vesting, 'VestingWallet2', { unsafeAllow: 'delegatecall' }))
+        .to.be.revertedWith(`Ownable: caller is not the owner`);
       });
     });
   });
