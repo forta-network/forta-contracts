@@ -328,7 +328,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         return SafeCast.toUint256(
             SafeCast.toInt256(_historicalRewardFraction(subject, sharesOf(subject, account)))
             -
-            _released[subject].balanceOf( account)
+            _released[subject].balanceOf(account)
         );
     }
 
