@@ -1,5 +1,4 @@
 const { ethers, upgrades } = require('hardhat');
-
 const migrate = require('../scripts/deploy-platform');
 const utils   = require('../scripts/utils');
 

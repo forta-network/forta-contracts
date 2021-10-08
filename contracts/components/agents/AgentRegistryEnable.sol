@@ -26,17 +26,19 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     }
 
     function enableAgent(uint256 agentId, Permission permission) public virtual {
-        require(permission < Permission.length, "invalid permission slot");
-        if (permission == Permission.ADMIN) { require(hasRole(AGENT_ADMIN_ROLE, _msgSender())); }
-        if (permission == Permission.OWNER) { require(_msgSender() == ownerOf(agentId)); }
+        require(_hasPermission(agentId, permission), "invalid permission");
         _enable(agentId, permission, true);
     }
 
     function disableAgent(uint256 agentId, Permission permission) public virtual {
-        require(permission < Permission.length, "invalid permission slot");
-        if (permission == Permission.ADMIN) { require(hasRole(AGENT_ADMIN_ROLE, _msgSender())); }
-        if (permission == Permission.OWNER) { require(_msgSender() == ownerOf(agentId)); }
+        require(_hasPermission(agentId, permission), "invalid permission");
         _enable(agentId, permission, false);
+    }
+
+    function _hasPermission(uint256 agentId, Permission permission) internal view returns (bool) {
+        if (permission == Permission.ADMIN) { return hasRole(AGENT_ADMIN_ROLE, _msgSender()); }
+        if (permission == Permission.OWNER) { return _msgSender() == ownerOf(agentId); }
+        return false;
     }
 
     function _enable(uint256 agentId, Permission permission, bool enable) internal {

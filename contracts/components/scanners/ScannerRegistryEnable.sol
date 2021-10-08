@@ -28,21 +28,21 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
     }
 
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(permission < Permission.length, "invalid permission slot");
-        if (permission == Permission.ADMIN)   { require(hasRole(SCANNER_ADMIN_ROLE, _msgSender())); }
-        if (permission == Permission.SELF)    { require(uint256(uint160(_msgSender())) == scannerId); }
-        if (permission == Permission.OWNER)   { require(_msgSender() == ownerOf(scannerId)); }
-        if (permission == Permission.MANAGER) { require(isManager(scannerId, _msgSender())); }
+        require(_hasPermission(scannerId, permission), "invalid permission");
         _enable(scannerId, permission, true);
     }
 
     function disableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(permission < Permission.length, "invalid permission slot");
-        if (permission == Permission.ADMIN)   { require(hasRole(SCANNER_ADMIN_ROLE, _msgSender())); }
-        if (permission == Permission.SELF)    { require(uint256(uint160(_msgSender())) == scannerId); }
-        if (permission == Permission.OWNER)   { require(_msgSender() == ownerOf(scannerId)); }
-        if (permission == Permission.MANAGER) { require(isManager(scannerId, _msgSender())); }
+        require(_hasPermission(scannerId, permission), "invalid permission");
         _enable(scannerId, permission, false);
+    }
+
+    function _hasPermission(uint256 scannerId, Permission permission) internal view returns (bool) {
+        if (permission == Permission.ADMIN)   { return hasRole(SCANNER_ADMIN_ROLE, _msgSender()); }
+        if (permission == Permission.SELF)    { return uint256(uint160(_msgSender())) == scannerId; }
+        if (permission == Permission.OWNER)   { return _msgSender() == ownerOf(scannerId); }
+        if (permission == Permission.MANAGER) { return isManager(scannerId, _msgSender()); }
+        return false;
     }
 
     function _enable(uint256 scannerId, Permission permission, bool enable) internal {
