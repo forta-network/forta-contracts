@@ -65,6 +65,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     address private _treasury;
 
     event WithdrawalInitiated(address indexed subject, address indexed account, uint64 deadline);
+    event WithdrawalExecuted(address indexed subject, address indexed account);
     event Froze(address indexed subject, address indexed by, bool isFrozen);
     event Slashed(address indexed subject, address indexed by, uint256 value);
     event Rewarded(address indexed subject, address indexed from, uint256 value);
@@ -189,7 +190,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     /**
      * @dev Schedule the withdrawal of shares.
      *
-     * Emits a WithdrawalSheduled event.
+     * Emits a WithdrawalInitiated event.
      */
     function initiateWithdrawal(address subject, uint256 sharesValue) public returns (uint64) {
         address staker = _msgSender();
@@ -216,7 +217,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     /**
      * @dev Burn `sharesValue` shares for a given `subject`, and withdraw the corresponding tokens.
      *
-     * Emits a ERC1155.TransferSingle event.
+     * Emits events WithdrawalExecuted and ERC1155.TransferSingle.
      */
     function withdraw(address subject) public returns (uint256) {
         address staker = _msgSender();
@@ -226,7 +227,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         Timers.Timestamp storage timer = _lockingDelay[subject][staker];
         require(timer.isExpired(), 'Withdrawal is not ready');
         timer.reset();
-        emit WithdrawalInitiated(subject, staker, 0);
+        emit WithdrawalExecuted(subject, staker);
 
         uint256 inactiveShares = inactiveSharesOf(subject, staker);
         uint256 stakeValue     = _inactiveSharesToStake(subject, inactiveShares);
