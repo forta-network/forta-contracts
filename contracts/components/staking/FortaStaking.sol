@@ -246,9 +246,12 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     function slash(address subject, uint256 stakeValue) public onlyRole(SLASHER_ROLE) returns (uint256) {
         uint256 activeStake       = _activeStake.balanceOf(subject);
         uint256 inactiveStake     = _inactiveStake.balanceOf(subject);
-        // if active/inactive stake is not 0, then prevent slashing it down to 0 (leave at least 1 wei) so shares can be priced.
-        uint256 slashFromActive   = Math.min(activeStake   == 0 ? 0 : activeStake   - 1, FullMath.mulDiv(activeStake, activeStake + inactiveStake, stakeValue));
-        uint256 slashFromInactive = Math.min(inactiveStake == 0 ? 0 : inactiveStake - 1, stakeValue - slashFromActive);
+
+        uint256 maxSlashableStake = FullMath.mulDiv(9, 10, activeStake + inactiveStake);
+        require(stakeValue <= maxSlashableStake, "Stake to be slashed is over 90%");
+
+        uint256 slashFromActive   = FullMath.mulDiv(activeStake, activeStake + inactiveStake, stakeValue);
+        uint256 slashFromInactive = stakeValue - slashFromActive;
         stakeValue                = slashFromActive + slashFromInactive;
 
         _activeStake.burn(subject, slashFromActive);
