@@ -7,7 +7,7 @@ coverage
 coverage.*
 deploy.*.json
 
-.cache-*.json
+scripts/.cache-31337.json
 
 /.env
 /.openzeppelin

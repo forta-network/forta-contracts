@@ -9,9 +9,10 @@ async function main() {
     const deployer = config?.deployer ??                               await utils.getDefaultDeployer(provider);
 
     const { name, chainId } = await provider.getNetwork();
+    const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
 
     if (!provider.network.ensAddress) {
-        provider.network.ensAddress = await (new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` })).get('ens-registry');
+        provider.network.ensAddress = await CACHE.get('ens-registry');
     }
 
     DEBUG(`Network:  ${name} (${chainId})`);
@@ -49,20 +50,28 @@ async function main() {
         SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
+    // await contracts.access.grantRole(roles.UPGRADER,      deployer.address        ).then(tx => tx.wait());
+    // await contracts.access.grantRole(roles.AGENT_ADMIN,   deployer.address        ).then(tx => tx.wait());
+    // await contracts.access.grantRole(roles.SCANNER_ADMIN, deployer.address        ).then(tx => tx.wait());
+    // await contracts.access.grantRole(roles.DISPATCHER,    deployer.address        ).then(tx => tx.wait());
+    // await contracts.token .grantRole(roles.MINTER,        deployer.address        ).then(tx => tx.wait());
+    // await contracts.token .grantRole(roles.WHITELISTER,   deployer.address        ).then(tx => tx.wait());
+    // await contracts.token .grantRole(roles.WHITELIST,     contract.staking.address).then(tx => tx.wait());
+
     // await contracts.access.grantRole(roles.UPGRADER, deployer.address).then(tx => tx.wait());
     // await contracts.access.grantRole(roles.DISPATCHER, '0x9e857a04ebde96351878ddf3ad40164ff68c1ee1').then(tx => tx.wait());
-    // await Promise.all(Object.values(contracts).map(contract => contract.setName(ethers.provider.network.ensAddress, contract.address).then(tx => tx.wait())));
+    // await Promise.all(Object.values(contracts).map(contract => contract.setName(provider.network.ensAddress, contract.address).then(tx => tx.wait())));
 
-    // await ethers.provider.resolveName(contracts.access.address  ).then(address => utils.getFactory('AccessManager'  ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
-    // await ethers.provider.resolveName(contracts.router.address  ).then(address => utils.getFactory('Router'         ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
-    // await ethers.provider.resolveName(contracts.staking.address ).then(address => utils.getFactory('FortaStaking'   ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
-    // await ethers.provider.resolveName(contracts.agents.address  ).then(address => utils.getFactory('AgentRegistry'  ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
-    // await ethers.provider.resolveName(contracts.scanners.address).then(address => utils.getFactory('ScannerRegistry').then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
-    // await ethers.provider.resolveName(contracts.dispatch.address).then(address => utils.getFactory('Dispatch'       ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
-    // await ethers.provider.resolveName(contracts.alerts.address  ).then(address => utils.getFactory('Alerts'         ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.access.address  ).then(address => utils.getFactory('AccessManager'  ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.router.address  ).then(address => utils.getFactory('Router'         ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.staking.address ).then(address => utils.getFactory('FortaStaking'   ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.agents.address  ).then(address => utils.getFactory('AgentRegistry'  ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.scanners.address).then(address => utils.getFactory('ScannerRegistry').then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.dispatch.address).then(address => utils.getFactory('Dispatch'       ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.alerts.address  ).then(address => utils.getFactory('Alerts'         ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
 
     await Promise.all(
-        Object.entries(contracts).map(([ name, contracts ]) => ethers.provider.resolveName(contracts.address)
+        Object.entries(contracts).map(([ name, contracts ]) => provider.resolveName(contracts.address)
         .then(address => upgrades.erc1967.getImplementationAddress(address)
             .then(implementation => [ name, { ens: contracts.address, address, implementation} ])
             .catch(() => [ name, { ens: contracts.address, address } ])

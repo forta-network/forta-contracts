@@ -140,6 +140,9 @@ async function migrate(config = {}) {
 
     DEBUG('[10] roles fetched')
 
+    // TODO: check before set
+    await contracts.access.grantRole(roles.ENS_MANAGER, deployer.address).then(tx => tx.wait());
+
     if (!provider.network.ensAddress) {
         contracts.ens = {};
 
@@ -205,9 +208,6 @@ async function migrate(config = {}) {
 
         provider.network.ensAddress = contracts.ens.registry.address;
     }
-
-    // TODO: check before set
-    await contracts.access.grantRole(roles.ENS_MANAGER, deployer.address).then(tx => tx.wait());
 
     // TODO: check before set
     await Promise.all([

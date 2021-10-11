@@ -2,7 +2,9 @@ const { ethers, upgrades } = require('hardhat');
 const { NonceManager     } = require('@ethersproject/experimental');
 const Conf                 = require('conf');
 const pLimit               = require('p-limit');
-const env                  = require('dotenv').config()
+
+// override process.env with dotenv
+Object.assign(process.env, require('dotenv').config().parsed);
 
 const DEFAULT_FEE_DATA = {
     maxFeePerGas:         ethers.utils.parseUnits('100', 'gwei'),
@@ -20,7 +22,7 @@ const getDefaultProvider = async (
 
 const getDefaultDeployer = async (
     provider,
-    baseDeployer = ethers.Wallet.fromMnemonic(env.MNEMONIC ?? 'test test test test test test test test test test test junk')
+    baseDeployer = ethers.Wallet.fromMnemonic(process.env.MNEMONIC || 'test test test test test test test test test test test junk')
 ) => {
     const deployer = new NonceManager(baseDeployer).connect(provider);
     await deployer.getTransactionCount().then(nonce => deployer.setTransactionCount(nonce));
