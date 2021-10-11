@@ -16,6 +16,10 @@
 pragma solidity ^0.8.0;
 
 library FullMath {
+    /**
+     * @dev Multiplication followed by division, without overflow of intermediate values. Lack of overflow is guaranteed if numerator <= denominator.
+     * @return partialAmount target * numerator / denominator
+     */
     function mulDiv(uint256 numerator, uint256 denominator, uint256 target) internal pure returns (uint256 partialAmount) {
         // 512-bit multiply [prod1 prod0] = target * numerator
         // Compute the product mod 2**256 and mod 2**256 - 1
