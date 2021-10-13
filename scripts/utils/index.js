@@ -16,7 +16,7 @@ const getDefaultProvider = async (
     feeData      = {},
 ) => {
     const provider  = new ethers.providers.FallbackProvider([ baseProvider ], 1);
-    provider.getFeeData = () => Promise.resolve(Object.assign(DEFAULT_FEE_DATA, feeData));
+    // provider.getFeeData = () => Promise.resolve(Object.assign(DEFAULT_FEE_DATA, feeData));
     return provider;
 }
 
