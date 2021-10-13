@@ -15,6 +15,7 @@ async function migrate(config = {}) {
     DEBUG(`Network:  ${name} (${chainId})`);
     DEBUG(`ENS:      ${provider.network.ensAddress ?? 'undetected'}`);
     DEBUG(`Deployer: ${deployer.address}`);
+    DEBUG(`Balance:  ${await provider.getBalance(deployer.address).then(ethers.utils.formatEther)}${ethers.constants.EtherSymbol}`);
     DEBUG('----------------------------------------------------');
 
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
