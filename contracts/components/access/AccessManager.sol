@@ -28,7 +28,7 @@ contract AccessManager is ForwardedContext, AccessControlUpgradeable, UUPSUpgrad
     }
 
     // Allow the upgrader to set ENS reverse registration
-    function setName(address ensRegistry, string calldata ensName) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setName(address ensRegistry, string calldata ensName) public onlyRole(ENS_MANAGER_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 
