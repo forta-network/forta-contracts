@@ -30,11 +30,12 @@ module.exports = {
     timeout: 300000,
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN,
+    // apiKey: argv.etherscan,
+    apiKey: argv.polyscan,
   },
   gasReporter: {
     currency: 'USD',
-    coinmarketcap: process.env.COINMARKETCAP,
+    coinmarketcap: argv.coinmarketcap,
   },
 };
 

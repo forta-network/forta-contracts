@@ -1,6 +1,6 @@
-const { ethers, upgrades } = require('hardhat');
-const DEBUG                = require('debug')('upgrade');
-const utils                = require('./utils');
+const { ethers, upgrades, run } = require('hardhat');
+const DEBUG                     = require('debug')('upgrade');
+const utils                     = require('./utils');
 
 upgrades.silenceWarnings();
 
@@ -21,12 +21,12 @@ async function main() {
     DEBUG('----------------------------------------------------');
 
     const contracts = await Promise.all(Object.entries({
-        token:     utils.attach('Forta',           'forta.eth'                    ).then(contract => contract.connect(deployer)),
+        // token:     utils.attach('Forta',           'forta.eth'                    ).then(contract => contract.connect(deployer)),
         access:    utils.attach('AccessManager',   'access.forta.eth'             ).then(contract => contract.connect(deployer)),
         alerts:    utils.attach('Alerts',          'alerts.forta.eth'             ).then(contract => contract.connect(deployer)),
         dispatch:  utils.attach('Dispatch',        'dispatch.forta.eth'           ).then(contract => contract.connect(deployer)),
         router:    utils.attach('Router',          'router.forta.eth'             ).then(contract => contract.connect(deployer)),
-        staking:   utils.attach('FortaStaking',    'staking.forta.eth'            ).then(contract => contract.connect(deployer)),
+        // staking:   utils.attach('FortaStaking',    'staking.forta.eth'            ).then(contract => contract.connect(deployer)),
         forwarder: utils.attach('Forwarder',       'forwarder.forta.eth'          ).then(contract => contract.connect(deployer)),
         agents:    utils.attach('AgentRegistry',   'agents.registries.forta.eth'  ).then(contract => contract.connect(deployer)),
         scanners:  utils.attach('ScannerRegistry', 'scanners.registries.forta.eth').then(contract => contract.connect(deployer)),
@@ -34,10 +34,10 @@ async function main() {
 
     const roles = await Promise.all(Object.entries({
         // Forta
-        ADMIN:         contracts.token.ADMIN_ROLE(),
-        MINTER:        contracts.token.MINTER_ROLE(),
-        WHITELISTER:   contracts.token.WHITELISTER_ROLE(),
-        WHITELIST:     contracts.token.WHITELIST_ROLE(),
+        // ADMIN:         contracts.token.ADMIN_ROLE(),
+        // MINTER:        contracts.token.MINTER_ROLE(),
+        // WHITELISTER:   contracts.token.WHITELISTER_ROLE(),
+        // WHITELIST:     contracts.token.WHITELIST_ROLE(),
         // AccessManager / AccessManaged roles
         DEFAULT_ADMIN: ethers.constants.HashZero,
         ROUTER_ADMIN:  ethers.utils.id('ROUTER_ADMIN_ROLE'),

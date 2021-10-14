@@ -8,7 +8,5 @@ coverage.*
 deploy.*.json
 
 scripts/.cache-31337.json
-
-/.env
-/.openzeppelin
-!/.openzeppelin/mainnet.json
+.openzeppelin/unknown-31337.json
+.env
