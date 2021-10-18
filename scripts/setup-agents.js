@@ -2,6 +2,8 @@ const { ethers } = require('hardhat');
 const DEBUG      = require('debug')('forta');
 const utils      = require('./utils');
 
+const data = require('./data/agents');
+
 Array.range = function(start, stop = undefined, step = 1) {
     if (!stop) { stop = start; start = 0; }
     return start < stop ? Array(Math.ceil((stop - start) / step)).fill().map((_, i) => start + i * step) : [];
@@ -40,13 +42,26 @@ async function main() {
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
 
-    const AGENTS = Array.range(16).map(i => ({ id: i, owner: deployer.address, metadata: `test #${i}`, chainIds: [ 1 ] }));
-
-    await Promise.all(
-        AGENTS
-        .map(agent => contracts.agents.interface.encodeFunctionData('createAgent', [ agent.id, agent.owner, agent.metadata, agent.chainIds ]))
-        .chunk(16)
-        .map(chunk => contracts.agents.multicall(chunk).then(tx => tx.wait()))
+    const receipts = await Promise.all(
+        data
+        .map(agent =>
+            (
+                contracts.agents.ownerOf(agent.id)
+                .then(() => false)
+                .catch(() => true)
+            ).then(_ => _ && contracts.agents.interface.encodeFunctionData('createAgent', [
+                agent.id,
+                agent.ownerAddress,
+                agent.manifest,
+                [ 1 ],
+            ]))
+        )
+    )
+    .then(calls => Promise.all(
+        calls
+        .filter(Boolean)
+        .chunk(8)
+        .map(chunk => contracts.agents.multicall(chunk).then(tx => tx.wait())))
     );
 
     console.log('done')
