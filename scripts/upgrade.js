@@ -1,6 +1,6 @@
-const { ethers, upgrades, run } = require('hardhat');
-const DEBUG                     = require('debug')('upgrade');
-const utils                     = require('./utils');
+const { ethers, upgrades } = require('hardhat');
+const DEBUG                = require('debug')('forta');
+const utils                = require('./utils');
 
 upgrades.silenceWarnings();
 

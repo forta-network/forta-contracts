@@ -26,7 +26,7 @@ module.exports = {
     ],
   },
   networks: { hardhat: {} },
-	mocha: {
+  mocha: {
     timeout: 300000,
   },
   etherscan: {
