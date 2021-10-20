@@ -236,6 +236,8 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         _burn(staker, _subjectToInactive(subject), inactiveShares);
         SafeERC20.safeTransfer(stakedToken, staker, stakeValue);
 
+        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(address)", subject));
+
         return stakeValue;
     }
 
