@@ -5,18 +5,20 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponent.sol";
 import "../../tools/FrontRunningProtection.sol";
+import "./AgentRegistryPermissioned.sol";
 
 abstract contract AgentRegistryCore is
     BaseComponent,
     FrontRunningProtection,
-    ERC721Upgradeable
+    ERC721Upgradeable,
+    AgentRegistryPermissioned
 {
     event AgentCommitted(bytes32 indexed commit);
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
 
     modifier onlyOwnerOf(uint256 agentId) {
-        require(_msgSender() == ownerOf(agentId), "Restricted to agent owner");
-        _;
+      require(_msgSender() == ownerOf(agentId), "Restricted to agent owner");
+      _;
     }
 
     modifier onlySorted(uint256[] memory array) {
@@ -44,13 +46,20 @@ abstract contract AgentRegistryCore is
 
     function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds)
     public
-        onlyOwnerOf(agentId)
         onlySorted(chainIds)
         frontrunProtected(keccak256(abi.encodePacked(agentId, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
     {
+        require( _hasPermission(agentId), "Invalid permission");
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);
         _afterAgentUpdate(agentId, metadata, chainIds);
+    }
+
+    /**
+      Permissioning
+    */
+    function _hasPermission(uint256 agentId) internal virtual override view returns (bool) {
+      return _msgSender() == ownerOf(agentId);
     }
 
     /**

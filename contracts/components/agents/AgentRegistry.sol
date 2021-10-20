@@ -5,6 +5,7 @@ import "../BaseComponent.sol";
 
 import "./AgentRegistryCore.sol";
 import "./AgentRegistryEnable.sol";
+import "./AgentRegistryDeveloped.sol";
 import "./AgentRegistryEnumerable.sol";
 import "./AgentRegistryMetadata.sol";
 
@@ -12,6 +13,7 @@ contract AgentRegistry is
     BaseComponent,
     AgentRegistryCore,
     AgentRegistryEnable,
+    AgentRegistryDeveloped,
     AgentRegistryMetadata,
     AgentRegistryEnumerable
 {
@@ -36,6 +38,10 @@ contract AgentRegistry is
 
     function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
         super._agentUpdate(agentId, newMetadata, newChainIds);
+    }
+
+    function _hasPermission(uint256 agentId) internal override(AgentRegistryCore, AgentRegistryDeveloped, AgentRegistryEnable) view returns (bool) {
+      return super._hasPermission(agentId);
     }
 
     function _msgSender() internal view virtual override(BaseComponent, AgentRegistryCore) returns (address sender) {
