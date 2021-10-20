@@ -40,7 +40,7 @@ contract AgentRegistry is
         super._agentUpdate(agentId, newMetadata, newChainIds);
     }
 
-    function _hasPermission(uint256 agentId) internal override(AgentRegistryCore, AgentRegistryDeveloped, AgentRegistryEnable) view returns (bool) {
+    function _hasPermission(uint256 agentId) internal override(AgentRegistryCore, AgentRegistryEnable, AgentRegistryDeveloped) view returns (bool) {
       return super._hasPermission(agentId);
     }
 

@@ -2,7 +2,6 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 
-
 const AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
 
 
@@ -10,7 +9,7 @@ const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.
 const prepareCommit = (...args)  => ethers.utils.solidityKeccak256([ 'bytes32', 'address', 'string', 'uint256[]' ], args);
 
 
-describe('Agent Registry', function () {
+describe.only('Agent Registry', function () {
   prepare();
 
   describe('create and update', function () {
@@ -226,6 +225,45 @@ describe('Agent Registry', function () {
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, true);
 
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+      });
+    });
+
+    describe('developer',  async function () {
+      let developer
+      before(async function() {
+        developer = this.accounts.other;
+      })
+
+      it('owner can enable developer', async function() {
+        expect(await this.agents.getDeveloperCount(AGENT_ID)).to.be.equal(0)
+        expect(await this.agents.isDeveloper(AGENT_ID, developer.address)).to.be.equal(false)
+        await expect(this.agents.connect(this.accounts.user1).setDeveloper(AGENT_ID, developer.address, true))
+          .to.emit(this.agents, 'DeveloperEnabled').withArgs(AGENT_ID, developer.address, true);
+        expect(await this.agents.isDeveloper(AGENT_ID, developer.address)).to.be.equal(true)
+        expect(await this.agents.getDeveloperCount(AGENT_ID)).to.be.equal(1)
+        expect(await this.agents.getDeveloperAt(AGENT_ID, 0)).to.be.equal(developer.address)
+
+      });
+
+      it('non owner cannot enable developer', async function() {
+        await expect(this.agents.connect(this.accounts.user2).setDeveloper(AGENT_ID, this.accounts.user1.address, true))
+          .to.be.revertedWith('Restricted to agent owner');
+      });
+
+
+      it('developer can enable / disable agents', async function () {
+        await this.agents.connect(this.accounts.user1).setDeveloper(AGENT_ID, developer.address, true)
+        await expect(this.agents.connect(developer).disableAgent(AGENT_ID, 2))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 2, false);
+
+        await expect(this.agents.connect(developer).enableAgent(AGENT_ID, 2))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 2, true);
+      });
+
+      it('developer can update agents', async function () {
+        await this.agents.connect(this.accounts.user1).setDeveloper(AGENT_ID, developer.address, true)
+        await expect(this.agents.connect(developer).updateAgent(AGENT_ID, 'Metadata3', [ 1, 4, 6 ]))
+        .to.emit(this.agents, 'AgentUpdated').withArgs(AGENT_ID, developer.address, 'Metadata3', [ 1, 4, 6 ]);
       });
     });
   });

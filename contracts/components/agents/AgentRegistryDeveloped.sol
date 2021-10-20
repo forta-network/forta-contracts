@@ -8,34 +8,32 @@ import "./AgentRegistryCore.sol";
 abstract contract AgentRegistryDeveloped is AgentRegistryCore {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
 
-    mapping(uint256 => EnumerableSetUpgradeable.AddressSet) agentDevs;
+    mapping(uint256 => EnumerableSetUpgradeable.AddressSet) _agentDevs;
     
-    event AgentDevAdded(uint256 indexed agentId, address indexed by, address indexed dev);
-    event AgentDevRemoved(uint256 indexed agentId, address indexed by, address indexed dev);
+    event DeveloperEnabled(uint256 indexed agentId, address indexed developer, bool enabled);
+
     /**
      * Agent Developer management
      */
-    function addAgentDev(uint256 agentId, address dev)
-    public
-        onlyOwnerOf(agentId)
-        frontrunProtected(keccak256(abi.encodePacked(agentId, dev)), 0 minutes) // TODO: 0 disables the check
-    {
-        require(dev != address(0), "Address(0) is not allowed");
-        require(
-            agentDevs[agentId].add(dev),
-            "Address is already an agent admin"
-        );
-        emit AgentDevAdded(agentId, _msgSender(),  dev);
+    function isDeveloper(uint256 agentId, address developer) public view virtual returns (bool) {
+        return _agentDevs[agentId].contains(developer);
     }
 
-    function removeAgentDev(uint256 agentId, address dev)
-    public
-        onlyOwnerOf(agentId)
-        frontrunProtected(keccak256(abi.encodePacked(agentId, dev)), 0 minutes) // TODO: 0 disables the check
-    {
-        require(dev != address(0), "Address(0) is not allowed");
-        require(agentDevs[agentId].remove(dev), "Address is not an agent admin");
-        emit AgentDevRemoved(agentId, _msgSender(),  dev);
+    function getDeveloperCount(uint256 agentId) public view virtual returns (uint256) {
+        return _agentDevs[agentId].length();
+    }
+
+    function getDeveloperAt(uint256 agentId, uint256 index) public view virtual returns (address) {
+        return _agentDevs[agentId].at(index);
+    }
+
+    function setDeveloper(uint256 agentId, address developer, bool enable) public onlyOwnerOf(agentId) {
+        if (enable) {
+            _agentDevs[agentId].add(developer);
+        } else {
+            _agentDevs[agentId].remove(developer);
+        }
+        emit DeveloperEnabled(agentId, developer, enable);
     }
 
     /**
@@ -43,7 +41,10 @@ abstract contract AgentRegistryDeveloped is AgentRegistryCore {
      */
 
     function _hasPermission(uint256 agentId) internal virtual override view returns (bool) {
-      return agentDevs[agentId].contains(_msgSender()) || super._hasPermission(agentId);
+      if (_agentDevs[agentId].contains(_msgSender())) {
+        return true;
+      } 
+      return super._hasPermission(agentId);
     }
 
     uint256[49] private __gap;

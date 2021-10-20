@@ -29,9 +29,10 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     }
 
     function _hasPermission(uint256 agentId) internal virtual override view returns (bool) {
-      return _msgSender() == ownerOf(agentId)
-        || hasRole(AGENT_ADMIN_ROLE, _msgSender())
-        || super._hasPermission(agentId);
+      if (hasRole(AGENT_ADMIN_ROLE, _msgSender())) {
+        return true;
+      }
+      return super._hasPermission(agentId);
     }
 
     function _enable(uint256 agentId, Permission permission, bool enable) internal {
