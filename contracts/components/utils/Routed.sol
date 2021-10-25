@@ -25,4 +25,6 @@ abstract contract RoutedUpgradeable is AccessManagedUpgradeable {
         _router = IRouter(newRouter);
         emit RouterUpdated(newRouter);
     }
+
+    uint256[49] private __gap;
 }

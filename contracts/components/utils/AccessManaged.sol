@@ -3,11 +3,10 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import "../Roles.sol";
 
 abstract contract AccessManagedUpgradeable is ContextUpgradeable {
-    bytes32 public constant DEFAULT_ADMIN_ROLE = bytes32(0);
-
-    IAccessControl private _accessManager;
+    IAccessControl private _accessControl;
 
     event AccessManagerUpdated(address indexed newAddressManager);
     error MissingRole(bytes32 role, address account);
@@ -20,16 +19,18 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
     }
 
     function __AccessManaged_init(address manager) internal initializer {
-        _accessManager = IAccessControl(manager);
+        _accessControl = IAccessControl(manager);
         emit AccessManagerUpdated(manager);
     }
 
     function hasRole(bytes32 role, address account) internal view returns (bool) {
-        return _accessManager.hasRole(role, account);
+        return _accessControl.hasRole(role, account);
     }
 
     function setAccessManager(address newManager) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _accessManager = IAccessControl(newManager);
+        _accessControl = IAccessControl(newManager);
         emit AccessManagerUpdated(newManager);
     }
+
+    uint256[49] private __gap;
 }

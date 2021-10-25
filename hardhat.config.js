@@ -1,6 +1,7 @@
 require('dotenv/config');
 require('@nomiclabs/hardhat-ethers');
 require('@nomiclabs/hardhat-waffle');
+require('@nomiclabs/hardhat-etherscan');
 require('solidity-coverage');
 require('hardhat-gas-reporter');
 require('@openzeppelin/hardhat-upgrades');
@@ -14,7 +15,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: '0.8.7',
+        version: '0.8.9',
         settings: {
           optimizer: {
             enabled: true,
@@ -25,9 +26,16 @@ module.exports = {
     ],
   },
   networks: { hardhat: {} },
+  mocha: {
+    timeout: 300000,
+  },
+  etherscan: {
+    // apiKey: argv.etherscan,
+    apiKey: argv.polyscan,
+  },
   gasReporter: {
     currency: 'USD',
-    coinmarketcap: process.env.COINMARKETCAP,
+    coinmarketcap: argv.coinmarketcap,
   },
 };
 
@@ -44,6 +52,8 @@ Object.assign(
     'rinkeby',
     'goerli',
     'kovan',
+    'polygon',
+    'mumbai',
   ].map(name => [ name, { url: argv[`${name}Node`], accounts } ]).filter(([, { url} ]) => url)),
   argv.slow && { hardhat: { mining: { auto: false, interval: [3000, 6000] }}}, // Simulate a slow chain locally
   argv.fork && { hardhat: { forking: { url: argv.fork }}}, // Simulate a mainnet fork

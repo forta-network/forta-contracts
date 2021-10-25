@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./AgentRegistryMetadata.sol";
 
-contract AgentRegistryEnumerable is AgentRegistryMetadata {
+abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
     using EnumerableSet for EnumerableSet.UintSet;
 
     EnumerableSet.UintSet private _allAgents;
@@ -29,20 +29,20 @@ contract AgentRegistryEnumerable is AgentRegistryMetadata {
     function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
         super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
 
-        AgentMetadata memory agent = getAgent(agentId);
+        (uint256 version,, uint256[] memory oldChainIds) = getAgent(agentId);
 
-        if (agent.version == 1) { _allAgents.add(agentId); }
+        if (version == 0) { _allAgents.add(agentId); }
 
         uint256 i = 0;
         uint256 j = 0;
-        while (i < agent.chainIds.length || j < newChainIds.length) {
-            if (i == agent.chainIds.length) { // no more old chains, just add the remaining new chains
+        while (i < oldChainIds.length || j < newChainIds.length) {
+            if (i == oldChainIds.length) { // no more old chains, just add the remaining new chains
                 _chainAgents[newChainIds[j++]].add(agentId);
             } else if (j == newChainIds.length) { // no more new chain, just remove the remaining old chains
-                _chainAgents[agent.chainIds[i++]].remove(agentId);
-            } else if (agent.chainIds[i] < newChainIds[j]) { // old chain smaller, remove if
-                _chainAgents[agent.chainIds[i++]].remove(agentId);
-            } else if (agent.chainIds[i] > newChainIds[j]) { // new chain smaller, add it
+                _chainAgents[oldChainIds[i++]].remove(agentId);
+            } else if (oldChainIds[i] < newChainIds[j]) { // old chain smaller, remove if
+                _chainAgents[oldChainIds[i++]].remove(agentId);
+            } else if (oldChainIds[i] > newChainIds[j]) { // new chain smaller, add it
                 _chainAgents[newChainIds[j++]].add(agentId);
             } else { // chainIds are the same do nothing
                 ++i;
@@ -50,4 +50,6 @@ contract AgentRegistryEnumerable is AgentRegistryMetadata {
             }
         }
     }
+
+    uint256[48] private __gap;
 }

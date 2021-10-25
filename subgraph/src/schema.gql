@@ -1,0 +1,127 @@
+type Account @entity {
+	id:                           ID!
+	asScanner:                    Scanner
+	agents:                       [Agent!]! @derivedFrom(field: "owner")
+	scanners:                     [Scanner!]! @derivedFrom(field: "owner")
+	managerOf:                    [ScannerManager!]! @derivedFrom(field: "account")
+	agentTransferFromEvents:      [AgentTransfer!]! @derivedFrom(field: "from")
+	agentTransferToEvents:        [AgentTransfer!]! @derivedFrom(field: "to")
+	agentUpdatedEvents:           [AgentUpdated!]! @derivedFrom(field: "by")
+	scannerTransferFromEvents:    [ScannerTransfer!]! @derivedFrom(field: "from")
+	scannerTransferToEvents:      [ScannerTransfer!]! @derivedFrom(field: "to")
+	scannerManagerEnabledEvents:  [ScannerManagerEnabled!]! @derivedFrom(field: "manager")
+}
+
+type Agent @entity {
+	id:                           ID!
+	owner:                        Account!
+	enabled:                      Boolean!
+	disableFlags:                 Int!
+	metadata:                     String!
+	chains:                       [BigInt!]!
+	links:                        [Link!]! @derivedFrom(field: "agent")
+
+	agentTransferEvents:          [AgentTransfer!]! @derivedFrom(field: "agent")
+	agentUpdatedEvents:           [AgentUpdated!]! @derivedFrom(field: "agent")
+	agentEnabledEvents:           [AgentEnabled!]! @derivedFrom(field: "agent")
+	linkEnabledEvents:            [LinkEnabled!]! @derivedFrom(field: "agent")
+}
+
+type Scanner @entity {
+	id:                           ID!
+	asAccount:                    Account!
+	owner:                        Account!
+	enabled:                      Boolean!
+	disableFlags:                 Int!
+	managers:                     [ScannerManager!]! @derivedFrom(field: "scanner")
+	links:                        [Link!]! @derivedFrom(field: "scanner")
+
+	scannerTransferEvents:        [ScannerTransfer!]! @derivedFrom(field: "scanner")
+	scannerEnabledEvents:         [ScannerEnabled!]! @derivedFrom(field: "scanner")
+	scannerManagerEnabledEvents:  [ScannerManagerEnabled!]! @derivedFrom(field: "scanner")
+	linkEnabledEvents:            [LinkEnabled!]! @derivedFrom(field: "scanner")
+}
+
+type ScannerManager @entity {
+	id:                           ID!
+	scanner:                      Scanner!
+	account:                      Account!
+	active:                       Boolean!
+	scannerManagerEnabledEvents:  [ScannerManagerEnabled!]! @derivedFrom(field: "scannermanager")
+}
+
+type Link @entity {
+	id:                           ID!
+	agent:                        Agent!
+	scanner:                      Scanner!
+	active:                       Boolean!
+	linkEnabledEvents:            [LinkEnabled!]! @derivedFrom(field: "link")
+}
+
+type AgentTransfer implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	agent:                        Agent!
+	from:                         Account!
+	to:                           Account!
+}
+
+type AgentUpdated implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	agent:                        Agent!
+	by:                           Account!
+	metadata:                     String!
+	chains:                       [BigInt!]!
+}
+
+type AgentEnabled implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	agent:                        Agent!
+	enabled:                      Boolean!
+	permission:                   Int!
+	value:                        Boolean!
+}
+
+type ScannerTransfer implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	scanner:                      Scanner!
+	from:                         Account!
+	to:                           Account!
+}
+
+type ScannerEnabled implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	scanner:                      Scanner!
+	enabled:                      Boolean!
+	permission:                   Int!
+	value:                        Boolean!
+}
+
+type ScannerManagerEnabled implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	scanner:                      Scanner!
+	manager:                      Account!
+	scannermanager:               ScannerManager!
+	enabled:                      Boolean!
+}
+
+type LinkEnabled implements Event @entity {
+	id:                           ID!
+	transaction:                  Transaction!
+	timestamp:                    BigInt!
+	scanner:                      Scanner!
+	agent:                        Agent!
+	link:                         Link!
+	enabled:                      Boolean!
+}

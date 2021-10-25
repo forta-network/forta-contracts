@@ -18,17 +18,17 @@ import "../../tools/FullMath.sol";
  * in the Forta ecosystem, who need to lock assets in order to contribute to the system.
  *
  * Stakers take risks with their funds, as bad action from a subject can lead to slashing of the funds. In the
- * meantime, stakers are elligible to rewards. Rewards distributed to a particular subject stakers are distributed
+ * meantime, stakers are elligible for rewards. Rewards distributed to a particular subject's stakers are distributed
  * following to each staker's share in the subject.
  *
  * Stakers can withdraw their funds, following a withdrawal delay. During the withdrawal delay, funds are no longer
- * counting counting toward the active stake of a subject, but are still slashable.
+ * counting toward the active stake of a subject, but are still slashable.
  *
- * The SLASHER_ROLE should be bigen to a future smart contract that will be in charge of resolving disputes.
+ * The SLASHER_ROLE should be given to a future smart contract that will be in charge of resolving disputes.
  *
  * Stakers receive ERC1155 shares in exchange for their stake, making the active stake transferable. When a withdrawal
- * is initiated, similar the ERC1155 tokens representing the (transferable) active shares are burned in exchange for
- * non-transferable ERC1155 tokens representing the inactives shares.
+ * is initiated, similarly the ERC1155 tokens representing the (transferable) active shares are burned in exchange for
+ * non-transferable ERC1155 tokens representing the inactive shares.
  *
  * ERC1155 shares representing active stake are transferable, and can be used in an AMM. Their value is however subject
  * to quick devaluation in case of slashing event for the corresponding subject. Thus, trading of such shares should be
@@ -74,7 +74,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     event TreasurySet(address newTreasury);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
+    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
     function initialize(
         address __manager,
@@ -236,6 +236,8 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         _burn(staker, _subjectToInactive(subject), inactiveShares);
         SafeERC20.safeTransfer(stakedToken, staker, stakeValue);
 
+        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(address)", subject));
+
         return stakeValue;
     }
 
@@ -277,7 +279,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     }
 
     /**
-     * @dev Deposit reward value for a given `subject`. The corresponding tokens will be shared amongs the shareholders
+     * @dev Deposit reward value for a given `subject`. The corresponding tokens will be shared amongst the shareholders
      * of this subject.
      *
      * Emits a Reward event.
@@ -302,7 +304,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
             amount -= _rewards.totalSupply();
         }
 
-        token.transfer(recipient, amount);
+        SafeERC20.safeTransfer(token, recipient, amount);
 
         return amount;
     }
@@ -332,7 +334,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         return SafeCast.toUint256(
             SafeCast.toInt256(_historicalRewardFraction(subject, sharesOf(subject, account)))
             -
-            _released[subject].balanceOf( account)
+            _released[subject].balanceOf(account)
         );
     }
 
@@ -431,4 +433,14 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     function setURI(string memory newUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setURI(newUri);
     }
+
+    function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponent) returns (address sender) {
+        return super._msgSender();
+    }
+
+    function _msgData() internal view virtual override(ContextUpgradeable, BaseComponent) returns (bytes calldata) {
+        return super._msgData();
+    }
+
+    uint256[41] private __gap;
 }

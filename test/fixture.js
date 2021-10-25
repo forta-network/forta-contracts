@@ -1,107 +1,73 @@
 const { ethers, upgrades } = require('hardhat');
-
-function attach(name, ...params) {
-  return ethers.getContractFactory(name)
-    .then(contract => Contract.attach(...params));
-}
-
-function deploy(name, ...params) {
-  return ethers.getContractFactory(name)
-    .then(contract => contract.deploy(...params))
-    .then(f => f.deployed());
-}
-
-function deployUpgradeable(name, kind, ...params) {
-  return ethers.getContractFactory(name)
-    .then(contract => upgrades.deployProxy(contract, params, { kind }))
-    .then(f => f.deployed());
-}
-
-function performUpgrade(proxy, name) {
-  return ethers.getContractFactory(name)
-    .then(contract => upgrades.upgradeProxy(proxy.address, contract, {}));
-}
+const migrate = require('../scripts/deploy-platform');
+const utils   = require('../scripts/utils');
 
 function prepare() {
-  beforeEach(async function () {
-    this.accounts              = await ethers.getSigners();
-    this.accounts.admin        = this.accounts.shift();
-    this.accounts.manager      = this.accounts.shift();
-    this.accounts.minter       = this.accounts.shift();
-    this.accounts.whitelister  = this.accounts.shift();
-    this.accounts.whitelist    = this.accounts.shift();
-    this.accounts.nonwhitelist = this.accounts.shift();
-    this.accounts.treasure     = this.accounts.shift();
-    this.accounts.user1        = this.accounts.shift();
-    this.accounts.user2        = this.accounts.shift();
-    this.accounts.user3        = this.accounts.shift();
-    this.accounts.other        = this.accounts.shift();
+  before(async function() {
+    // list signers
+    this.accounts = await ethers.getSigners();
+    this.accounts.getAccount = (name) => (this.accounts[name]) || (this.accounts[name] = this.accounts.shift());
+    [
+      'admin',
+      'manager',
+      'minter',
+      'whitelister',
+      'whitelist',
+      'nonwhitelist',
+      'treasure',
+      'user1',
+      'user2',
+      'user3',
+      'other',
+    ].map(name => this.accounts.getAccount(name));
 
-    this.token = await deployUpgradeable('Forta', 'uups',
-      this.accounts.admin.address
-    );
+    // migrate
+    await migrate({ force: true, deployer: this.accounts.admin }).then(env => Object.assign(this, env));
 
-    this.otherToken = await deployUpgradeable('Forta', 'uups',
-      this.accounts.admin.address
-    );
+    // mock contracts
+    this.contracts.sink       = await utils.deploy('Sink');
+    this.contracts.otherToken = await utils.deployUpgradeable('Forta', 'uups', [ this.deployer.address ]);
 
-    this.access = await deployUpgradeable('AccessManager', 'uups',
-      this.accounts.admin.address
-    );
+    // Set admin as default signer for all contracts
+    Object.assign(this, this.contracts);
 
-    this.router = await deployUpgradeable('Router', 'uups',
-      this.access.address
-    );
+    // setup roles
+    await Promise.all([
+      this.staking   .connect(this.accounts.admin).setTreasury(this.accounts.treasure.address),
+      this.access    .connect(this.accounts.admin).grantRole(this.roles.ENS_MANAGER,   this.accounts.admin.address      ),
+      this.access    .connect(this.accounts.admin).grantRole(this.roles.UPGRADER,      this.accounts.admin.address      ),
+      this.access    .connect(this.accounts.admin).grantRole(this.roles.AGENT_ADMIN,   this.accounts.manager.address    ),
+      this.access    .connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN, this.accounts.manager.address    ),
+      this.access    .connect(this.accounts.admin).grantRole(this.roles.DISPATCHER,    this.accounts.manager.address    ),
+      this.token     .connect(this.accounts.admin).grantRole(this.roles.MINTER,        this.accounts.minter.address     ),
+      this.token     .connect(this.accounts.admin).grantRole(this.roles.WHITELISTER,   this.accounts.whitelister.address),
+      this.otherToken.connect(this.accounts.admin).grantRole(this.roles.MINTER,        this.accounts.minter.address     ),
+      this.otherToken.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER,   this.accounts.whitelister.address),
+    ].map(txPromise => txPromise.then(tx => tx.wait())));
 
-    this.components = await Promise.all(Object.entries({
-      staking:  deployUpgradeable('FortaStaking',    'uups', this.access.address, this.router.address, this.token.address, 0, this.accounts.treasure.address),
-      agents:   deployUpgradeable('AgentRegistry',   'uups', this.access.address, this.router.address, 'Forta Agents', 'FAgents'),
-      // scanners: deployUpgradeable('ScannerRegistry', 'uups', this.access.address, this.router.address, 'Forta Scanners', 'FScanners'),
-    }).map(entry => Promise.all(entry))).then(Object.fromEntries);
+    await Promise.all([
+      this.token     .connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address  ),
+      this.token     .connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address   ),
+      this.token     .connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address             ),
+      this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address  ),
+      this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address   ),
+      this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address             ),
+    ].map(txPromise => txPromise.then(tx => tx.wait())));
 
-    this.sink = await deploy('Sink');
+    __SNAPSHOT_ID__ = await ethers.provider.send('evm_snapshot');
+  });
 
-    this.roles = await Promise.all(Object.entries({
-      // Forta
-      ADMIN:         this.token.ADMIN_ROLE(),
-      MINTER:        this.token.MINTER_ROLE(),
-      WHITELISTER:   this.token.WHITELISTER_ROLE(),
-      WHITELIST:     this.token.WHITELIST_ROLE(),
-      // AccessManager / AccessManaged roles
-      DEFAULT_ADMIN: ethers.constants.HashZero,
-      ROUTER_ADMIN:  ethers.utils.id('ROUTER_ADMIN_ROLE'),
-      ENS_MANAGER:   ethers.utils.id('ENS_MANAGER_ROLE'),
-      UPGRADER:      ethers.utils.id('UPGRADER_ROLE'),
-      AGENT_ADMIN:   ethers.utils.id('AGENT_ADMIN_ROLE'),
-      SCANNER_ADMIN: ethers.utils.id('SCANNER_ADMIN_ROLE'),
-      SLASHER:       ethers.utils.id('SLASHER_ROLE'),
-      SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
-    }).map(entry => Promise.all(entry))).then(Object.fromEntries);
-
-    await Promise.all([].concat(
-      // Forta roles are standalone
-      [ this.token, this.otherToken ].flatMap(token => [
-        token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
-        token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address),
-        token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
-        token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
-        token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.components.staking.address),
-      ]),
-      // AccessManager roles
-      [
-        this.access.connect(this.accounts.admin).grantRole(this.roles.ENS_MANAGER,   this.accounts.admin.address),
-        this.access.connect(this.accounts.admin).grantRole(this.roles.UPGRADER,      this.accounts.admin.address),
-        this.access.connect(this.accounts.admin).grantRole(this.roles.AGENT_ADMIN,   this.accounts.manager.address),
-        this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN, this.accounts.manager.address),
-      ],
-    ));
+  beforeEach(async function() {
+    await ethers.provider.send('evm_revert', [ __SNAPSHOT_ID__ ])
+    __SNAPSHOT_ID__ = await ethers.provider.send('evm_snapshot');
   });
 }
 
 module.exports = {
   prepare,
-  attach,
-  deploy,
-  deployUpgradeable,
-  performUpgrade,
+  getFactory:        utils.getFactory,
+  attach:            utils.attach,
+  deploy:            utils.deploy,
+  deployUpgradeable: utils.deployUpgradeable,
+  performUpgrade:    utils.performUpgrade,
 }
