@@ -77,5 +77,7 @@ module.exports = {
     vestedAllocation('0x2Eca594E41CaB2511855c5c0319e3ad4459b08dc',  '1000000'),
     vestedAllocation('0x61F270F698a0E00D9b7feee27D806b0CFC05A1d7',   '100000'),
     vestedAllocation('0x875998f98049A6E8d8Ea93c15be5B27fd4094aDA',    '50000'),
+    vestedAllocation('0x446AeE9479901B30838fF442187C9C6a139d9260',   '400000'),
+    vestedAllocation('0xF5Fb27b912D987B5b6e02A1B1BE0C1F0740E2c6f',   '400000'),
   ],
 };
