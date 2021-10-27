@@ -92,8 +92,8 @@ function tryFetchContract(cache, key, contract, args = []) {
   return resumeOrDeploy(cache, key, () => contract.deploy(...args)).then(address => contract.attach(address));
 }
 
-function tryFetchProxy(cache, key, contract, args = [], kind = 'uups') {
-  return resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind })).then(address => contract.attach(address));
+function tryFetchProxy(cache, key, contract, args = [], kind = 'uups', opts = {}) {
+  return resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind, ...opts })).then(address => contract.attach(address));
 }
 
 async function resumeOrDeploy(cache, key, deploy) {
@@ -303,6 +303,7 @@ async function main() {
         VestingWallet,
         [ beneficiary, admin, start, cliff, duration ],
         'uups',
+        { unsafeAllow: ['delegatecall'] },
       ).then(result => {
         console.log(`- VestingWallet #${i+1}/${allocations.length} for ${allocation.beneficiary} deployed to ${result.address}`);
         return [ allocation.beneficiary, result ];
