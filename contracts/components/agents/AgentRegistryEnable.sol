@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./AgentRegistryCore.sol";
+
 abstract contract AgentRegistryEnable is AgentRegistryCore {
     using BitMaps for BitMaps.BitMap;
 
@@ -19,20 +20,18 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     }
 
     function enableAgent(uint256 agentId, Permission permission) public virtual {
-        require(_hasPermission(agentId), "invalid permission");
+        require(_hasPermission(agentId, permission), "invalid permission");
         _enable(agentId, permission, true);
     }
 
     function disableAgent(uint256 agentId, Permission permission) public virtual {
-        require(_hasPermission(agentId), "invalid permission");
+        require(_hasPermission(agentId, permission), "invalid permission");
         _enable(agentId, permission, false);
     }
 
-    function _hasPermission(uint256 agentId) internal virtual override view returns (bool) {
-      if (hasRole(AGENT_ADMIN_ROLE, _msgSender())) {
-        return true;
-      }
-      return super._hasPermission(agentId);
+    function _hasPermission(uint256 agentId, Permission permission) internal virtual override view returns (bool) {
+        if (permission == Permission.ADMIN) { return hasRole(AGENT_ADMIN_ROLE, _msgSender()); }
+        return super._hasPermission(agentId, permission);
     }
 
     function _enable(uint256 agentId, Permission permission, bool enable) internal {

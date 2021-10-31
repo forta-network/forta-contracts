@@ -5,17 +5,18 @@ import "../BaseComponent.sol";
 
 import "./AgentRegistryCore.sol";
 import "./AgentRegistryEnable.sol";
-import "./AgentRegistryDeveloped.sol";
-import "./AgentRegistryEnumerable.sol";
 import "./AgentRegistryMetadata.sol";
+import "./AgentRegistryEnumerable.sol";
+import "./AgentRegistryDeveloper.sol";
+
 
 contract AgentRegistry is
     BaseComponent,
     AgentRegistryCore,
     AgentRegistryEnable,
-    AgentRegistryDeveloped,
     AgentRegistryMetadata,
-    AgentRegistryEnumerable
+    AgentRegistryEnumerable,
+    AgentRegistryDeveloper
 {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -40,8 +41,8 @@ contract AgentRegistry is
         super._agentUpdate(agentId, newMetadata, newChainIds);
     }
 
-    function _hasPermission(uint256 agentId) internal override(AgentRegistryCore, AgentRegistryEnable, AgentRegistryDeveloped) view returns (bool) {
-      return super._hasPermission(agentId);
+    function _hasPermission(uint256 agentId, Permission permission)internal override(AgentRegistryCore, AgentRegistryEnable, AgentRegistryDeveloper) view returns (bool) {
+      return super._hasPermission(agentId, permission);
     }
 
     function _msgSender() internal view virtual override(BaseComponent, AgentRegistryCore) returns (address sender) {

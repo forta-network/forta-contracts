@@ -69,7 +69,7 @@ describe('Dispatcher', function () {
 
     const hashBefore = await this.dispatch.scannerHash(this.SCANNER_ID);
 
-    await expect(this.agents.connect(this.accounts.user1).updateAgent(this.AGENT_ID, 'Metadata2', [ 1 ])).to.be.not.reverted;
+    await expect(this.agents.connect(this.accounts.user1).updateAgent(this.AGENT_ID, 1, 'Metadata2', [ 1 ])).to.be.not.reverted;
 
     expect(await this.dispatch.scannerHash(this.SCANNER_ID)).to.not.be.deep.equal(hashBefore);
   });

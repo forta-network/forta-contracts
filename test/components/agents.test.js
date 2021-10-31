@@ -8,10 +8,15 @@ const AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
 const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
 const prepareCommit = (...args)  => ethers.utils.solidityKeccak256([ 'bytes32', 'address', 'string', 'uint256[]' ], args);
 
+const PERMISSION = {
+    ADMIN: 0,
+    OWNER: 1,
+    DEVELOPER: 2
+}
 
-describe.only('Agent Registry', function () {
+describe('Agent Registry', function () {
   prepare();
-
+  let developer 
   describe('create and update', function () {
     it.skip('missing prepare', async function () {
       const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ] ];
@@ -125,7 +130,7 @@ describe.only('Agent Registry', function () {
         expect(await this.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
         expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
 
-        await expect(this.agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 'Metadata2', [ 1, 4, 5 ]))
+        await expect(this.agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 1, 'Metadata2', [ 1, 4, 5 ]))
         .to.emit(this.agents, 'AgentUpdated').withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata2', [ 1, 4, 5 ]);
 
         expect(await this.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
@@ -162,72 +167,51 @@ describe.only('Agent Registry', function () {
 
     describe('manager', async function () {
       it('disable', async function () {
-        await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0))
-        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
+        await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, PERMISSION.ADMIN))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.ADMIN, false);
 
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
       });
 
       it('re-enable', async function () {
-        await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0))
-        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
+        await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, PERMISSION.ADMIN))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.ADMIN, false);
 
         await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0))
-        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 0, true);
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, PERMISSION.ADMIN, true);
 
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
       });
 
       it('restricted', async function () {
-        await expect(this.agents.connect(this.accounts.other).disableAgent(AGENT_ID, 0)).to.be.reverted;
+        await expect(this.agents.connect(this.accounts.other).disableAgent(AGENT_ID, PERMISSION.ADMIN)).to.be.reverted;
       });
     });
 
     describe('owner', async function () {
       it('disable', async function () {
-        await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1))
-        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
+        await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, PERMISSION.OWNER))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.OWNER, false);
 
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
       });
 
       it('re-enable', async function () {
-        await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1))
-        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
+        await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, PERMISSION.OWNER))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.OWNER, false);
 
         await expect(this.agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1))
-        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 1, true);
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, PERMISSION.OWNER, true);
 
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
       });
 
       it('restricted', async function () {
-        await expect(this.agents.connect(this.accounts.other).disableAgent(AGENT_ID, 1)).to.be.reverted;
+        await expect(this.agents.connect(this.accounts.other).disableAgent(AGENT_ID, PERMISSION.OWNER)).to.be.reverted;
       });
     });
 
-    describe('hybrid', async function () {
-      it('owner cannot reenable after admin disable', async function () {
-        await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0))
-        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
-
-        await expect(this.agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1))
-        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, true);
-
-        expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
-      });
-
-      it('admin cannot reenable after owner disable', async function () {
-        await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1))
-        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
-
-        await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0))
-        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, true);
-
-        expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
-      });
-    });
-
+    
     describe('developer',  async function () {
       let developer
       before(async function() {
@@ -253,17 +237,66 @@ describe.only('Agent Registry', function () {
 
       it('developer can enable / disable agents', async function () {
         await this.agents.connect(this.accounts.user1).setDeveloper(AGENT_ID, developer.address, true)
-        await expect(this.agents.connect(developer).disableAgent(AGENT_ID, 2))
-        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 2, false);
+        await expect(this.agents.connect(developer).disableAgent(AGENT_ID, PERMISSION.DEVELOPER))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.DEVELOPER, false);
 
-        await expect(this.agents.connect(developer).enableAgent(AGENT_ID, 2))
-        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 2, true);
+        await expect(this.agents.connect(developer).enableAgent(AGENT_ID, PERMISSION.DEVELOPER))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, PERMISSION.DEVELOPER, true);
       });
 
       it('developer can update agents', async function () {
         await this.agents.connect(this.accounts.user1).setDeveloper(AGENT_ID, developer.address, true)
-        await expect(this.agents.connect(developer).updateAgent(AGENT_ID, 'Metadata3', [ 1, 4, 6 ]))
+        await expect(this.agents.connect(developer).updateAgent(AGENT_ID, PERMISSION.DEVELOPER, 'Metadata3', [ 1, 4, 6 ]))
         .to.emit(this.agents, 'AgentUpdated').withArgs(AGENT_ID, developer.address, 'Metadata3', [ 1, 4, 6 ]);
+      });
+    });
+
+    describe('hybrid', async function () {
+      let developer
+      before(async function() {
+        developer = this.accounts.other;
+      })
+
+      it('owner cannot reenable after admin disable', async function () {
+        await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, PERMISSION.ADMIN))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.ADMIN, false);
+
+        await expect(this.agents.connect(this.accounts.user1).enableAgent(AGENT_ID, PERMISSION.OWNER))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.OWNER, true);
+
+        expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+      });
+
+      it('admin cannot reenable after owner disable', async function () {
+        await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, PERMISSION.OWNER))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.OWNER, false);
+
+        await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, PERMISSION.ADMIN))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.ADMIN, true);
+
+        expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+      });
+
+      it('developer cannot reenable after owner and admin disable', async function () {
+        await expect(this.agents.connect(this.accounts.user1).setDeveloper(AGENT_ID, developer.address, true))
+
+        await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, PERMISSION.OWNER))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.OWNER, false);
+
+        await expect(this.agents.connect(developer).enableAgent(AGENT_ID, PERMISSION.DEVELOPER))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.DEVELOPER, true);
+
+        expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+
+        this.agents.connect(this.accounts.user1).enableAgent(AGENT_ID, PERMISSION.OWNER);
+
+        await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, PERMISSION.ADMIN))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.ADMIN, false);
+
+        await expect(this.agents.connect(developer).enableAgent(AGENT_ID, PERMISSION.DEVELOPER))
+        .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.DEVELOPER, true);
+
+        expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
       });
     });
   });

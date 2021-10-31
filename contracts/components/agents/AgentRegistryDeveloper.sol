@@ -5,7 +5,8 @@ import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
 import "./AgentRegistryCore.sol";
-abstract contract AgentRegistryDeveloped is AgentRegistryCore {
+
+abstract contract AgentRegistryDeveloper is AgentRegistryCore {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
 
     mapping(uint256 => EnumerableSetUpgradeable.AddressSet) _agentDevs;
@@ -40,11 +41,9 @@ abstract contract AgentRegistryDeveloped is AgentRegistryCore {
      Access modifiers
      */
 
-    function _hasPermission(uint256 agentId) internal virtual override view returns (bool) {
-      if (_agentDevs[agentId].contains(_msgSender())) {
-        return true;
-      } 
-      return super._hasPermission(agentId);
+    function _hasPermission(uint256 agentId, Permission permission) internal virtual override view returns (bool) {
+        if (permission == Permission.DEVELOPER) { return _agentDevs[agentId].contains(_msgSender()); }
+        return super._hasPermission(agentId, permission);
     }
 
     uint256[49] private __gap;
