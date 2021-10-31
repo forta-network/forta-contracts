@@ -22,6 +22,7 @@ abstract contract AgentRegistryCore is
     }
 
     modifier onlySorted(uint256[] memory array) {
+        require(array.length > 0, "At least one chain id required");
         for (uint256 i = 1; i < array.length; ++i ) {
             require(array[i] > array[i-1], "Values must be sorted");
         }
