@@ -42,7 +42,7 @@ contract AgentRegistry is
     }
 
     function _hasPermission(uint256 agentId, Permission permission)internal override(AgentRegistryCore, AgentRegistryEnable, AgentRegistryDeveloper) view returns (bool) {
-      return super._hasPermission(agentId, permission);
+        return super._hasPermission(agentId, permission);
     }
 
     function _msgSender() internal view virtual override(BaseComponent, AgentRegistryCore) returns (address sender) {

@@ -17,8 +17,8 @@ abstract contract AgentRegistryCore is
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
 
     modifier onlyOwnerOf(uint256 agentId) {
-      require(_msgSender() == ownerOf(agentId), "Restricted to agent owner");
-      _;
+        require(_msgSender() == ownerOf(agentId), "Restricted to agent owner");
+        _;
     }
 
     modifier onlySorted(uint256[] memory array) {
