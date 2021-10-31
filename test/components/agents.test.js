@@ -9,9 +9,9 @@ const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.
 const prepareCommit = (...args)  => ethers.utils.solidityKeccak256([ 'bytes32', 'address', 'string', 'uint256[]' ], args);
 
 const PERMISSION = {
-    ADMIN: 0,
-    OWNER: 1,
-    DEVELOPER: 2
+  ADMIN: 0,
+  OWNER: 1,
+  DEVELOPER: 2
 }
 
 describe('Agent Registry', function () {
@@ -222,7 +222,7 @@ describe('Agent Registry', function () {
         expect(await this.agents.getDeveloperCount(AGENT_ID)).to.be.equal(0)
         expect(await this.agents.isDeveloper(AGENT_ID, developer.address)).to.be.equal(false)
         await expect(this.agents.connect(this.accounts.user1).setDeveloper(AGENT_ID, developer.address, true))
-          .to.emit(this.agents, 'DeveloperEnabled').withArgs(AGENT_ID, developer.address, true);
+        .to.emit(this.agents, 'DeveloperEnabled').withArgs(AGENT_ID, developer.address, true);
         expect(await this.agents.isDeveloper(AGENT_ID, developer.address)).to.be.equal(true)
         expect(await this.agents.getDeveloperCount(AGENT_ID)).to.be.equal(1)
         expect(await this.agents.getDeveloperAt(AGENT_ID, 0)).to.be.equal(developer.address)
@@ -231,7 +231,7 @@ describe('Agent Registry', function () {
 
       it('non owner cannot enable developer', async function() {
         await expect(this.agents.connect(this.accounts.user2).setDeveloper(AGENT_ID, this.accounts.user1.address, true))
-          .to.be.revertedWith('Restricted to agent owner');
+        .to.be.revertedWith('Restricted to agent owner');
       });
 
 
