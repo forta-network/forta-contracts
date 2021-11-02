@@ -41,9 +41,14 @@ abstract contract AgentRegistryDeveloper is AgentRegistryCore {
      Access modifiers
      */
 
-    function _hasPermission(uint256 agentId, Permission permission) internal virtual override view returns (bool) {
+    function _hasUpdatingPermission(uint256 agentId, Permission permission) internal virtual override view returns (bool) {
         if (permission == Permission.DEVELOPER) { return _agentDevs[agentId].contains(_msgSender()); }
-        return super._hasPermission(agentId, permission);
+        return super._hasUpdatingPermission(agentId, permission);
+    }
+
+    function _hasEnablingPermission(uint256 agentId, Permission permission) internal virtual override view returns (bool) {
+        if (permission == Permission.DEVELOPER) { return _agentDevs[agentId].contains(_msgSender()); }
+        return super._hasEnablingPermission(agentId, permission);
     }
 
     uint256[49] private __gap;

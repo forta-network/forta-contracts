@@ -50,7 +50,7 @@ abstract contract AgentRegistryCore is
         onlySorted(chainIds)
         frontrunProtected(keccak256(abi.encodePacked(agentId, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
     {
-        require(_hasPermission(agentId, permission), "Invalid permission");
+        require(_hasUpdatingPermission(agentId, permission), "Invalid permission");
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);
         _afterAgentUpdate(agentId, metadata, chainIds);
@@ -59,9 +59,10 @@ abstract contract AgentRegistryCore is
     /**
       Permissioning
     */
-    function _hasPermission(uint256 agentId, Permission permission) internal virtual override view returns (bool) {
+
+    function _hasUpdatingPermission(uint256 agentId, Permission permission) internal virtual override view returns (bool) {
         if (permission == Permission.OWNER) { return _msgSender() == ownerOf(agentId); }
-        return super._hasPermission(agentId, permission);
+        return super._hasUpdatingPermission(agentId, permission);
     }
 
     /**

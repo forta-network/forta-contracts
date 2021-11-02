@@ -14,7 +14,7 @@ const PERMISSION = {
   DEVELOPER: 2
 }
 
-describe('Agent Registry', function () {
+describe.only('Agent Registry', function () {
   prepare();
   let developer 
   describe('create and update', function () {
@@ -154,6 +154,26 @@ describe('Agent Registry', function () {
         expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
         expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
       });
+
+      it('admin cannot update', async function () {
+        const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1, 3, 4 ] ];
+
+
+        await expect(this.agents.prepareAgent(prepareCommit(...args)))
+        .to.emit(this.agents, 'AgentCommitted').withArgs(prepareCommit(...args));
+
+        await network.provider.send('evm_increaseTime', [ 300 ]);
+
+        await expect(this.agents.connect(this.accounts.other).createAgent(...args))
+        .to.emit(this.agents, 'Transfer').withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+        .to.emit(this.agents, 'AgentUpdated').withArgs(AGENT_ID, this.accounts.other.address, 'Metadata1', [ 1 , 3, 4 ]);
+
+
+
+        await expect(this.agents.connect(this.accounts.manager).updateAgent(AGENT_ID, 1, 'Metadata2', [ 1, 4, 5 ]))
+        .to.be.revertedWith('Invalid permission');
+
+      });
     });
   });
 
@@ -177,7 +197,7 @@ describe('Agent Registry', function () {
         await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, PERMISSION.ADMIN))
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, PERMISSION.ADMIN, false);
 
-        await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0))
+        await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, PERMISSION.ADMIN))
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, PERMISSION.ADMIN, true);
 
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
@@ -249,6 +269,7 @@ describe('Agent Registry', function () {
         await expect(this.agents.connect(developer).updateAgent(AGENT_ID, PERMISSION.DEVELOPER, 'Metadata3', [ 1, 4, 6 ]))
         .to.emit(this.agents, 'AgentUpdated').withArgs(AGENT_ID, developer.address, 'Metadata3', [ 1, 4, 6 ]);
       });
+
     });
 
     describe('hybrid', async function () {
@@ -298,6 +319,7 @@ describe('Agent Registry', function () {
 
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
       });
+
     });
   });
 

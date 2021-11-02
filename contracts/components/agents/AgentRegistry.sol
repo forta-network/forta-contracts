@@ -9,7 +9,6 @@ import "./AgentRegistryMetadata.sol";
 import "./AgentRegistryEnumerable.sol";
 import "./AgentRegistryDeveloper.sol";
 
-
 contract AgentRegistry is
     BaseComponent,
     AgentRegistryCore,
@@ -41,8 +40,12 @@ contract AgentRegistry is
         super._agentUpdate(agentId, newMetadata, newChainIds);
     }
 
-    function _hasPermission(uint256 agentId, Permission permission)internal override(AgentRegistryCore, AgentRegistryEnable, AgentRegistryDeveloper) view returns (bool) {
-        return super._hasPermission(agentId, permission);
+    function _hasUpdatingPermission(uint256 agentId, Permission permission) internal override(AgentRegistryCore, AgentRegistryDeveloper) view returns (bool) {
+        return super._hasUpdatingPermission(agentId, permission);
+    }
+
+    function _hasEnablingPermission(uint256 agentId, Permission permission)internal override(AgentRegistryPermissioned, AgentRegistryEnable, AgentRegistryDeveloper) view returns (bool) {
+        return super._hasEnablingPermission(agentId, permission);
     }
 
     function _msgSender() internal view virtual override(BaseComponent, AgentRegistryCore) returns (address sender) {

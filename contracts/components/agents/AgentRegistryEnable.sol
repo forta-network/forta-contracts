@@ -20,18 +20,19 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     }
 
     function enableAgent(uint256 agentId, Permission permission) public virtual {
-        require(_hasPermission(agentId, permission), "invalid permission");
+        require(_hasEnablingPermission(agentId, permission), "invalid permission");
         _enable(agentId, permission, true);
     }
 
     function disableAgent(uint256 agentId, Permission permission) public virtual {
-        require(_hasPermission(agentId, permission), "invalid permission");
+        require(_hasEnablingPermission(agentId, permission), "invalid permission");
         _enable(agentId, permission, false);
     }
 
-    function _hasPermission(uint256 agentId, Permission permission) internal virtual override view returns (bool) {
+    function _hasEnablingPermission(uint256 agentId, Permission permission) internal virtual override view returns (bool) {
         if (permission == Permission.ADMIN) { return hasRole(AGENT_ADMIN_ROLE, _msgSender()); }
-        return super._hasPermission(agentId, permission);
+        if (permission == Permission.OWNER) { return _msgSender() == ownerOf(agentId); }
+        return super._hasEnablingPermission(agentId, permission);
     }
 
     function _enable(uint256 agentId, Permission permission, bool enable) internal {

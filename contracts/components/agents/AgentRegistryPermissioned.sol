@@ -9,7 +9,11 @@ abstract contract AgentRegistryPermissioned {
         DEVELOPER,
         length
     }
-    function _hasPermission(uint256 agentId, Permission permission) internal virtual view returns (bool) {
+    function _hasEnablingPermission(uint256 agentId, Permission permission) internal virtual view returns (bool) {
+        return false;
+    }
+
+    function _hasUpdatingPermission(uint256 agentId, Permission permission) internal virtual view returns (bool) {
         return false;
     }
 }
