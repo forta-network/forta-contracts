@@ -132,7 +132,7 @@ async function main() {
   const impl          = { 1: "0xF5E4f8e6F4eD07c2854a315332B883Dac49b2575" }[chainId] || revert(`VestingWallet implementation not yet deployed to ${name}-${chainId}`);
   const { interface } = await ethers.getContractFactory('VestingWallet', deployer);
   const proxyFactory  = await getProxyFactory(hre, deployer);
-  const manifest      = await Manifest.forNetwork(hre.network.provider);
+  const manifest      = new Manifest(chainId);
 
 
 
