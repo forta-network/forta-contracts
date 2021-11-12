@@ -9,10 +9,14 @@ import "../BaseComponent.sol";
  * @notice This contract must have the WHITELISTER_ROLE role on token
  */
 contract StakingEscrowFactory is BaseComponent {
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     FortaBridged  public immutable token;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     FortaStaking  public immutable staking;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     StakingEscrow public immutable template;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         address      __trustedForwarder,
         FortaStaking __staking
