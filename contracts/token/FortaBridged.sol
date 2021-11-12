@@ -22,6 +22,11 @@ contract FortaBridged is FortaCommon {
         _burn(msg.sender, amount);
     }
 
+    function withdrawTo(uint256 amount, address receiver) external {
+        _transfer(msg.sender, receiver, amount);
+        _burn(receiver, amount);
+    }
+
     function updateChildChainManager(address _childChainManagerProxy) external onlyRole(ADMIN_ROLE) {
         require(_childChainManagerProxy != address(0), "FortaBridged: bad childChainManagerProxy address");
         childChainManagerProxy = _childChainManagerProxy;
