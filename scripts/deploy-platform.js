@@ -31,7 +31,7 @@ const registerNode = async (name, owner, opts = {}) => {
     }
 
     if (resolved) {
-        const currentResolved = signer.provider.resolveName(name);
+        const currentResolved = await signer.provider.resolveName(name);
         if (resolved != currentResolved) {
             await resolver.connect(signer)['setAddr(bytes32,address)'](
                 ethers.utils.namehash(name),
@@ -45,6 +45,16 @@ const registerNode = async (name, owner, opts = {}) => {
                 owner,
             ).then(tx => tx.wait());
         }
+    }
+}
+
+const reverseRegister = async (contract, name) => {
+    const reverseResolved = await contract.provider.lookupAddress(contract.address);
+    if (reverseResolved != name) {
+        await contract.setName(
+            contract.provider.network.ensAddress,
+            name,
+        ).then(tx => tx.wait());
     }
 }
 
@@ -250,35 +260,33 @@ async function migrate(config = {}) {
         await registerNode(                 'addr.reverse', contracts.ens.reverse.address, { ...contracts.ens,                                       });
         await registerNode(                          'eth', deployer.address,              { ...contracts.ens,                                       });
         await registerNode(                    'forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.token.address     });
-        await registerNode(             'access.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.access.address    });
-        await registerNode(             'alerts.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.alerts.address    });
-        await registerNode(           'dispatch.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.dispatch.address  });
-        await registerNode(          'forwarder.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.forwarder.address });
-        await registerNode(             'router.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.router.address    });
-        await registerNode(            'staking.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.staking.address   });
         await registerNode(         'registries.forta.eth', deployer.address,              { ...contracts.ens,                                       });
-        await registerNode(  'agents.registries.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.agents.address    });
-        await registerNode('scanners.registries.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.scanners.address  });
-
-        if (config.l2enable) {
-            await registerNode('escrow.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.escrowFactory.address });
-        }
+        await Promise.all([
+            registerNode(             'access.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.access.address    }),
+            registerNode(             'alerts.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.alerts.address    }),
+            registerNode(           'dispatch.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.dispatch.address  }),
+            registerNode(          'forwarder.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.forwarder.address }),
+            registerNode(             'router.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.router.address    }),
+            registerNode(            'staking.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.staking.address   }),
+            registerNode(  'agents.registries.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.agents.address    }),
+            registerNode('scanners.registries.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.scanners.address  }),
+            config.l2enable && registerNode('escrow.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.escrowFactory.address }),
+        ]);
 
         DEBUG('[11.4] ens configuration')
     }
 
-    await contracts.token   .setName(provider.network.ensAddress,                     'forta.eth');
-    await contracts.access  .setName(provider.network.ensAddress,              'access.forta.eth');
-    await contracts.alerts  .setName(provider.network.ensAddress,              'alerts.forta.eth');
-    await contracts.router  .setName(provider.network.ensAddress,              'router.forta.eth');
-    await contracts.dispatch.setName(provider.network.ensAddress,            'dispatch.forta.eth');
-    await contracts.staking .setName(provider.network.ensAddress,             'staking.forta.eth');
-    await contracts.agents  .setName(provider.network.ensAddress,   'agents.registries.forta.eth');
-    await contracts.scanners.setName(provider.network.ensAddress, 'scanners.registries.forta.eth');
-
-    if (config.l2enable) {
-        await contracts.escrowFactory.setName(provider.network.ensAddress, 'escrow.forta.eth');
-    }
+    await Promise.all([
+        reverseRegister(contracts.token,                        'forta.eth'),
+        reverseRegister(contracts.access,                'access.forta.eth'),
+        reverseRegister(contracts.alerts,                'alerts.forta.eth'),
+        reverseRegister(contracts.router,                'router.forta.eth'),
+        reverseRegister(contracts.dispatch,            'dispatch.forta.eth'),
+        reverseRegister(contracts.staking,              'staking.forta.eth'),
+        reverseRegister(contracts.agents,     'agents.registries.forta.eth'),
+        reverseRegister(contracts.scanners, 'scanners.registries.forta.eth'),
+        config.l2enable && reverseRegister(contracts.escrowFactory, 'escrow.forta.eth'),
+    ]);
 
     DEBUG('[11.5] reverse registration')
 
