@@ -48,14 +48,16 @@ const registerNode = async (name, owner, opts = {}) => {
     }
 }
 
+const CHILD_CHAIN_MANAGER_PROXY = {
+    137:   '0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa',
+    80001: '0xb5505a6d998549090530911180f38aC5130101c6',
+};
+
 /*********************************************************************************************************************
  *                                                Migration workflow                                                 *
  *********************************************************************************************************************/
 async function migrate(config = {}) {
 
-    config.childChainManagerProxy = ethers.constants.AddressZero;
-
-    const l2enable = !!config.childChainManagerProxy;
     const provider = config?.provider ?? config?.deployer?.provider ?? await utils.getDefaultProvider();
     const deployer = config?.deployer ??                               await utils.getDefaultDeployer(provider);
 
@@ -69,6 +71,9 @@ async function migrate(config = {}) {
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
     if (config?.force) { CACHE.clear(); }
 
+    config.childChainManagerProxy = config.childChainManagerProxy ?? CHILD_CHAIN_MANAGER_PROXY[chainId];
+    config.l2enable               = config.l2enable               ?? !!config.childChainManagerProxy;
+
     const contracts = {}
 
     contracts.forwarder = await ethers.getContractFactory('Forwarder', deployer).then(factory => utils.tryFetchContract(
@@ -81,11 +86,11 @@ async function migrate(config = {}) {
     DEBUG(`[1] forwarder: ${contracts.forwarder.address}`);
 
     contracts.token = await ethers.getContractFactory(
-        l2enable ? 'FortaBridged' : 'Forta',
+        config.l2enable ? 'FortaBridged' : 'Forta',
         deployer
     ).then(factory => utils.tryFetchProxy(
         CACHE,
-        l2enable ? 'forta-bridge' : 'forta',
+        config.l2enable ? 'forta-bridge' : 'forta',
         factory,
         'uups',
         [ deployer.address, config.childChainManagerProxy ].filter(Boolean),
@@ -126,7 +131,7 @@ async function migrate(config = {}) {
 
     DEBUG(`[5] staking: ${contracts.staking.address}`);
 
-    if (l2enable) {
+    if (config.l2enable) {
         contracts.escrowFactory = await ethers.getContractFactory('StakingEscrowFactory', deployer).then(factory => utils.tryFetchProxy(
             CACHE,
             'escrow-factory',
@@ -255,23 +260,23 @@ async function migrate(config = {}) {
         await registerNode(  'agents.registries.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.agents.address    });
         await registerNode('scanners.registries.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.scanners.address  });
 
-        if (l2enable) {
+        if (config.l2enable) {
             await registerNode('escrow.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.escrowFactory.address });
         }
 
         DEBUG('[11.4] ens configuration')
     }
 
-    await contracts.token   .setName(provider.network.ensAddress, 'forta.eth'                    );
-    await contracts.access  .setName(provider.network.ensAddress, 'access.forta.eth'             );
-    await contracts.alerts  .setName(provider.network.ensAddress, 'alerts.forta.eth'             );
-    await contracts.router  .setName(provider.network.ensAddress, 'router.forta.eth'             );
-    await contracts.dispatch.setName(provider.network.ensAddress, 'dispatch.forta.eth'           );
-    await contracts.staking .setName(provider.network.ensAddress, 'staking.forta.eth'            );
-    await contracts.agents  .setName(provider.network.ensAddress, 'agents.registries.forta.eth'  );
+    await contracts.token   .setName(provider.network.ensAddress,                     'forta.eth');
+    await contracts.access  .setName(provider.network.ensAddress,              'access.forta.eth');
+    await contracts.alerts  .setName(provider.network.ensAddress,              'alerts.forta.eth');
+    await contracts.router  .setName(provider.network.ensAddress,              'router.forta.eth');
+    await contracts.dispatch.setName(provider.network.ensAddress,            'dispatch.forta.eth');
+    await contracts.staking .setName(provider.network.ensAddress,             'staking.forta.eth');
+    await contracts.agents  .setName(provider.network.ensAddress,   'agents.registries.forta.eth');
     await contracts.scanners.setName(provider.network.ensAddress, 'scanners.registries.forta.eth');
 
-    if (l2enable) {
+    if (config.l2enable) {
         await contracts.escrowFactory.setName(provider.network.ensAddress, 'escrow.forta.eth');
     }
 
