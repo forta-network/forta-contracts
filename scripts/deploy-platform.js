@@ -8,6 +8,7 @@ upgrades.silenceWarnings();
  *                                                Migration workflow                                                 *
  *********************************************************************************************************************/
 async function migrate(config = {}) {
+    const l2enable = !!config.childChainManagerProxy;
     const provider = config?.provider ?? config?.deployer?.provider ?? await utils.getDefaultProvider();
     const deployer = config?.deployer ??                               await utils.getDefaultDeployer(provider);
 
@@ -32,12 +33,15 @@ async function migrate(config = {}) {
 
     DEBUG(`[1] forwarder: ${contracts.forwarder.address}`);
 
-    contracts.token = await ethers.getContractFactory('Forta', deployer).then(factory => utils.tryFetchProxy(
+    contracts.token = await ethers.getContractFactory(
+        l2enable ? 'FortaBridged' : 'Forta',
+        deployer
+    ).then(factory => utils.tryFetchProxy(
         CACHE,
-        'forta',
+        l2enable ? 'forta-bridge' : 'forta',
         factory,
         'uups',
-        [ deployer.address ],
+        [ deployer.address, config.childChainManagerProxy ].filter(Boolean),
     ));
 
     DEBUG(`[2] forta: ${contracts.token.address}`);

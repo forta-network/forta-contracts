@@ -2,16 +2,16 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import "./L2VestingWallet.sol";
+import "./StakingEscrow.sol";
 import "../BaseComponent.sol";
 
 /**
  * @notice This contract must have the WHITELISTER_ROLE role on token
  */
-contract L2VestingFactory is BaseComponent {
-    FortaBridged    public immutable token;
-    FortaStaking    public immutable staking;
-    L2VestingWallet public immutable template;
+contract StakingEscrowFactory is BaseComponent {
+    FortaBridged  public immutable token;
+    FortaStaking  public immutable staking;
+    StakingEscrow public immutable template;
 
     constructor(
         address      __trustedForwarder,
@@ -20,7 +20,7 @@ contract L2VestingFactory is BaseComponent {
         token   = FortaBridged(address(__staking.stakedToken()));
         staking = __staking;
 
-        template = new L2VestingWallet(
+        template = new StakingEscrow(
             __trustedForwarder,
             token,
             staking
@@ -47,7 +47,7 @@ contract L2VestingFactory is BaseComponent {
                 beneficiary
             ))
         );
-        L2VestingWallet(instance).initialize(vesting, beneficiary);
+        StakingEscrow(instance).initialize(vesting, beneficiary);
         token.grantRole(WHITELIST_ROLE, vesting); // necessary for withdrawals
         token.grantRole(WHITELIST_ROLE, instance);
         return instance;

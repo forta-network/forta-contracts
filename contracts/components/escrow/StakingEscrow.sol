@@ -5,7 +5,7 @@ import "../../token/FortaBridged.sol";
 import "../staking/FortaStaking.sol";
 import "../utils/ForwardedContext.sol";
 
-contract L2VestingWallet is Initializable, ForwardedContext {
+contract StakingEscrow is Initializable, ForwardedContext {
     FortaBridged public immutable token;
     FortaStaking public immutable staking;
     address      public           vesting;
