@@ -21,16 +21,18 @@ async function main() {
     DEBUG('----------------------------------------------------');
 
     const contracts = await Promise.all(Object.entries({
-        // token:     utils.attach('Forta',           'forta.eth'                    ).then(contract => contract.connect(deployer)),
+        token:     utils.attach('Forta',           'forta.eth'                    ).then(contract => contract.connect(deployer)),
         access:    utils.attach('AccessManager',   'access.forta.eth'             ).then(contract => contract.connect(deployer)),
         alerts:    utils.attach('Alerts',          'alerts.forta.eth'             ).then(contract => contract.connect(deployer)),
         dispatch:  utils.attach('Dispatch',        'dispatch.forta.eth'           ).then(contract => contract.connect(deployer)),
         router:    utils.attach('Router',          'router.forta.eth'             ).then(contract => contract.connect(deployer)),
-        // staking:   utils.attach('FortaStaking',    'staking.forta.eth'            ).then(contract => contract.connect(deployer)),
+        staking:   utils.attach('FortaStaking',    'staking.forta.eth'            ).then(contract => contract.connect(deployer)),
         forwarder: utils.attach('Forwarder',       'forwarder.forta.eth'          ).then(contract => contract.connect(deployer)),
         agents:    utils.attach('AgentRegistry',   'agents.registries.forta.eth'  ).then(contract => contract.connect(deployer)),
         scanners:  utils.attach('ScannerRegistry', 'scanners.registries.forta.eth').then(contract => contract.connect(deployer)),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
+
+    const forwarderAddress = await provider.resolveName(contracts.forwarder.address);
 
     const roles = await Promise.all(Object.entries({
         // Forta
@@ -62,13 +64,15 @@ async function main() {
     // await contracts.access.grantRole(roles.DISPATCHER, '0x9e857a04ebde96351878ddf3ad40164ff68c1ee1').then(tx => tx.wait());
     // await Promise.all(Object.values(contracts).map(contract => contract.setName(provider.network.ensAddress, contract.address).then(tx => tx.wait())));
 
-    // await provider.resolveName(contracts.access.address  ).then(address => utils.getFactory('AccessManager'  ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
-    // await provider.resolveName(contracts.router.address  ).then(address => utils.getFactory('Router'         ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
-    // await provider.resolveName(contracts.staking.address ).then(address => utils.getFactory('FortaStaking'   ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
-    // await provider.resolveName(contracts.agents.address  ).then(address => utils.getFactory('AgentRegistry'  ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
-    // await provider.resolveName(contracts.scanners.address).then(address => utils.getFactory('ScannerRegistry').then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
-    // await provider.resolveName(contracts.dispatch.address).then(address => utils.getFactory('Dispatch'       ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
-    // await provider.resolveName(contracts.alerts.address  ).then(address => utils.getFactory('Alerts'         ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.token.address   ).then(address => utils.getFactory('Forta'          ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.token.address   ).then(address => utils.getFactory('FortaBridged'   ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.access.address  ).then(address => utils.getFactory('AccessManager'  ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ forwarderAddress ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.router.address  ).then(address => utils.getFactory('Router'         ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ forwarderAddress ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.staking.address ).then(address => utils.getFactory('FortaStaking'   ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ forwarderAddress ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.agents.address  ).then(address => utils.getFactory('AgentRegistry'  ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ forwarderAddress ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.scanners.address).then(address => utils.getFactory('ScannerRegistry').then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ forwarderAddress ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.dispatch.address).then(address => utils.getFactory('Dispatch'       ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ forwarderAddress ], unsafeAllow: 'delegatecall' })));
+    // await provider.resolveName(contracts.alerts.address  ).then(address => utils.getFactory('Alerts'         ).then(factory => utils.performUpgrade({ address }, factory.connect(deployer), { constructorArgs: [ forwarderAddress ], unsafeAllow: 'delegatecall' })));
 
     await Promise.all(
         Object.entries(contracts).map(([ name, contracts ]) => provider.resolveName(contracts.address)
