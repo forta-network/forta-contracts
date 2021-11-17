@@ -12,6 +12,10 @@ import "../BaseComponent.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
 
+interface IRewardReceiver {
+    function onRewardReceived(address subject, uint256 amount) external;
+}
+
 /**
  * @dev This is a generic staking contract for the Forta platform. It allows any account to deposit ERC20 tokens to
  * delegate their "power" by staking on behalf of a particular subject. The subject can be scanner, or any other actor
@@ -324,6 +328,11 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
         emit Released(subject, account, value);
 
+        if (Address.isContract(account)) {
+            try IRewardReceiver(account).onRewardReceived(subject, value) {}
+            catch {}
+        }
+
         return value;
     }
 
@@ -370,8 +379,9 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         uint256[] memory amounts,
         bytes memory data
     ) internal virtual override {
-        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
 
+        // Order is important here, we must do the virtual release, which uses totalShares() in
+        // _historicalRewardFraction, BEFORE the super call updates the totalSupply()
         for (uint256 i = 0; i < ids.length; ++i) {
             if (ids[i] >> 160 == 0) {
                 // active shares (ids[i] is the address of the subject)
@@ -392,6 +402,8 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
                 require(from == address(0) || to == address(0), "Withdrawal shares are not transferable");
             }
         }
+
+        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
     }
 
     // Conversions

@@ -236,18 +236,18 @@ describe('Forta Staking', function () {
       await expect(this.staking.connect(this.accounts.user2).deposit(subject1, '50')).to.be.not.reverted;
 
       expect(await this.staking.availableReward(subject1, this.accounts.user1.address)).to.be.equal('0');
-      expect(await this.staking.availableReward(subject1, this.accounts.user1.address)).to.be.equal('0');
+      expect(await this.staking.availableReward(subject1, this.accounts.user2.address)).to.be.equal('0');
 
       await expect(this.staking.connect(this.accounts.user3).reward(subject1, '60'))
       .to.emit(this.staking, 'Rewarded').withArgs(subject1, this.accounts.user3.address, '60');
 
       expect(await this.staking.availableReward(subject1, this.accounts.user1.address)).to.be.equal('30');
-      expect(await this.staking.availableReward(subject1, this.accounts.user1.address)).to.be.equal('30');
+      expect(await this.staking.availableReward(subject1, this.accounts.user2.address)).to.be.equal('30');
 
       await expect(this.staking.connect(this.accounts.user1).deposit(subject1, '50')).to.be.not.reverted;
 
       expect(await this.staking.availableReward(subject1, this.accounts.user1.address)).to.be.equal('30');
-      expect(await this.staking.availableReward(subject1, this.accounts.user1.address)).to.be.equal('30');
+      expect(await this.staking.availableReward(subject1, this.accounts.user2.address)).to.be.equal('30');
 
       await expect(this.staking.connect(this.accounts.user3).reward(subject1, '15')).to.be.not.reverted;
 
