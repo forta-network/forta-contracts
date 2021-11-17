@@ -15,7 +15,14 @@ contract FortaBridged is FortaCommon {
     function deposit(address user, bytes calldata depositData) external {
         require(msg.sender == childChainManagerProxy, "FortaBridged: only childChainManagerProxy can deposit");
         uint256 amount = abi.decode(depositData, (uint256));
-        _mint(user, amount);
+
+        if (hasRole(WHITELIST_ROLE, user)) {
+            _mint(user, amount);
+        } else {
+            _grantRole(WHITELIST_ROLE, user);
+            _mint(user, amount);
+            _revokeRole(WHITELIST_ROLE, user);
+        }
     }
 
     function withdraw(uint256 amount) external {

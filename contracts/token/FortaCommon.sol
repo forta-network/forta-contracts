@@ -33,7 +33,8 @@ contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpg
 
     // Only allow transfer to whitelisted accounts
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
-        require(hasRole(WHITELIST_ROLE, to), "Forta: receiver is not whitelisted");
+        require(from == address(0) || hasRole(WHITELIST_ROLE, from), "Forta: sender is not whitelisted");
+        require(to   == address(0) || hasRole(WHITELIST_ROLE, to), "Forta: receiver is not whitelisted");
         super._beforeTokenTransfer(from, to, amount);
     }
 
