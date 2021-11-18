@@ -100,7 +100,7 @@ async function migrate(config = {}) {
         deployer
     ).then(factory => utils.tryFetchProxy(
         CACHE,
-        config.l2enable ? 'forta-bridge' : 'forta',
+        'forta',
         factory,
         'uups',
         [ deployer.address, config.childChainManagerProxy ].filter(Boolean),
@@ -213,7 +213,6 @@ async function migrate(config = {}) {
         DISPATCHER:    ethers.utils.id('DISPATCHER_ROLE'),
         SLASHER:       ethers.utils.id('SLASHER_ROLE'),
         SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
-        BRIDGER:       ethers.utils.id('BRIDGER_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
     DEBUG('[10] roles fetched')

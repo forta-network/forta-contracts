@@ -42,16 +42,16 @@ contract StakingEscrowFactory is BaseComponent {
 
     function newWallet(
         address vesting,
-        address beneficiary
-    ) public onlyRole(BRIDGER_ROLE) returns (address) {
+        address manager
+    ) public returns (address) {
         address instance = Clones.cloneDeterministic(
             address(template),
             keccak256(abi.encodePacked(
                 vesting,
-                beneficiary
+                manager
             ))
         );
-        StakingEscrow(instance).initialize(vesting, beneficiary);
+        StakingEscrow(instance).initialize(vesting, manager);
         token.grantRole(WHITELIST_ROLE, vesting); // necessary for withdrawals
         token.grantRole(WHITELIST_ROLE, instance);
         return instance;

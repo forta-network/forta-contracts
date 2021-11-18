@@ -1,8 +1,8 @@
 {
 	"forwarder-pending": "0xac6d60c22e55ef0a1b162d7aa3a0c4f033f5099bdb07f8dc91d2c6785597f6f0",
 	"forwarder": "0x4d8F93bD622cEcE936D49b09b57d0E6A1c54e6B5",
-	"forta-bridge-pending": "0x05b4262214f22ef7e90634a401e9bd6b568526fb5642963136d90bdf61b48fa4",
-	"forta-bridge": "0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+	"forta-pending": "0x05b4262214f22ef7e90634a401e9bd6b568526fb5642963136d90bdf61b48fa4",
+	"forta": "0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
 	"access-pending": "0xeb761b35d307c30baca49115043dfcc856511affb22fabd7ce4bf031eb4cd93c",
 	"access": "0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
 	"router-pending": "0x96e5450980c452e897a343f0f0f6492645f5464e9d65cedbea24ee455a3bd476",
