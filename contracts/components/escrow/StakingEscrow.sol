@@ -61,17 +61,20 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext {
      * Release reward to any account chossen by the beneficiary. Rewards shouldn't be bridged back to prevent them
      * from being subject to vesting.
      */
-    function releaseReward(address receiver, uint256 amount) public onlyManager() {
-        pendingReward -= amount; // reverts is overflow;
+    function release(address releaseToken, address receiver, uint256 amount) public onlyManager() {
+        if (address(token) == releaseToken) {
+            pendingReward -= amount; // reverts is overflow;
+        }
+
         SafeERC20.safeTransfer(
-            IERC20(address(token)),
+            IERC20(releaseToken),
             receiver,
             amount
         );
     }
 
-    function releaseReward(address receiver) public {
-        releaseReward(receiver, pendingReward);
+    function releaseAllReward(address receiver) public {
+        release(address(token), receiver, pendingReward);
     }
 
     /**
@@ -84,18 +87,6 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext {
 
     function bridge() public {
         bridge(token.balanceOf(address(this)) - pendingReward);
-    }
-
-    /**
-     * Mechanism to release any other token that would have been send by mistake
-     */
-    function release(IERC20 otherToken, address receiver) public onlyManager() {
-        require(address(token) != address(otherToken), "token subject to restriction");
-        SafeERC20.safeTransfer(
-            otherToken,
-            receiver,
-            otherToken.balanceOf(address(this))
-        );
     }
 
     /**
