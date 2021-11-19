@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
+import "../components/escrow/StakingEscrowUtils.sol";
 import "./VestingWallet.sol";
 
 interface IRootChainManager {
@@ -15,6 +16,8 @@ contract VestingWalletV2 is VestingWallet {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IRootChainManager public immutable RootChainManager;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    address           public immutable L1Token;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address           public immutable L2EscrowFactory;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address           public immutable L2EscrowTemplate;
@@ -23,13 +26,20 @@ contract VestingWalletV2 is VestingWallet {
 
     event TokensBridged(address indexed token, uint256 amount, address l2escrow, address l2manager);
 
+    modifier onlyBridgable(address token) {
+        require(token == L1Token);
+        _;
+    }
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         address __RootChainManager,
+        address __L1Token,
         address __L2EscrowFactory,
         address __L2EscrowTemplate
     ) { // parent is already initializer
         RootChainManager = IRootChainManager(__RootChainManager);
+        L1Token          = __L1Token;
         L2EscrowFactory  = __L2EscrowFactory;
         L2EscrowTemplate = __L2EscrowTemplate;
     }
@@ -37,24 +47,29 @@ contract VestingWalletV2 is VestingWallet {
     /**
      * bridge token to L2
      */
-    function bridge(address token, uint256 amount) public virtual {
+    function bridge(address token, uint256 amount)
+        public
+        virtual
+    {
         bridge(token, amount, beneficiary());
     }
 
     /**
      * bridge token to L2, with custom escrow manager on L2
      */
-    function bridge(address token, uint256 amount, address l2manager) public virtual onlyBeneficiary() {
+    function bridge(address token, uint256 amount, address l2manager)
+        public
+        virtual
+        onlyBeneficiary()
+        onlyBridgable(token)
+    {
         // lock historicalBalance
         _historicalBalanceBridged[token] = _historicalBalance(token);
 
         // compute l2escrow address
         address l2escrow = Clones.predictDeterministicAddress(
             L2EscrowTemplate,
-            keccak256(abi.encodePacked(
-                address(this),
-                l2manager
-            )),
+            StakingEscrowUtils.computeSalt(address(this), l2manager),
             L2EscrowFactory
         );
 
@@ -71,22 +86,37 @@ contract VestingWalletV2 is VestingWallet {
     /**
      * Historical balance override to keep vesting speed when tokens are bridged.
      */
-    function _historicalBalance(address token) internal virtual override view returns (uint256) {
+    function _historicalBalance(address token)
+        internal
+        virtual
+        override
+        view
+        returns (uint256)
+    {
         return Math.max(super._historicalBalance(token), _historicalBalanceBridged[token]);
     }
 
     /**
      * Admin operations
      */
-    function setHistoricalBalanceBridged(address token, uint256 value) public onlyOwner() {
+    function setHistoricalBalanceBridged(address token, uint256 value)
+        public
+        onlyOwner()
+    {
         _historicalBalanceBridged[token] = value;
     }
 
-    function incrHistoricalBalanceBridged(address token, uint256 value) public onlyOwner() {
+    function incrHistoricalBalanceBridged(address token, uint256 value)
+        public
+        onlyOwner()
+    {
         _historicalBalanceBridged[token] += value;
     }
 
-    function decrHistoricalBalanceBridged(address token, uint256 value) public onlyOwner() {
+    function decrHistoricalBalanceBridged(address token, uint256 value)
+        public
+        onlyOwner()
+    {
         _historicalBalanceBridged[token] -= value;
     }
 }

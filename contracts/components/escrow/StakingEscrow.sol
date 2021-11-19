@@ -90,7 +90,7 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext {
     }
 
     /**
-     *
+     * Hook for reward accounting
      */
     function onRewardReceived(address, uint256 amount) public {
         require(msg.sender == address(staking));

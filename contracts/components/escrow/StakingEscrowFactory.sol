@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./StakingEscrow.sol";
+import "./StakingEscrowUtils.sol";
 import "../BaseComponent.sol";
 
 /**
@@ -15,6 +16,8 @@ contract StakingEscrowFactory is BaseComponent {
     FortaStaking  public immutable staking;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     StakingEscrow public immutable template;
+
+    event NewStakingEscrow(address indexed escrow, address indexed vesting, address indexed manager);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
@@ -46,13 +49,13 @@ contract StakingEscrowFactory is BaseComponent {
     ) public returns (address) {
         address instance = Clones.cloneDeterministic(
             address(template),
-            keccak256(abi.encodePacked(
-                vesting,
-                manager
-            ))
+            StakingEscrowUtils.computeSalt(vesting, manager)
         );
         StakingEscrow(instance).initialize(vesting, manager);
         token.grantRole(WHITELIST_ROLE, instance);
+
+        emit NewStakingEscrow(instance, vesting, manager);
+
         return instance;
     }
 }
