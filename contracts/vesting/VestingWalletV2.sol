@@ -22,14 +22,9 @@ contract VestingWalletV2 is VestingWallet {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address           public immutable L2EscrowTemplate;
 
-    mapping (address => uint256) private _historicalBalanceBridged;
+    uint256           public           historicalBalanceBridged;
 
-    event TokensBridged(address indexed token, uint256 amount, address l2escrow, address l2manager);
-
-    modifier onlyBridgable(address token) {
-        require(token == L1Token);
-        _;
-    }
+    event TokensBridged(address indexed l2escrow, address indexed l2manager, uint256 amount);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
@@ -47,24 +42,23 @@ contract VestingWalletV2 is VestingWallet {
     /**
      * bridge token to L2
      */
-    function bridge(address token, uint256 amount)
+    function bridge(uint256 amount)
         public
         virtual
     {
-        bridge(token, amount, beneficiary());
+        bridge(amount, beneficiary());
     }
 
     /**
      * bridge token to L2, with custom escrow manager on L2
      */
-    function bridge(address token, uint256 amount, address l2manager)
+    function bridge(uint256 amount, address l2manager)
         public
         virtual
         onlyBeneficiary()
-        onlyBridgable(token)
     {
         // lock historicalBalance
-        _historicalBalanceBridged[token] = _historicalBalance(token);
+        historicalBalanceBridged = _historicalBalance(L1Token);
 
         // compute l2escrow address
         address l2escrow = Clones.predictDeterministicAddress(
@@ -74,13 +68,13 @@ contract VestingWalletV2 is VestingWallet {
         );
 
         // approval
-        address predicate = RootChainManager.typeToPredicate(RootChainManager.tokenToType(token));
-        SafeERC20.safeApprove(IERC20(token), predicate, amount);
+        address predicate = RootChainManager.typeToPredicate(RootChainManager.tokenToType(L1Token));
+        SafeERC20.safeApprove(IERC20(L1Token), predicate, amount);
 
         // deposit
-        RootChainManager.depositFor(l2escrow, token, abi.encode(amount));
+        RootChainManager.depositFor(l2escrow, L1Token, abi.encode(amount));
 
-        emit TokensBridged(token, amount, l2escrow, l2manager);
+        emit TokensBridged(l2escrow, l2manager, amount);
     }
 
     /**
@@ -93,30 +87,34 @@ contract VestingWalletV2 is VestingWallet {
         view
         returns (uint256)
     {
-        return Math.max(super._historicalBalance(token), _historicalBalanceBridged[token]);
+        if (token == L1Token) {
+            return Math.max(super._historicalBalance(token), historicalBalanceBridged);
+        } else {
+            return super._historicalBalance(token);
+        }
     }
 
     /**
      * Admin operations
      */
-    function setHistoricalBalanceBridged(address token, uint256 value)
+    function setHistoricalBalanceBridged(uint256 value)
         public
         onlyOwner()
     {
-        _historicalBalanceBridged[token] = value;
+        historicalBalanceBridged = value;
     }
 
-    function incrHistoricalBalanceBridged(address token, uint256 value)
+    function incrHistoricalBalanceBridged(uint256 value)
         public
         onlyOwner()
     {
-        _historicalBalanceBridged[token] += value;
+        historicalBalanceBridged += value;
     }
 
-    function decrHistoricalBalanceBridged(address token, uint256 value)
+    function decrHistoricalBalanceBridged(uint256 value)
         public
         onlyOwner()
     {
-        _historicalBalanceBridged[token] -= value;
+        historicalBalanceBridged -= value;
     }
 }
