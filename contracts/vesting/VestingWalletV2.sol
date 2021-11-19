@@ -13,6 +13,9 @@ interface IRootChainManager {
 }
 
 contract VestingWalletV2 is VestingWallet {
+    using SafeCast for int256;
+    using SafeCast for uint256;
+
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IRootChainManager public immutable RootChainManager;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -68,8 +71,11 @@ contract VestingWalletV2 is VestingWallet {
         );
 
         // approval
-        address predicate = RootChainManager.typeToPredicate(RootChainManager.tokenToType(L1Token));
-        SafeERC20.safeApprove(IERC20(L1Token), predicate, amount);
+        SafeERC20.safeApprove(
+            IERC20(L1Token),
+            RootChainManager.typeToPredicate(RootChainManager.tokenToType(L1Token)),
+            amount
+        );
 
         // deposit
         RootChainManager.depositFor(l2escrow, L1Token, abi.encode(amount));
@@ -104,17 +110,10 @@ contract VestingWalletV2 is VestingWallet {
         historicalBalanceBridged = value;
     }
 
-    function incrHistoricalBalanceBridged(uint256 value)
+    function updateHistoricalBalanceBridged(int256 value)
         public
         onlyOwner()
     {
-        historicalBalanceBridged += value;
-    }
-
-    function decrHistoricalBalanceBridged(uint256 value)
-        public
-        onlyOwner()
-    {
-        historicalBalanceBridged -= value;
+        historicalBalanceBridged = (historicalBalanceBridged.toInt256() + value).toUint256();
     }
 }
