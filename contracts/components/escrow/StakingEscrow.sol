@@ -34,6 +34,9 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext {
         manager = __manager;
     }
 
+    /**
+     * Tunnel calls to the stacking contract.
+     */
     function deposit(address subject, uint256 stakeValue) public onlyManager() returns (uint256) {
         SafeERC20.safeApprove(
             IERC20(address(token)),
@@ -42,7 +45,6 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext {
         );
         return staking.deposit(subject, stakeValue);
     }
-
     function initiateWithdrawal(address subject, uint256 sharesValue) public onlyManager() returns (uint64) {
         return staking.initiateWithdrawal(subject, sharesValue);
     }
@@ -55,6 +57,10 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext {
         return staking.releaseReward(subject, address(this));
     }
 
+    /**
+     * Release reward to any account chossen by the beneficiary. Rewards shouldn't be bridged back to prevent them
+     * from being subject to vesting.
+     */
     function releaseReward(address receiver, uint256 amount) public onlyManager() {
         pendingReward -= amount; // reverts is overflow;
         SafeERC20.safeTransfer(
@@ -68,6 +74,9 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext {
         releaseReward(receiver, pendingReward);
     }
 
+    /**
+     * Bridge operation
+     */
     function bridge(uint256 amount) public onlyManager() {
         require(token.balanceOf(address(this)) >= amount + pendingReward, "rewards should not be bridged to L1");
         token.withdrawTo(amount, vesting);
@@ -77,10 +86,24 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext {
         bridge(token.balanceOf(address(this)) - pendingReward);
     }
 
+    /**
+     * Mechanism to release any other token that would have been send by mistake
+     */
+    function release(IERC20 otherToken, address receiver) public onlyManager() {
+        require(address(token) != address(otherToken), "token subject to restriction");
+        SafeERC20.safeTransfer(
+            otherToken,
+            receiver,
+            otherToken.balanceOf(address(this))
+        );
+    }
+
+    /**
+     *
+     */
     function onRewardReceived(address, uint256 amount) public {
         require(msg.sender == address(staking));
 
         pendingReward += amount;
     }
-
 }

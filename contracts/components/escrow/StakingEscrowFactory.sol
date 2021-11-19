@@ -43,7 +43,7 @@ contract StakingEscrowFactory is BaseComponent {
     function newWallet(
         address vesting,
         address manager
-    ) public /* onlyRole(BRIDGER_ROLE) */ returns (address) {
+    ) public returns (address) {
         address instance = Clones.cloneDeterministic(
             address(template),
             keccak256(abi.encodePacked(

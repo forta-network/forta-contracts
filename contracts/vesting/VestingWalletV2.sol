@@ -68,7 +68,25 @@ contract VestingWalletV2 is VestingWallet {
         emit TokensBridged(token, amount, l2escrow, l2manager);
     }
 
+    /**
+     * Historical balance override to keep vesting speed when tokens are bridged.
+     */
     function _historicalBalance(address token) internal virtual override view returns (uint256) {
         return Math.max(super._historicalBalance(token), _historicalBalanceBridged[token]);
+    }
+
+    /**
+     * Admin operations
+     */
+    function setHistoricalBalanceBridged(address token, uint256 value) public onlyOwner() {
+        _historicalBalanceBridged[token] = value;
+    }
+
+    function incrHistoricalBalanceBridged(address token, uint256 value) public onlyOwner() {
+        _historicalBalanceBridged[token] += value;
+    }
+
+    function decrHistoricalBalanceBridged(address token, uint256 value) public onlyOwner() {
+        _historicalBalanceBridged[token] -= value;
     }
 }
