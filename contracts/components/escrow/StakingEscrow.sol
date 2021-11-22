@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
+
 import "../../token/FortaBridged.sol";
 import "../staking/FortaStaking.sol";
 import "../utils/ForwardedContext.sol";
 
-contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext {
+contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext, ERC1155Receiver {
     FortaBridged public immutable token;
     FortaStaking public immutable staking;
     address      public           vesting;
@@ -45,8 +47,13 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext {
         );
         return staking.deposit(subject, stakeValue);
     }
+
     function initiateWithdrawal(address subject, uint256 sharesValue) public onlyManager() returns (uint64) {
         return staking.initiateWithdrawal(subject, sharesValue);
+    }
+
+    function initiateFullWithdrawal(address subject) public returns (uint64) {
+        return initiateWithdrawal(subject, staking.balanceOf(address(this), uint256(uint160(subject))));
     }
 
     function withdraw(address subject) public onlyManager() returns (uint256) {
@@ -96,5 +103,18 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext {
         require(msg.sender == address(staking));
 
         pendingReward += amount;
+    }
+
+    /**
+     * This account is going to hold staking shares
+     */
+    function onERC1155Received(address, address, uint256, uint256, bytes calldata) external view returns (bytes4) {
+        require(msg.sender == address(staking));
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata) external view returns (bytes4) {
+        require(msg.sender == address(staking));
+        return this.onERC1155BatchReceived.selector;
     }
 }

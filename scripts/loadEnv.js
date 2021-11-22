@@ -64,7 +64,6 @@ async function loadEnv(config = {}) {
         BRIDGER:       ethers.utils.id('BRIDGER_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
-
     return {
         CACHE,
         chainType,

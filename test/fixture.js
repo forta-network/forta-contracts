@@ -2,7 +2,7 @@ const { ethers, upgrades } = require('hardhat');
 const migrate = require('../scripts/deploy-platform');
 const utils   = require('../scripts/utils');
 
-function prepare() {
+function prepare(config = {}) {
   before(async function() {
     // list signers
     this.accounts = await ethers.getSigners();
@@ -22,7 +22,11 @@ function prepare() {
     ].map(name => this.accounts.getAccount(name));
 
     // migrate
-    await migrate({ force: true, deployer: this.accounts.admin }).then(env => Object.assign(this, env));
+    await migrate(Object.assign({
+        force:                  true,
+        deployer:               this.accounts.admin,
+        childChainManagerProxy: config.childChain && this.accounts.admin.address
+    })).then(env => Object.assign(this, env));
 
     // mock contracts
     this.contracts.sink       = await utils.deploy('Sink');
@@ -43,7 +47,7 @@ function prepare() {
       this.token     .connect(this.accounts.admin).grantRole(this.roles.WHITELISTER,   this.accounts.whitelister.address),
       this.otherToken.connect(this.accounts.admin).grantRole(this.roles.MINTER,        this.accounts.minter.address     ),
       this.otherToken.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER,   this.accounts.whitelister.address),
-    ].map(txPromise => txPromise.then(tx => tx.wait())));
+    ].map(txPromise => txPromise.then(tx => tx.wait()).catch(() => {})));
 
     await Promise.all([
       this.token     .connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address  ),
@@ -52,7 +56,7 @@ function prepare() {
       this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address  ),
       this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address   ),
       this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address             ),
-    ].map(txPromise => txPromise.then(tx => tx.wait())));
+    ].map(txPromise => txPromise.then(tx => tx.wait()).catch(() => {})));
 
     __SNAPSHOT_ID__ = await ethers.provider.send('evm_snapshot');
   });

@@ -58,4 +58,14 @@ contract StakingEscrowFactory is BaseComponent {
 
         return instance;
     }
+
+    function predictWallet(
+        address vesting,
+        address manager
+    ) public view returns (address) {
+        return Clones.predictDeterministicAddress(
+            address(template),
+            StakingEscrowUtils.computeSalt(vesting, manager)
+        );
+    }
 }

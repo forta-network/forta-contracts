@@ -191,6 +191,20 @@ describe('Forta Staking', function () {
   });
 
   describe('Rewards', function () {
+    it ('cannot reward to non zero subject', async function () {
+      const subject = '0x0000000000000000000000000000000000000000';
+
+      await expect(this.staking.connect(this.accounts.user1).reward(subject, '10'))
+      .to.be.revertedWith('mint to the zero address');
+    });
+
+    it ('can reward to non zero subject', async function () {
+      const subject = '0x0000000000000000000000000000000000000001';
+
+      await expect(this.staking.connect(this.accounts.user1).reward(subject, '10'))
+      .to.emit(this.staking, 'Rewarded').withArgs(subject, this.accounts.user1.address, '10');
+    });
+
     it('fix shares', async function () {
       await expect(this.staking.connect(this.accounts.user1).deposit(subject1, '100')).to.be.not.reverted;
       await expect(this.staking.connect(this.accounts.user2).deposit(subject1, '50')).to.be.not.reverted;
