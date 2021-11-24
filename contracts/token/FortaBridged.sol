@@ -4,7 +4,8 @@ pragma solidity ^0.8.0;
 import "./FortaCommon.sol";
 
 contract FortaBridged is FortaCommon {
-    address private childChainManagerProxy;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    address public immutable childChainManagerProxy;
 
     modifier flashRole(bytes32 role, address user) {
         bool missing = !hasRole(role, user);
@@ -18,10 +19,13 @@ contract FortaBridged is FortaCommon {
         }
     }
 
-    function initialize(address admin, address _childChainManagerProxy) public initializer {
-        __FortaCommon_init(admin);
-
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor(address _childChainManagerProxy) {
         childChainManagerProxy = _childChainManagerProxy;
+    }
+
+    function initialize(address admin) public initializer {
+        __FortaCommon_init(admin);
     }
 
     function deposit(address user, bytes calldata depositData) external flashRole(WHITELIST_ROLE, user) {
@@ -38,10 +42,5 @@ contract FortaBridged is FortaCommon {
     function withdrawTo(uint256 amount, address receiver) external flashRole(WHITELIST_ROLE, receiver) {
         _transfer(msg.sender, receiver, amount);
         _burn(receiver, amount);
-    }
-
-    function updateChildChainManager(address _childChainManagerProxy) external onlyRole(ADMIN_ROLE) {
-        require(_childChainManagerProxy != address(0), "FortaBridged: bad childChainManagerProxy address");
-        childChainManagerProxy = _childChainManagerProxy;
     }
 }

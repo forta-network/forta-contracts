@@ -128,7 +128,7 @@ describe('Agent Registry', function () {
       });
 
 
-      describe.only('withdrawal', function () {
+      describe('withdrawal', function () {
         it('protected', async function () {
           await expect(this.escrow.initiateWithdrawal(subject, this.value))
           .to.be.revertedWith('restricted to manager');

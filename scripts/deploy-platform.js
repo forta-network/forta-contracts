@@ -103,7 +103,8 @@ async function migrate(config = {}) {
         'forta',
         factory,
         'uups',
-        [ deployer.address, config.childChainManagerProxy ].filter(Boolean),
+        [ deployer.address ],
+        { constructorArgs: [ config.childChainManagerProxy ].filter(Boolean) },
     ));
 
     DEBUG(`[2] forta: ${contracts.token.address}`);
