@@ -8,14 +8,14 @@ import "../staking/FortaStaking.sol";
 import "../utils/ForwardedContext.sol";
 
 contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext, ERC1155Receiver {
-    FortaBridged public immutable token;
-    FortaStaking public immutable staking;
-    address      public           vesting;
-    address      public           manager;
+    FortaBridged public immutable l2token;
+    FortaStaking public immutable l2staking;
+    address      public           l1vesting;
+    address      public           l2manager;
     uint256      public           pendingReward;
 
     modifier onlyManager() {
-        require(_msgSender() == manager, "restricted to manager");
+        require(_msgSender() == l2manager, "restricted to manager");
         _;
     }
 
@@ -24,16 +24,16 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext, ERC1
         FortaBridged __token,
         FortaStaking __staking
     ) ForwardedContext(__trustedForwarder) initializer() {
-        token   = __token;
-        staking = __staking;
+        l2token   = __token;
+        l2staking = __staking;
     }
 
     function initialize(
-        address __vesting,
-        address __manager
+        address __l1vesting,
+        address __l2manager
     ) public initializer {
-        vesting = __vesting;
-        manager = __manager;
+        l1vesting = __l1vesting;
+        l2manager = __l2manager;
     }
 
     /**
@@ -41,27 +41,27 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext, ERC1
      */
     function deposit(address subject, uint256 stakeValue) public onlyManager() returns (uint256) {
         SafeERC20.safeApprove(
-            IERC20(address(token)),
-            address(staking),
+            IERC20(address(l2token)),
+            address(l2staking),
             stakeValue
         );
-        return staking.deposit(subject, stakeValue);
+        return l2staking.deposit(subject, stakeValue);
     }
 
     function initiateWithdrawal(address subject, uint256 sharesValue) public onlyManager() returns (uint64) {
-        return staking.initiateWithdrawal(subject, sharesValue);
+        return l2staking.initiateWithdrawal(subject, sharesValue);
     }
 
     function initiateFullWithdrawal(address subject) public returns (uint64) {
-        return initiateWithdrawal(subject, staking.balanceOf(address(this), uint256(uint160(subject))));
+        return initiateWithdrawal(subject, l2staking.balanceOf(address(this), uint256(uint160(subject))));
     }
 
     function withdraw(address subject) public onlyManager() returns (uint256) {
-        return staking.withdraw(subject);
+        return l2staking.withdraw(subject);
     }
 
     function claimReward(address subject) public returns (uint256) {
-        return staking.releaseReward(subject, address(this));
+        return l2staking.releaseReward(subject, address(this));
     }
 
     /**
@@ -69,7 +69,7 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext, ERC1
      * from being subject to vesting.
      */
     function release(address releaseToken, address receiver, uint256 amount) public onlyManager() {
-        if (address(token) == releaseToken) {
+        if (address(l2token) == releaseToken) {
             pendingReward -= amount; // reverts is overflow;
         }
 
@@ -81,26 +81,26 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext, ERC1
     }
 
     function releaseAllReward(address receiver) public {
-        release(address(token), receiver, pendingReward);
+        release(address(l2token), receiver, pendingReward);
     }
 
     /**
      * Bridge operation
      */
     function bridge(uint256 amount) public onlyManager() {
-        require(token.balanceOf(address(this)) >= amount + pendingReward, "rewards should not be bridged to L1");
-        token.withdrawTo(amount, vesting);
+        require(l2token.balanceOf(address(this)) >= amount + pendingReward, "rewards should not be bridged to L1");
+        l2token.withdrawTo(amount, l1vesting);
     }
 
     function bridge() public {
-        bridge(token.balanceOf(address(this)) - pendingReward);
+        bridge(l2token.balanceOf(address(this)) - pendingReward);
     }
 
     /**
      * Hook for reward accounting
      */
     function onRewardReceived(address, uint256 amount) public {
-        require(msg.sender == address(staking));
+        require(msg.sender == address(l2staking));
 
         pendingReward += amount;
     }
@@ -109,12 +109,12 @@ contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext, ERC1
      * This account is going to hold staking shares
      */
     function onERC1155Received(address, address, uint256, uint256, bytes calldata) external view returns (bytes4) {
-        require(msg.sender == address(staking));
+        require(msg.sender == address(l2staking));
         return this.onERC1155Received.selector;
     }
 
     function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata) external view returns (bytes4) {
-        require(msg.sender == address(staking));
+        require(msg.sender == address(l2staking));
         return this.onERC1155BatchReceived.selector;
     }
 }
