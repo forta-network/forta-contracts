@@ -22,8 +22,14 @@ contract StakingEscrowFactory is BaseComponent {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         address      __trustedForwarder,
-        FortaStaking __staking
-    ) initializer ForwardedContext(__trustedForwarder) {
+        FortaStaking __staking,
+        address      __manager,
+        address      __router
+    )
+    ForwardedContext(__trustedForwarder)
+    AccessManaged(__manager)
+    Routed(__router)
+    {
         token   = FortaBridged(address(__staking.stakedToken()));
         staking = __staking;
 
@@ -32,15 +38,6 @@ contract StakingEscrowFactory is BaseComponent {
             token,
             staking
         );
-    }
-
-    function initialize(
-        address __manager,
-        address __router
-    ) public initializer {
-        __AccessManaged_init(__manager);
-        __Routed_init(__router);
-        __UUPSUpgradeable_init();
     }
 
     function newWallet(

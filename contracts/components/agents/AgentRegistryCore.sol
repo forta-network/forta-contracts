@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
-import "../BaseComponent.sol";
+import "../BaseComponentUpgradeable.sol";
 import "../../tools/FrontRunningProtection.sol";
 
 abstract contract AgentRegistryCore is
-    BaseComponent,
+    BaseComponentUpgradeable,
     FrontRunningProtection,
     ERC721Upgradeable
 {
@@ -68,11 +68,11 @@ abstract contract AgentRegistryCore is
         _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256)", agentId));
     }
 
-    function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponent) returns (address sender) {
+    function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(ContextUpgradeable, BaseComponent) returns (bytes calldata) {
+    function _msgData() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (bytes calldata) {
         return super._msgData();
     }
 

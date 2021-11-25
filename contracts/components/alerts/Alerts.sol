@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: Unlicensed
 pragma solidity ^0.8.0;
 
-import "../BaseComponent.sol";
+import "../BaseComponentUpgradeable.sol";
 import "../scanners/ScannerRegistry.sol";
 
-contract Alerts is BaseComponent {
+contract Alerts is BaseComponentUpgradeable {
     ScannerRegistry public scannerRegistry;
 
     event AlertBatch(
@@ -27,7 +27,7 @@ contract Alerts is BaseComponent {
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+    constructor(address forwarder) initializer ForwardedContextUpgradeable(forwarder) {}
 
     function initialize(
         address __manager,

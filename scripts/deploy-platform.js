@@ -143,13 +143,11 @@ async function migrate(config = {}) {
     DEBUG(`[5] staking: ${contracts.staking.address}`);
 
     if (config.l2enable) {
-        contracts.escrowFactory = await ethers.getContractFactory('StakingEscrowFactory', deployer).then(factory => utils.tryFetchProxy(
+        contracts.escrowFactory = await ethers.getContractFactory('StakingEscrowFactory', deployer).then(factory => utils.tryFetchContract(
             CACHE,
             'escrow-factory',
             factory,
-            'uups',
-            [ contracts.access.address, contracts.router.address ] ,
-            { constructorArgs: [ contracts.forwarder.address, contracts.staking.address ], unsafeAllow: 'delegatecall' },
+            [ contracts.forwarder.address, contracts.staking.address, contracts.access.address, contracts.router.address ],
         ));
 
         DEBUG(`[5.2] escrow factory: ${contracts.escrowFactory.address}`);

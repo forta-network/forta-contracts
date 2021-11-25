@@ -2,11 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
-abstract contract ForwardedContext is Context {
+abstract contract ForwardedContextUpgradeable is ContextUpgradeable {
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address private immutable _trustedForwarder;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address trustedForwarder) {
         _trustedForwarder = trustedForwarder;
     }
