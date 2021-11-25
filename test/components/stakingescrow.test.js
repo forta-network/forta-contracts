@@ -10,7 +10,7 @@ const [
 
 const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
 
-describe('Agent Registry', function () {
+describe('Staking Escrow', function () {
   prepare({ childChain: true });
 
   beforeEach(async function () {

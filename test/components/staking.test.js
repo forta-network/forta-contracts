@@ -191,7 +191,7 @@ describe('Forta Staking', function () {
   });
 
   describe('Rewards', function () {
-    it ('cannot reward to non zero subject', async function () {
+    it ('cannot reward to zero subject', async function () {
       const subject = '0x0000000000000000000000000000000000000000';
 
       await expect(this.staking.connect(this.accounts.user1).reward(subject, '10'))
