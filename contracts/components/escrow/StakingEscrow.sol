@@ -37,7 +37,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
     }
 
     /**
-     * Tunnel calls to the stacking contract.
+     * Tunnel calls to the staking contract.
      */
     function deposit(address subject, uint256 stakeValue) public onlyManager() returns (uint256) {
         SafeERC20.safeApprove(
