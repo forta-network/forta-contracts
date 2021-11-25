@@ -74,7 +74,7 @@ describe('Dispatcher', function () {
     expect(await this.dispatch.scannerHash(this.SCANNER_ID)).to.not.be.deep.equal(hashBefore);
   });
 
-  it('gas estimation', async function () {
+  it.skip('gas estimation', async function () {
     for (const i in Array(10).fill()) {
       for (const j in Array(10).fill()) {
         const agent   = ethers.utils.hexlify(ethers.utils.randomBytes(32));

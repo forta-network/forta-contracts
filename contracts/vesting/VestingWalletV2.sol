@@ -12,29 +12,29 @@ contract VestingWalletV2 is VestingWallet {
     using SafeCast for uint256;
 
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    IRootChainManager public immutable RootChainManager;
+    IRootChainManager public immutable rootChainManager;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    address           public immutable L1Token;
+    address           public immutable l1Token;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    address           public immutable L2EscrowFactory;
+    address           public immutable l2EscrowFactory;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    address           public immutable L2EscrowTemplate;
+    address           public immutable l2EscrowTemplate;
 
-    uint256           public           historicalBalanceBridged;
+    uint256           public           historicalBalanceMinimum;
 
     event TokensBridged(address indexed l2escrow, address indexed l2manager, uint256 amount);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
-        address __RootChainManager,
-        address __L1Token,
-        address __L2EscrowFactory,
-        address __L2EscrowTemplate
+        address _rootChainManager,
+        address _l1Token,
+        address _l2EscrowFactory,
+        address _l2EscrowTemplate
     ) { // parent is already initializer
-        RootChainManager = IRootChainManager(__RootChainManager);
-        L1Token          = __L1Token;
-        L2EscrowFactory  = __L2EscrowFactory;
-        L2EscrowTemplate = __L2EscrowTemplate;
+        rootChainManager = IRootChainManager(_rootChainManager);
+        l1Token          = _l1Token;
+        l2EscrowFactory  = _l2EscrowFactory;
+        l2EscrowTemplate = _l2EscrowTemplate;
     }
 
     /**
@@ -56,24 +56,24 @@ contract VestingWalletV2 is VestingWallet {
         onlyBeneficiary()
     {
         // lock historicalBalance
-        historicalBalanceBridged = _historicalBalance(L1Token);
+        historicalBalanceMinimum = _historicalBalance(l1Token);
 
         // compute l2escrow address
         address l2escrow = Clones.predictDeterministicAddress(
-            L2EscrowTemplate,
+            l2EscrowTemplate,
             StakingEscrowUtils.computeSalt(address(this), l2manager),
-            L2EscrowFactory
+            l2EscrowFactory
         );
 
         // approval
         SafeERC20.safeApprove(
-            IERC20(L1Token),
-            RootChainManager.typeToPredicate(RootChainManager.tokenToType(L1Token)),
+            IERC20(l1Token),
+            rootChainManager.typeToPredicate(rootChainManager.tokenToType(l1Token)),
             amount
         );
 
         // deposit
-        RootChainManager.depositFor(l2escrow, L1Token, abi.encode(amount));
+        rootChainManager.depositFor(l2escrow, l1Token, abi.encode(amount));
 
         emit TokensBridged(l2escrow, l2manager, amount);
     }
@@ -88,8 +88,8 @@ contract VestingWalletV2 is VestingWallet {
         view
         returns (uint256)
     {
-        if (token == L1Token) {
-            return Math.max(super._historicalBalance(token), historicalBalanceBridged);
+        if (token == l1Token) {
+            return Math.max(super._historicalBalance(token), historicalBalanceMinimum);
         } else {
             return super._historicalBalance(token);
         }
@@ -102,13 +102,13 @@ contract VestingWalletV2 is VestingWallet {
         public
         onlyOwner()
     {
-        historicalBalanceBridged = value;
+        historicalBalanceMinimum = value;
     }
 
-    function updateHistoricalBalanceBridged(int256 value)
+    function updateHistoricalBalanceBridged(int256 update)
         public
         onlyOwner()
     {
-        historicalBalanceBridged = (historicalBalanceBridged.toInt256() + value).toUint256();
+        historicalBalanceMinimum = (historicalBalanceMinimum.toInt256() + update).toUint256();
     }
 }
