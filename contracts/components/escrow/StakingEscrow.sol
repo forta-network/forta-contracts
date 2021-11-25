@@ -19,6 +19,11 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
         _;
     }
 
+    modifier vestingBalance(uint256 amount) {
+        require(l2token.balanceOf(address(this)) >= amount + pendingReward, "rewards should not be bridged or staked");
+        _;
+    }
+
     constructor(
         address      __trustedForwarder,
         FortaBridged __token,
@@ -39,7 +44,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
     /**
      * Tunnel calls to the staking contract.
      */
-    function deposit(address subject, uint256 stakeValue) public onlyManager() returns (uint256) {
+    function deposit(address subject, uint256 stakeValue) public onlyManager() vestingBalance(stakeValue) returns (uint256) {
         SafeERC20.safeApprove(
             IERC20(address(l2token)),
             address(l2staking),
@@ -87,8 +92,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
     /**
      * Bridge operation
      */
-    function bridge(uint256 amount) public onlyManager() {
-        require(l2token.balanceOf(address(this)) >= amount + pendingReward, "rewards should not be bridged to L1");
+    function bridge(uint256 amount) public onlyManager() vestingBalance(amount) {
         l2token.withdrawTo(amount, l1vesting);
     }
 
