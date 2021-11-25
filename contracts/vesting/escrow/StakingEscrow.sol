@@ -2,10 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
-
 import "../../token/FortaBridged.sol";
-import "../staking/FortaStaking.sol";
-import "../utils/ForwardedContext.sol";
+import "../../components/staking/FortaStaking.sol";
+import "../../components/utils/ForwardedContext.sol";
 
 contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1155Receiver {
     FortaBridged public immutable l2token;

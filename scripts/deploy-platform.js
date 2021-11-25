@@ -147,7 +147,7 @@ async function migrate(config = {}) {
             CACHE,
             'escrow-factory',
             factory,
-            [ contracts.forwarder.address, contracts.staking.address, contracts.access.address, contracts.router.address ],
+            [ contracts.forwarder.address, contracts.staking.address ],
         ));
 
         DEBUG(`[5.2] escrow factory: ${contracts.escrowFactory.address}`);
@@ -283,7 +283,7 @@ async function migrate(config = {}) {
         reverseRegister(contracts.staking,              'staking.forta.eth'),
         reverseRegister(contracts.agents,     'agents.registries.forta.eth'),
         reverseRegister(contracts.scanners, 'scanners.registries.forta.eth'),
-        config.l2enable && reverseRegister(contracts.escrowFactory, 'escrow.forta.eth'),
+        // contract.escrow doesn't support reverse registration (not a component)
     ]);
 
     DEBUG('[11.5] reverse registration')

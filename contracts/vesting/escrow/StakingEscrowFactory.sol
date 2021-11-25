@@ -4,12 +4,11 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./StakingEscrow.sol";
 import "./StakingEscrowUtils.sol";
-import "../BaseComponent.sol";
 
 /**
  * @notice This contract must have the WHITELISTER_ROLE role on token
  */
-contract StakingEscrowFactory is BaseComponent {
+contract StakingEscrowFactory {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     FortaBridged  public immutable token;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -20,16 +19,7 @@ contract StakingEscrowFactory is BaseComponent {
     event NewStakingEscrow(address indexed escrow, address indexed vesting, address indexed manager);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(
-        address      __trustedForwarder,
-        FortaStaking __staking,
-        address      __manager,
-        address      __router
-    )
-    ForwardedContext(__trustedForwarder)
-    AccessManaged(__manager)
-    Routed(__router)
-    {
+    constructor(address __trustedForwarder, FortaStaking __staking) {
         token   = FortaBridged(address(__staking.stakedToken()));
         staking = __staking;
 

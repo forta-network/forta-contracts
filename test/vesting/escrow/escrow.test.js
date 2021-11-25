@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
-const { prepare } = require('../fixture');
-const utils       = require('../../scripts/utils');
+const { prepare } = require('../../fixture');
+const utils       = require('../../../scripts/utils');
 
 const LOCKED_OFFSET = ethers.BigNumber.from(2).pow(160);
 const [
