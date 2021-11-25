@@ -7,7 +7,7 @@ import "../../token/FortaBridged.sol";
 import "../staking/FortaStaking.sol";
 import "../utils/ForwardedContext.sol";
 
-contract StakingEscrow is IRewardReceiver, Initializable, ForwardedContext, ERC1155Receiver {
+contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1155Receiver {
     FortaBridged public immutable token;
     FortaStaking public immutable staking;
     address      public           vesting;
