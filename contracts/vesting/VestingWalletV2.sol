@@ -4,13 +4,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "../components/escrow/StakingEscrowUtils.sol";
+import "./IRootChainManager.sol";
 import "./VestingWallet.sol";
-
-interface IRootChainManager {
-    function tokenToType(address) external view returns (bytes32);
-    function typeToPredicate(bytes32) external view returns (address);
-    function depositFor(address user, address rootToken, bytes calldata depositData) external;
-}
 
 contract VestingWalletV2 is VestingWallet {
     using SafeCast for int256;
