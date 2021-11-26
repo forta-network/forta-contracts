@@ -103,7 +103,7 @@ async function resumeOrDeploy(cache, key, deploy) {
 async function main() {
 
   const TXLimiter = pLimit(4); // maximum 4 simulatenous transactions
-  const CONFIG    = require('./CONFIG.js.js');
+  const CONFIG    = require('./CONFIG.js');
 
   // wrap provider to re-enable maxpriorityfee mechanism
   const provider = new ethers.providers.FallbackProvider([ ethers.provider ], 1);
