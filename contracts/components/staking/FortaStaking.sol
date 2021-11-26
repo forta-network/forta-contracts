@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 
 import "./FortaStakingUtils.sol";
-import "../BaseComponentUpgradeable.sol";
+import "../BaseComponent.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
 
@@ -39,7 +39,7 @@ interface IRewardReceiver {
  * to quick devaluation in case of slashing event for the corresponding subject. Thus, trading of such shares should be
  * be done very carefully.
  */
-contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable {
+contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
@@ -79,7 +79,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable {
     event TreasurySet(address newTreasury);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder) initializer ForwardedContextUpgradeable(forwarder) {}
+    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
     function initialize(
         address __manager,
@@ -443,11 +443,11 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable {
         _setURI(newUri);
     }
 
-    function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (address sender) {
+    function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponent) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (bytes calldata) {
+    function _msgData() internal view virtual override(ContextUpgradeable, BaseComponent) returns (bytes calldata) {
         return super._msgData();
     }
 

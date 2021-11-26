@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Multicall.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./Roles.sol";
 import "./utils/AccessManaged.sol";
 import "./utils/ForwardedContext.sol";
@@ -19,20 +20,27 @@ import "../tools/ENSReverseRegistration.sol";
  */
 abstract contract BaseComponent is
     ForwardedContext,
-    AccessManaged,
-    Routed,
-    Multicall
+    AccessManagedUpgradeable,
+    RoutedUpgradeable,
+    Multicall,
+    UUPSUpgradeable
 {
+    // Access control for the upgrade process
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(UPGRADER_ROLE) {
+    }
+
     // Allow the upgrader to set ENS reverse registration
     function setName(address ensRegistry, string calldata ensName) public onlyRole(ENS_MANAGER_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 
-    function _msgSender() internal view virtual override(Context, ForwardedContext) returns (address sender) {
+    function _msgSender() internal view virtual override(ContextUpgradeable, ForwardedContext) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(Context, ForwardedContext) returns (bytes calldata) {
+    function _msgData() internal view virtual override(ContextUpgradeable, ForwardedContext) returns (bytes calldata) {
         return super._msgData();
     }
+
+    uint256[50] private __gap;
 }

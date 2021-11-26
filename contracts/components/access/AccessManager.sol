@@ -5,13 +5,13 @@ import "@openzeppelin/contracts/utils/Multicall.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../Roles.sol";
-import "../utils/ForwardedContextUpgradeable.sol";
+import "../utils/ForwardedContext.sol";
 import "../../tools/ENSReverseRegistration.sol";
 
 // This cannot be BaseComponent, because BaseComponent is AccessManagedUpgradeable
-contract AccessManager is ForwardedContextUpgradeable, AccessControlUpgradeable, UUPSUpgradeable, Multicall {
+contract AccessManager is ForwardedContext, AccessControlUpgradeable, UUPSUpgradeable, Multicall {
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder) initializer ForwardedContextUpgradeable(forwarder) {}
+    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
     function initialize(address __admin) external initializer {
         __AccessControl_init();
@@ -32,11 +32,11 @@ contract AccessManager is ForwardedContextUpgradeable, AccessControlUpgradeable,
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 
-    function _msgSender() internal view virtual override(ContextUpgradeable, ForwardedContextUpgradeable) returns (address sender) {
+    function _msgSender() internal view virtual override(ContextUpgradeable, ForwardedContext) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(ContextUpgradeable, ForwardedContextUpgradeable) returns (bytes calldata) {
+    function _msgData() internal view virtual override(ContextUpgradeable, ForwardedContext) returns (bytes calldata) {
         return super._msgData();
     }
 

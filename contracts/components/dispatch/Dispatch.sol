@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import "../BaseComponentUpgradeable.sol";
+import "../BaseComponent.sol";
 import "../agents/AgentRegistry.sol";
 import "../scanners/ScannerRegistry.sol";
 
-contract Dispatch is BaseComponentUpgradeable {
+contract Dispatch is BaseComponent {
     using EnumerableSet for EnumerableSet.UintSet;
 
     AgentRegistry   private _agents;
@@ -19,7 +19,7 @@ contract Dispatch is BaseComponentUpgradeable {
     event Link(uint256 agentId, uint256 scannerId, bool enable);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder) initializer ForwardedContextUpgradeable(forwarder) {}
+    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
     function initialize(
         address __manager,

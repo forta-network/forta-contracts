@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/IAccessControl.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "../Roles.sol";
 
-abstract contract AccessManaged is Context {
+abstract contract AccessManagedUpgradeable is ContextUpgradeable {
     IAccessControl private _accessControl;
 
     event AccessManagerUpdated(address indexed newAddressManager);
@@ -18,7 +18,7 @@ abstract contract AccessManaged is Context {
         _;
     }
 
-    constructor(address manager) {
+    function __AccessManaged_init(address manager) internal initializer {
         _accessControl = IAccessControl(manager);
         emit AccessManagerUpdated(manager);
     }
@@ -31,4 +31,6 @@ abstract contract AccessManaged is Context {
         _accessControl = IAccessControl(newManager);
         emit AccessManagerUpdated(newManager);
     }
+
+    uint256[49] private __gap;
 }
