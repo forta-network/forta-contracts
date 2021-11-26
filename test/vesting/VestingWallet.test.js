@@ -24,7 +24,7 @@ describe('VestingWallet', function () {
       }));
 
     this.rootchainmanager = await deploy('RootChainManagerMock');
-    this.predicat         = await this.rootchainmanager.predicat().then(address => attach('PredicatMock', address));
+    this.predicate         = await this.rootchainmanager.predicate().then(address => attach('PredicatMock', address));
     this.l2escrowfactory  = { address: ethers.constants.AddressZero };
     this.l2escrowtemplate = { address: ethers.constants.AddressZero };
 
@@ -49,7 +49,7 @@ describe('VestingWallet', function () {
       },
     );
 
-    await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.predicat.address);
+    await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.predicate.address);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.vesting.address);
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.other.address);
     await this.token.connect(this.accounts.minter).mint(this.vesting.address, this.amount);
@@ -167,10 +167,10 @@ describe('VestingWallet', function () {
       );
 
       await expect(this.vesting.connect(this.accounts.other).functions['bridge(uint256)'](this.amount))
-      .to.emit(this.token,    'Approval'     ).withArgs(this.vesting.address, this.predicat.address, this.amount)
-      .to.emit(this.token,    'Transfer'     ).withArgs(this.vesting.address, this.predicat.address, this.amount)
-      .to.emit(this.token,    'Approval'     ).withArgs(this.vesting.address, this.predicat.address, 0)
-      .to.emit(this.predicat, 'LockedERC20'  ).withArgs(this.vesting.address, l2escrow, this.token.address, this.amount)
+      .to.emit(this.token,    'Approval'     ).withArgs(this.vesting.address, this.predicate.address, this.amount)
+      .to.emit(this.token,    'Transfer'     ).withArgs(this.vesting.address, this.predicate.address, this.amount)
+      .to.emit(this.token,    'Approval'     ).withArgs(this.vesting.address, this.predicate.address, 0)
+      .to.emit(this.predicate, 'LockedERC20'  ).withArgs(this.vesting.address, l2escrow, this.token.address, this.amount)
       .to.emit(this.vesting,  'TokensBridged').withArgs(l2escrow, this.accounts.other.address, this.amount);
     });
   });

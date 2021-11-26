@@ -32,7 +32,7 @@ contract PredicatMock is Ownable {
 }
 
 contract RootChainManagerMock is IRootChainManager, Context {
-    PredicatMock public predicat = new PredicatMock();
+    PredicatMock public predicate = new PredicatMock();
 
     event BridgeDeposit(address user, address rootToken, bytes depositData);
 
@@ -41,12 +41,12 @@ contract RootChainManagerMock is IRootChainManager, Context {
     }
 
     function typeToPredicate(bytes32) external view override returns (address) {
-        return address(predicat);
+        return address(predicate);
     }
 
     function depositFor(address user, address rootToken, bytes calldata depositData) external override {
         // Checks
-        predicat.lockTokens(
+        predicate.lockTokens(
             _msgSender(),
             user,
             rootToken,
