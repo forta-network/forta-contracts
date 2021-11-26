@@ -820,20 +820,15 @@
     ethers "^4.0.0-beta.1"
     source-map-support "^0.5.19"
 
-"@openzeppelin/contracts-upgradeable@^4.4.0-rc.1":
-  version "4.4.0-rc.1"
-  resolved "https://registry.npmjs.org/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.4.0-rc.1.tgz"
-  integrity sha512-LntmcuZPn8rFyu7PnzmQTzjZ7X+Ev0R5cu8V42ZN+VQ9VLw9BpM0y5cXlhHOXpjb75Ob0KRWwObwl8ZZcmUgfw==
+"@openzeppelin/contracts-upgradeable@^4.4.0":
+  version "4.4.0"
+  resolved "https://registry.npmjs.org/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.4.0.tgz"
+  integrity sha512-hIEyWJHu7bDTv6ckxOaV+K3+7mVzhjtyvp3QSaz56Rk5PscXtPAbkiNTb3yz6UJCWHPWpxVyULVgZ6RubuFEZg==
 
-"@openzeppelin/contracts@^4.0.0", "@openzeppelin/contracts@^4.1.0":
-  version "4.3.2"
-  resolved "https://registry.npmjs.org/@openzeppelin/contracts/-/contracts-4.3.2.tgz"
-  integrity sha512-AybF1cesONZStg5kWf6ao9OlqTZuPqddvprc0ky7lrUVOjXeKpmQ2Y9FK+6ygxasb+4aic4O5pneFBfwVsRRRg==
-
-"@openzeppelin/contracts@^4.4.0-rc.1":
-  version "4.4.0-rc.1"
-  resolved "https://registry.npmjs.org/@openzeppelin/contracts/-/contracts-4.4.0-rc.1.tgz"
-  integrity sha512-45krr970Q7Q6aax2v6TwrT91Cif2XGZrBPmjQ7UtcSwGDqlinvC2qDw3jMtH/fAQTpZkzPplfEV6ru26ub6NbA==
+"@openzeppelin/contracts@^4.0.0", "@openzeppelin/contracts@^4.1.0", "@openzeppelin/contracts@^4.4.0":
+  version "4.4.0"
+  resolved "https://registry.npmjs.org/@openzeppelin/contracts/-/contracts-4.4.0.tgz"
+  integrity sha512-dlKiZmDvJnGRLHojrDoFZJmsQVeltVeoiRN7RK+cf2FmkhASDEblE0RiaYdxPNsUZa6mRG8393b9bfyp+V5IAw==
 
 "@openzeppelin/hardhat-upgrades@^1.11.0":
   version "1.11.0"
@@ -10804,7 +10799,7 @@ y18n@^3.2.1:
 
 y18n@^4.0.0:
   version "4.0.3"
-  resolved "https://registry.npmjs.org/y18n/-/y18n-4.0.3.tgz"
+  resolved "https://registry.yarnpkg.com/y18n/-/y18n-4.0.3.tgz#b5f259c82cd6e336921efd7bfd8bf560de9eeedf"
   integrity sha512-JKhqTOwSrqNA1NY5lSztJ1GrBiUodLMmIZuLiDaMRJ+itFd+ABVE8XBjOvIWL+rSqNDC74LCSFmlb/U4UZ4hJQ==
 
 yaeti@^0.0.6:
