@@ -17,7 +17,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     uint256 private _cliff;
     uint256 private _duration;
 
-    event TokensReleased(address token, uint256 amount);
+    event TokensReleased(address indexed token, uint256 amount);
 
     modifier onlyBeneficiary() {
         require(beneficiary() == _msgSender(), "VestingWallet: access restricted to beneficiary");
@@ -102,7 +102,7 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     /**
      * @dev Calculates the historical balance (current balance + already released balance).
      */
-    function _historicalBalance(address token) private view returns (uint256) {
+    function _historicalBalance(address token) internal virtual view returns (uint256) {
         return IERC20(token).balanceOf(address(this)) + released(token);
     }
 

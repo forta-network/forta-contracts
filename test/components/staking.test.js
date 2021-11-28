@@ -191,6 +191,20 @@ describe('Forta Staking', function () {
   });
 
   describe('Rewards', function () {
+    it ('cannot reward to zero subject', async function () {
+      const subject = '0x0000000000000000000000000000000000000000';
+
+      await expect(this.staking.connect(this.accounts.user1).reward(subject, '10'))
+      .to.be.revertedWith('mint to the zero address');
+    });
+
+    it ('can reward to non zero subject', async function () {
+      const subject = '0x0000000000000000000000000000000000000001';
+
+      await expect(this.staking.connect(this.accounts.user1).reward(subject, '10'))
+      .to.emit(this.staking, 'Rewarded').withArgs(subject, this.accounts.user1.address, '10');
+    });
+
     it('fix shares', async function () {
       await expect(this.staking.connect(this.accounts.user1).deposit(subject1, '100')).to.be.not.reverted;
       await expect(this.staking.connect(this.accounts.user2).deposit(subject1, '50')).to.be.not.reverted;
@@ -236,18 +250,18 @@ describe('Forta Staking', function () {
       await expect(this.staking.connect(this.accounts.user2).deposit(subject1, '50')).to.be.not.reverted;
 
       expect(await this.staking.availableReward(subject1, this.accounts.user1.address)).to.be.equal('0');
-      expect(await this.staking.availableReward(subject1, this.accounts.user1.address)).to.be.equal('0');
+      expect(await this.staking.availableReward(subject1, this.accounts.user2.address)).to.be.equal('0');
 
       await expect(this.staking.connect(this.accounts.user3).reward(subject1, '60'))
       .to.emit(this.staking, 'Rewarded').withArgs(subject1, this.accounts.user3.address, '60');
 
       expect(await this.staking.availableReward(subject1, this.accounts.user1.address)).to.be.equal('30');
-      expect(await this.staking.availableReward(subject1, this.accounts.user1.address)).to.be.equal('30');
+      expect(await this.staking.availableReward(subject1, this.accounts.user2.address)).to.be.equal('30');
 
       await expect(this.staking.connect(this.accounts.user1).deposit(subject1, '50')).to.be.not.reverted;
 
       expect(await this.staking.availableReward(subject1, this.accounts.user1.address)).to.be.equal('30');
-      expect(await this.staking.availableReward(subject1, this.accounts.user1.address)).to.be.equal('30');
+      expect(await this.staking.availableReward(subject1, this.accounts.user2.address)).to.be.equal('30');
 
       await expect(this.staking.connect(this.accounts.user3).reward(subject1, '15')).to.be.not.reverted;
 

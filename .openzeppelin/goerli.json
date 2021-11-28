@@ -45,6 +45,11 @@
       "address": "0x44F5288D1B5a61cE13595835Aced1191889bB741",
       "txHash": "0x05a2531caa71a2c1d8fefa0bf064d09e6b957afba37d57807ec054778c6a0460",
       "kind": "uups"
+    },
+    {
+      "address": "0xedc9e493ADa6bBBDF975D38c7025f3FD200DD86F",
+      "txHash": "0xd9895db22e7a47483396ce2f6bd0ddd864c7833b06c141844095d0e74cb745bd",
+      "kind": "uups"
     }
   ],
   "impls": {
@@ -7216,6 +7221,112 @@
           },
           "t_contract(IAccessControl)12008": {
             "label": "contract IAccessControl"
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        }
+      }
+    },
+    "63998b483724d6e1275c803d17e6275b53c1351261b5e1f653686f1928e93418": {
+      "address": "0x7E028e488E13045E435d4FC8Cd46aA9753B626Aa",
+      "txHash": "0xfa81ef6a750d43e038e52625500c8dc6e28e012a3791ebc68a85792a907f5b53",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:37"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:42"
+          },
+          {
+            "contract": "ContextUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:31"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:82"
+          },
+          {
+            "contract": "ERC1967UpgradeUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:215"
+          },
+          {
+            "contract": "UUPSUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:81"
+          },
+          {
+            "contract": "VestingWallet",
+            "label": "_released",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "contracts/vesting/VestingWallet.sol:14"
+          },
+          {
+            "contract": "VestingWallet",
+            "label": "_beneficiary",
+            "type": "t_address",
+            "src": "contracts/vesting/VestingWallet.sol:15"
+          },
+          {
+            "contract": "VestingWallet",
+            "label": "_start",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWallet.sol:16"
+          },
+          {
+            "contract": "VestingWallet",
+            "label": "_cliff",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWallet.sol:17"
+          },
+          {
+            "contract": "VestingWallet",
+            "label": "_duration",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWallet.sol:18"
+          },
+          {
+            "contract": "VestingWalletV2",
+            "label": "_historicalBalanceBridged",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "contracts/vesting/VestingWalletV2.sol:22"
+          }
+        ],
+        "types": {
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
           },
           "t_bool": {
             "label": "bool"
