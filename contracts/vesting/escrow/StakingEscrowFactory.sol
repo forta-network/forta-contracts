@@ -6,6 +6,21 @@ import "./StakingEscrow.sol";
 import "./StakingEscrowUtils.sol";
 
 /**
+ * Factory in charge of creating escrow instances for the vesting wallets. This factory, and the escrow instances are
+ * on the child chain, where the staking contract exist. The vesting wallets are back on the parent chain, where they
+ * are supervising vesting allocations.
+ *
+ * This is a trustless, non upgradeable contract. Anyone can create an escrow instance for a vesting wallet. The
+ * escrow instance is automatically whitelisted, but the manager isn't (to avoid whitelist abuse). The manager will
+ * not handle tokens anyway. Manager can be the beneficiary of the vesting wallet, or any other address. It as to be
+ * an address valid on the child chain.
+ *
+ * Anyone can instanciate an escrow for any vesting contract with any manager. It is ultimatelly the vesting
+ * beneficiary that decide which manager to use when bridging token from the parent chain to the child chain.
+ *
+ * Escrow instanciation uses create2 so that they can be deterministically predicted (in particular, by the vesting
+ * wallet on the parent chain).
+ *
  * @notice This contract must have the WHITELISTER_ROLE role on token
  */
 contract StakingEscrowFactory {
@@ -16,9 +31,8 @@ contract StakingEscrowFactory {
     event NewStakingEscrow(address indexed escrow, address indexed vesting, address indexed manager);
 
     constructor(address __trustedForwarder, FortaStaking __staking) {
-        token   = FortaBridged(address(__staking.stakedToken()));
-        staking = __staking;
-
+        token    = FortaBridged(address(__staking.stakedToken()));
+        staking  = __staking;
         template = new StakingEscrow(
             __trustedForwarder,
             token,
