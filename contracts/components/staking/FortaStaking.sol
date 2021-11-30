@@ -8,9 +8,14 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 
+import "./FortaStakingUtils.sol";
 import "../BaseComponent.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
+
+interface IRewardReceiver {
+    function onRewardReceived(address subject, uint256 amount) external;
+}
 
 /**
  * @dev This is a generic staking contract for the Forta platform. It allows any account to deposit ERC20 tokens to
@@ -129,7 +134,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      * NOTE: This is equivalent to getting the ERC1155 balance of `account` with `subject` casted to a uint256 tokenId.
      */
     function sharesOf(address subject, address account) public view returns (uint256) {
-        return balanceOf(account, _subjectToActive(subject));
+        return balanceOf(account, FortaStakingUtils.subjectToActive(subject));
     }
 
     /**
@@ -138,7 +143,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      * NOTE: This is equivalent to getting the ERC1155 totalSupply for `subject` casted to a uint256 tokenId.
      */
     function totalShares(address subject) public view returns (uint256) {
-        return totalSupply(_subjectToActive(subject));
+        return totalSupply(FortaStakingUtils.subjectToActive(subject));
     }
 
     /**
@@ -148,7 +153,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      * plus a mask corresponding to 2 ** 160.
      */
     function inactiveSharesOf(address subject, address account) public view returns (uint256) {
-        return balanceOf(account, _subjectToInactive(subject));
+        return balanceOf(account, FortaStakingUtils.subjectToInactive(subject));
     }
 
     /**
@@ -158,7 +163,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      * plus a mask corresponding to 2 ** 160.
      */
     function totalInactiveShares(address subject) public view returns (uint256) {
-        return totalSupply(_subjectToInactive(subject));
+        return totalSupply(FortaStakingUtils.subjectToInactive(subject));
     }
 
     /**
@@ -180,7 +185,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
         SafeERC20.safeTransferFrom(stakedToken, staker, address(this), stakeValue);
         _activeStake.mint(subject, stakeValue);
-        _mint(staker, _subjectToActive(subject), sharesValue, new bytes(0));
+        _mint(staker, FortaStakingUtils.subjectToActive(subject), sharesValue, new bytes(0));
 
         _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(address)", subject));
 
@@ -204,8 +209,8 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
         _activeStake.burn(subject, stakeValue);
         _inactiveStake.mint(subject, stakeValue);
-        _burn(staker, _subjectToActive(subject), activeShares);
-        _mint(staker, _subjectToInactive(subject), inactiveShares, new bytes(0));
+        _burn(staker, FortaStakingUtils.subjectToActive(subject), activeShares);
+        _mint(staker, FortaStakingUtils.subjectToInactive(subject), inactiveShares, new bytes(0));
 
         emit WithdrawalInitiated(subject, staker, deadline);
 
@@ -233,7 +238,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         uint256 stakeValue     = _inactiveSharesToStake(subject, inactiveShares);
 
         _inactiveStake.burn(subject, stakeValue);
-        _burn(staker, _subjectToInactive(subject), inactiveShares);
+        _burn(staker, FortaStakingUtils.subjectToInactive(subject), inactiveShares);
         SafeERC20.safeTransfer(stakedToken, staker, stakeValue);
 
         _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(address)", subject));
@@ -324,6 +329,11 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
         emit Released(subject, account, value);
 
+        if (Address.isContract(account)) {
+            try IRewardReceiver(account).onRewardReceived(subject, value) {}
+            catch {}
+        }
+
         return value;
     }
 
@@ -370,12 +380,13 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         uint256[] memory amounts,
         bytes memory data
     ) internal virtual override {
-        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
 
+        // Order is important here, we must do the virtual release, which uses totalShares() in
+        // _historicalRewardFraction, BEFORE the super call updates the totalSupply()
         for (uint256 i = 0; i < ids.length; ++i) {
             if (ids[i] >> 160 == 0) {
                 // active shares (ids[i] is the address of the subject)
-                address subject = _sharesToSubject(ids[i]);
+                address subject = FortaStakingUtils.sharesToSubject(ids[i]);
 
                 // Mint, burn, or transfer of subject shares would by default affect the distribution of the
                 // currently available reward for the subject. We create a "virtual release" that should preserve
@@ -392,13 +403,11 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
                 require(from == address(0) || to == address(0), "Withdrawal shares are not transferable");
             }
         }
+
+        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
     }
 
     // Conversions
-    function _subjectToActive(address subject) private pure returns (uint256) { return uint256(uint160(subject)); }
-    function _subjectToInactive(address subject) private pure returns (uint256) { return uint256(uint160(subject)) | 2 ** 160; }
-    function _sharesToSubject(uint256 tokenId) private pure returns (address) { return address(uint160(tokenId)); }
-
     function _stakeToActiveShares(address subject, uint256 amount) internal view returns (uint256) {
         uint256 activeStake = _activeStake.balanceOf(subject);
         return activeStake == 0 ? amount : FullMath.mulDiv(amount, activeStake, totalShares(subject));

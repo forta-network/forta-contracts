@@ -7,15 +7,15 @@ describe('Forta upgrade', function () {
 
   describe('Token update', function () {
     it('authorized', async function () {
-      this.token = await performUpgrade(this.token, 'Forta2');
-      expect(await this.token.version()).to.be.equal('Forta2');
+      this.token = await performUpgrade(this.token, 'FortaExtendedMock');
+      expect(await this.token.version()).to.be.equal('FortaExtendedMock');
     });
 
     it('unauthorized', async function () {
       const ADMIN_ROLE = await this.token.ADMIN_ROLE();
 
       await this.token.renounceRole(ADMIN_ROLE, this.accounts.admin.address);
-      await expect(performUpgrade(this.token, 'Forta2'))
+      await expect(performUpgrade(this.token, 'FortaExtendedMock'))
       .to.be.revertedWith(`AccessControl: account ${this.accounts.admin.address.toLowerCase()} is missing role ${ADMIN_ROLE}`);
     });
   });
@@ -39,13 +39,13 @@ describe('Forta upgrade', function () {
       });
 
       it('authorized', async function () {
-        this.vesting = await performUpgrade(this.vesting, 'VestingWallet2', { unsafeAllow: 'delegatecall' });
-        expect(await this.vesting.version()).to.be.equal('VestingWallet2');
+        this.vesting = await performUpgrade(this.vesting, 'VestingWalletExtendedMock', { unsafeAllow: 'delegatecall' });
+        expect(await this.vesting.version()).to.be.equal('VestingWalletExtendedMock');
       });
 
       it('unauthorized', async function () {
         await this.vesting.transferOwnership(this.accounts.other.address);
-        await expect(performUpgrade(this.vesting, 'VestingWallet2', { unsafeAllow: 'delegatecall' }))
+        await expect(performUpgrade(this.vesting, 'VestingWalletExtendedMock', { unsafeAllow: 'delegatecall' }))
         .to.be.revertedWith(`Ownable: caller is not the owner`);
       });
     });
@@ -53,7 +53,7 @@ describe('Forta upgrade', function () {
     describe('locked vesting', function () {
       beforeEach(async function () {
         this.vesting = await deployUpgradeable(
-          'VestingWallet2',
+          'VestingWalletExtendedMock',
           'uups',
           [
             this.accounts.other.address,
@@ -68,7 +68,7 @@ describe('Forta upgrade', function () {
       });
 
       it('unauthorized', async function () {
-        await expect(performUpgrade(this.vesting, 'VestingWallet2', { unsafeAllow: 'delegatecall' }))
+        await expect(performUpgrade(this.vesting, 'VestingWalletExtendedMock', { unsafeAllow: 'delegatecall' }))
         .to.be.revertedWith(`Ownable: caller is not the owner`);
       });
     });

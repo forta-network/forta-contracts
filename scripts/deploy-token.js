@@ -93,7 +93,7 @@ function tryFetchContract(cache, key, contract, args = []) {
 }
 
 function tryFetchProxy(cache, key, contract, args = [], kind = 'uups') {
-  return resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind })).then(address => contract.attach(address));
+  return resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind, unsafeAllow: 'delegatecall' })).then(address => contract.attach(address));
 }
 
 async function resumeOrDeploy(cache, key, deploy) {
@@ -384,36 +384,39 @@ async function main() {
   ].map(({ role, address, value }) => forta.hasRole(role, address).then(result => result === value))).then(results => results.every(Boolean)));
 
   // vesting config
-  await Promise.all(Object.values(CONFIG.allocations).map(async allocation => {
-    switch(allocation.type) {
-      case 'direct':
-        await Promise.all([
-          forta.balanceOf(allocation.beneficiary),
-        ]).then(([ balance ]) => {
-          assert(balance.eq(allocation.amount), `Wrong balance for direct allocation to ${allocation.beneficiary}`);
-        });
-        break;
+  await Promise.all(
+    CONFIG.allocations
+    .map(async (allocation, i, allocations) => {
+      switch(allocation.type) {
+        case 'direct':
+          await Promise.all([
+            forta.balanceOf(allocation.beneficiary),
+          ]).then(([ balance ]) => {
+            assert(balance.eq(allocation.amount), `Wrong balance for direct allocation to ${allocation.beneficiary}`);
+          });
+          break;
 
-      case 'vesting':
-        const contract = vesting[allocation.beneficiary];
-        await Promise.all([
-          forta.balanceOf(contract.address),
-          contract.start(),
-          contract.cliff(),
-          contract.duration(),
-          contract.beneficiary(),
-          contract.owner(),
-        ]).then(([ balance, start, cliff, duration, beneficiary, owner]) => {
-          assert(balance.eq(allocation.amount),                       `Wrong balance for vested allocation to ${allocation.beneficiary}`);
-          assert(start.eq(dateToTimestamp(allocation.start)),         `Wrong start for vested allocation to ${allocation.beneficiary}`);
-          assert(cliff.eq(durationToSeconds(allocation.cliff)),       `Wrong cliff for vested allocation to ${allocation.beneficiary}`);
-          assert(duration.eq(durationToSeconds(allocation.duration)), `Wrong duration for vested allocation to ${allocation.beneficiary}`);
-          assert.strictEqual(beneficiary, allocation.beneficiary,     `Wrong beneficiary for vested allocation to ${allocation.beneficiary}`);
-          assert.strictEqual(owner,       allocation.upgrader,        `Wrong admin for direct allocation to ${allocation.beneficiary}`);
-        });
-        break;
-    }
-  }));
+        case 'vesting':
+          const contract = vesting[allocation.beneficiary];
+          await Promise.all([
+            forta.balanceOf(contract.address),
+            contract.start(),
+            contract.cliff(),
+            contract.duration(),
+            contract.beneficiary(),
+            contract.owner(),
+          ]).then(([ balance, start, cliff, duration, beneficiary, owner]) => {
+            assert(balance.eq(allocation.amount),                       `Wrong balance for vested allocation to ${allocation.beneficiary}`);
+            assert(start.eq(dateToTimestamp(allocation.start)),         `Wrong start for vested allocation to ${allocation.beneficiary}`);
+            assert(cliff.eq(durationToSeconds(allocation.cliff)),       `Wrong cliff for vested allocation to ${allocation.beneficiary}`);
+            assert(duration.eq(durationToSeconds(allocation.duration)), `Wrong duration for vested allocation to ${allocation.beneficiary}`);
+            assert.strictEqual(beneficiary, allocation.beneficiary,     `Wrong beneficiary for vested allocation to ${allocation.beneficiary}`);
+            assert.strictEqual(owner,       allocation.upgrader,        `Wrong admin for direct allocation to ${allocation.beneficiary}`);
+          });
+          break;
+      }
+    })
+  );
   console.log(chalk.bold('[8/8] done.'));
 
   console.log('----------------------------------------------------');
