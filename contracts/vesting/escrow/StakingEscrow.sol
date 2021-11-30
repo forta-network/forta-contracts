@@ -8,7 +8,7 @@ import "../../components/utils/ForwardedContext.sol";
 
 /**
  * Logic for the escrow that handles vesting tokens, on the child chain, for a vesting wallet
- * on the parent chain.
+ * on the parent chain. Instances are created as Minimal Proxy Clones.
  *
  * This contract contains some immutable parameters, common to all instances, that are set at
  * construction and some "normal" storage-based parameters that are instance specific and set
@@ -78,7 +78,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
     }
 
     /**
-     * Overload: initiate full withdrawal
+     * Overload: initiate withdrawal of the full stake amount
      */
     function initiateFullWithdrawal(address subject) public returns (uint64) {
         return initiateWithdrawal(subject, l2staking.balanceOf(address(this), uint256(uint160(subject))));
