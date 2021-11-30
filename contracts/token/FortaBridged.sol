@@ -43,7 +43,7 @@ contract FortaBridged is FortaCommon {
     }
 
     /**
-     * @notice: To avoid token locked on the parent chains not being correctly represented on the
+     * @dev To avoid token locked on the parent chains not being correctly represented on the
      * child chain, this should NEVER revert. Consequently, whe might have to temporarily grant
      * WHITELIST_ROLE to the receiver.
      *
@@ -62,7 +62,7 @@ contract FortaBridged is FortaCommon {
     }
 
     /**
-     * @notice: In order for a token holder on the child chain to be able to withdraw tokens to
+     * @dev In order for a token holder on the child chain to be able to withdraw tokens to
      * another address on the parent chain, this function will temporarily transfer the tokens to
      * the address of the receiver on the parent chain so that the burn event is correct.
      *

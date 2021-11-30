@@ -50,7 +50,7 @@ describe('Staking Escrow', function () {
       beforeEach(async function () {
         this.value = ethers.utils.parseEther('1.00');
 
-        await expect(this.escrow.connect(this.accounts.manager).deposit(subject, this.value))
+        await expect(this.escrow.connect(this.accounts.manager).functions['deposit(address,uint256)'](subject, this.value))
         .to.emit(this.token,   'Approval'      ).withArgs(this.escrow.address, this.staking.address, this.value)
         .to.emit(this.token,   'Transfer'      ).withArgs(this.escrow.address, this.staking.address, this.value)
         .to.emit(this.token,   'Approval'      ).withArgs(this.escrow.address, this.staking.address, 0)
