@@ -14,8 +14,8 @@ import "./FortaCommon.sol";
  *
  * In order to bridge tokens back from the child chain to the parent chain, any (whitelisted) user
  * can call either the {withdraw} or the {withdrawTo} function. This will burn tokens here,
- * emitting a burn event in the process, that can be used to unlock the corresponding tokens on
- * the parent chain
+ * emitting a burn event (Transfer event from the user to address(0)) in the process. This burn event
+ * is needed to trigger unlocking the corresponding tokens on the parent chain.
  */
 contract FortaBridged is FortaCommon {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -66,7 +66,7 @@ contract FortaBridged is FortaCommon {
      * another address on the parent chain, this function will temporarily transfer the tokens to
      * the address of the receiver on the parent chain so that the burn event is correct.
      *
-     * In order to do so, the receiver address might not to be temporarily granted WHITELIST_ROLE.
+     * In order to do so, the receiver address must be temporarily granted WHITELIST_ROLE.
      */
     function withdrawTo(uint256 amount, address receiver) external flashRole(WHITELIST_ROLE, receiver) {
         _transfer(msg.sender, receiver, amount);

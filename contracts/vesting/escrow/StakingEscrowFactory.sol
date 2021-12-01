@@ -11,12 +11,14 @@ import "./StakingEscrowUtils.sol";
  * are supervising vesting allocations.
  *
  * This is a trustless, non upgradeable contract. Anyone can create an escrow instance for a vesting wallet. The
- * escrow instance is automatically whitelisted, but the manager isn't (to avoid whitelist abuse). The manager will
- * not handle tokens anyway. Manager can be the beneficiary of the vesting wallet, or any other address. It as to be
- * an address valid on the child chain.
+ * escrow instance is automatically whitelisted on the forta token (on the child chain), but the manager isn't
+ * (to avoid whitelist abuse). The manager will not handle tokens anyway. Manager can be the beneficiary of the
+ * vesting wallet, or any other address. It as to be an address valid on the child chain.
  *
  * Anyone can instanciate an escrow for any vesting contract with any manager. It is ultimatelly the vesting
  * beneficiary that decide which manager to use when bridging token from the parent chain to the child chain.
+ * The manager is the address of an EOA, or a smart wallet on the child chain, that will be the only one authorized
+ * to operate on the escrow (see the {StakingEscrow}).
  *
  * Escrow instanciation uses create2 so that they can be deterministically predicted (in particular, by the vesting
  * wallet on the parent chain).
