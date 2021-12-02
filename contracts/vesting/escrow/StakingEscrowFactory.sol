@@ -42,6 +42,13 @@ contract StakingEscrowFactory {
         );
     }
 
+    /**
+     * Deterministically deploys new instance of StakingEscrow as a Minimal Proxy Clone, whitelisting it for
+     * FortaBridged token transfer
+     * @param vesting address for associated L1 VestingWallet. StakingEscrow will bridge back to this.
+     * @param manager address that will be l2Manager in StakingEscrow
+     * @return address of the deployed StakingEscrow  
+     */
     function newWallet(
         address vesting,
         address manager
@@ -58,6 +65,12 @@ contract StakingEscrowFactory {
         return instance;
     }
 
+    /**
+     * Deterministically infers address ofnew instance of StakingEscrow without deploying
+     * @param vesting address for associated L1 VestingWallet. StakingEscrow will bridge back to this.
+     * @param manager address that will be l2Manager in StakingEscrow
+     * @return address of the StakingEscrow  
+     */
     function predictWallet(
         address vesting,
         address manager
