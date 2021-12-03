@@ -13,14 +13,14 @@ import "./StakingEscrowUtils.sol";
  * This is a trustless, non upgradeable contract. Anyone can create an escrow instance for a vesting wallet. The
  * escrow instance is automatically whitelisted on the forta token (on the child chain), but the manager isn't
  * (to avoid whitelist abuse). The manager will not handle tokens anyway. Manager can be the beneficiary of the
- * vesting wallet, or any other address. It as to be an address valid on the child chain.
+ * vesting wallet, or any other address. It has to be an address valid on the child chain.
  *
- * Anyone can instanciate an escrow for any vesting contract with any manager. It is ultimatelly the vesting
+ * Anyone can instantiate an escrow for any vesting contract with any manager. It is ultimately the vesting
  * beneficiary that decide which manager to use when bridging token from the parent chain to the child chain.
  * The manager is the address of an EOA, or a smart wallet on the child chain, that will be the only one authorized
  * to operate on the escrow (see the {StakingEscrow}).
  *
- * Escrow instanciation uses create2 so that they can be deterministically predicted (in particular, by the vesting
+ * Escrow instantiation uses create2 so that they can be deterministically predicted (in particular, by the vesting
  * wallet on the parent chain).
  *
  * @notice This contract must have the WHITELISTER_ROLE role on token
@@ -47,7 +47,7 @@ contract StakingEscrowFactory {
      * FortaBridged token transfer
      * @param vesting address for associated L1 VestingWallet. StakingEscrow will bridge back to this.
      * @param manager address that will be l2Manager in StakingEscrow
-     * @return address of the deployed StakingEscrow  
+     * @return address of the deployed StakingEscrow
      */
     function newWallet(
         address vesting,
@@ -66,10 +66,10 @@ contract StakingEscrowFactory {
     }
 
     /**
-     * Deterministically infers address ofnew instance of StakingEscrow without deploying
+     * Deterministically infers address of new instance of StakingEscrow without deploying
      * @param vesting address for associated L1 VestingWallet. StakingEscrow will bridge back to this.
      * @param manager address that will be l2Manager in StakingEscrow
-     * @return address of the StakingEscrow  
+     * @return address of the StakingEscrow
      */
     function predictWallet(
         address vesting,

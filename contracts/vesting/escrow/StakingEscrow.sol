@@ -95,7 +95,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * Staking operation: Relay `withdrawal` calls to the staking contract.
      *
      * Note: anyone can call that directly on the staking contract. One should not assume rewards claims are done
-     * trough this relay function.
+     * through this relay function.
      */
     function claimReward(address subject) public returns (uint256) {
         return l2staking.releaseReward(subject, address(this));
@@ -105,7 +105,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * Release reward to any account chossen by the beneficiary. Rewards shouldn't be bridged back to prevent them
      * from being subject to vesting.
      *
-     * In addition to releaseing rewards, this function can also be used to release any other tokens that would be
+     * In addition to releasing rewards, this function can also be used to release any other tokens that would be
      * sent to this escrow by mistake.
      */
     function release(address releaseToken, address receiver, uint256 amount) public onlyManager() {
