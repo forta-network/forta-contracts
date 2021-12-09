@@ -7,6 +7,13 @@ import "./escrow/StakingEscrowUtils.sol";
 import "./IRootChainManager.sol";
 import "./VestingWallet.sol";
 
+/**
+ * This contract exists on the root chain, where it manages vesting token allocations.
+ *
+ * During deployment, immutable storage is used to configure the parameters relevant to
+ * cross-chain operations. Proxies (UUPS) can then use this as their implementation and
+ * will automatically uses these parameters (hardcoded in the implementation).
+ */
 contract VestingWalletV2 is VestingWallet {
     using SafeCast for int256;
     using SafeCast for uint256;
@@ -22,7 +29,7 @@ contract VestingWalletV2 is VestingWallet {
 
     uint256           public           historicalBalanceMinimum;
 
-    event TokensBridged(address indexed l2escrow, address indexed l2manager, uint256 amount);
+    event TokensBridged(address indexed l2Escrow, address indexed l2Manager, uint256 amount);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
@@ -38,19 +45,27 @@ contract VestingWalletV2 is VestingWallet {
     }
 
     /**
-     * bridge token to L2
+     * Bridge token to L2
+     *
+     * In case the beneficiary is a smart contract, bridging that way might be dangerous. In such cases,
+     * {bridge(uint256,address)} should be prefered.
      */
     function bridge(uint256 amount)
         public
         virtual
     {
+        require(!Address.isContract(beneficiary()), "Caution: beneficiary is a contract");
         bridge(amount, beneficiary());
     }
 
     /**
-     * bridge token to L2, with custom escrow manager on L2
+     * Bridge token to L2, with custom escrow manager on L2.
+     *
+     * Using a custom escrow manager is needed if the beneficiary isn't valid on the child chain, for example if it
+     * is a smart wallet that doesn't exist at the same address on the child chain. If the beneficiary of the contract
+     * is a smart wallet valid on both chain, it must be explicitelly mentioned as the manager.
      */
-    function bridge(uint256 amount, address l2manager)
+    function bridge(uint256 amount, address l2Manager)
         public
         virtual
         onlyBeneficiary()
@@ -58,10 +73,10 @@ contract VestingWalletV2 is VestingWallet {
         // lock historicalBalance
         historicalBalanceMinimum = _historicalBalance(l1Token);
 
-        // compute l2escrow address
-        address l2escrow = Clones.predictDeterministicAddress(
+        // compute l2Escrow address
+        address l2Escrow = Clones.predictDeterministicAddress(
             l2EscrowTemplate,
-            StakingEscrowUtils.computeSalt(address(this), l2manager),
+            StakingEscrowUtils.computeSalt(address(this), l2Manager),
             l2EscrowFactory
         );
 
@@ -73,9 +88,9 @@ contract VestingWalletV2 is VestingWallet {
         );
 
         // deposit
-        rootChainManager.depositFor(l2escrow, l1Token, abi.encode(amount));
+        rootChainManager.depositFor(l2Escrow, l1Token, abi.encode(amount));
 
-        emit TokensBridged(l2escrow, l2manager, amount);
+        emit TokensBridged(l2Escrow, l2Manager, amount);
     }
 
     /**

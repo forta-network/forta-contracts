@@ -3,8 +3,15 @@ pragma solidity ^0.8.0;
 
 import "./FortaCommon.sol";
 
+/**
+ * This version of the Forta token is living on the root (or parent) chain. That would be:
+ * - Mainnet for production
+ * - Goerli for testing
+ *
+ * In addition to all the common forta features, the version is mintable by a specific role.
+ */
 contract Forta is FortaCommon {
-    bytes32 public constant MINTER_ROLE      = keccak256("MINTER_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     function initialize(address admin) public initializer {
         __FortaCommon_init(admin);
