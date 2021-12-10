@@ -9,6 +9,24 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
     }
 
     mapping(uint256 => ScannerMetadata) private _scannerMetadata;
+    /**
+     * Version of the scanner image software the network expects
+     */
+    string public scannerNodeVersion;
+
+    event ScannerNodeVersionUpdated(string newVersion, string oldVersion);
+
+    /**
+     * Setting t
+     */
+    function setScannerNodeVersion(string calldata version) public onlyRole(SCANNER_ADMIN_ROLE) {
+        require(
+            keccak256(abi.encodePacked(scannerNodeVersion)) != keccak256(abi.encodePacked(version)),
+            "must update to different scannerNodeVersion"
+        );
+        emit ScannerNodeVersionUpdated(version, scannerNodeVersion);
+        scannerNodeVersion = version;
+    }
 
     function getScanner(uint256 scannerId) public view returns (uint256 chainIds) {
         return (
