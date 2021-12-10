@@ -17,7 +17,7 @@ import "./FortaCommon.sol";
  * emitting a burn event (Transfer event from the user to address(0)) in the process. This burn event
  * is needed to trigger unlocking the corresponding tokens on the parent chain.
  */
-contract FortaBridged is FortaCommon {
+contract FortaBridgedPolygon is FortaCommon {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable childChainManagerProxy;
 
@@ -51,7 +51,7 @@ contract FortaBridged is FortaCommon {
      * usable until the receiver goes through the whitelisting process.
      */
     function deposit(address user, bytes calldata depositData) external flashRole(WHITELIST_ROLE, user) {
-        require(msg.sender == childChainManagerProxy, "FortaBridged: only childChainManagerProxy can deposit");
+        require(msg.sender == childChainManagerProxy, "FortaBridgedPolygon: only childChainManagerProxy can deposit");
 
         uint256 amount = abi.decode(depositData, (uint256));
         _mint(user, amount);

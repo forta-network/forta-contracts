@@ -26,14 +26,14 @@ import "./StakingEscrowUtils.sol";
  * @notice This contract must have the WHITELISTER_ROLE role on token
  */
 contract StakingEscrowFactory {
-    FortaBridged  public immutable token;
+    FortaBridgedPolygon  public immutable token;
     FortaStaking  public immutable staking;
     StakingEscrow public immutable template;
 
     event NewStakingEscrow(address indexed escrow, address indexed vesting, address indexed manager);
 
     constructor(address __trustedForwarder, FortaStaking __staking) {
-        token    = FortaBridged(address(__staking.stakedToken()));
+        token    = FortaBridgedPolygon(address(__staking.stakedToken()));
         staking  = __staking;
         template = new StakingEscrow(
             __trustedForwarder,
@@ -44,7 +44,7 @@ contract StakingEscrowFactory {
 
     /**
      * Deterministically deploys new instance of StakingEscrow as a Minimal Proxy Clone, whitelisting it for
-     * FortaBridged token transfer
+     * FortaBridgedPolygon token transfer
      * @param vesting address for associated L1 VestingWallet. StakingEscrow will bridge back to this.
      * @param manager address that will be l2Manager in StakingEscrow
      * @return address of the deployed StakingEscrow

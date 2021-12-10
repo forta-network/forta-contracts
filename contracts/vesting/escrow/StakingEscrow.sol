@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
-import "../../token/FortaBridged.sol";
+import "../../token/FortaBridgedPolygon.sol";
 import "../../components/staking/FortaStaking.sol";
 import "../../components/utils/ForwardedContext.sol";
 
@@ -15,7 +15,7 @@ import "../../components/utils/ForwardedContext.sol";
  * during initialization.
  */
 contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1155Receiver {
-    FortaBridged public immutable l2token;
+    FortaBridgedPolygon public immutable l2token;
     FortaStaking public immutable l2staking;
     address      public           l1vesting;
     address      public           l2manager;
@@ -33,7 +33,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
 
     constructor(
         address      __trustedForwarder,
-        FortaBridged __token,
+        FortaBridgedPolygon __token,
         FortaStaking __staking
     ) ForwardedContext(__trustedForwarder) initializer() {
         l2token   = __token;
