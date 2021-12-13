@@ -7,6 +7,9 @@
   "scripts": {
     "compile": "hardhat compile",
     "coverage": "hardhat coverage",
+    "lint": "npm run lint:solidity && npm run lint:javascript",
+    "lint:javascript": "eslint ./",
+    "lint:solidity": "solhint 'contracts/**/*.sol'",
     "test": "hardhat test"
   },
   "repository": {
@@ -34,10 +37,17 @@
     "chai": "^4.3.4",
     "conf": "^10.0.2",
     "dotenv": "^10.0.0",
+    "eslint": "^8.4.1",
+    "eslint-plugin-mocha-no-only": "^1.1.1",
+    "eslint-plugin-prettier": "^4.0.0",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.4.6",
     "hardhat": "^2.6.2",
     "hardhat-gas-reporter": "^1.0.4",
+    "prettier": "^2.5.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.19",
+    "solhint": "^3.3.6",
+    "solhint-plugin-prettier": "0.0.5",
     "solidity-coverage": "^0.7.17"
   }
 }
