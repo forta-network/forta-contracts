@@ -228,6 +228,8 @@ describe('Scanner Registry', function () {
       await expect(this.scanners.connect(this.accounts.manager).setScannerNodeVersion("1.0.0"))
         .to.emit(this.scanners, 'ScannerNodeVersionUpdated').withArgs("1.0.0", "");
       expect(await this.scanners.scannerNodeVersion()).to.be.equal("1.0.0")
+      await expect(this.scanners.connect(this.accounts.manager).setScannerNodeVersion("2.0.0"))
+        .to.emit(this.scanners, 'ScannerNodeVersionUpdated').withArgs("2.0.0", "1.0.0");
     })
     it('reverts setting same version', async function () {
       this.scanners.connect(this.accounts.manager).setScannerNodeVersion("1.0.0")
