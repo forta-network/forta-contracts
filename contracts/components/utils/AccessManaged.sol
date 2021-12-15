@@ -19,6 +19,7 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
     }
 
     function __AccessManaged_init(address manager) internal initializer {
+        require(manager != address(0), "AccessManaged: manager cannot be address 0");
         _accessControl = IAccessControl(manager);
         emit AccessManagerUpdated(manager);
     }
@@ -28,6 +29,7 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
     }
 
     function setAccessManager(address newManager) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newManager != address(0), "AccessManaged: newManager cannot be address 0");
         _accessControl = IAccessControl(newManager);
         emit AccessManagerUpdated(newManager);
     }

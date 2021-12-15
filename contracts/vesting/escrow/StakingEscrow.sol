@@ -44,6 +44,8 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
         address __l1vesting,
         address __l2manager
     ) public initializer {
+        require(__l1vesting != address(0), "StakingEscrow: __l1vesting cannot be address 0");
+        require(__l2manager != address(0), "StakingEscrow: __l1vesting cannot be address 0");
         l1vesting = __l1vesting;
         l2manager = __l2manager;
     }
@@ -55,6 +57,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * there.
      */
     function deposit(address subject, uint256 stakeValue) public onlyManager() vestingBalance(stakeValue) returns (uint256) {
+        require(stakeValue > 0, "StakingEscrow: stakeValue must be > 0");
         SafeERC20.safeApprove(
             IERC20(address(l2token)),
             address(l2staking),
@@ -109,6 +112,9 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * sent to this escrow by mistake.
      */
     function release(address releaseToken, address receiver, uint256 amount) public onlyManager() {
+        require(releaseToken != address(0), "StakingEscrow: releaseToken cannot be address 0");
+        require(receiver != address(0), "StakingEscrow: receiver cannot be address 0");
+        require(amount > 0, "StakingEscrow: amount must be > 0");
         if (address(l2token) == releaseToken) {
             pendingReward -= amount; // reverts is overflow;
         }
@@ -131,6 +137,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * not be bridged back, but rather released to another wallet (and potentially bridged back independently).
      */
     function bridge(uint256 amount) public onlyManager() vestingBalance(amount) {
+        require(amount > 0, "StakingEscrow: amount must be > 0");
         l2token.withdrawTo(amount, l1vesting);
     }
 
