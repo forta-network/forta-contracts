@@ -177,7 +177,6 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
     /**
      * @dev Deposit `stakeValue` tokens for a given `subject`, and mint the corresponding shares.
-     * WARNING: If a contract calls deposit, said contract must implement ERC165 for IRewardReceiver in
      * order for releaseRewards to not revert
      * Emits a ERC1155.TransferSingle event.
      */
@@ -319,8 +318,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
     /**
      * @dev Release reward owed by given `account` for its current or past share for a given `subject`.
-     * WARNING: If staking from a contract, said contract must implement ERC165 for IRewardReceiver or
-     * releaseReward will revert
+     * If staking from a contract, said contract may optionally implement ERC165 for IRewardReceiver
      * Emits a Release event.
      */
     function releaseReward(address subject, address account) public returns (uint256) {
@@ -333,11 +331,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
         emit Released(subject, account, value);
 
-        if (Address.isContract(account)) {
-            require(
-                account.supportsInterface(type(IRewardReceiver).interfaceId),
-                "FortaStaking: Unsupported IRewardReceiver"
-            );
+        if (Address.isContract(account) && account.supportsInterface(type(IRewardReceiver).interfaceId)) {
             IRewardReceiver(account).onRewardReceived(subject, value);
         }
 
