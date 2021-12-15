@@ -30,6 +30,7 @@ contract VestingWalletV2 is VestingWallet {
     uint256           public           historicalBalanceMinimum;
 
     event TokensBridged(address indexed l2Escrow, address indexed l2Manager, uint256 amount);
+    event HistoricalBalanceMinimumChanged(uint256 newValue, uint256 oldValue);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
@@ -117,13 +118,14 @@ contract VestingWalletV2 is VestingWallet {
         public
         onlyOwner()
     {
+        emit HistoricalBalanceMinimumChanged(value, historicalBalanceMinimum);
         historicalBalanceMinimum = value;
     }
 
     function updateHistoricalBalanceBridged(int256 update)
         public
         onlyOwner()
-    {
-        historicalBalanceMinimum = (historicalBalanceMinimum.toInt256() + update).toUint256();
+    {   
+        setHistoricalBalanceBridged((historicalBalanceMinimum.toInt256() + update).toUint256());
     }
 }
