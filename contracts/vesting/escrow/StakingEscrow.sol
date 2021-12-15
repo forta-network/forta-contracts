@@ -145,7 +145,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * Hook for reward accounting
      */
     function onRewardReceived(address, uint256 amount) public {
-        require(msg.sender == address(l2staking));
+        require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
 
         pendingReward += amount;
     }
@@ -154,12 +154,12 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * This account is going to hold staking shares
      */
     function onERC1155Received(address, address, uint256, uint256, bytes calldata) external view returns (bytes4) {
-        require(msg.sender == address(l2staking));
+        require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
         return this.onERC1155Received.selector;
     }
 
     function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata) external view returns (bytes4) {
-        require(msg.sender == address(l2staking));
+        require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
         return this.onERC1155BatchReceived.selector;
     }
 }
