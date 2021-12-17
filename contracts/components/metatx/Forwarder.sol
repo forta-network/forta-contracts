@@ -26,7 +26,7 @@ abstract contract EIP712WithNonce is EIP712 {
         uint256 nonce    = uint128(fullNonce);
         uint256 expected = _nonces[user][timeline]++;
 
-        require(nonce == expected, "invalid-nonce");
+        require(nonce == expected, "EIP712WithNonce: invalid-nonce");
 
         emit NonceUsed(user, timeline, nonce);
     }

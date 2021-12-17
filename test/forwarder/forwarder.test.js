@@ -124,7 +124,7 @@ describe('Forwarder', function () {
       const signature = await this.accounts.admin._signTypedData(domain, types, forwardRequest)
 
       await expect(this.contracts.forwarder.connect(this.accounts.other).execute(forwardRequest, signature))
-      .to.be.revertedWith('invalid-nonce');
+      .to.be.revertedWith('EIP712WithNonce: invalid-nonce');
     });
 
     it('replay protection', async function () {
@@ -135,7 +135,7 @@ describe('Forwarder', function () {
       .to.be.not.reverted;
 
       await expect(this.contracts.forwarder.connect(this.accounts.other).execute(forwardRequest, signature))
-      .to.be.revertedWith('invalid-nonce');
+      .to.be.revertedWith('EIP712WithNonce: invalid-nonce');
     });
 
     it('nonce is updated', async function () {
