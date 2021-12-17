@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 abstract contract EIP712WithNonce is EIP712 {
+    event NonceUsed(address indexed user, uint256 indexed timeline, uint256 nonce);
+
     mapping(address => mapping(uint256 => uint256)) private _nonces;
 
     function DOMAIN_SEPARATOR() external view returns (bytes32) {
@@ -19,8 +21,14 @@ abstract contract EIP712WithNonce is EIP712 {
         return _nonces[from][timeline];
     }
 
-    function _verifyAndConsumeNonce(address owner, uint256 idx) internal virtual {
-        require(idx % (1 << 128) == _nonces[owner][idx >> 128]++, "invalid-nonce");
+    function _verifyAndConsumeNonce(address user, uint256 fullNonce) internal virtual {
+        uint256 timeline = fullNonce >> 128;
+        uint256 nonce    = uint128(fullNonce);
+        uint256 expected = _nonces[user][timeline]++;
+
+        require(nonce == expected, "invalid-nonce");
+
+        emit NonceUsed(user, timeline, nonce);
     }
 }
 
