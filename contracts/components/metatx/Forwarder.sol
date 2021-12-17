@@ -50,6 +50,18 @@ contract Forwarder is EIP712WithNonce {
 
     constructor() EIP712("Forwarder", "1") {}
 
+    /**
+     * Executes a ForwardRequest (meta-tx) if signature is verified, deadline is met and nonce is valid
+     * NOTE: This implementations allows for out of order execution, by allowing several "timelines" per nonce
+     * by splitting the uint256 type space into 128 bit subspaces where each subspace is interpreted as maintaining
+     * an ordered timeline. The intent of the design is to allow multiple nonces to be valid at any given time.
+     * For a detailed explanation: https://github.com/amxx/permit#out-of-order-execution
+     * For an example on how to leverage this functionality, see tests/forwarder/forwarder.test.js
+     * Will emit NonceUsed(user, timeline, nonce) for better reporting / UX 
+     * @param req  ForwardRequest to be executed
+     * @param signature EIP-712 signature of the ForwardRequest
+     * @return (success, returnData) of the executed request 
+     */
     function execute(ForwardRequest calldata req, bytes calldata signature)
         public
         payable
