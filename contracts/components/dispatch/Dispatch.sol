@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import "../BaseComponent.sol";
+import "../BaseComponentUpgradeable.sol";
 import "../agents/AgentRegistry.sol";
 import "../scanners/ScannerRegistry.sol";
 
-contract Dispatch is BaseComponent {
+contract Dispatch is BaseComponentUpgradeable {
     using EnumerableSet for EnumerableSet.UintSet;
 
     AgentRegistry   private _agents;

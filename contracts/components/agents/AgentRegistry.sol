@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../BaseComponent.sol";
+import "../BaseComponentUpgradeable.sol";
 
 import "./AgentRegistryCore.sol";
 import "./AgentRegistryEnable.sol";
@@ -9,7 +9,7 @@ import "./AgentRegistryEnumerable.sol";
 import "./AgentRegistryMetadata.sol";
 
 contract AgentRegistry is
-    BaseComponent,
+    BaseComponentUpgradeable,
     AgentRegistryCore,
     AgentRegistryEnable,
     AgentRegistryMetadata,
@@ -38,11 +38,11 @@ contract AgentRegistry is
         super._agentUpdate(agentId, newMetadata, newChainIds);
     }
 
-    function _msgSender() internal view virtual override(BaseComponent, AgentRegistryCore) returns (address sender) {
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(BaseComponent, AgentRegistryCore) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore) returns (bytes calldata) {
         return super._msgData();
     }
 

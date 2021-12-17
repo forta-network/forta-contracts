@@ -10,7 +10,7 @@ import "../utils/ForwardedContext.sol";
 import "../../tools/ENSReverseRegistration.sol";
 import "./IRouter.sol";
 
-// This should be BaseComponent, because BaseComponent is Routed
+// This should be BaseComponentUpgradeable, because BaseComponentUpgradeable is Routed
 contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgradeable, Multicall {
     using EnumerableSet for EnumerableSet.AddressSet;
 
