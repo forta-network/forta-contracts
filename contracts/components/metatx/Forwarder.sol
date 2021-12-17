@@ -12,13 +12,18 @@ abstract contract EIP712WithNonce is EIP712 {
     }
 
     function getNonce(address from) public view virtual returns (uint256) {
-        return uint256(_nonces[from][0]);
+        return _nonces[from][0];
     }
 
     function getNonce(address from, uint256 timeline) public view virtual returns (uint256) {
         return _nonces[from][timeline];
     }
-
+    // left taking the number isolating leftmost 128 bit of index, The counter
+    // uint128(idx) 
+    // right part, reading the nonce mapping for owner and idx shifted righ, taking leftmost and putting it there  
+    // divifin by 2^128
+    // index is a full nonce concat of timeline specific amount and timeline id
+    // usecase relay 3 metatx to forta
     function _verifyAndConsumeNonce(address owner, uint256 idx) internal virtual {
         require(idx % (1 << 128) == _nonces[owner][idx >> 128]++, "invalid-nonce");
     }
