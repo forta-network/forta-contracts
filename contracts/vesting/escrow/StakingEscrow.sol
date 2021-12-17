@@ -102,7 +102,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
     }
 
     /**
-     * Release reward to any account chossen by the beneficiary. Rewards shouldn't be bridged back to prevent them
+     * Release reward to any account chosen by the beneficiary. Rewards shouldn't be bridged back to prevent them
      * from being subject to vesting.
      *
      * In addition to releasing rewards, this function can also be used to release any other tokens that would be
@@ -110,7 +110,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      */
     function release(address releaseToken, address receiver, uint256 amount) public onlyManager() {
         if (address(l2token) == releaseToken) {
-            pendingReward -= amount; // reverts is overflow;
+            pendingReward -= amount; // reverts on overflow;
         }
 
         SafeERC20.safeTransfer(
