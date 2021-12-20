@@ -197,21 +197,33 @@ async function migrate(config = {}) {
 
     DEBUG(`[9] alerts: ${contracts.alerts.address}`);
 
+    contracts.scannerNodeVersion= await ethers.getContractFactory('ScannerNodeVersion', deployer).then(factory => utils.tryFetchProxy(
+        CACHE,
+        'acannerNodeVersion',
+        factory,
+        'uups',
+        [ contracts.access.address, contracts.router.address ],
+        { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
+    ));
+
+    DEBUG(`[10] scanner node version: ${contracts.scannerNodeVersion.address}`);
+
     // Roles dictionnary
     const roles = await Promise.all(Object.entries({
-        DEFAULT_ADMIN: ethers.constants.HashZero,
-        ADMIN:         ethers.utils.id('ADMIN_ROLE'),
-        MINTER:        ethers.utils.id('MINTER_ROLE'),
-        WHITELISTER:   ethers.utils.id('WHITELISTER_ROLE'),
-        WHITELIST:     ethers.utils.id('WHITELIST_ROLE'),
-        ROUTER_ADMIN:  ethers.utils.id('ROUTER_ADMIN_ROLE'),
-        ENS_MANAGER:   ethers.utils.id('ENS_MANAGER_ROLE'),
-        UPGRADER:      ethers.utils.id('UPGRADER_ROLE'),
-        AGENT_ADMIN:   ethers.utils.id('AGENT_ADMIN_ROLE'),
-        SCANNER_ADMIN: ethers.utils.id('SCANNER_ADMIN_ROLE'),
-        DISPATCHER:    ethers.utils.id('DISPATCHER_ROLE'),
-        SLASHER:       ethers.utils.id('SLASHER_ROLE'),
-        SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
+        DEFAULT_ADMIN:        ethers.constants.HashZero,
+        ADMIN:                ethers.utils.id('ADMIN_ROLE'),
+        MINTER:               ethers.utils.id('MINTER_ROLE'),
+        WHITELISTER:          ethers.utils.id('WHITELISTER_ROLE'),
+        WHITELIST:            ethers.utils.id('WHITELIST_ROLE'),
+        ROUTER_ADMIN:         ethers.utils.id('ROUTER_ADMIN_ROLE'),
+        ENS_MANAGER:          ethers.utils.id('ENS_MANAGER_ROLE'),
+        UPGRADER:             ethers.utils.id('UPGRADER_ROLE'),
+        AGENT_ADMIN:          ethers.utils.id('AGENT_ADMIN_ROLE'),
+        SCANNER_ADMIN:        ethers.utils.id('SCANNER_ADMIN_ROLE'),
+        DISPATCHER:           ethers.utils.id('DISPATCHER_ROLE'),
+        SLASHER:              ethers.utils.id('SLASHER_ROLE'),
+        SWEEPER:              ethers.utils.id('SWEEPER_ROLE'),
+        SCANNER_VERSION:      ethers.utils.id('SCANNER_VERSION_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
     DEBUG('[10] roles fetched')
@@ -268,6 +280,7 @@ async function migrate(config = {}) {
             registerNode(            'staking.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.staking.address   }),
             registerNode(  'agents.registries.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.agents.address    }),
             registerNode('scanners.registries.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.scanners.address  }),
+            registerNode('scanner-node-version.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.scannerNodeVersion.address  }),
             config.l2enable && registerNode('escrow.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.escrowFactory.address }),
         ]);
 
@@ -283,6 +296,7 @@ async function migrate(config = {}) {
         reverseRegister(contracts.staking,              'staking.forta.eth'),
         reverseRegister(contracts.agents,     'agents.registries.forta.eth'),
         reverseRegister(contracts.scanners, 'scanners.registries.forta.eth'),
+        reverseRegister(contracts.scannerNodeVersion, 'scanner-node-version.forta.eth'),
         // contract.escrow doesn't support reverse registration (not a component)
     ]);
 
