@@ -197,9 +197,9 @@ async function migrate(config = {}) {
 
     DEBUG(`[9] alerts: ${contracts.alerts.address}`);
 
-    contracts.scannerNodeVersion= await ethers.getContractFactory('ScannerNodeVersion', deployer).then(factory => utils.tryFetchProxy(
+    contracts.scannerNodeVersion = await ethers.getContractFactory('ScannerNodeVersion', deployer).then(factory => utils.tryFetchProxy(
         CACHE,
-        'acannerNodeVersion',
+        'scannerNodeVersion',
         factory,
         'uups',
         [ contracts.access.address, contracts.router.address ],
