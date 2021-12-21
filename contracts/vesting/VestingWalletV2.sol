@@ -125,7 +125,7 @@ contract VestingWalletV2 is VestingWallet {
     function updateHistoricalBalanceBridged(int256 update)
         public
         onlyOwner()
-    {   
+    {
         setHistoricalBalanceBridged((historicalBalanceMinimum.toInt256() + update).toUint256());
     }
 }
