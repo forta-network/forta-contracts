@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import "../BaseComponent.sol";
 
 /**
- * Contract that will trigger software autoupdate of the Scanner Node software
- * Governance, through SCANNER_VERSION_ROLE, will propose and approve updates and
- * the nodes will listen to the event
+ * Contract that will trigger software autoupdate of the Scanner Node software.
+ * Forta Governance, through SCANNER_VERSION_ROLE, will propose and approve updates and
+ * the nodes will listen to the resulting event, downloading the new version from IPFS
  */
 contract ScannerNodeVersion is BaseComponent {
 
