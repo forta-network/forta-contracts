@@ -112,9 +112,6 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * sent to this escrow by mistake.
      */
     function release(address releaseToken, address receiver, uint256 amount) public onlyManager() {
-        require(releaseToken != address(0), "StakingEscrow: releaseToken cannot be address 0");
-        require(receiver != address(0), "StakingEscrow: receiver cannot be address 0");
-        require(amount > 0, "StakingEscrow: amount must be > 0");
         if (address(l2token) == releaseToken) {
             pendingReward -= amount; // reverts is overflow;
         }

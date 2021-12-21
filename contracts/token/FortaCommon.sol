@@ -29,7 +29,6 @@ contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpg
 
     // Allow whitelister to assign other whitelisters
     function grantWhitelister(address to) public onlyRole(WHITELISTER_ROLE) {
-        require(to != address(0), "FortaCommon: to cannot be address 0");
         this.grantRole(WHITELISTER_ROLE, to);
     }
 

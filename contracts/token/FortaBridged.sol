@@ -52,7 +52,6 @@ contract FortaBridged is FortaCommon {
      * usable until the receiver goes through the whitelisting process.
      */
     function deposit(address user, bytes calldata depositData) external flashRole(WHITELIST_ROLE, user) {
-        require(user != address(0), "FortaBridged: user can't be address 0");
         require(msg.sender == childChainManagerProxy, "FortaBridged: only childChainManagerProxy can deposit");
 
         uint256 amount = abi.decode(depositData, (uint256));
@@ -71,7 +70,6 @@ contract FortaBridged is FortaCommon {
      * In order to do so, the receiver address must be temporarily granted WHITELIST_ROLE.
      */
     function withdrawTo(uint256 amount, address receiver) external flashRole(WHITELIST_ROLE, receiver) {
-        require(receiver != address(0), "FortaBridged: receiver cannot be address 0");
         _transfer(msg.sender, receiver, amount);
         _burn(receiver, amount);
     }
