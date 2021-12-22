@@ -1,4 +1,4 @@
-const { ethers, upgrades } = require('hardhat');
+const { ethers, upgrades, network } = require('hardhat');
 const DEBUG                = require('debug')('forta:migration');
 const utils                = require('./utils');
 
@@ -9,16 +9,15 @@ const registerNode = async (name, owner, opts = {}) => {
     const registry      = opts.registry //?? contracts.ens.registry;
     const resolver      = opts.resolver //?? contracts.ens.resolver;
     const signer        = opts.signer   ?? registry.signer ?? resolver.signer;
+    
     const signerAddress = await signer.getAddress();
-
     const [ label, ...self ]  = name.split('.');
     const parent = self.join('.');
-
     const parentOwner = await registry.owner(ethers.utils.namehash(parent));
     if (parentOwner != signerAddress) {
+        DEBUG('Unauthorized signer')
         throw new Error('Unauthorized signer');
     }
-
     const currentOwner = await registry.owner(ethers.utils.namehash(name));
     if (currentOwner == ethers.constants.AddressZero) {
         await registry.connect(signer).setSubnodeRecord(
@@ -27,23 +26,27 @@ const registerNode = async (name, owner, opts = {}) => {
             resolved ? signerAddress : owner,
             resolver.address,
             0
-        ).then(tx => tx.wait());
+        ).then(tx => tx.wait())
+        .catch(e => DEBUG(e))
     }
-
     if (resolved) {
         const currentResolved = await signer.provider.resolveName(name);
+        DEBUG(resolved, currentResolved)
+
         if (resolved != currentResolved) {
             await resolver.connect(signer)['setAddr(bytes32,address)'](
                 ethers.utils.namehash(name),
                 resolved,
-            ).then(tx => tx.wait());
+            ).then(tx => tx.wait())
+            .catch(e => DEBUG(e))
         }
 
         if (signerAddress != owner) {
             await registry.connect(signer).setOwner(
                 ethers.utils.namehash(name),
                 owner,
-            ).then(tx => tx.wait());
+            ).then(tx => tx.wait())
+            .catch(e => DEBUG(e))
         }
     }
 }
@@ -54,7 +57,8 @@ const reverseRegister = async (contract, name) => {
         await contract.setName(
             contract.provider.network.ensAddress,
             name,
-        ).then(tx => tx.wait());
+        ).then(tx => tx.wait())
+        .catch(e => DEBUG(e))
     }
 }
 
@@ -230,7 +234,7 @@ async function migrate(config = {}) {
 
     await contracts.access.hasRole(roles.ENS_MANAGER, deployer.address)
         .then(result => result || contracts.access.grantRole(roles.ENS_MANAGER, deployer.address).then(tx => tx.wait()));
-
+    console.log(provider.network.ensAddress)
     if (!provider.network.ensAddress) {
         contracts.ens = {};
 
@@ -285,6 +289,17 @@ async function migrate(config = {}) {
         ]);
 
         DEBUG('[11.4] ens configuration')
+    } else {
+        contracts.ens = {};
+        contracts.ens.registry = await utils.attach(
+          'ENSRegistry',
+          await CACHE.get('ens-registry')
+        );
+        
+        contracts.ens.resolver = await utils.attach(
+          'PublicResolver',
+          await CACHE.get('ens-resolver')
+        );
     }
 
     await Promise.all([
