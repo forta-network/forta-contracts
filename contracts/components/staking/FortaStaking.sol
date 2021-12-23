@@ -392,14 +392,14 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         for (uint256 i = 0; i < ids.length; ++i) {
             if (ids[i] >> 160 == 0) {
                 // active shares (ids[i] is the address of the subject)
-                uint256 subject = ids[i];
-
+                uint256 sharesId = ids[i];
+                uint256 subject = 
                 // Mint, burn, or transfer of subject shares would by default affect the distribution of the
                 // currently available reward for the subject. We create a "virtual release" that should preserve
                 // reward distribution as it was prior to the transfer.
                 int256 virtualRelease = SafeCast.toInt256(
                     _historicalRewardFraction(
-                        subjectTypeOfShares(ids[i])
+                        subjectTypeOfShares(sharesId)
                         ids[i],
                         amounts[i]
                     )
