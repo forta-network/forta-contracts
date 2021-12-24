@@ -31,29 +31,29 @@ library Distributions {
     }
 
     struct SignedBalances {
-        mapping(uint256 => int256) _balances;
+        mapping(address => int256) _balances;
         int256 _totalSupply;
     }
 
-    function balanceOf(SignedBalances storage self, uint256 subjectId) internal view returns (int256) {
-        return self._balances[subjectId];
+    function balanceOf(SignedBalances storage self, address account) internal view returns (int256) {
+        return self._balances[account];
     }
 
     function totalSupply(SignedBalances storage self) internal view returns (int256) {
         return self._totalSupply;
     }
 
-    function mint(SignedBalances storage self, uint256 subjectId, int256 amount) internal {
-        self._balances[subjectId] += amount;
+    function mint(SignedBalances storage self, address account, int256 amount) internal {
+        self._balances[account] += amount;
         self._totalSupply += amount;
     }
 
-    function burn(SignedBalances storage self, uint256 subjectId, int256 amount) internal {
-        self._balances[subjectId] -= amount;
+    function burn(SignedBalances storage self, address account, int256 amount) internal {
+        self._balances[account] -= amount;
         self._totalSupply -= amount;
     }
 
-    function transfer(SignedBalances storage self, uint256 from, uint256 to, int256 amount) internal {
+    function transfer(SignedBalances storage self, address from, address to, int256 amount) internal {
         self._balances[from] -= amount;
         self._balances[to] += amount;
     }
