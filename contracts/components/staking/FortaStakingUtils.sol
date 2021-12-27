@@ -33,11 +33,11 @@ library FortaStakingUtils {
     }
 
 
-    function isActive(uint256 sharesId) external pure returns(bool) {
+    function isActive(uint256 sharesId) internal pure returns(bool) {
         return sharesId & (1 << 8) == 256;
     }
 
-    function subjectTypeOfShares(uint256 sharesId) external pure returns(uint8) {
+    function subjectTypeOfShares(uint256 sharesId) internal pure returns(uint8) {
         return uint8(sharesId);
     }
 }
