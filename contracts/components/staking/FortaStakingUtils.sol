@@ -22,14 +22,14 @@ library FortaStakingUtils {
      * Unsets bit 9 of an activeSharesId to mark as inactive
      */
     function activeToInactive(uint256 activeSharesId) internal pure returns (uint256) {
-        return activeSharesId & (~uint256(1 << 9));
+        return activeSharesId & (~uint256(1 << 8));
     }
 
     /**
      * Sets bit 9 of an inactiveSharesId to mark as inactive
      */
     function inactiveToActive(uint256 inactiveSharesId) internal pure returns (uint256) {
-        return inactiveSharesId | (1 << 9);
+        return inactiveSharesId | (1 << 8);
     }
 
 

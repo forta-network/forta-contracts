@@ -81,7 +81,11 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * Overload: initiate withdrawal of the full stake amount
      */
     function initiateFullWithdrawal(uint8 subjectType, uint256 subject) public returns (uint64) {
-        return initiateWithdrawal(subjectType, subject, l2staking.balanceOf(address(this), uint256(uint160(subject))));
+        return initiateWithdrawal(
+            subjectType,
+            subject,
+            l2staking.sharesOf(subjectType, subject, address(this))
+        );
     }
 
     /**
