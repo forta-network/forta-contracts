@@ -44,16 +44,20 @@ library Distributions {
     }
 
     function mint(SignedBalances storage self, address account, int256 amount) internal {
+        require(account != address(0), "mint from the zero address");
         self._balances[account] += amount;
         self._totalSupply += amount;
     }
 
     function burn(SignedBalances storage self, address account, int256 amount) internal {
+        require(account != address(0), "burn from the zero address");
         self._balances[account] -= amount;
         self._totalSupply -= amount;
     }
 
     function transfer(SignedBalances storage self, address from, address to, int256 amount) internal {
+        require(from != address(0), "transfer from the zero address");
+        require(to != address(0), "transfer to the zero address");
         self._balances[from] -= amount;
         self._balances[to] += amount;
     }

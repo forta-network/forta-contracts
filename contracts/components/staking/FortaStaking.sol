@@ -172,7 +172,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      * NOTE: This is equivalent to getting the ERC1155 balanceOf for keccak256(abi.encodePacked(subjectType, subject)),
      * shifted 9 bits, with the 9th bit unset and uint8(subjectType) masked in
      */
-    function inactiveSharesOf(uint8 subjectType, uint256 subject, address account) public view returns (uint256) {
+    function inactiveSharesOf(uint8 subjectType, uint256 subject, address account) external view returns (uint256) {
         return balanceOf(account, FortaStakingUtils.subjectToInactive(subjectType, subject));
     }
 
@@ -182,7 +182,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      * NOTE: This is equivalent to getting the ERC1155 totalSupply for keccak256(abi.encodePacked(subjectType, subject)),
      * shifted 9 bits, with the 9th bit unset and uint8(subjectType) masked in
      */
-    function totalInactiveShares(uint8 subjectType, uint256 subject) public view returns (uint256) {
+    function totalInactiveShares(uint8 subjectType, uint256 subject) external view returns (uint256) {
         return totalSupply(FortaStakingUtils.subjectToInactive(subjectType, subject));
     }
 
