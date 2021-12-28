@@ -34,7 +34,7 @@ describe('Forta Staking', function () {
 
   describe('Deposit / Withdraw', function () {
     describe('no delay', function () {
-      it('happy path', async function () {
+      it('happy path 1 subject', async function () {
         expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.be.equal('0');
         expect(await this.staking.totalActiveStake()).to.be.equal('0');
         expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user1.address)).to.be.equal('0');
@@ -107,9 +107,121 @@ describe('Forta Staking', function () {
         await expect(this.staking.connect(this.accounts.user2).withdraw(subjectType1, subject1)).to.be.reverted;
       });
 
+      it('happy path 2 subjects', async function () {
+        expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.be.equal('0');
+        expect(await this.staking.activeStakeFor(subjectType2, subject2)).to.be.equal('0');
+        expect(await this.staking.totalActiveStake()).to.be.equal('0');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user1.address)).to.be.equal('0');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('0');
+        expect(await this.staking.sharesOf(subjectType2, subject2, this.accounts.user3.address)).to.be.equal('0');
+        expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('0');
+        expect(await this.staking.totalShares(subjectType2, subject2)).to.be.equal('0');
+
+        await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100'))
+        .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.staking.address, '100')
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, active1, '100')
+        .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType1, subject1, this.accounts.user1.address, '100');
+        
+        expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.be.equal('100');
+        expect(await this.staking.totalActiveStake()).to.be.equal('100');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user1.address)).to.be.equal('100');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('0');
+        expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('100');
+
+        await expect(this.staking.connect(this.accounts.user2).deposit(subjectType1, subject1, '100'))
+        .to.emit(this.token, 'Transfer').withArgs(this.accounts.user2.address, this.staking.address, '100')
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user2.address, ethers.constants.AddressZero, this.accounts.user2.address, active1, '100')
+        .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType1, subject1, this.accounts.user2.address, '100');
+
+        expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.be.equal('200');
+        expect(await this.staking.totalActiveStake()).to.be.equal('200');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user1.address)).to.be.equal('100');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('100');
+        expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('200');
+
+        await expect(this.staking.connect(this.accounts.user3).deposit(subjectType2, subject2, '100'))
+        .to.emit(this.token, 'Transfer').withArgs(this.accounts.user3.address, this.staking.address, '100')
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user3.address, ethers.constants.AddressZero, this.accounts.user3.address, active2, '100')
+        .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType2, subject2, this.accounts.user3.address, '100');
+
+        expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.be.equal('200');
+        expect(await this.staking.totalActiveStake()).to.be.equal('300');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user1.address)).to.be.equal('100');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('100');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user3.address)).to.be.equal('0');
+        expect(await this.staking.sharesOf(subjectType2, subject2, this.accounts.user3.address)).to.be.equal('100');
+        expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('200');
+        expect(await this.staking.totalShares(subjectType2, subject2)).to.be.equal('100');
+
+        await expect(this.staking.connect(this.accounts.user1).withdraw(subjectType1, subject1)).to.be.reverted;
+        await expect(this.staking.connect(this.accounts.user2).withdraw(subjectType1, subject1)).to.be.reverted;
+        await expect(this.staking.connect(this.accounts.user3).withdraw(subjectType2, subject2)).to.be.reverted;
+
+        const tx1 = await this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '50');
+        await expect(tx1)
+        .to.emit(this.staking, 'WithdrawalInitiated').withArgs(subjectType1, subject1, this.accounts.user1.address, await txTimestamp(tx1))
+        .to.emit(this.staking, 'TransferSingle')/*.withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, subject1, '50')*/
+        .to.emit(this.staking, 'TransferSingle')/*.withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, inactive1, '50')*/
+
+        await expect(this.staking.connect(this.accounts.user1).withdraw(subjectType1, subject1))
+        .to.emit(this.token, 'Transfer').withArgs(this.staking.address, this.accounts.user1.address, '50')
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, inactive1, '50')
+        .to.emit(this.staking, 'WithdrawalExecuted').withArgs(subjectType1, subject1, this.accounts.user1.address);
+
+        expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.be.equal('150');
+        expect(await this.staking.totalActiveStake()).to.be.equal('250');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user1.address)).to.be.equal('50');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('100');
+        expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('150');
+
+        await expect(this.staking.connect(this.accounts.user1).withdraw(subject1)).to.be.reverted;
+        await expect(this.staking.connect(this.accounts.user2).withdraw(subject1)).to.be.reverted;
+
+        const tx2 = await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjectType1, subject1, '100');
+        await expect(tx2)
+        .to.emit(this.staking, 'WithdrawalInitiated').withArgs(subjectType1, subject1, this.accounts.user2.address, await txTimestamp(tx2))
+        .to.emit(this.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, subject1, '100')*/
+        .to.emit(this.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, ethers.constants.AddressZero, this.accounts.user2.address, inactive1, '100')*/
+
+        await expect(this.staking.connect(this.accounts.user2).withdraw(subjectType1, subject1))
+        .to.emit(this.token, 'Transfer').withArgs(this.staking.address, this.accounts.user2.address, '100')
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, inactive1, '100')
+        .to.emit(this.staking, 'WithdrawalExecuted').withArgs(subjectType1, subject1, this.accounts.user2.address);
+
+        const tx3 = await this.staking.connect(this.accounts.user3).initiateWithdrawal(subjectType2, subject2, '100');
+        await expect(tx3)
+        .to.emit(this.staking, 'WithdrawalInitiated').withArgs(subjectType2, subject2, this.accounts.user3.address, await txTimestamp(tx2))
+        .to.emit(this.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, subject1, '100')*/
+        .to.emit(this.staking, 'TransferSingle')/*.withArgs(this.accounts.user2.address, ethers.constants.AddressZero, this.accounts.user2.address, inactive1, '100')*/
+
+        await expect(this.staking.connect(this.accounts.user3).withdraw(subjectType2, subject2))
+        .to.emit(this.token, 'Transfer').withArgs(this.staking.address, this.accounts.user3.address, '100')
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user3.address, this.accounts.user3.address, ethers.constants.AddressZero, inactive2, '100')
+        .to.emit(this.staking, 'WithdrawalExecuted').withArgs(subjectType2, subject2, this.accounts.user3.address);
+
+        expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.be.equal('50');
+        expect(await this.staking.totalActiveStake()).to.be.equal('50');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user1.address)).to.be.equal('50');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('0');
+        expect(await this.staking.sharesOf(subjectType2, subject2, this.accounts.user3.address)).to.be.equal('0');
+
+        expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('50');
+        expect(await this.staking.totalShares(subjectType2, subject2)).to.be.equal('0');
+
+        await expect(this.staking.connect(this.accounts.user1).withdraw(subjectType1, subject1)).to.be.reverted;
+        await expect(this.staking.connect(this.accounts.user2).withdraw(subjectType1, subject1)).to.be.reverted;
+        await expect(this.staking.connect(this.accounts.user3).withdraw(subjectType2, subject2)).to.be.reverted;
+
+      });
+
       it('subject 0', async function () {
         await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, 0, '100'))
         .to.be.revertedWith('FortaStaking: subject cannot be 0');
+      });
+
+      it('invalid subjectType', async function () {
+        await expect(this.staking.connect(this.accounts.user1).deposit(9, subject1, '100'))
+        .to.be.revertedWith('FortaStaking: invalid subjectType');
       });
     });
 

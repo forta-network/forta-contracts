@@ -14,8 +14,6 @@ import "../BaseComponent.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
 
-import "hardhat/console.sol";
-
 interface IRewardReceiver {
     function onRewardReceived(uint8 subjectType, uint256 subject, uint256 amount) external;
 }
@@ -215,7 +213,6 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
         _activeStake.mint(activeSharesId, stakeValue);
         _mint(staker, activeSharesId, sharesValue, new bytes(0));
-
         emit StakeDeposited(subjectType, subject, staker, stakeValue);
         _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
         return sharesValue;
