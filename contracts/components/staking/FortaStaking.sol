@@ -9,12 +9,13 @@ import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 
 import "./FortaStakingUtils.sol";
+import "./FortaStakingSubjectTypes.sol";
 import "../BaseComponent.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
 
 interface IRewardReceiver {
-    function onRewardReceived(address subject, uint256 amount) external;
+    function onRewardReceived(uint8 subjectType, uint256 subject, uint256 amount) external;
 }
 
 /**
@@ -48,20 +49,20 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
     // subject => active stake
     Distributions.Balances private _activeStake;
-
     // subject => inactive stake
     Distributions.Balances private _inactiveStake;
+    
 
     // subject => staker => inactive stake timer
-    mapping(address => mapping(address => Timers.Timestamp)) private _lockingDelay;
+    mapping(uint256 => mapping(address => Timers.Timestamp)) private _lockingDelay;
 
     // subject => reward
     Distributions.Balances private _rewards;
     // subject => staker => released reward
-    mapping(address => Distributions.SignedBalances) private _released;
+    mapping(uint256 => Distributions.SignedBalances) private _released;
 
     // frozen tokens
-    mapping(address => bool) private _frozen;
+    mapping(uint256 => bool) private _frozen;
 
     // withdrawal delay
     uint64 private _withdrawalDelay;
@@ -69,14 +70,32 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     // treasury for slashing
     address private _treasury;
 
-    event WithdrawalInitiated(address indexed subject, address indexed account, uint64 deadline);
-    event WithdrawalExecuted(address indexed subject, address indexed account);
-    event Froze(address indexed subject, address indexed by, bool isFrozen);
-    event Slashed(address indexed subject, address indexed by, uint256 value);
-    event Rewarded(address indexed subject, address indexed from, uint256 value);
-    event Released(address indexed subject, address indexed to, uint256 value);
+    event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
+    event WithdrawalInitiated(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint64 deadline);
+    event WithdrawalExecuted(uint8 indexed subjectType, uint256 indexed subject, address indexed account);
+    event Froze(uint8 indexed subjectType, uint256 indexed subject, address indexed by, bool isFrozen);
+    event Slashed(uint8 indexed subjectType, uint256 indexed subject, address indexed by, uint256 value);
+    event Rewarded(uint8 indexed subjectType, uint256 indexed subject, address indexed from, uint256 value);
+    event Released(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
+
+    modifier onlyValidSubjectType(uint8 subjectType) {
+        require(
+            subjectType == SCANNER_SUBJECT ||
+            subjectType == AGENT_SUBJECT,
+            "FortaStaking: invalid subjectType"
+        );
+        _;
+    }
+
+    modifier onlyValidSubject(uint256 subject) {
+        require(
+            subject > 0,
+            "FortaStaking: subject cannot be 0"
+        );
+        _;
+    }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -103,8 +122,8 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     /**
      * @dev Get stake of a subject
      */
-    function activeStakeFor(address subject) public view returns (uint256) {
-        return _activeStake.balanceOf(subject);
+    function activeStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
+        return _activeStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject));
     }
 
     /**
@@ -117,8 +136,8 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     /**
      * @dev Get stake inactive for withdrawal of a subject
      */
-    function inactiveStakeFor(address subject) public view returns (uint256) {
-        return _inactiveStake.balanceOf(subject);
+    function inactiveStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
+        return _inactiveStake.balanceOf(FortaStakingUtils.subjectToInactive(subjectType, subject));
     }
 
     /**
@@ -129,66 +148,73 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     }
 
     /**
-     * @dev Get shares of an account on a subject, corresponding to a fraction of the subject stake.
-     *
-     * NOTE: This is equivalent to getting the ERC1155 balance of `account` with `subject` casted to a uint256 tokenId.
+     * @dev Get (active) shares of an account on a subject, corresponding to a fraction of the subject stake.
+     * NOTE: This is equivalent to getting the ERC1155 balanceOf for keccak256(abi.encodePacked(subjectType, subject)),
+     * shifted 9 bits, with the 9th bit set and uint8(subjectType) masked in
      */
-    function sharesOf(address subject, address account) public view returns (uint256) {
-        return balanceOf(account, FortaStakingUtils.subjectToActive(subject));
+    function sharesOf(uint8 subjectType, uint256 subject, address account) public view returns (uint256) {
+        return balanceOf(account, FortaStakingUtils.subjectToActive(subjectType, subject));
     }
 
     /**
-     * @dev Get the total shares on a subject.
+     * @dev Get the total (active) shares on a subject.
      *
-     * NOTE: This is equivalent to getting the ERC1155 totalSupply for `subject` casted to a uint256 tokenId.
+     * NOTE: This is equivalent to getting the ERC1155 totalSupply for keccak256(abi.encodePacked(subjectType, subject)),
+     * shifted 9 bits, with the 9th bit set and uint8(subjectType) masked in
      */
-    function totalShares(address subject) public view returns (uint256) {
-        return totalSupply(FortaStakingUtils.subjectToActive(subject));
+    function totalShares(uint8 subjectType, uint256 subject) external view returns (uint256) {
+        return totalSupply(FortaStakingUtils.subjectToActive(subjectType, subject));
     }
 
     /**
      * @dev Get inactive shares of an account on a subject, corresponding to a fraction of the subject inactive stake.
      *
-     * NOTE: This is equivalent to getting the ERC1155 balance of `account` with `subject` casted to a uint256 tokenId
-     * plus a mask corresponding to 2 ** 160.
+     * NOTE: This is equivalent to getting the ERC1155 balanceOf for keccak256(abi.encodePacked(subjectType, subject)),
+     * shifted 9 bits, with the 9th bit unset and uint8(subjectType) masked in
      */
-    function inactiveSharesOf(address subject, address account) public view returns (uint256) {
-        return balanceOf(account, FortaStakingUtils.subjectToInactive(subject));
+    function inactiveSharesOf(uint8 subjectType, uint256 subject, address account) external view returns (uint256) {
+        return balanceOf(account, FortaStakingUtils.subjectToInactive(subjectType, subject));
     }
 
     /**
-     * @dev Get the total shares on a subject.
+     * @dev Get the total inactive shares on a subject.
      *
-     * NOTE: This is equivalent to getting the ERC1155 balance of `account` with `subject` casted to a uint256 tokenId
-     * plus a mask corresponding to 2 ** 160.
+     * NOTE: This is equivalent to getting the ERC1155 totalSupply for keccak256(abi.encodePacked(subjectType, subject)),
+     * shifted 9 bits, with the 9th bit unset and uint8(subjectType) masked in
      */
-    function totalInactiveShares(address subject) public view returns (uint256) {
-        return totalSupply(FortaStakingUtils.subjectToInactive(subject));
+    function totalInactiveShares(uint8 subjectType, uint256 subject) external view returns (uint256) {
+        return totalSupply(FortaStakingUtils.subjectToInactive(subjectType, subject));
     }
 
     /**
      * @dev Is a subject frozen (stake of frozen subject cannot be withdrawn).
      */
-    function isFrozen(address subject) public view returns (bool) {
-        return _frozen[subject];
+    function isFrozen(uint8 subjectType, uint256 subject) public view returns (bool) {
+        return _frozen[FortaStakingUtils.subjectToActive(subjectType, subject)];
     }
 
     /**
      * @dev Deposit `stakeValue` tokens for a given `subject`, and mint the corresponding shares.
-     *
-     * Emits a ERC1155.TransferSingle event.
+     * NOTE: Subject type is necessary because we can't infer subject ID uniqueness between scanners, agents, etc
+     * Emits a ERC1155.TransferSingle event and StakeDeposited (to allow accounting per subject type)
      */
-    function deposit(address subject, uint256 stakeValue) public returns (uint256) {
+    function deposit(uint8 subjectType, uint256 subject, uint256 stakeValue)
+        public
+        onlyValidSubjectType(subjectType)
+        onlyValidSubject(subject)
+        returns (uint256)
+    {
+        require(subject > 0, "FortaStaking: cannot stake on subject 0");
         address staker = _msgSender();
+        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
 
-        uint256 sharesValue = _stakeToActiveShares(subject, stakeValue);
-
+        uint256 sharesValue = _stakeToActiveShares(activeSharesId, stakeValue);
         SafeERC20.safeTransferFrom(stakedToken, staker, address(this), stakeValue);
-        _activeStake.mint(subject, stakeValue);
-        _mint(staker, FortaStakingUtils.subjectToActive(subject), sharesValue, new bytes(0));
 
-        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(address)", subject));
-
+        _activeStake.mint(activeSharesId, stakeValue);
+        _mint(staker, activeSharesId, sharesValue, new bytes(0));
+        emit StakeDeposited(subjectType, subject, staker, stakeValue);
+        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
         return sharesValue;
     }
 
@@ -197,25 +223,30 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      *
      * Emits a WithdrawalInitiated event.
      */
-    function initiateWithdrawal(address subject, uint256 sharesValue) public returns (uint64) {
+    function initiateWithdrawal(uint8 subjectType, uint256 subject, uint256 sharesValue)
+        public
+        onlyValidSubjectType(subjectType)
+        onlyValidSubject(subject) 
+        returns (uint64)
+    {
         address staker = _msgSender();
-
+        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         uint64 deadline = SafeCast.toUint64(block.timestamp) + _withdrawalDelay;
-        _lockingDelay[subject][staker].setDeadline(deadline);
 
-        uint256 activeShares   = Math.min(sharesValue, sharesOf(subject, staker));
-        uint256 stakeValue     = _activeSharesToStake(subject, activeShares);
-        uint256 inactiveShares = _stakeToInactiveShares(subject, stakeValue);
+        _lockingDelay[activeSharesId][staker].setDeadline(deadline);
 
-        _activeStake.burn(subject, stakeValue);
-        _inactiveStake.mint(subject, stakeValue);
-        _burn(staker, FortaStakingUtils.subjectToActive(subject), activeShares);
-        _mint(staker, FortaStakingUtils.subjectToInactive(subject), inactiveShares, new bytes(0));
+        uint256 activeShares   = Math.min(sharesValue, balanceOf(staker, activeSharesId));
+        uint256 stakeValue     = _activeSharesToStake(activeSharesId, activeShares);
+        uint256 inactiveShares = _stakeToInactiveShares(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
 
-        emit WithdrawalInitiated(subject, staker, deadline);
+        _activeStake.burn(activeSharesId, stakeValue);
+        _inactiveStake.mint(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
+        _burn(staker, activeSharesId, activeShares);
+        _mint(staker, FortaStakingUtils.activeToInactive(activeSharesId), inactiveShares, new bytes(0));
 
-        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(address)", subject));
+        emit WithdrawalInitiated(subjectType, subject, staker, deadline);
 
+        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
         return deadline;
     }
 
@@ -224,24 +255,29 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      *
      * Emits events WithdrawalExecuted and ERC1155.TransferSingle.
      */
-    function withdraw(address subject) public returns (uint256) {
+    function withdraw(uint8 subjectType, uint256 subject)
+        public
+        onlyValidSubjectType(subjectType)
+        onlyValidSubject(subject)
+        returns (uint256)
+    {
         address staker = _msgSender();
+        uint256 inactiveSharesId = FortaStakingUtils.subjectToInactive(subjectType, subject);
+        require(!_frozen[FortaStakingUtils.inactiveToActive(inactiveSharesId)], "Subject unstaking is currently frozen");
 
-        require(!isFrozen(subject), "Subject unstaking is currently frozen");
-
-        Timers.Timestamp storage timer = _lockingDelay[subject][staker];
+        Timers.Timestamp storage timer = _lockingDelay[FortaStakingUtils.inactiveToActive(inactiveSharesId)][staker];
         require(timer.isExpired(), 'Withdrawal is not ready');
         timer.reset();
-        emit WithdrawalExecuted(subject, staker);
+        emit WithdrawalExecuted(subjectType, subject, staker);
 
-        uint256 inactiveShares = inactiveSharesOf(subject, staker);
-        uint256 stakeValue     = _inactiveSharesToStake(subject, inactiveShares);
+        uint256 inactiveShares = balanceOf(staker, inactiveSharesId);
+        uint256 stakeValue     = _inactiveSharesToStake(inactiveSharesId, inactiveShares);
 
-        _inactiveStake.burn(subject, stakeValue);
-        _burn(staker, FortaStakingUtils.subjectToInactive(subject), inactiveShares);
+        _inactiveStake.burn(inactiveSharesId, stakeValue);
+        _burn(staker, inactiveSharesId, inactiveShares);
         SafeERC20.safeTransfer(stakedToken, staker, stakeValue);
 
-        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(address)", subject));
+        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
 
         return stakeValue;
     }
@@ -251,9 +287,16 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      *
      * Emits a Slashed event.
      */
-    function slash(address subject, uint256 stakeValue) public onlyRole(SLASHER_ROLE) returns (uint256) {
-        uint256 activeStake       = _activeStake.balanceOf(subject);
-        uint256 inactiveStake     = _inactiveStake.balanceOf(subject);
+    function slash(uint8 subjectType, uint256 subject, uint256 stakeValue)
+        public
+        onlyRole(SLASHER_ROLE)
+        onlyValidSubjectType(subjectType)
+        onlyValidSubject(subject)
+        returns (uint256)
+    {
+        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        uint256 activeStake       = _activeStake.balanceOf(activeSharesId);
+        uint256 inactiveStake     = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
 
         uint256 maxSlashableStake = FullMath.mulDiv(9, 10, activeStake + inactiveStake);
         require(stakeValue <= maxSlashableStake, "Stake to be slashed is over 90%");
@@ -262,13 +305,13 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         uint256 slashFromInactive = stakeValue - slashFromActive;
         stakeValue                = slashFromActive + slashFromInactive;
 
-        _activeStake.burn(subject, slashFromActive);
-        _inactiveStake.burn(subject, slashFromInactive);
+        _activeStake.burn(activeSharesId, slashFromActive);
+        _inactiveStake.burn(FortaStakingUtils.activeToInactive(activeSharesId), slashFromInactive);
         SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue);
 
-        emit Slashed(subject, _msgSender(), stakeValue);
+        emit Slashed(subjectType, subject, _msgSender(), stakeValue);
 
-        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(address)", subject));
+        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
 
         return stakeValue;
     }
@@ -278,22 +321,30 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      *
      * Emits a Freeze event.
      */
-    function freeze(address subject, bool frozen) public onlyRole(SLASHER_ROLE) {
-        _frozen[subject] = frozen;
-        emit Froze(subject, _msgSender(), frozen);
+    function freeze(uint8 subjectType, uint256 subject, bool frozen)
+        public
+        onlyRole(SLASHER_ROLE)
+        onlyValidSubjectType(subjectType)
+    {
+        _frozen[FortaStakingUtils.subjectToActive(subjectType, subject)] = frozen;
+        emit Froze(subjectType, subject, _msgSender(), frozen);
     }
 
     /**
-     * @dev Deposit reward value for a given `subject`. The corresponding tokens will be shared amongst the shareholders
-     * of this subject.
-     *
-     * Emits a Reward event.
-     */
-    function reward(address subject, uint256 value) public {
+    * @dev Deposit reward value for a given `subject`. The corresponding tokens will be shared amongst the shareholders
+    * of this subject.
+    *
+    * Emits a Reward event.
+    */
+    function reward(uint8 subjectType, uint256 subject, uint256 value)
+        public
+        onlyValidSubjectType(subjectType)
+        onlyValidSubject(subject)
+    {
         SafeERC20.safeTransferFrom(stakedToken, _msgSender(), address(this), value);
-        _rewards.mint(subject, value);
+        _rewards.mint(FortaStakingUtils.subjectToActive(subjectType, subject), value);
 
-        emit Rewarded(subject, _msgSender(), value);
+        emit Rewarded(subjectType, subject, _msgSender(), value);
     }
 
     /**
@@ -319,18 +370,23 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
      *
      * Emits a Release event.
      */
-    function releaseReward(address subject, address account) public returns (uint256) {
-        uint256 value = availableReward(subject, account);
-
-        _rewards.burn(subject, value);
-        _released[subject].mint(account, SafeCast.toInt256(value));
+    function releaseReward(uint8 subjectType, uint256 subject, address account)
+        public
+        onlyValidSubjectType(subjectType)
+        onlyValidSubject(subject)
+        returns (uint256)
+    {
+        uint256 value = availableReward(subjectType, subject, account);
+        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        _rewards.burn(activeSharesId, value);
+        _released[activeSharesId].mint(account, SafeCast.toInt256(value));
 
         SafeERC20.safeTransfer(stakedToken, account, value);
 
-        emit Released(subject, account, value);
+        emit Released(subjectType, subject, account, value);
 
         if (Address.isContract(account)) {
-            try IRewardReceiver(account).onRewardReceived(subject, value) {}
+            try IRewardReceiver(account).onRewardReceived(subjectType, subject, value) {}
             catch {}
         }
 
@@ -340,11 +396,12 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     /**
      * @dev Amount of reward tokens owed by given `account` for its current or past share for a given `subject`.
      */
-    function availableReward(address subject, address account) public view returns (uint256) {
+    function availableReward(uint8 subjectType, uint256 subject, address account) public view returns (uint256) {
+        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         return SafeCast.toUint256(
-            SafeCast.toInt256(_historicalRewardFraction(subject, sharesOf(subject, account)))
+            SafeCast.toInt256(_historicalRewardFraction(activeSharesId, balanceOf(account, activeSharesId)))
             -
-            _released[subject].balanceOf(account)
+            _released[activeSharesId].balanceOf(account)
         );
     }
 
@@ -363,13 +420,17 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     }
 
     // Internal helpers
-    function _totalHistoricalReward(address subject) internal view returns (uint256) {
-        return SafeCast.toUint256(SafeCast.toInt256(_rewards.balanceOf(subject)) + _released[subject].totalSupply());
+    function _totalHistoricalReward(uint256 activeSharesId) internal view returns (uint256) {
+        return SafeCast.toUint256(
+            SafeCast.toInt256(_rewards.balanceOf(activeSharesId))
+            +
+            _released[activeSharesId].totalSupply()
+        );
     }
 
-    function _historicalRewardFraction(address subject, uint256 amount) internal view returns (uint256) {
-        uint256 supply = totalShares(subject);
-        return amount > 0 && supply > 0 ? FullMath.mulDiv(amount, supply, _totalHistoricalReward(subject)) : 0;
+    function _historicalRewardFraction(uint256 activeSharesId, uint256 amount) internal view returns (uint256) {
+        uint256 supply = totalSupply(activeSharesId);
+        return amount > 0 && supply > 0 ? FullMath.mulDiv(amount, supply, _totalHistoricalReward(activeSharesId)) : 0;
     }
 
     function _beforeTokenTransfer(
@@ -381,23 +442,25 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         bytes memory data
     ) internal virtual override {
 
-        // Order is important here, we must do the virtual release, which uses totalShares() in
+        // Order is important here, we must do the virtual release, which uses totalSupply(activeSharesId) in
         // _historicalRewardFraction, BEFORE the super call updates the totalSupply()
         for (uint256 i = 0; i < ids.length; ++i) {
-            if (ids[i] >> 160 == 0) {
-                // active shares (ids[i] is the address of the subject)
-                address subject = FortaStakingUtils.sharesToSubject(ids[i]);
-
+            if (FortaStakingUtils.isActive(ids[i])) {
                 // Mint, burn, or transfer of subject shares would by default affect the distribution of the
                 // currently available reward for the subject. We create a "virtual release" that should preserve
                 // reward distribution as it was prior to the transfer.
-                int256 virtualRelease = SafeCast.toInt256(_historicalRewardFraction(subject, amounts[i]));
+                int256 virtualRelease = SafeCast.toInt256(
+                    _historicalRewardFraction(
+                        ids[i],
+                        amounts[i]
+                    )
+                );
                 if (from == address(0)) {
-                    _released[subject].mint(to, virtualRelease);
+                    _released[ids[i]].mint(to, virtualRelease);
                 } else if (to == address(0)) {
-                    _released[subject].burn(from, virtualRelease);
+                    _released[ids[i]].burn(from, virtualRelease);
                 } else {
-                    _released[subject].transfer(from, to, virtualRelease);
+                    _released[ids[i]].transfer(from, to, virtualRelease);
                 }
             } else {
                 require(from == address(0) || to == address(0), "Withdrawal shares are not transferable");
@@ -408,23 +471,23 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     }
 
     // Conversions
-    function _stakeToActiveShares(address subject, uint256 amount) internal view returns (uint256) {
-        uint256 activeStake = _activeStake.balanceOf(subject);
-        return activeStake == 0 ? amount : FullMath.mulDiv(amount, activeStake, totalShares(subject));
+    function _stakeToActiveShares(uint256 activeSharesId, uint256 amount) internal view returns (uint256) {
+        uint256 activeStake = _activeStake.balanceOf(activeSharesId);
+        return activeStake == 0 ? amount : FullMath.mulDiv(amount, activeStake, totalSupply(activeSharesId));
     }
 
-    function _stakeToInactiveShares(address subject, uint256 amount) internal view returns (uint256) {
-        uint256 inactiveStake = _inactiveStake.balanceOf(subject);
-        return inactiveStake == 0 ? amount : FullMath.mulDiv(amount, inactiveStake, totalInactiveShares(subject));
+    function _stakeToInactiveShares(uint256 inactiveSharesId, uint256 amount) internal view returns (uint256) {
+        uint256 inactiveStake = _inactiveStake.balanceOf(inactiveSharesId);
+        return inactiveStake == 0 ? amount : FullMath.mulDiv(amount, inactiveStake, totalSupply(inactiveSharesId));
     }
 
-    function _activeSharesToStake(address subject, uint256 amount) internal view returns (uint256) {
-        uint256 activeSupply = totalShares(subject);
-        return activeSupply == 0 ? 0 : FullMath.mulDiv(amount, activeSupply, _activeStake.balanceOf(subject));
+    function _activeSharesToStake(uint256 activeSharesId, uint256 amount) internal view returns (uint256) {
+        uint256 activeSupply = totalSupply(activeSharesId);
+        return activeSupply == 0 ? 0 : FullMath.mulDiv(amount, activeSupply, _activeStake.balanceOf(activeSharesId));
     }
-    function _inactiveSharesToStake(address subject, uint256 amount) internal view returns (uint256) {
-        uint256 inactiveSupply = totalInactiveShares(subject);
-        return inactiveSupply == 0 ? 0 : FullMath.mulDiv(amount, inactiveSupply, _inactiveStake.balanceOf(subject));
+    function _inactiveSharesToStake(uint256 inactiveSharesId, uint256 amount) internal view returns (uint256) {
+        uint256 inactiveSupply = totalSupply(inactiveSharesId);
+        return inactiveSupply == 0 ? 0 : FullMath.mulDiv(amount, inactiveSupply, _inactiveStake.balanceOf(inactiveSharesId));
     }
 
     // Admin: change withdrawal delay
