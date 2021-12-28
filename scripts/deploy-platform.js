@@ -131,14 +131,13 @@ async function migrate(config = {}) {
 
     DEBUG(`[4] router: ${contracts.router.address}`);
 
-
     contracts.staking = await ethers.getContractFactory('FortaStaking', deployer).then(factory => utils.tryFetchProxy(
-      CACHE,
-      'staking',
-      factory,
-      'uups',
-      [ contracts.access.address, contracts.router.address, contracts.token.address, 0, deployer.address ],
-      { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: ['delegatecall']},
+        CACHE,
+        'staking',
+        factory,
+        'uups',
+        [ contracts.access.address, contracts.router.address, contracts.token.address, 0, deployer.address ],
+        { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
     ));
 
     DEBUG(`[5] staking: ${contracts.staking.address}`);
