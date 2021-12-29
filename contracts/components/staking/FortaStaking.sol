@@ -10,7 +10,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Supp
 
 import "./FortaStakingUtils.sol";
 import "./FortaStakingSubjectTypes.sol";
-import "./IMinimumStake.sol";
+import "./IMinimumStakeController.sol";
 import "../BaseComponent.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
@@ -41,7 +41,7 @@ interface IRewardReceiver {
  * to quick devaluation in case of slashing event for the corresponding subject. Thus, trading of such shares should be
  * be done very carefully.
  */
-contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable, IMinimumStake {
+contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable, IMinimumStakeController {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
@@ -508,7 +508,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable, IMinimumStake 
 
     // Mininimum Stake
     function setMinStake(uint8 subjectType, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
-        emit IMinimumStake.MinimumStakeChanged(amount, _minimumStakes[subjectType]);
+        emit IMinimumStakeController.MinimumStakeChanged(amount, _minimumStakes[subjectType]);
         _minimumStakes[subjectType] = amount;
     }
 
