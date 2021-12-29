@@ -725,19 +725,19 @@ describe('Forta Staking', function () {
       await expect(this.staking.connect(this.accounts.admin).setMinStake(subjectType1, '1000'))
       .to.emit(this.staking, 'MinimumStakeChanged').withArgs('1000','0');
       expect(await this.staking.getMinStake(subjectType1)).to.equal('1000');
-      expect(await this.staking.connect(this.accounts.user1).isSubjectStakedOverMinimum(subjectType1, subject1)).to.equal(false);
+      expect(await this.staking.connect(this.accounts.user1).isStakedOverMinimum(subjectType1, subject1)).to.equal(false);
       await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '1000')).to.not.be.reverted;
-      expect(await this.staking.connect(this.accounts.user1).isSubjectStakedOverMinimum(subjectType1, subject1)).to.equal(true);
+      expect(await this.staking.connect(this.accounts.user1).isStakedOverMinimum(subjectType1, subject1)).to.equal(true);
 
     });
 
     it ('changing general minimum stake reflects on previous staked values', async function () {
       await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '1000')).to.not.be.reverted;
       await expect(this.staking.connect(this.accounts.admin).setMinStake(subjectType1, '1001')).to.not.be.reverted;
-      expect(await this.staking.connect(this.accounts.user1).isSubjectStakedOverMinimum(subjectType1, subject1)).to.equal(false);
+      expect(await this.staking.connect(this.accounts.user1).isStakedOverMinimum(subjectType1, subject1)).to.equal(false);
       await expect(this.staking.connect(this.accounts.admin).setMinStake(subjectType1, '999'))
       .to.emit(this.staking, 'MinimumStakeChanged').withArgs('999','1001');
-      expect(await this.staking.connect(this.accounts.user1).isSubjectStakedOverMinimum(subjectType1, subject1)).to.equal(true);
+      expect(await this.staking.connect(this.accounts.user1).isStakedOverMinimum(subjectType1, subject1)).to.equal(true);
 
     });
 

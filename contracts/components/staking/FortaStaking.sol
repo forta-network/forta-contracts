@@ -515,7 +515,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable, IMinimumStakeC
     function getMinStake(uint8 subjectType) external view returns (uint256) {
         return _minimumStakes[subjectType];
     }
-    function isSubjectStakedOverMinimum(uint8 subjectType, uint256 subject) external view returns (bool) {
+    function isStakedOverMinimum(uint8 subjectType, uint256 subject) external view returns (bool) {
         return activeStakeFor(subjectType, subject) >= _minimumStakes[subjectType];
     }
 

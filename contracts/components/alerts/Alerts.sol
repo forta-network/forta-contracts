@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import "../BaseComponent.sol";
 import "../scanners/ScannerRegistry.sol";
+import "../utils/MinStakeAware.sol";
 
-contract Alerts is BaseComponent {
+contract Alerts is BaseComponent, MinStakeAwareUpgradeable {
     ScannerRegistry public scannerRegistry;
 
     event AlertBatch(
@@ -21,8 +22,10 @@ contract Alerts is BaseComponent {
     event ScannerRegistryChanged(address from, address to, address by);
 
     modifier onlyValidScanner() {
-        require(scannerRegistry.ownerOf(uint256(uint160(_msgSender()))) != address(0), "Scanner does not exist");
-        //TODO this will validate stake requirements
+        // TODO improve first check, ERC721 cannot be owned by address(0)
+        require(scannerRegistry.ownerOf(uint256(uint160(_msgSender()))) != address(0), "Alerts: Scanner does not exist");
+        require(scannerRegistry.isEnabled(uint256(uint160(_msgSender()))), "Alerts: Scanner not enabled");
+        require(_isStakedOverMinimum(SCANNER_SUBJECT, uint256(uint160(_msgSender()))), "Alerts: Scanner is not staked over minimum");
         _;
     }
 
@@ -32,12 +35,13 @@ contract Alerts is BaseComponent {
     function initialize(
         address __manager,
         address __router,
-        address __scannerRegistry
+        address __scannerRegistry,
+        address __minStakeController
     ) public initializer {
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
-
+        __MinStakeAwareUpgradeable_init(__minStakeController);
         scannerRegistry = ScannerRegistry(__scannerRegistry);
     }
 
@@ -71,6 +75,14 @@ contract Alerts is BaseComponent {
         emit ScannerRegistryChanged(address(scannerRegistry), newScannerRegistry, _msgSender());
 
         scannerRegistry = ScannerRegistry(newScannerRegistry);
+    }
+
+    function _msgSender() internal view virtual override(BaseComponent, ContextUpgradeable) returns (address sender) {
+        return super._msgSender();
+    }
+
+    function _msgData() internal view virtual override(BaseComponent, ContextUpgradeable) returns (bytes calldata) {
+        return super._msgData();
     }
 
     uint256[49] private __gap;

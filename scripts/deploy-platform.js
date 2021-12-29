@@ -192,7 +192,7 @@ async function migrate(config = {}) {
         'alerts',
         factory,
         'uups',
-        [ contracts.access.address, contracts.router.address, contracts.scanners.address ],
+        [ contracts.access.address, contracts.router.address, contracts.scanners.address, contracts.staking.address ],
         { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
     ));
 

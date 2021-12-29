@@ -4,5 +4,5 @@ interface IMinimumStakeController {
   
   function setMinStake(uint8 subjectType, uint256 amount) external; 
   function getMinStake(uint8 subjectType) external returns (uint256);
-  function isSubjectStakedOverMinimum(uint8 subjectType, uint256 subject) external returns (bool);
+  function isStakedOverMinimum(uint8 subjectType, uint256 subject) external view returns (bool);
 }

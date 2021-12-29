@@ -2,11 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "../staking/IMinimumStakeController.sol";
+import "../staking/FortaStakingSubjectTypes.sol";
 import "../Roles.sol";
 import "./AccessManaged.sol";
 
 abstract contract MinStakeAwareUpgradeable is AccessManagedUpgradeable {
-    IMinimumStakeController internal _minStakeController;
+    IMinimumStakeController private _minStakeController;
 
     event MinimumStakeControllerUpdated(address indexed newMinStakeController);
 
@@ -22,6 +23,10 @@ abstract contract MinStakeAwareUpgradeable is AccessManagedUpgradeable {
 
     function setMinStakeController(address minStakeController) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setMinStakeController(minStakeController);
+    }
+
+    function _isStakedOverMinimum(uint8 subjectType, uint256 subject) internal view returns(bool) {
+        return _minStakeController.isStakedOverMinimum(subjectType, subject);
     }
 
     uint256[49] private __gap;
