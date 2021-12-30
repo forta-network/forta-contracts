@@ -22,23 +22,25 @@ contract ScannerRegistry is
         address __manager,
         address __router,
         string calldata __name,
-        string calldata __symbol
+        string calldata __symbol,
+        address _minStakeController
     ) public initializer {
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
         __ERC721_init(__name, __symbol);
+        __MinStakeAwareUpgradeable_init(_minStakeController);
     }
 
     function _scannerUpdate(uint256 scannerId, uint256 chainId) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) {
         super._scannerUpdate(scannerId, chainId);
     }
 
-    function _msgSender() internal view virtual override(BaseComponent, ScannerRegistryCore) returns (address sender) {
+    function _msgSender() internal view virtual override(BaseComponent, ScannerRegistryCore, ScannerRegistryEnable) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(BaseComponent, ScannerRegistryCore) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponent, ScannerRegistryCore, ScannerRegistryEnable) returns (bytes calldata) {
         return super._msgData();
     }
 

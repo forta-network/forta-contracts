@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./ScannerRegistryManaged.sol";
+import "../utils/MinStakeAware.sol";
 
-abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
+abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAwareUpgradeable {
     using BitMaps for BitMaps.BitMap;
 
     enum Permission {
@@ -13,6 +14,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
         SELF,
         OWNER,
         MANAGER,
+        STAKE,
         length
     }
 
@@ -24,24 +26,26 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
      * @dev Enable/Disable scaner
      */
     function isEnabled(uint256 scannerId) public view virtual returns (bool) {
-        return _disabled[scannerId]._data[0] == 0; // Permission.length < 256 → we don't have to loop
+        // Permission.length < 256 → we don't have to loop
+        return _disabled[scannerId]._data[0] == 0 && _isStakedOverMinimum(SCANNER_SUBJECT, scannerId); 
     }
 
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_hasPermission(scannerId, permission), "invalid permission");
+        require(_hasPermission(scannerId, permission, true), "invalid permission");
+        require(_isStakedOverMinimum(SCANNER_SUBJECT, scannerId), "ScannerRegistryEnable: needs stake over minimum");
         _enable(scannerId, permission, true);
     }
 
     function disableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_hasPermission(scannerId, permission), "invalid permission");
+        require(_hasPermission(scannerId, permission, false), "invalid permission");
         _enable(scannerId, permission, false);
     }
 
-    function _hasPermission(uint256 scannerId, Permission permission) internal view returns (bool) {
+    function _hasPermission(uint256 scannerId, Permission permission, bool enabling) internal view returns (bool) {
+        if (permission == Permission.STAKE && !enabling) { return _isStakedOverMinimum(SCANNER_SUBJECT, scannerId); }
         if (permission == Permission.ADMIN)   { return hasRole(SCANNER_ADMIN_ROLE, _msgSender()); }
         if (permission == Permission.SELF)    { return uint256(uint160(_msgSender())) == scannerId; }
         if (permission == Permission.OWNER)   { return _msgSender() == ownerOf(scannerId); }
-        if (permission == Permission.MANAGER) { return isManager(scannerId, _msgSender()); }
         return false;
     }
 
@@ -69,6 +73,15 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
     function _afterScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256)", scannerId));
     }
+
+    function _msgSender() internal view virtual override(ContextUpgradeable, ScannerRegistryCore) returns (address sender) {
+        return super._msgSender();
+    }
+
+    function _msgData() internal view virtual override(ContextUpgradeable, ScannerRegistryCore) returns (bytes calldata) {
+        return super._msgData();
+    }
+
 
     uint256[49] private __gap;
 }
