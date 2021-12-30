@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./AgentRegistryCore.sol";
+import "../utils/MinStakeAware.sol";
 
-abstract contract AgentRegistryEnable is AgentRegistryCore {
+abstract contract AgentRegistryEnable is AgentRegistryCore, MinStakeAwareUpgradeable {
     using BitMaps for BitMaps.BitMap;
 
     enum Permission {
@@ -22,11 +23,13 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
      * @dev Enable/Disable agent
      */
     function isEnabled(uint256 agentId) public view virtual returns (bool) {
-        return _disabled[agentId]._data[0] == 0; // Permission.length < 256 → we don't have to loop
+        // Permission.length < 256 → we don't have to loop
+        return _disabled[agentId]._data[0] == 0 && _isStakedOverMinimum(AGENT_SUBJECT, agentId);
     }
 
     function enableAgent(uint256 agentId, Permission permission) public virtual {
         require(_hasPermission(agentId, permission), "invalid permission");
+        require(_isStakedOverMinimum(AGENT_SUBJECT, agentId), "AgentRegistryEnable: agent staked under minimum");
         _enable(agentId, permission, true);
     }
 
@@ -64,6 +67,14 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
 
     function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256)", agentId));
+    }
+
+    function _msgSender() internal view virtual override(ContextUpgradeable, AgentRegistryCore) returns (address sender) {
+        return super._msgSender();
+    }
+
+    function _msgData() internal view virtual override(ContextUpgradeable, AgentRegistryCore) returns (bytes calldata) {
+        return super._msgData();
     }
 
     uint256[49] private __gap;

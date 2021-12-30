@@ -14,7 +14,6 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAware
         SELF,
         OWNER,
         MANAGER,
-        STAKE,
         length
     }
 
@@ -31,21 +30,21 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAware
     }
 
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_hasPermission(scannerId, permission, true), "invalid permission");
-        require(_isStakedOverMinimum(SCANNER_SUBJECT, scannerId), "ScannerRegistryEnable: needs stake over minimum");
+        require(_hasPermission(scannerId, permission), "invalid permission");
+        require(_isStakedOverMinimum(SCANNER_SUBJECT, scannerId), "ScannerRegistryEnable: scanner staked under minimum");
         _enable(scannerId, permission, true);
     }
 
     function disableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_hasPermission(scannerId, permission, false), "invalid permission");
+        require(_hasPermission(scannerId, permission), "invalid permission");
         _enable(scannerId, permission, false);
     }
 
-    function _hasPermission(uint256 scannerId, Permission permission, bool enabling) internal view returns (bool) {
-        if (permission == Permission.STAKE && !enabling) { return _isStakedOverMinimum(SCANNER_SUBJECT, scannerId); }
+    function _hasPermission(uint256 scannerId, Permission permission) internal view returns (bool) {
         if (permission == Permission.ADMIN)   { return hasRole(SCANNER_ADMIN_ROLE, _msgSender()); }
         if (permission == Permission.SELF)    { return uint256(uint160(_msgSender())) == scannerId; }
         if (permission == Permission.OWNER)   { return _msgSender() == ownerOf(scannerId); }
+        if (permission == Permission.MANAGER) { return isManager(scannerId, _msgSender()); }
         return false;
     }
 
@@ -81,7 +80,6 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAware
     function _msgData() internal view virtual override(ContextUpgradeable, ScannerRegistryCore) returns (bytes calldata) {
         return super._msgData();
     }
-
 
     uint256[49] private __gap;
 }

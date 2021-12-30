@@ -139,5 +139,5 @@ contract Dispatch is BaseComponent, MinStakeAwareUpgradeable {
         return super._msgData();
     }
 
-    uint256[48] private __gap;
+    uint256[46] private __gap;
 }

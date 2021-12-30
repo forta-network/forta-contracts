@@ -22,12 +22,14 @@ contract AgentRegistry is
         address __manager,
         address __router,
         string calldata __name,
-        string calldata __symbol
+        string calldata __symbol,
+        address _minStakeController
     ) public initializer {
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
         __ERC721_init(__name, __symbol);
+        __MinStakeAwareUpgradeable_init(_minStakeController);
     }
 
     function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryEnumerable) {
@@ -38,11 +40,11 @@ contract AgentRegistry is
         super._agentUpdate(agentId, newMetadata, newChainIds);
     }
 
-    function _msgSender() internal view virtual override(BaseComponent, AgentRegistryCore) returns (address sender) {
+    function _msgSender() internal view virtual override(BaseComponent, AgentRegistryCore, AgentRegistryEnable) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(BaseComponent, AgentRegistryCore) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponent, AgentRegistryCore, AgentRegistryEnable) returns (bytes calldata) {
         return super._msgData();
     }
 

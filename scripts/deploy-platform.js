@@ -159,7 +159,7 @@ async function migrate(config = {}) {
         'agents',
         factory,
         'uups',
-        [ contracts.access.address, contracts.router.address, 'Forta Agents', 'FAgents' ],
+        [ contracts.access.address, contracts.router.address, 'Forta Agents', 'FAgents',  contracts.staking.address ],
         { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
     ));
 
@@ -192,7 +192,7 @@ async function migrate(config = {}) {
         'alerts',
         factory,
         'uups',
-        [ contracts.access.address, contracts.router.address, contracts.scanners.address, contracts.staking.address ],
+        [ contracts.access.address, contracts.router.address, contracts.scanners.address ],
         { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
     ));
 
