@@ -21,8 +21,6 @@ contract Alerts is BaseComponent {
     event ScannerRegistryChanged(address from, address to, address by);
 
     modifier onlyValidScanner() {
-        // TODO improve first check, ERC721 cannot be owned by address(0)
-        require(scannerRegistry.ownerOf(uint256(uint160(_msgSender()))) != address(0), "Alerts: Scanner does not exist");
         require(scannerRegistry.isEnabled(uint256(uint160(_msgSender()))), "Alerts: Scanner not enabled");
         _;
     }
