@@ -30,6 +30,11 @@
       "address": "0x5Cf7008aC441Ec1797fAfA4EE132eA4277E9239B",
       "txHash": "0xf7b767c938863b02c2c7b83e93f204201ede938ff4addf518ba21b4dc61aca32",
       "kind": "uups"
+    },
+    {
+      "address": "0x4720c872425876B6f4b4E9130CDef667aDE553b2",
+      "txHash": "0x25e95ae21b91ed837b587e4f4ba418fd2151293162e41ac738cc7e3fa4e3138d",
+      "kind": "uups"
     }
   ],
   "impls": {
@@ -1378,6 +1383,109 @@
           },
           "t_contract(IAccessControl)12008": {
             "label": "contract IAccessControl"
+          }
+        }
+      }
+    },
+    "f151ac853b844eba9563e6f15f585cbe97448d0f9e2b4cac1f6e954a92ae3773": {
+      "address": "0x58BB8Cb8C21032A23EB6ECC99430F0CEEE29B10b",
+      "txHash": "0xa0a547fe1c7121ad006621a0a1605698d018f313a3ebb91d69791d13586b6027",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:37"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:42"
+          },
+          {
+            "contract": "ContextUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:31"
+          },
+          {
+            "contract": "AccessManagedUpgradeable",
+            "label": "_accessControl",
+            "type": "t_contract(IAccessControl)12009",
+            "src": "contracts/components/utils/AccessManaged.sol:9"
+          },
+          {
+            "contract": "AccessManagedUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "contracts/components/utils/AccessManaged.sol:35"
+          },
+          {
+            "contract": "RoutedUpgradeable",
+            "label": "_router",
+            "type": "t_contract(IRouter)18976",
+            "src": "contracts/components/utils/Routed.sol:8"
+          },
+          {
+            "contract": "RoutedUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "contracts/components/utils/Routed.sol:29"
+          },
+          {
+            "contract": "ERC1967UpgradeUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:215"
+          },
+          {
+            "contract": "UUPSUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:81"
+          },
+          {
+            "contract": "BaseComponent",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "contracts/components/BaseComponent.sol:45"
+          },
+          {
+            "contract": "ScannerNodeVersion",
+            "label": "scannerNodeVersion",
+            "type": "t_string_storage",
+            "src": "contracts/components/scanners/ScannerNodeVersion.sol:17"
+          },
+          {
+            "contract": "ScannerNodeVersion",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "contracts/components/scanners/ScannerNodeVersion.sol:43"
+          }
+        ],
+        "types": {
+          "t_string_storage": {
+            "label": "string"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
+          },
+          "t_contract(IRouter)18976": {
+            "label": "contract IRouter"
+          },
+          "t_contract(IAccessControl)12009": {
+            "label": "contract IAccessControl"
+          },
+          "t_bool": {
+            "label": "bool"
           }
         }
       }
