@@ -181,7 +181,7 @@ async function migrate(config = {}) {
         'dispatch',
         factory,
         'uups',
-        [ contracts.access.address, contracts.router.address, contracts.agents.address, contracts.scanners.address, contracts.staking.address ],
+        [ contracts.access.address, contracts.router.address, contracts.agents.address, contracts.scanners.address ],
         { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
     ));
 

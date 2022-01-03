@@ -6,9 +6,8 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "../BaseComponent.sol";
 import "../agents/AgentRegistry.sol";
 import "../scanners/ScannerRegistry.sol";
-import "../utils/MinStakeAware.sol";
 
-contract Dispatch is BaseComponent, MinStakeAwareUpgradeable {
+contract Dispatch is BaseComponent {
     using EnumerableSet for EnumerableSet.UintSet;
 
     AgentRegistry   private _agents;
@@ -26,12 +25,10 @@ contract Dispatch is BaseComponent, MinStakeAwareUpgradeable {
         address __manager,
         address __router,
         address __agents,
-        address __scanners,
-        address __minStakeController
+        address __scanners
     ) public initializer {
         __AccessManaged_init(__manager);
         __Routed_init(__router);
-        __MinStakeAwareUpgradeable_init(__minStakeController);
         _agents   = AgentRegistry(__agents);
         _scanners = ScannerRegistry(__scanners);
     }
@@ -73,9 +70,9 @@ contract Dispatch is BaseComponent, MinStakeAwareUpgradeable {
 
     function link(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
         require(_agents.ownerOf(agentId) != address(0), "invalid agent id");
-        require(_isStakedOverMinimum(AGENT_SUBJECT, agentId), "Dispatch: Agent is not staked over minimum");
+        require(_agents.isEnabled(agentId), "Dispatch: Agent disabled");
         require(_scanners.ownerOf(scannerId) != address(0), "invalid scanner id");
-        require(_isStakedOverMinimum(SCANNER_SUBJECT, scannerId), "Dispatch: Scanner is not staked over minimum");
+        require(_scanners.isEnabled(scannerId), "Dispatch: Scanner disabled");
 
         scannerToAgents[scannerId].add(agentId);
         agentToScanners[agentId].add(scannerId);
@@ -129,14 +126,6 @@ contract Dispatch is BaseComponent, MinStakeAwareUpgradeable {
             agents.length,
             keccak256(abi.encodePacked(agents, version, enabled))
         );
-    }
-
-    function _msgSender() internal view virtual override(BaseComponent, ContextUpgradeable) returns (address sender) {
-        return super._msgSender();
-    }
-
-    function _msgData() internal view virtual override(BaseComponent, ContextUpgradeable) returns (bytes calldata) {
-        return super._msgData();
     }
 
     uint256[46] private __gap;

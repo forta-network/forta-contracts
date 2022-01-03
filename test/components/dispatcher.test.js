@@ -35,13 +35,25 @@ describe('Dispatcher', function () {
   it('link fails if scanner not staked over minimum', async function () {
     await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '10000');
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
-    .to.be.revertedWith('Dispatch: Scanner is not staked over minimum')
+    .to.be.revertedWith('Dispatch: Scanner disabled')
+  });
+
+  it('link fails if scanner is disabled', async function () {
+    await this.scanners.connect(this.accounts.user1).disableScanner(this.SCANNER_ID, 2);
+    await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
+    .to.be.revertedWith('Dispatch: Scanner disabled')
   });
 
   it('link fails if agent not staked over minimum', async function () {
     await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.AGENT_SUBJECT_TYPE, '10000');
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
-    .to.be.revertedWith('Dispatch: Agent is not staked over minimum')
+    .to.be.revertedWith('Dispatch: Agent disabled')
+  });
+
+  it('link fails if agent is disabled', async function () {
+    await this.agents.connect(this.accounts.user1).disableAgent(this.AGENT_ID, 1);
+    await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
+    .to.be.revertedWith('Dispatch: Agent disabled')
   });
 
   it('unlink', async function () {
