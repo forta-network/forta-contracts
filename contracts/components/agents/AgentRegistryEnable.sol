@@ -26,12 +26,12 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     }
 
     function enableAgent(uint256 agentId, Permission permission) public virtual {
-        require(_hasPermission(agentId, permission), "invalid permission");
+        require(_hasPermission(agentId, permission), "AgentRegistryEnable: invalid permission");
         _enable(agentId, permission, true);
     }
 
     function disableAgent(uint256 agentId, Permission permission) public virtual {
-        require(_hasPermission(agentId, permission), "invalid permission");
+        require(_hasPermission(agentId, permission), "AgentRegistryEnable: invalid permission");
         _enable(agentId, permission, false);
     }
 
