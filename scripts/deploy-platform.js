@@ -234,7 +234,6 @@ async function migrate(config = {}) {
 
     await contracts.access.hasRole(roles.ENS_MANAGER, deployer.address)
         .then(result => result || contracts.access.grantRole(roles.ENS_MANAGER, deployer.address).then(tx => tx.wait()));
-    console.log(provider.network.ensAddress)
     if (!provider.network.ensAddress) {
         contracts.ens = {};
 
@@ -291,15 +290,10 @@ async function migrate(config = {}) {
         DEBUG('[11.4] ens configuration')
     } else {
         contracts.ens = {};
-        contracts.ens.registry = await utils.attach(
-          'ENSRegistry',
-          await CACHE.get('ens-registry')
-        );
-        
-        contracts.ens.resolver = await utils.attach(
-          'PublicResolver',
-          await CACHE.get('ens-resolver')
-        );
+        const ensRegistryAddress = await CACHE.get('ens-registry')
+        contracts.ens.registry = ensRegistryAddress ? await utils.attach('ENSRegistry', ensRegistryAddress) : null;
+        const ensResolverAddress = await CACHE.get('ens-resolver')
+        contracts.ens.resolver = ensRegistryAddress ? await utils.attach('PublicResolver', ensResolverAddress) : null;
     }
 
     await Promise.all([
