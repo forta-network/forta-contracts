@@ -15,7 +15,6 @@ contract Forta is FortaCommon {
 
     function initialize(address admin) public initializer {
         __FortaCommon_init(admin);
-
         _setRoleAdmin(MINTER_ROLE, ADMIN_ROLE);
     }
 
