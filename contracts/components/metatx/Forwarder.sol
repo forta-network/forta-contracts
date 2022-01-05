@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 abstract contract EIP712WithNonce is EIP712 {
+    event NonceUsed(address indexed user, uint256 indexed timeline, uint256 nonce);
+
     mapping(address => mapping(uint256 => uint256)) private _nonces;
 
     function DOMAIN_SEPARATOR() external view returns (bytes32) {
@@ -19,8 +21,14 @@ abstract contract EIP712WithNonce is EIP712 {
         return _nonces[from][timeline];
     }
 
-    function _verifyAndConsumeNonce(address owner, uint256 idx) internal virtual {
-        require(idx % (1 << 128) == _nonces[owner][idx >> 128]++, "invalid-nonce");
+    function _verifyAndConsumeNonce(address user, uint256 fullNonce) internal virtual {
+        uint256 timeline = fullNonce >> 128;
+        uint256 nonce    = uint128(fullNonce);
+        uint256 expected = _nonces[user][timeline]++;
+
+        require(nonce == expected, "EIP712WithNonce: invalid-nonce");
+
+        emit NonceUsed(user, timeline, nonce);
     }
 }
 
@@ -42,6 +50,18 @@ contract Forwarder is EIP712WithNonce {
 
     constructor() EIP712("Forwarder", "1") {}
 
+    /**
+     * Executes a ForwardRequest (meta-tx) if signature is verified, deadline is met and nonce is valid
+     * NOTE: This implementations allows for out of order execution, by allowing several "timelines" per nonce
+     * by splitting the uint256 type space into 128 bit subspaces where each subspace is interpreted as maintaining
+     * an ordered timeline. The intent of the design is to allow multiple nonces to be valid at any given time.
+     * For a detailed explanation: https://github.com/amxx/permit#out-of-order-execution
+     * For an example on how to leverage this functionality, see tests/forwarder/forwarder.test.js
+     * Will emit NonceUsed(user, timeline, nonce) for better reporting / UX 
+     * @param req  ForwardRequest to be executed
+     * @param signature EIP-712 signature of the ForwardRequest
+     * @return (success, returnData) of the executed request 
+     */
     function execute(ForwardRequest calldata req, bytes calldata signature)
         public
         payable
@@ -53,7 +73,6 @@ contract Forwarder is EIP712WithNonce {
             req.deadline == 0 || req.deadline > block.timestamp,
             "Forwarder: deadline expired"
         );
-
         require(
             SignatureChecker.isValidSignatureNow(
                 req.from,
@@ -68,8 +87,14 @@ contract Forwarder is EIP712WithNonce {
         );
         // Validate that the relayer has sent enough gas for the call.
         // See https://ronan.eth.link/blog/ethereum-gas-dangers/
-        assert(gasleft() > req.gas / 63);
-
+        if (gasleft() <= req.gas / 63) {
+          // We explicitly trigger invalid opcode to consume all gas and bubble-up the effects, since
+          // Panic error do not consume all gas since Solidity 0.8.0
+          // https://docs.soliditylang.org/en/v0.8.0/control-structures.html#panic-via-assert-and-error-via-require
+          assembly {
+            invalid()
+          }
+        }
         return (success, returndata);
     }
 }
