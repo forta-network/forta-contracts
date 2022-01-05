@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol"; 
 import "../../token/FortaBridged.sol";
 import "../../components/staking/FortaStaking.sol";
 import "../../components/utils/ForwardedContext.sol";
@@ -14,7 +15,7 @@ import "../../components/utils/ForwardedContext.sol";
  * construction and some "normal" storage-based parameters that are instance specific and set
  * during initialization.
  */
-contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1155Receiver {
+contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedContext, ERC1155Receiver {
     FortaBridged public immutable l2token;
     FortaStaking public immutable l2staking;
     address      public           l1vesting;
@@ -139,6 +140,15 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      */
     function bridge() public {
         bridge(l2token.balanceOf(address(this)) - pendingReward);
+    }
+
+    /**
+     * ERC165 implementation, needed for onRewardReceived.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, ERC1155Receiver) returns (bool) {
+        return
+            interfaceId == type(IRewardReceiver).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     /**
