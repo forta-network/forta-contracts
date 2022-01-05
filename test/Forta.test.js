@@ -20,7 +20,7 @@ describe('Forta', function () {
     it('authorized', async function () {
       await expect(this.token.connect(this.accounts.whitelister).grantWhitelister(this.accounts.other.address))
         .to.emit(this.token, 'RoleGranted')
-        .withArgs(this.roles.WHITELISTER, this.accounts.other.address, this.token.address);
+        .withArgs(this.roles.WHITELISTER, this.accounts.other.address, this.accounts.whitelister.address);
     });
   });
 

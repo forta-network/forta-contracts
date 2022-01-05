@@ -24,12 +24,11 @@ contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpg
         _setRoleAdmin(WHITELISTER_ROLE, ADMIN_ROLE);
         _setRoleAdmin(WHITELIST_ROLE, WHITELISTER_ROLE);
         _setupRole(ADMIN_ROLE, admin);
-        _setupRole(ADMIN_ROLE, address(this)); // required by grantWhitelister
     }
 
     // Allow whitelister to assign other whitelisters
     function grantWhitelister(address to) public onlyRole(WHITELISTER_ROLE) {
-        this.grantRole(WHITELISTER_ROLE, to);
+        _grantRole(WHITELISTER_ROLE, to);
     }
 
     // Only allow transfer to whitelisted accounts
