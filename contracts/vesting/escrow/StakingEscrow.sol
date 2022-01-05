@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol"; 
 import "../../token/FortaBridged.sol";
 import "../../components/staking/FortaStaking.sol";
 import "../../components/utils/ForwardedContext.sol";
@@ -14,7 +15,7 @@ import "../../components/utils/ForwardedContext.sol";
  * construction and some "normal" storage-based parameters that are instance specific and set
  * during initialization.
  */
-contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1155Receiver {
+contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedContext, ERC1155Receiver {
     FortaBridged public immutable l2token;
     FortaStaking public immutable l2staking;
     address      public           l1vesting;
@@ -44,6 +45,8 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
         address __l1vesting,
         address __l2manager
     ) public initializer {
+        require(__l1vesting != address(0), "StakingEscrow: __l1vesting cannot be address 0");
+        require(__l2manager != address(0), "StakingEscrow: __l1vesting cannot be address 0");
         l1vesting = __l1vesting;
         l2manager = __l2manager;
     }
@@ -55,6 +58,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * there.
      */
     function deposit(address subject, uint256 stakeValue) public onlyManager() vestingBalance(stakeValue) returns (uint256) {
+        require(stakeValue > 0, "StakingEscrow: stakeValue must be > 0");
         SafeERC20.safeApprove(
             IERC20(address(l2token)),
             address(l2staking),
@@ -102,7 +106,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
     }
 
     /**
-     * Release reward to any account chossen by the beneficiary. Rewards shouldn't be bridged back to prevent them
+     * Release reward to any account chosen by the beneficiary. Rewards shouldn't be bridged back to prevent them
      * from being subject to vesting.
      *
      * In addition to releasing rewards, this function can also be used to release any other tokens that would be
@@ -110,7 +114,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      */
     function release(address releaseToken, address receiver, uint256 amount) public onlyManager() {
         if (address(l2token) == releaseToken) {
-            pendingReward -= amount; // reverts is overflow;
+            pendingReward -= amount; // reverts on overflow;
         }
 
         SafeERC20.safeTransfer(
@@ -131,6 +135,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * not be bridged back, but rather released to another wallet (and potentially bridged back independently).
      */
     function bridge(uint256 amount) public onlyManager() vestingBalance(amount) {
+        require(amount > 0, "StakingEscrow: amount must be > 0");
         l2token.withdrawTo(amount, l1vesting);
     }
 
@@ -142,10 +147,19 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
     }
 
     /**
+     * ERC165 implementation, needed for onRewardReceived.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, ERC1155Receiver) returns (bool) {
+        return
+            interfaceId == type(IRewardReceiver).interfaceId ||
+            super.supportsInterface(interfaceId);
+    }
+
+    /**
      * Hook for reward accounting
      */
     function onRewardReceived(address, uint256 amount) public {
-        require(msg.sender == address(l2staking));
+        require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
 
         pendingReward += amount;
     }
@@ -154,12 +168,12 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * This account is going to hold staking shares
      */
     function onERC1155Received(address, address, uint256, uint256, bytes calldata) external view returns (bytes4) {
-        require(msg.sender == address(l2staking));
+        require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
         return this.onERC1155Received.selector;
     }
 
     function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata) external view returns (bytes4) {
-        require(msg.sender == address(l2staking));
+        require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
         return this.onERC1155BatchReceived.selector;
     }
 }

@@ -18,7 +18,7 @@ import "../tools/ENSReverseRegistration.sol";
  * - __Routed_init(address router)
  * in their initialization process.
  */
-abstract contract BaseComponent is
+abstract contract BaseComponentUpgradeable is
     ForwardedContext,
     AccessManagedUpgradeable,
     RoutedUpgradeable,
