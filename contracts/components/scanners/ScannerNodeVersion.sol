@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../BaseComponent.sol";
+import "../BaseComponentUpgradeable.sol";
 
 /**
  * Contract that will trigger software autoupdate of the Scanner Node software.
  * Forta Governance, through SCANNER_VERSION_ROLE, will propose and approve updates and
  * the nodes will listen to the resulting event, downloading the new version from IPFS
  */
-contract ScannerNodeVersion is BaseComponent {
+contract ScannerNodeVersion is BaseComponentUpgradeable {
 
     /**
      * Version of the scanner image software the network expects (IPFS hash)
