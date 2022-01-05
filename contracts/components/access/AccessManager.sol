@@ -8,7 +8,7 @@ import "../Roles.sol";
 import "../utils/ForwardedContext.sol";
 import "../../tools/ENSReverseRegistration.sol";
 
-// This cannot be BaseComponent, because BaseComponent is AccessManagedUpgradeable
+// This cannot be BaseComponentUpgradeable, because BaseComponentUpgradeable is AccessManagedUpgradeable
 contract AccessManager is ForwardedContext, AccessControlUpgradeable, UUPSUpgradeable, Multicall {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
