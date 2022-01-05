@@ -28,12 +28,12 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
     }
 
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_hasPermission(scannerId, permission), "invalid permission");
+        require(_hasPermission(scannerId, permission), "ScannerRegistryEnable: invalid permission");
         _enable(scannerId, permission, true);
     }
 
     function disableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_hasPermission(scannerId, permission), "invalid permission");
+        require(_hasPermission(scannerId, permission), "ScannerRegistryEnable: invalid permission");
         _enable(scannerId, permission, false);
     }
 

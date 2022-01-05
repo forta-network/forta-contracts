@@ -21,7 +21,7 @@ contract Alerts is BaseComponent {
     event ScannerRegistryChanged(address from, address to, address by);
 
     modifier onlyValidScanner() {
-        require(scannerRegistry.ownerOf(uint256(uint160(_msgSender()))) != address(0), "Scanner does not exist");
+        require(scannerRegistry.ownerOf(uint256(uint160(_msgSender()))) != address(0), "AlertBatch: Scanner does not exist");
         //TODO this will validate stake requirements
         _;
     }
@@ -49,7 +49,7 @@ contract Alerts is BaseComponent {
         uint256 _maxSeverity,
         string memory _ref
     ) public onlyValidScanner() {
-        require(_blockEnd >= _blockStart, "_blockEnd must be >= _blockStart");
+        require(_blockEnd >= _blockStart, "AlertBatch: _blockEnd must be >= _blockStart");
 
         emit AlertBatch(
             keccak256(abi.encodePacked(_ref)),
@@ -67,7 +67,7 @@ contract Alerts is BaseComponent {
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        require(newScannerRegistry != address(0), "Address(0) is not allowed");
+        require(newScannerRegistry != address(0), "AlertBatch: Address(0) is not allowed");
         emit ScannerRegistryChanged(address(scannerRegistry), newScannerRegistry, _msgSender());
 
         scannerRegistry = ScannerRegistry(newScannerRegistry);

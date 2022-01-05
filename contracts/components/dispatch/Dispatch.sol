@@ -69,8 +69,8 @@ contract Dispatch is BaseComponent {
     }
 
     function link(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        require(_agents.ownerOf(agentId) != address(0), "invalid agent id");
-        require(_scanners.ownerOf(scannerId) != address(0), "invalid scanner id");
+        require(_agents.ownerOf(agentId) != address(0), "Dispatch: invalid agent id");
+        require(_scanners.ownerOf(scannerId) != address(0), "Dispatch: invalid scanner id");
 
         scannerToAgents[scannerId].add(agentId);
         agentToScanners[agentId].add(scannerId);
@@ -79,8 +79,8 @@ contract Dispatch is BaseComponent {
     }
 
     function unlink(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        require(_agents.ownerOf(agentId) != address(0), "invalid agent id");
-        require(_scanners.ownerOf(scannerId) != address(0), "invalid scanner id");
+        require(_agents.ownerOf(agentId) != address(0), "Dispatch: invalid agent id");
+        require(_scanners.ownerOf(scannerId) != address(0), "Dispatch: invalid scanner id");
 
         scannerToAgents[scannerId].remove(agentId);
         agentToScanners[agentId].remove(scannerId);

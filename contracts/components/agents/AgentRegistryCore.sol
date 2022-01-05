@@ -15,14 +15,14 @@ abstract contract AgentRegistryCore is
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
 
     modifier onlyOwnerOf(uint256 agentId) {
-        require(_msgSender() == ownerOf(agentId), "Restricted to agent owner");
+        require(_msgSender() == ownerOf(agentId), "AgentRegistryCore: Restricted to agent owner");
         _;
     }
 
     modifier onlySorted(uint256[] memory array) {
-        require(array.length > 0, "At least one chain id required");
+        require(array.length > 0, "AgentRegistryCore: At least one chain id required");
         for (uint256 i = 1; i < array.length; ++i ) {
-            require(array[i] > array[i-1], "Values must be sorted");
+            require(array[i] > array[i-1], "AgentRegistryCore: Values must be sorted");
         }
         _;
     }
