@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol"; 
 import "../../token/FortaBridged.sol";
 import "../../components/staking/FortaStaking.sol";
 import "../../components/utils/ForwardedContext.sol";
@@ -14,7 +15,7 @@ import "../../components/utils/ForwardedContext.sol";
  * construction and some "normal" storage-based parameters that are instance specific and set
  * during initialization.
  */
-contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1155Receiver {
+contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedContext, ERC1155Receiver {
     FortaBridged public immutable l2token;
     FortaStaking public immutable l2staking;
     address      public           l1vesting;
@@ -44,6 +45,8 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
         address __l1vesting,
         address __l2manager
     ) public initializer {
+        require(__l1vesting != address(0), "StakingEscrow: __l1vesting cannot be address 0");
+        require(__l2manager != address(0), "StakingEscrow: __l1vesting cannot be address 0");
         l1vesting = __l1vesting;
         l2manager = __l2manager;
     }
@@ -55,6 +58,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * there.
      */
     function deposit(address subject, uint256 stakeValue) public onlyManager() vestingBalance(stakeValue) returns (uint256) {
+        require(stakeValue > 0, "StakingEscrow: stakeValue must be > 0");
         SafeERC20.safeApprove(
             IERC20(address(l2token)),
             address(l2staking),
@@ -131,6 +135,7 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      * not be bridged back, but rather released to another wallet (and potentially bridged back independently).
      */
     function bridge(uint256 amount) public onlyManager() vestingBalance(amount) {
+        require(amount > 0, "StakingEscrow: amount must be > 0");
         l2token.withdrawTo(amount, l1vesting);
     }
 
@@ -139,6 +144,15 @@ contract StakingEscrow is Initializable, IRewardReceiver, ForwardedContext, ERC1
      */
     function bridge() public {
         bridge(l2token.balanceOf(address(this)) - pendingReward);
+    }
+
+    /**
+     * ERC165 implementation, needed for onRewardReceived.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, ERC1155Receiver) returns (bool) {
+        return
+            interfaceId == type(IRewardReceiver).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     /**

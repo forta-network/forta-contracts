@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/interfaces/draft-IERC2612.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
@@ -43,6 +44,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
+    using ERC165Checker for address;
 
     IERC20 public stakedToken;
 
@@ -175,7 +177,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
     /**
      * @dev Deposit `stakeValue` tokens for a given `subject`, and mint the corresponding shares.
-     *
+     * order for releaseRewards to not revert
      * Emits a ERC1155.TransferSingle event.
      */
     function deposit(address subject, uint256 stakeValue) public returns (uint256) {
@@ -316,7 +318,7 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
     /**
      * @dev Release reward owed by given `account` for its current or past share for a given `subject`.
-     *
+     * If staking from a contract, said contract may optionally implement ERC165 for IRewardReceiver
      * Emits a Release event.
      */
     function releaseReward(address subject, address account) public returns (uint256) {
@@ -329,9 +331,8 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
 
         emit Released(subject, account, value);
 
-        if (Address.isContract(account)) {
-            try IRewardReceiver(account).onRewardReceived(subject, value) {}
-            catch {}
+        if (Address.isContract(account) && account.supportsInterface(type(IRewardReceiver).interfaceId)) {
+            IRewardReceiver(account).onRewardReceived(subject, value);
         }
 
         return value;

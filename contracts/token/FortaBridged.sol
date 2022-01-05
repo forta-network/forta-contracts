@@ -35,6 +35,7 @@ contract FortaBridged is FortaCommon {
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address _childChainManagerProxy) {
+        require(_childChainManagerProxy != address(0), "FortaBridged: setting address 0");
         childChainManagerProxy = _childChainManagerProxy;
     }
 

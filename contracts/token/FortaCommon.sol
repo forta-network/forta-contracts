@@ -15,6 +15,7 @@ contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpg
     constructor() initializer {}
 
     function __FortaCommon_init(address admin) internal initializer {
+        require(admin != address(0), "FortaCommon: admin cannot be address 0");
         __AccessControl_init();
         __ERC20_init("Forta", "FORT");
         __ERC20Permit_init("Forta");

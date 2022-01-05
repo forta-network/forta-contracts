@@ -33,6 +33,7 @@ contract StakingEscrowFactory {
     event NewStakingEscrow(address indexed escrow, address indexed vesting, address indexed manager);
 
     constructor(address __trustedForwarder, FortaStaking __staking) {
+        require(__trustedForwarder != address(0), "StakingEscrowFactory: __trustedForwarder cannot be address 0");
         token    = FortaBridged(address(__staking.stakedToken()));
         staking  = __staking;
         template = new StakingEscrow(
@@ -53,6 +54,8 @@ contract StakingEscrowFactory {
         address vesting,
         address manager
     ) public returns (address) {
+        require(vesting != address(0), "StakingEscrowFactory: vesting cannot be address 0");
+        require(manager != address(0), "StakingEscrowFactory: manager cannot be address 0");
         address instance = Clones.cloneDeterministic(
             address(template),
             StakingEscrowUtils.computeSalt(vesting, manager)

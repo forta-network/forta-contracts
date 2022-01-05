@@ -3,9 +3,13 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165CheckerUpgradeable.sol";
 import "../Roles.sol";
 
 abstract contract AccessManagedUpgradeable is ContextUpgradeable {
+
+    using ERC165CheckerUpgradeable for address;
+
     IAccessControl private _accessControl;
 
     event AccessManagerUpdated(address indexed newAddressManager);
@@ -19,6 +23,7 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
     }
 
     function __AccessManaged_init(address manager) internal initializer {
+        require(manager.supportsInterface(type(IAccessControl).interfaceId), "AccessManaged: manager must be IAccessControl");
         _accessControl = IAccessControl(manager);
         emit AccessManagerUpdated(manager);
     }
@@ -28,6 +33,7 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
     }
 
     function setAccessManager(address newManager) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newManager.supportsInterface(type(IAccessControl).interfaceId), "AccessManaged: newManager must be IAccessControl");
         _accessControl = IAccessControl(newManager);
         emit AccessManagerUpdated(newManager);
     }
