@@ -61,7 +61,7 @@ contract StakingEscrowFactory {
             StakingEscrowUtils.computeSalt(vesting, manager)
         );
         StakingEscrow(instance).initialize(vesting, manager);
-        token.grantRole(WHITELIST_ROLE, instance);
+        token.grantRole(token.WHITELIST_ROLE(), instance);
 
         emit NewStakingEscrow(instance, vesting, manager);
 
