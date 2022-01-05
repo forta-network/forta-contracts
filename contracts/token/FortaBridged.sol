@@ -21,15 +21,15 @@ contract FortaBridged is FortaCommon {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable childChainManagerProxy;
 
-    modifier flashRole(bytes32 role, address user) {
-        bool missing = !hasRole(role, user);
+    modifier flashWhitelistRole(address user) {
+        bool missing = !hasRole(WHITELIST_ROLE, user);
 
         if (missing) {
-            _grantRole(role, user);
+            _grantRole(WHITELIST_ROLE, user);
         }
         _;
         if (missing) {
-            _revokeRole(role, user);
+            _revokeRole(WHITELIST_ROLE, user);
         }
     }
 
@@ -51,7 +51,7 @@ contract FortaBridged is FortaCommon {
      * If the receiver is not whitelisted when the deposit happens, tokens are minted but not
      * usable until the receiver goes through the whitelisting process.
      */
-    function deposit(address user, bytes calldata depositData) external flashRole(WHITELIST_ROLE, user) {
+    function deposit(address user, bytes calldata depositData) external flashWhitelistRole(user) {
         require(msg.sender == childChainManagerProxy, "FortaBridged: only childChainManagerProxy can deposit");
 
         uint256 amount = abi.decode(depositData, (uint256));
@@ -69,7 +69,7 @@ contract FortaBridged is FortaCommon {
      *
      * In order to do so, the receiver address must be temporarily granted WHITELIST_ROLE.
      */
-    function withdrawTo(uint256 amount, address receiver) external flashRole(WHITELIST_ROLE, receiver) {
+    function withdrawTo(uint256 amount, address receiver) external flashWhitelistRole(receiver) {
         _transfer(msg.sender, receiver, amount);
         _burn(receiver, amount);
     }
