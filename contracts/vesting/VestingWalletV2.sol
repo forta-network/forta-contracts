@@ -70,6 +70,8 @@ contract VestingWalletV2 is VestingWallet {
         virtual
         onlyBeneficiary()
     {
+        require(amount > 0, "VestingWalletV2: amount cannot be 0");
+        require(l2Manager!= address(0), "VestingWalletV2: l2Manager cannot be address 0");
         // lock historicalBalance
         historicalBalanceMinimum = _historicalBalance(l1Token);
 
