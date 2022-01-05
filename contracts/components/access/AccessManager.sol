@@ -17,7 +17,7 @@ contract AccessManager is ForwardedContext, AccessControlUpgradeable, UUPSUpgrad
         require(__admin != address(0), "AccessManager: __admin cannot be address 0");
         __AccessControl_init();
         __UUPSUpgradeable_init();
-        _setupRole(DEFAULT_ADMIN_ROLE, __admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, __admin);
     }
 
     function setNewRole(bytes32 role, bytes32 admin) external onlyRole(DEFAULT_ADMIN_ROLE) {
