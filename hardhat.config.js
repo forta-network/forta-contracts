@@ -30,8 +30,8 @@ module.exports = {
     timeout: 300000,
   },
   etherscan: {
-    apiKey: argv.etherscan,
-    // apiKey: argv.polyscan,
+    // apiKey: argv.etherscan,
+    apiKey: argv.polyscan,
   },
   gasReporter: {
     currency: 'USD',
