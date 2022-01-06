@@ -11,11 +11,13 @@ describe('Dispatcher', function () {
     this.accounts.getAccount('scanner');
     this.SCANNER_ID = this.accounts.scanner.address;
     this.AGENT_ID   = ethers.utils.hexlify(ethers.utils.randomBytes(32));
-    await expect(this.agents.createAgent(this.AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ])).to.be.not.reverted
-    await this.scanners.connect(this.accounts.manager).adminRegister(this.SCANNER_ID, this.accounts.user1.address, 1);
     this.SCANNER_SUBJECT_ID = BigNumber.from(this.SCANNER_ID);
     await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, this.SCANNER_SUBJECT_ID, '100');
     await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, this.AGENT_ID, '100');
+    await expect(this.agents.createAgent(this.AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ])).to.be.not.reverted
+    await expect(this.agents.connect(this.accounts.manager).enableAgent(this.AGENT_ID, 0)).to.be.not.reverted
+    await this.scanners.connect(this.accounts.manager).adminRegister(this.SCANNER_ID, this.accounts.user1.address, 1);
+    
   });
 
   it('protected', async function () {

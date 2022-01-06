@@ -69,8 +69,8 @@ contract Dispatch is BaseComponentUpgradeable {
     }
 
     function link(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        require(_agents.ownerOf(agentId) != address(0), "Dispatch: invalid agent id");
-        require(_scanners.ownerOf(scannerId) != address(0), "Dispatch: invalid scanner id");
+        require(_agents.isEnabled(agentId), "Dispatch: Agent disabled");
+        require(_scanners.isEnabled(scannerId), "Dispatch: Scanner disabled");
 
         scannerToAgents[scannerId].add(agentId);
         agentToScanners[agentId].add(scannerId);
