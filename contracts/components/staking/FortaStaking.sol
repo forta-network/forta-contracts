@@ -89,14 +89,6 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         _;
     }
 
-    modifier onlyValidSubject(uint256 subject) {
-        require(
-            subject > 0,
-            "FortaStaking: subject cannot be 0"
-        );
-        _;
-    }
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -201,10 +193,8 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     function deposit(uint8 subjectType, uint256 subject, uint256 stakeValue)
         public
         onlyValidSubjectType(subjectType)
-        onlyValidSubject(subject)
         returns (uint256)
     {
-        require(subject > 0, "FortaStaking: cannot stake on subject 0");
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
 
@@ -226,7 +216,6 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     function initiateWithdrawal(uint8 subjectType, uint256 subject, uint256 sharesValue)
         public
         onlyValidSubjectType(subjectType)
-        onlyValidSubject(subject) 
         returns (uint64)
     {
         address staker = _msgSender();
@@ -258,7 +247,6 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     function withdraw(uint8 subjectType, uint256 subject)
         public
         onlyValidSubjectType(subjectType)
-        onlyValidSubject(subject)
         returns (uint256)
     {
         address staker = _msgSender();
@@ -291,7 +279,6 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
         public
         onlyRole(SLASHER_ROLE)
         onlyValidSubjectType(subjectType)
-        onlyValidSubject(subject)
         returns (uint256)
     {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
@@ -339,7 +326,6 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     function reward(uint8 subjectType, uint256 subject, uint256 value)
         public
         onlyValidSubjectType(subjectType)
-        onlyValidSubject(subject)
     {
         SafeERC20.safeTransferFrom(stakedToken, _msgSender(), address(this), value);
         _rewards.mint(FortaStakingUtils.subjectToActive(subjectType, subject), value);
@@ -373,7 +359,6 @@ contract FortaStaking is BaseComponent, ERC1155SupplyUpgradeable {
     function releaseReward(uint8 subjectType, uint256 subject, address account)
         public
         onlyValidSubjectType(subjectType)
-        onlyValidSubject(subject)
         returns (uint256)
     {
         uint256 value = availableReward(subjectType, subject, account);
