@@ -18,5 +18,7 @@
 	"ens-resolver-pending": "0x2bda1cea38a4d01ad766d92904e807bc065e3fbc0112eba295012df4faa90c3a",
 	"ens-resolver": "0x08f42fcc52a9C2F391bF507C4E8688D0b53e1bd7",
 	"ens-reverse-pending": "0x62dc824afff2fc51540d304201f9d2dd2ba8102a7c40c9a3aacfe5696a0202e2",
-	"ens-reverse": "0x634C83F3213CcfC895A4e6A2c137b2B572fa64ad"
+	"ens-reverse": "0x634C83F3213CcfC895A4e6A2c137b2B572fa64ad",
+	"scannerNodeVersion-pending": "0x25e95ae21b91ed837b587e4f4ba418fd2151293162e41ac738cc7e3fa4e3138d",
+	"scannerNodeVersion": "0x4720c872425876B6f4b4E9130CDef667aDE553b2"
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../BaseComponent.sol";
+import "../BaseComponentUpgradeable.sol";
 
 import "./ScannerRegistryCore.sol";
 import "./ScannerRegistryManaged.sol";
@@ -9,7 +9,7 @@ import "./ScannerRegistryEnable.sol";
 import "./ScannerRegistryMetadata.sol";
 
 contract ScannerRegistry is
-    BaseComponent,
+    BaseComponentUpgradeable,
     ScannerRegistryCore,
     ScannerRegistryManaged,
     ScannerRegistryEnable,
@@ -36,11 +36,11 @@ contract ScannerRegistry is
         super._scannerUpdate(scannerId, chainId);
     }
 
-    function _msgSender() internal view virtual override(BaseComponent, ScannerRegistryCore, ScannerRegistryEnable) returns (address sender) {
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(BaseComponent, ScannerRegistryCore, ScannerRegistryEnable) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (bytes calldata) {
         return super._msgData();
     }
 

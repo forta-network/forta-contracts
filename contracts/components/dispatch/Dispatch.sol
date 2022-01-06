@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import "../BaseComponent.sol";
+import "../BaseComponentUpgradeable.sol";
 import "../agents/AgentRegistry.sol";
 import "../scanners/ScannerRegistry.sol";
 
-contract Dispatch is BaseComponent {
+contract Dispatch is BaseComponentUpgradeable {
     using EnumerableSet for EnumerableSet.UintSet;
 
     AgentRegistry   private _agents;
@@ -69,10 +69,8 @@ contract Dispatch is BaseComponent {
     }
 
     function link(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        require(_agents.ownerOf(agentId) != address(0), "invalid agent id");
-        require(_agents.isEnabled(agentId), "Dispatch: Agent disabled");
-        require(_scanners.ownerOf(scannerId) != address(0), "invalid scanner id");
-        require(_scanners.isEnabled(scannerId), "Dispatch: Scanner disabled");
+        require(_agents.ownerOf(agentId) != address(0), "Dispatch: invalid agent id");
+        require(_scanners.ownerOf(scannerId) != address(0), "Dispatch: invalid scanner id");
 
         scannerToAgents[scannerId].add(agentId);
         agentToScanners[agentId].add(scannerId);
@@ -81,8 +79,8 @@ contract Dispatch is BaseComponent {
     }
 
     function unlink(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        require(_agents.ownerOf(agentId) != address(0), "invalid agent id");
-        require(_scanners.ownerOf(scannerId) != address(0), "invalid scanner id");
+        require(_agents.ownerOf(agentId) != address(0), "Dispatch: invalid agent id");
+        require(_scanners.ownerOf(scannerId) != address(0), "Dispatch: invalid scanner id");
 
         scannerToAgents[scannerId].remove(agentId);
         agentToScanners[agentId].remove(scannerId);

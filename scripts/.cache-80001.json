@@ -24,5 +24,7 @@
 	"ens-resolver-pending": "0x1625da0c48703cceefb7d707b15220d885c88f3a72c1d8f1cc4e1663e117fb70",
 	"ens-resolver": "0x5f7c5bbBa72e1e1fae689120D76D2f334A390Ae9",
 	"ens-reverse-pending": "0xca84b80c24d5f51f4fa57d2f924df1864899799a45bb452229a54d2f5e59cd5a",
-	"ens-reverse": "0xE8cf49B7A19b6AEaF7d016B02Cd8Ce535f23193F"
+	"ens-reverse": "0xE8cf49B7A19b6AEaF7d016B02Cd8Ce535f23193F",
+	"scannerNodeVersion-pending": "0xe598d97152f18fa3925ea76fc109b0b380777486618b3827fdb64e47b0b0df72",
+	"scannerNodeVersion": "0x1B2F9edA5E29A92f92ba87bF354ACe37879939ed"
 }

@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: Unlicensed
 pragma solidity ^0.8.0;
 
-import "../BaseComponent.sol";
+import "../BaseComponentUpgradeable.sol";
 import "../scanners/ScannerRegistry.sol";
 
-contract Alerts is BaseComponent {
+contract Alerts is BaseComponentUpgradeable {
     ScannerRegistry public scannerRegistry;
 
     event AlertBatch(
@@ -47,7 +47,7 @@ contract Alerts is BaseComponent {
         uint256 _maxSeverity,
         string memory _ref
     ) public onlyValidScanner() {
-        require(_blockEnd >= _blockStart, "_blockEnd must be >= _blockStart");
+        require(_blockEnd >= _blockStart, "AlertBatch: _blockEnd must be >= _blockStart");
 
         emit AlertBatch(
             keccak256(abi.encodePacked(_ref)),
@@ -65,7 +65,7 @@ contract Alerts is BaseComponent {
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        require(newScannerRegistry != address(0), "Address(0) is not allowed");
+        require(newScannerRegistry != address(0), "AlertBatch: Address(0) is not allowed");
         emit ScannerRegistryChanged(address(scannerRegistry), newScannerRegistry, _msgSender());
 
         scannerRegistry = ScannerRegistry(newScannerRegistry);

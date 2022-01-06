@@ -26,7 +26,7 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
 
         bytes32 oldHash = keccak256(bytes(_agentMetadata[agentId].metadata));
         bytes32 newHash = keccak256(bytes(newMetadata));
-        require(!_agentMetadataUniqueness[newHash], "Error: metadata should be a unique property");
+        require(!_agentMetadataUniqueness[newHash], "AgentRegistryMetadata: metadata should be a unique property");
         _agentMetadataUniqueness[newHash] = true;
         _agentMetadataUniqueness[oldHash] = false;
 
