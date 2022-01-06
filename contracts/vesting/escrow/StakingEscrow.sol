@@ -57,42 +57,45 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * Tokens gained as staking rewards cannot be staked here. They should be released to another account and staked
      * there.
      */
-    function deposit(address subject, uint256 stakeValue) public onlyManager() vestingBalance(stakeValue) returns (uint256) {
-        require(stakeValue > 0, "StakingEscrow: stakeValue must be > 0");
+    function deposit(uint8 subjectType, uint256 subject, uint256 stakeValue) public onlyManager() vestingBalance(stakeValue) returns (uint256) {
         SafeERC20.safeApprove(
             IERC20(address(l2token)),
             address(l2staking),
             stakeValue
         );
-        return l2staking.deposit(subject, stakeValue);
+        return l2staking.deposit(subjectType, subject, stakeValue);
     }
 
     /**
      * Overload: deposit everything
      */
-    function deposit(address subject) public returns (uint256) {
-        return deposit(subject, l2token.balanceOf(address(this)) - pendingReward);
+    function deposit(uint8 subjectType, uint256 subject) public returns (uint256) {
+        return deposit(subjectType, subject, l2token.balanceOf(address(this)) - pendingReward);
     }
 
     /**
      * Staking operation: Relay `initiateWithdrawal` calls to the staking contract.
      */
-    function initiateWithdrawal(address subject, uint256 sharesValue) public onlyManager() returns (uint64) {
-        return l2staking.initiateWithdrawal(subject, sharesValue);
+    function initiateWithdrawal(uint8 subjectType, uint256 subject, uint256 sharesValue) public onlyManager() returns (uint64) {
+        return l2staking.initiateWithdrawal(subjectType, subject, sharesValue);
     }
 
     /**
      * Overload: initiate withdrawal of the full stake amount
      */
-    function initiateFullWithdrawal(address subject) public returns (uint64) {
-        return initiateWithdrawal(subject, l2staking.balanceOf(address(this), uint256(uint160(subject))));
+    function initiateFullWithdrawal(uint8 subjectType, uint256 subject) public returns (uint64) {
+        return initiateWithdrawal(
+            subjectType,
+            subject,
+            l2staking.sharesOf(subjectType, subject, address(this))
+        );
     }
 
     /**
      * Staking operation: Relay `withdrawal` calls to the staking contract.
      */
-    function withdraw(address subject) public onlyManager() returns (uint256) {
-        return l2staking.withdraw(subject);
+    function withdraw(uint8 subjectType, uint256 subject) public onlyManager() returns (uint256) {
+        return l2staking.withdraw(subjectType, subject);
     }
 
     /**
@@ -101,8 +104,8 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * Note: anyone can call that directly on the staking contract. One should not assume rewards claims are done
      * through this relay function.
      */
-    function claimReward(address subject) public returns (uint256) {
-        return l2staking.releaseReward(subject, address(this));
+    function claimReward(uint8 subjectType, uint256 subject) public returns (uint256) {
+        return l2staking.releaseReward(subjectType, subject, address(this));
     }
 
     /**
@@ -158,9 +161,8 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
     /**
      * Hook for reward accounting
      */
-    function onRewardReceived(address, uint256 amount) public {
+    function onRewardReceived(uint8, uint256, uint256 amount) public {
         require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
-
         pendingReward += amount;
     }
 
