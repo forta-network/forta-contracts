@@ -163,7 +163,7 @@ describe('Agent Registry', function () {
 
     });
 
-    it('isEnable is false for non registered agents, even if staked', async function() {
+    it('isEnabled is false for non registered agents, even if staked', async function() {
         const randomAgent = '123456789'
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, randomAgent, '100');
         expect(await this.agents.isEnabled(randomAgent)).to.be.equal(false);
