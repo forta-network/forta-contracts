@@ -25,6 +25,13 @@ abstract contract BaseComponentUpgradeable is
     Multicall,
     UUPSUpgradeable
 {
+    uint256 public version;
+
+    function __BaseComponentUpgradeable(uint256 _version) public initializer {
+        require(_version > version, "BaseComponentUpgradeable: upgrade to newer version number");
+        version = _version;
+    }
+    
     // Access control for the upgrade process
     function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(UPGRADER_ROLE) {
     }

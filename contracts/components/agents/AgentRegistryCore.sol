@@ -43,6 +43,10 @@ abstract contract AgentRegistryCore is
         _afterAgentUpdate(agentId, metadata, chainIds);
     }
 
+    function isCreated(uint256 agentId) public view returns(bool) {
+        return _exists(agentId);
+    }
+
     function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds)
     public
         onlyOwnerOf(agentId)

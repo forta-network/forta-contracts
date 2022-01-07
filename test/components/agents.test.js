@@ -50,7 +50,7 @@ describe('Agent Registry', function () {
         await expect(this.agents.connect(this.accounts.other).createAgent(...args))
         .to.emit(this.agents, 'Transfer').withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
         .to.emit(this.agents, 'AgentUpdated').withArgs(AGENT_ID, this.accounts.other.address, 'Metadata1', [ 1 , 3, 4, 5 ]);
-
+        expect(await this.agents.isCreated(AGENT_ID)).to.be.equal(true);
         expect(await this.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.agents.getAgent(AGENT_ID).then(agent => [
           agent.version.toNumber(),
@@ -166,7 +166,7 @@ describe('Agent Registry', function () {
     it('isEnable is false for non registered agents, even if staked', async function() {
         const randomAgent = '123456789'
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, randomAgent, '100');
-        await expect(this.agents.isEnabled(randomAgent)).to.be.revertedWith('ERC721: owner query for nonexistent token');
+        expect(await this.agents.isEnabled(randomAgent)).to.be.equal(false);
     });
 
     describe('manager', async function () {

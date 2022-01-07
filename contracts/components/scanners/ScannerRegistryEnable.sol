@@ -22,14 +22,14 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAware
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, Permission permission, bool value);
 
     /**
-     * Check if scanner is enabled
-     * NOTE: reverts with 'ERC721: owner query for nonexistent token' if the scanner is not registered
-     * @param scannerId token Id
-     * @return false if the scanner has been disabled, is staked under minimum value, true if otherwise
-     */
+    * Check if scanner is enabled
+    * @param scannerId token Id
+    * @return true if the scanner is registered, has not been disabled, and is staked over minimum value.
+    * Returns false if otherwise
+    */
     function isEnabled(uint256 scannerId) public view virtual returns (bool) {
          // Permission.length < 256 → we don't have to loop
-        return ownerOf(scannerId) != address(0) &&
+        return isRegistered(scannerId) &&
             _disabled[scannerId]._data[0] == 0 &&
             _isStakedOverMinimum(SCANNER_SUBJECT, scannerId); 
     }

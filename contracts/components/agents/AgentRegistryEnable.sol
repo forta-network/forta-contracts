@@ -21,13 +21,13 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, MinStakeAwareUpgrade
 
     /**
      * Check if agent is enabled
-     * NOTE: reverts with 'ERC721: owner query for nonexistent token' if the agent is not registered
      * @param agentId token Id
-     * @return false if the agent has been disabled, is staked under minimum value, true if otherwise
+     * @return true if the agent exist, has not been disabled, and is staked over minimum value.
+     * Returns false if otherwise
      */
     function isEnabled(uint256 agentId) public view virtual returns (bool) {
          // Permission.length < 256 → we don't have to loop
-        return ownerOf(agentId) != address(0) &&
+        return isCreated(agentId) &&
             _disabled[agentId]._data[0] == 0 &&
             _isStakedOverMinimum(AGENT_SUBJECT, agentId); 
     }

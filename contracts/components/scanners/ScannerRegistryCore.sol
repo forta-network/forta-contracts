@@ -20,6 +20,10 @@ abstract contract ScannerRegistryCore is
         _register(scanner, owner, chainId);
     }
 
+    function isRegistered(uint256 scannerId) public view returns(bool) {
+        return _exists(scannerId);
+    }
+
     function register(address owner, uint256 chainId) virtual public {
         _register(_msgSender(), owner, chainId);
     }

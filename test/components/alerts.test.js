@@ -25,7 +25,7 @@ describe('Alerts', function () {
   it('scanner cannot post if not registered ', async function () {
 
     await expect(this.alerts.connect(this.accounts.user1).addAlertBatch('1','123','124','3','1','ref'))
-    .to.be.revertedWith("ERC721: owner query for nonexistent token");
+    .to.be.revertedWith("Alerts: Scanner not enabled");
   });
 
 

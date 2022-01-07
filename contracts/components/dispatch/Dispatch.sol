@@ -79,8 +79,8 @@ contract Dispatch is BaseComponentUpgradeable {
     }
 
     function unlink(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        require(_agents.ownerOf(agentId) != address(0), "Dispatch: invalid agent id");
-        require(_scanners.ownerOf(scannerId) != address(0), "Dispatch: invalid scanner id");
+        require(_agents.isCreated(agentId), "Dispatch: invalid agent id");
+        require(_scanners.isRegistered(scannerId), "Dispatch: invalid scanner id");
 
         scannerToAgents[scannerId].remove(agentId);
         agentToScanners[agentId].remove(scannerId);
