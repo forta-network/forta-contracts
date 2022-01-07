@@ -32,6 +32,10 @@ contract ScannerRegistry is
         __MinStakeAwareUpgradeable_init(_minStakeController);
     }
 
+    function register(address owner, uint256 chainId) public virtual override(ScannerRegistryCore, ScannerRegistryEnable) {
+        super.register(owner, chainId);
+    }
+
     function _scannerUpdate(uint256 scannerId, uint256 chainId) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) {
         super._scannerUpdate(scannerId, chainId);
     }

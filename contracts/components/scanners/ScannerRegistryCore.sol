@@ -20,7 +20,7 @@ abstract contract ScannerRegistryCore is
         _register(scanner, owner, chainId);
     }
 
-    function register(address owner, uint256 chainId) public {
+    function register(address owner, uint256 chainId) virtual public {
         _register(_msgSender(), owner, chainId);
     }
 

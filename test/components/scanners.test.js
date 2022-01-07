@@ -22,6 +22,13 @@ describe('Scanner Registry', function () {
     expect(await this.scanners.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
   });
 
+  it('public register fails if minStake = 0', async function () {
+    await expect(this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '0')).to.not.be.reverted;
+    await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1))
+    .to.be.revertedWith('ScannerRegistryEnable: staking for public registration not enabled')
+
+  });
+
   it('admin register', async function () {
     const SCANNER_ID = this.accounts.scanner.address;
 

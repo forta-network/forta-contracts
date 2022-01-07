@@ -21,14 +21,20 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAware
 
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, Permission permission, bool value);
 
-    /**
-     * @dev Enable/Disable scaner
-     */
+    
     function isEnabled(uint256 scannerId) public view virtual returns (bool) {
         // Permission.length < 256 → we don't have to loop
         return _disabled[scannerId]._data[0] == 0 && _isStakedOverMinimum(SCANNER_SUBJECT, scannerId); 
     }
 
+    function register(address owner, uint256 chainId) virtual override public {
+        require(_getMinStake(SCANNER_SUBJECT) > 0, "ScannerRegistryEnable: staking for public registration not enabled");
+        super.register(owner, chainId);
+    }
+
+    /**
+     * @dev Enable/Disable scaner
+     */
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
         require(_isStakedOverMinimum(SCANNER_SUBJECT, scannerId), "ScannerRegistryEnable: scanner staked under minimum");
         require(_hasPermission(scannerId, permission), "ScannerRegistryEnable: invalid permission");

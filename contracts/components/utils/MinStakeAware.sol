@@ -29,5 +29,9 @@ abstract contract MinStakeAwareUpgradeable is AccessManagedUpgradeable {
         return _minStakeController.isStakedOverMinimum(subjectType, subject);
     }
 
+    function _getMinStake(uint8 subjectType) internal view returns (uint256) {
+        return _minStakeController.getMinStake(subjectType);
+    }
+
     uint256[49] private __gap;
 }
