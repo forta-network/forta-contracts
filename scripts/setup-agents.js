@@ -32,7 +32,6 @@ async function main() {
     const contracts = await Promise.all(Object.entries({
         // token:     utils.attach('Forta',           'forta.eth'                    ).then(contract => contract.connect(deployer)),
         access:    utils.attach('AccessManager',   'access.forta.eth'             ).then(contract => contract.connect(deployer)),
-        alerts:    utils.attach('Alerts',          'alerts.forta.eth'             ).then(contract => contract.connect(deployer)),
         dispatch:  utils.attach('Dispatch',        'dispatch.forta.eth'           ).then(contract => contract.connect(deployer)),
         router:    utils.attach('Router',          'router.forta.eth'             ).then(contract => contract.connect(deployer)),
         // staking:   utils.attach('FortaStaking',    'staking.forta.eth'            ).then(contract => contract.connect(deployer)),

@@ -43,19 +43,6 @@ async function main() {
     //     },
     // ))),
 
-    // contracts.alerts &&
-    // await contracts.alerts.resolvedAddress.then(address => utils.getFactory(
-    //     'Alerts',
-    //     'alerts.forta.eth'
-    // ).then(factory => utils.performUpgrade(
-    //     { address },
-    //     factory.connect(deployer),
-    //     {
-    //         unsafeAllow: 'delegatecall',
-    //         constructorArgs: [ forwarderAddress ],
-    //     },
-    // ))),
-
     // contracts.dispatch &&
     // await contracts.dispatch.resolvedAddress.then(address => utils.getFactory(
     //     'Dispatch',
