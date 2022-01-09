@@ -11,7 +11,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Supp
 
 import "./FortaStakingUtils.sol";
 import "./FortaStakingSubjectTypes.sol";
-import "./IMinimumStakeController.sol";
+import "./IMinStakeController.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
@@ -42,7 +42,7 @@ interface IRewardReceiver {
  * to quick devaluation in case of slashing event for the corresponding subject. Thus, trading of such shares should be
  * be done very carefully.
  */
-contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, IMinimumStakeController {
+contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, IMinStakeController {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
@@ -493,15 +493,19 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, IMi
     }
 
     // Mininimum Stake
+
+    /**
+    * Sets minimum stake for subject type. To be controlled by governance
+    */
     function setMinStake(uint8 subjectType, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
-        emit IMinimumStakeController.MinimumStakeChanged(amount, _minimumStakes[subjectType]);
+        emit MinStakeChanged(amount, _minimumStakes[subjectType]);
         _minimumStakes[subjectType] = amount;
     }
 
     function getMinStake(uint8 subjectType) external view returns (uint256) {
         return _minimumStakes[subjectType];
     }
-    function isStakedOverMinimum(uint8 subjectType, uint256 subject) external view returns (bool) {
+    function isStakedOverMin(uint8 subjectType, uint256 subject) external view returns (bool) {
         return activeStakeFor(subjectType, subject) >= _minimumStakes[subjectType];
     }
 

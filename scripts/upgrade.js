@@ -48,6 +48,7 @@ async function main() {
         DISPATCHER:    ethers.utils.id('DISPATCHER_ROLE'),
         SLASHER:       ethers.utils.id('SLASHER_ROLE'),
         SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
+        REWARDS_ADMIN: ethers.utils.id('REWARDS_ADMIN_ROLE'), 
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
     // await contracts.access.grantRole(roles.UPGRADER,      deployer.address        ).then(tx => tx.wait());

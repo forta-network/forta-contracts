@@ -29,11 +29,11 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, MinStakeAwareUpgrade
          // Permission.length < 256 → we don't have to loop
         return isCreated(agentId) &&
             _disabled[agentId]._data[0] == 0 &&
-            _isStakedOverMinimum(AGENT_SUBJECT, agentId); 
+            _isStakedOverMin(AGENT_SUBJECT, agentId); 
     }
 
     function enableAgent(uint256 agentId, Permission permission) public virtual {
-        require(_isStakedOverMinimum(AGENT_SUBJECT, agentId), "AgentRegistryEnable: agent staked under minimum");
+        require(_isStakedOverMin(AGENT_SUBJECT, agentId), "AgentRegistryEnable: agent staked under minimum");
         require(_hasPermission(agentId, permission), "AgentRegistryEnable: invalid permission");
         _enable(agentId, permission, true);
     }

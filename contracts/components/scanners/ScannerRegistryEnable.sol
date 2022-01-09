@@ -31,11 +31,11 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAware
          // Permission.length < 256 → we don't have to loop
         return isRegistered(scannerId) &&
             _disabled[scannerId]._data[0] == 0 &&
-            _isStakedOverMinimum(SCANNER_SUBJECT, scannerId); 
+            _isStakedOverMin(SCANNER_SUBJECT, scannerId); 
     }
 
     function register(address owner, uint256 chainId) virtual override public {
-        require(_getMinStake(SCANNER_SUBJECT) > 0, "ScannerRegistryEnable: staking for public registration not enabled");
+        require(_getMinStake(SCANNER_SUBJECT) > 0, "ScannerRegistryEnable: public registration only when staking activated");
         super.register(owner, chainId);
     }
 
@@ -43,7 +43,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAware
      * @dev Enable/Disable scaner
      */
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_isStakedOverMinimum(SCANNER_SUBJECT, scannerId), "ScannerRegistryEnable: scanner staked under minimum");
+        require(_isStakedOverMin(SCANNER_SUBJECT, scannerId), "ScannerRegistryEnable: scanner staked under minimum");
         require(_hasPermission(scannerId, permission), "ScannerRegistryEnable: invalid permission");
         _enable(scannerId, permission, true);
     }
