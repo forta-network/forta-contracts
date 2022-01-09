@@ -26,9 +26,8 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, MinStakeAwareUpgrade
      * Returns false if otherwise
      */
     function isEnabled(uint256 agentId) public view virtual returns (bool) {
-         // Permission.length < 256 → we don't have to loop
         return isCreated(agentId) &&
-            _disabled[agentId]._data[0] == 0 &&
+            _getDisableFlags(agentId) == 0 &&
             _isStakedOverMin(AGENT_SUBJECT, agentId); 
     }
 
@@ -55,6 +54,11 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, MinStakeAwareUpgrade
         _afterAgentEnable(agentId, permission, enable);
     }
 
+    /**
+     * Get the disabled flags for an agentId. Permission (uint8) is used for indexing, so we don't
+     * need to loop. 
+     * If not disabled, all flags will be 0
+     */
     function _getDisableFlags(uint256 agentId) internal view returns (uint256) {
         return _disabled[agentId]._data[0];
     }

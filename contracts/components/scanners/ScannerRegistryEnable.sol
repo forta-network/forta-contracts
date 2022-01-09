@@ -28,9 +28,8 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAware
     * Returns false if otherwise
     */
     function isEnabled(uint256 scannerId) public view virtual returns (bool) {
-         // Permission.length < 256 → we don't have to loop
         return isRegistered(scannerId) &&
-            _disabled[scannerId]._data[0] == 0 &&
+            _getDisableFlags(scannerId) == 0 &&
             _isStakedOverMin(SCANNER_SUBJECT, scannerId); 
     }
 
@@ -67,6 +66,11 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAware
         _afterScannerEnable(scannerId, permission, enable);
     }
 
+    /**
+     * Get the disabled flags for an agentId. Permission (uint8) is used for indexing, so we don't
+     * need to loop. 
+     * If not disabled, all flags will be 0
+     */
     function _getDisableFlags(uint256 scannerId) internal view returns (uint256) {
         return _disabled[scannerId]._data[0];
     }
