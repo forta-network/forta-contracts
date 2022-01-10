@@ -4,18 +4,16 @@ pragma solidity ^0.8.0;
 import "../BaseComponentUpgradeable.sol";
 
 import "./AgentRegistryCore.sol";
-import "./AgentRegistryEnable.sol";
+import "./AgentRegistryStakeAware.sol";
 import "./AgentRegistryEnumerable.sol";
 import "./AgentRegistryMetadata.sol";
-import "../utils/MinStakeAware.sol";
 
 contract AgentRegistry is
     BaseComponentUpgradeable,
     AgentRegistryCore,
-    AgentRegistryEnable,
+    AgentRegistryStakeAware,
     AgentRegistryMetadata,
-    AgentRegistryEnumerable,
-    MinStakeAwareUpgradeable
+    AgentRegistryEnumerable
 {
     string public constant version = "0.1.2";
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -40,7 +38,7 @@ contract AgentRegistry is
     function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
         super._agentUpdate(agentId, newMetadata, newChainIds);
     }
-
+/*
     function isEnabled(uint256 agentId) public view override returns (bool) {
         return super.isEnabled(agentId) && _isStakedOverMin(AGENT_SUBJECT, agentId); 
     }
@@ -49,12 +47,12 @@ contract AgentRegistry is
         require(_isStakedOverMin(AGENT_SUBJECT, agentId), "AgentRegistry: agent staked under minimum");
         super.enableAgent(agentId, permission);
     }
-
-    function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable, AgentRegistryCore) returns (address sender) {
+*/
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryStakeAware) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable, AgentRegistryCore) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryStakeAware) returns (bytes calldata) {
         return super._msgData();
     }
 
