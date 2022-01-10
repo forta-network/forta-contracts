@@ -10,8 +10,10 @@ import "../../tools/ENSReverseRegistration.sol";
 
 // This cannot be BaseComponentUpgradeable, because BaseComponentUpgradeable is AccessManagedUpgradeable
 contract AccessManager is ForwardedContext, AccessControlUpgradeable, UUPSUpgradeable, Multicall {
-    /// @custom:oz-upgrades-unsafe-allow constructor
+    
     string public constant version = "0.1.0";
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
     function initialize(address __admin) external initializer {

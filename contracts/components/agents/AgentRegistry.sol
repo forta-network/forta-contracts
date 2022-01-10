@@ -7,15 +7,17 @@ import "./AgentRegistryCore.sol";
 import "./AgentRegistryEnable.sol";
 import "./AgentRegistryEnumerable.sol";
 import "./AgentRegistryMetadata.sol";
+import "../utils/MinStakeAware.sol";
 
 contract AgentRegistry is
     BaseComponentUpgradeable,
     AgentRegistryCore,
     AgentRegistryEnable,
     AgentRegistryMetadata,
-    AgentRegistryEnumerable
+    AgentRegistryEnumerable,
+    MinStakeAwareUpgradeable
 {
-    string public constant version = "0.1.1";
+    string public constant version = "0.1.2";
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -39,11 +41,20 @@ contract AgentRegistry is
         super._agentUpdate(agentId, newMetadata, newChainIds);
     }
 
-    function _msgSender() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryEnable) returns (address sender) {
+    function isEnabled(uint256 agentId) public view override returns (bool) {
+        return super.isEnabled(agentId) && _isStakedOverMin(AGENT_SUBJECT, agentId); 
+    }
+
+    function enableAgent(uint256 agentId, Permission permission) public override {
+        require(_isStakedOverMin(AGENT_SUBJECT, agentId), "AgentRegistry: agent staked under minimum");
+        super.enableAgent(agentId, permission);
+    }
+
+    function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable, AgentRegistryCore) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryEnable) returns (bytes calldata) {
+    function _msgData() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable, AgentRegistryCore) returns (bytes calldata) {
         return super._msgData();
     }
 

@@ -4,16 +4,11 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./AgentRegistryCore.sol";
-import "../utils/MinStakeAware.sol";
+import "./AgentRegistryPermissioned.sol";
 
-abstract contract AgentRegistryEnable is AgentRegistryCore, MinStakeAwareUpgradeable {
+
+abstract contract AgentRegistryEnable is AgentRegistryCore, AgentRegistryPermissioned {
     using BitMaps for BitMaps.BitMap;
-
-    enum Permission {
-        ADMIN,
-        OWNER,
-        length
-    }
 
     mapping(uint256 => BitMaps.BitMap) private _disabled;
 
@@ -22,17 +17,15 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, MinStakeAwareUpgrade
     /**
      * Check if agent is enabled
      * @param agentId token Id
-     * @return true if the agent exist, has not been disabled, and is staked over minimum value.
+     * @return true if the agent exist and has not been disabled
      * Returns false if otherwise
      */
     function isEnabled(uint256 agentId) public view virtual returns (bool) {
         return isCreated(agentId) &&
-            _getDisableFlags(agentId) == 0 &&
-            _isStakedOverMin(AGENT_SUBJECT, agentId); 
+            _getDisableFlags(agentId) == 0;
     }
 
     function enableAgent(uint256 agentId, Permission permission) public virtual {
-        require(_isStakedOverMin(AGENT_SUBJECT, agentId), "AgentRegistryEnable: agent staked under minimum");
         require(_hasPermission(agentId, permission), "AgentRegistryEnable: invalid permission");
         _enable(agentId, permission, true);
     }
@@ -42,7 +35,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, MinStakeAwareUpgrade
         _enable(agentId, permission, false);
     }
 
-    function _hasPermission(uint256 agentId, Permission permission) internal view returns (bool) {
+    function _hasPermission(uint256 agentId, Permission permission) internal override view returns (bool) {
         if (permission == Permission.ADMIN) { return hasRole(AGENT_ADMIN_ROLE, _msgSender()); }
         if (permission == Permission.OWNER) { return _msgSender() == ownerOf(agentId); }
         return false;
@@ -76,14 +69,6 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, MinStakeAwareUpgrade
 
     function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256)", agentId));
-    }
-
-    function _msgSender() internal view virtual override(ContextUpgradeable, AgentRegistryCore) returns (address sender) {
-        return super._msgSender();
-    }
-
-    function _msgData() internal view virtual override(ContextUpgradeable, AgentRegistryCore) returns (bytes calldata) {
-        return super._msgData();
     }
 
     uint256[49] private __gap;
