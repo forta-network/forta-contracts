@@ -15,6 +15,7 @@ contract ScannerRegistry is
     ScannerRegistryEnable,
     ScannerRegistryMetadata
 {
+    string public constant version = "0.1.1";
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -22,14 +23,12 @@ contract ScannerRegistry is
         address __manager,
         address __router,
         string calldata __name,
-        string calldata __symbol,
-        address _minStakeController
+        string calldata __symbol
     ) public initializer {
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
         __ERC721_init(__name, __symbol);
-        __MinStakeAwareUpgradeable_init(_minStakeController);
     }
 
     function register(address owner, uint256 chainId) public virtual override(ScannerRegistryCore, ScannerRegistryEnable) {

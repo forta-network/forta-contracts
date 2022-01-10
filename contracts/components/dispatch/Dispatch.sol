@@ -13,6 +13,8 @@ contract Dispatch is BaseComponentUpgradeable {
     AgentRegistry   private _agents;
     ScannerRegistry private _scanners;
 
+    string public constant version = "0.1.1";
+
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
 
@@ -53,10 +55,10 @@ contract Dispatch is BaseComponentUpgradeable {
         return scannerToAgents[scannerId].at(pos);
     }
 
-    function agentRefAt(uint256 scannerId, uint256 pos) external view returns (uint256 agentId, bool enabled, uint256 version, string memory metadata, uint256[] memory chainIds) {
+    function agentRefAt(uint256 scannerId, uint256 pos) external view returns (uint256 agentId, bool enabled, uint256 agentVersion, string memory metadata, uint256[] memory chainIds) {
         agentId = agentsAt(scannerId, pos);
         enabled = _agents.isEnabled(agentId);
-        (version, metadata, chainIds) = _agents.getAgent(agentId);
+        (agentVersion, metadata, chainIds) = _agents.getAgent(agentId);
     }
 
     function scannersAt(uint256 agentId, uint256 pos) public view returns (uint256) {
@@ -112,17 +114,17 @@ contract Dispatch is BaseComponentUpgradeable {
 
     function scannerHash(uint256 scannerId) external view returns (uint256 length, bytes32 manifest) {
         uint256[] memory agents  = scannerToAgents[scannerId].values();
-        uint256[] memory version = new uint256[](agents.length);
+        uint256[] memory agentVersion = new uint256[](agents.length);
         bool[]    memory enabled = new bool[](agents.length);
 
         for (uint256 i = 0; i < agents.length; ++i) {
-            (version[i],,) = _agents.getAgent(agents[i]);
+            (agentVersion[i],,) = _agents.getAgent(agents[i]);
             enabled[i]     = _agents.isEnabled(agents[i]);
         }
 
         return (
             agents.length,
-            keccak256(abi.encodePacked(agents, version, enabled))
+            keccak256(abi.encodePacked(agents, agentVersion, enabled))
         );
     }
 
