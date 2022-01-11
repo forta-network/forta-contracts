@@ -38,16 +38,7 @@ contract AgentRegistry is
     function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
         super._agentUpdate(agentId, newMetadata, newChainIds);
     }
-/*
-    function isEnabled(uint256 agentId) public view override returns (bool) {
-        return super.isEnabled(agentId) && _isStakedOverMin(AGENT_SUBJECT, agentId); 
-    }
 
-    function enableAgent(uint256 agentId, Permission permission) public override {
-        require(_isStakedOverMin(AGENT_SUBJECT, agentId), "AgentRegistry: agent staked under minimum");
-        super.enableAgent(agentId, permission);
-    }
-*/
     function _msgSender() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryEnable) returns (address sender) {
         return super._msgSender();
     }
