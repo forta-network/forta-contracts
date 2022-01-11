@@ -100,7 +100,7 @@ async function migrate(config = {}) {
     DEBUG(`[1] forwarder: ${contracts.forwarder.address}`);
 
     contracts.token = await ethers.getContractFactory(
-        config.l2enable ? 'FortaBridged' : 'Forta',
+        config.l2enable ? 'FortaBridgedPolygon' : 'Forta',
         deployer
     ).then(factory => utils.tryFetchProxy(
         CACHE,
