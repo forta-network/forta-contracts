@@ -75,20 +75,56 @@ describe('Upgrades testing', function () {
             NewImplementation,
             {
                 call: {
-                    fn:'setMinStakeController(address)',
+                    fn:'setStakeController(address)',
                     args: [this.contracts.staking.address]
                 },
                 constructorArgs: [ this.contracts.forwarder.address ],
                 unsafeAllow: ['delegatecall']
             }
         );
-        expect(await agentRegistry.getMinStakeController()).to.be.equal(this.contracts.staking.address)
+        expect(await agentRegistry.getStakeController()).to.be.equal(this.contracts.staking.address)
         expect(await agentRegistry.version()).to.be.equal('0.1.2')
         expect(await agents_0_1_1.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false)
         await agents_0_1_1.connect(this.accounts.user1).enableAgent(AGENT_ID, 1)
         expect(await agents_0_1_1.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true)
         expect(await agents_0_1_1.name()).to.be.equal('Forta Agents');
         expect(await agents_0_1_1.symbol()).to.be.equal('FAgents'); 
+    })
+  })
+
+
+  describe.only('Scanner Registry', async function() {
+    it(' 0.1.0 -> 0.1.1', async function () {
+        const ScannerRegistry_0_1_0 = await ethers.getContractFactory("ScannerRegistry_0_1_0");
+        const scanners_0_1_1 = await upgrades.deployProxy(
+            ScannerRegistry_0_1_0,
+            [ this.contracts.access.address, this.contracts.router.address, 'Forta Scanners', 'FScanners' ],
+            { 
+                kind: 'uups',
+                constructorArgs: [ this.contracts.forwarder.address ],
+                unsafeAllow: ['delegatecall']
+            }
+        );
+        await scanners_0_1_1.deployed();
+
+
+
+        const NewImplementation = await ethers.getContractFactory('ScannerRegistry');
+        const scannerRegistry = await upgrades.upgradeProxy(
+            scanners_0_1_1.address,
+            NewImplementation,
+            {
+                call: {
+                    fn:'setStakeController(address)',
+                    args: [this.contracts.staking.address]
+                },
+                constructorArgs: [ this.contracts.forwarder.address ],
+                unsafeAllow: ['delegatecall']
+            }
+        );
+        expect(await agentRegistry.getStakeController()).to.be.equal(this.contracts.staking.address)
+        expect(await agentRegistry.version()).to.be.equal('0.1.1')
+
     })
   })
 });
