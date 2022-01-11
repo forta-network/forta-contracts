@@ -4,10 +4,15 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./AgentRegistryCore.sol";
-import "./AgentRegistryPermissioned.sol";
 
-abstract contract AgentRegistryEnable is AgentRegistryCore, AgentRegistryPermissioned {
+abstract contract AgentRegistryEnable is AgentRegistryCore {
     using BitMaps for BitMaps.BitMap;
+
+    enum Permission {
+        ADMIN,
+        OWNER,
+        length
+    }
 
     mapping(uint256 => BitMaps.BitMap) private _disabled;
 
