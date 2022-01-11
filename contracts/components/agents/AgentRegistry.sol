@@ -4,14 +4,14 @@ pragma solidity ^0.8.0;
 import "../BaseComponentUpgradeable.sol";
 
 import "./AgentRegistryCore.sol";
-import "./AgentRegistryStakeAware.sol";
+import "./AgentRegistryEnable.sol";
 import "./AgentRegistryEnumerable.sol";
 import "./AgentRegistryMetadata.sol";
 
 contract AgentRegistry is
     BaseComponentUpgradeable,
     AgentRegistryCore,
-    AgentRegistryStakeAware,
+    AgentRegistryEnable,
     AgentRegistryMetadata,
     AgentRegistryEnumerable
 {
@@ -48,11 +48,11 @@ contract AgentRegistry is
         super.enableAgent(agentId, permission);
     }
 */
-    function _msgSender() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryStakeAware) returns (address sender) {
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryEnable) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryStakeAware) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryEnable) returns (bytes calldata) {
         return super._msgData();
     }
 
