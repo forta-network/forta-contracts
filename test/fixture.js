@@ -61,6 +61,12 @@ function prepare(config = {}) {
       this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address             ),
     ].map(txPromise => txPromise.then(tx => tx.wait()).catch(() => {})));
 
+    // Upgrades
+    // Agents v0.1.2
+    await this.agents.connect(this.accounts.admin).setStakeController(this.contracts.staking.address)
+    // Scanners v0.1.1
+    await this.scanners.connect(this.accounts.admin).setStakeController(this.contracts.staking.address)
+
     // Prep for tests that need minimum stake
     if (config.minStake) {
       await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
@@ -73,6 +79,8 @@ function prepare(config = {}) {
       await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, config.minStake);
       await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.AGENT_SUBJECT_TYPE, config.minStake);
     }
+
+    
 
     __SNAPSHOT_ID__ = await ethers.provider.send('evm_snapshot');
   });

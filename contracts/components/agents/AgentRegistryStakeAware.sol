@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "./AgentRegistryEnable.sol";
-import "../utils/MinStakeAware.sol";
+import "../utils/StakeAware.sol";
 
-abstract contract AgentRegistryStakeAware is AgentRegistryEnable, MinStakeAwareUpgradeable {
+abstract contract AgentRegistryStakeAware is AgentRegistryEnable, StakeAwareUpgradeable {
 
     /**
      * Check if agent is enabled

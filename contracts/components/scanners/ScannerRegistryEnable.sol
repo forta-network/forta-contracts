@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./ScannerRegistryManaged.sol";
-import "../utils/MinStakeAware.sol";
+import "../utils/StakeAware.sol";
 
-abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAwareUpgradeable {
+abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeAwareUpgradeable {
     using BitMaps for BitMaps.BitMap;
 
     enum Permission {
