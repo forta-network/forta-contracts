@@ -21,8 +21,7 @@ contract Alerts is BaseComponentUpgradeable {
     event ScannerRegistryChanged(address from, address to, address by);
 
     modifier onlyValidScanner() {
-        require(scannerRegistry.ownerOf(uint256(uint160(_msgSender()))) != address(0), "AlertBatch: Scanner does not exist");
-        //TODO this will validate stake requirements
+        require(scannerRegistry.isEnabled(uint256(uint160(_msgSender()))), "Alerts: Scanner not enabled");
         _;
     }
 
@@ -37,7 +36,6 @@ contract Alerts is BaseComponentUpgradeable {
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
-
         scannerRegistry = ScannerRegistry(__scannerRegistry);
     }
 
@@ -72,6 +70,7 @@ contract Alerts is BaseComponentUpgradeable {
 
         scannerRegistry = ScannerRegistry(newScannerRegistry);
     }
+
 
     uint256[49] private __gap;
 }

@@ -11,6 +11,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Supp
 
 import "./FortaStakingUtils.sol";
 import "./FortaStakingSubjectTypes.sol";
+import "./IStakeController.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
@@ -41,7 +42,7 @@ interface IRewardReceiver {
  * to quick devaluation in case of slashing event for the corresponding subject. Thus, trading of such shares should be
  * be done very carefully.
  */
-contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable {
+contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, IStakeController {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
@@ -72,6 +73,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable {
     // treasury for slashing
     address private _treasury;
 
+    // minimum stake per subject type
+    mapping(uint8 => uint256) _minimumStakes;
+
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
     event WithdrawalInitiated(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint64 deadline);
     event WithdrawalExecuted(uint8 indexed subjectType, uint256 indexed subject, address indexed account);
@@ -90,6 +94,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable {
         );
         _;
     }
+
+    string public constant version = "0.1.0";
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -116,7 +122,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable {
     /**
      * @dev Get stake of a subject
      */
-    function activeStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
+    function activeStakeFor(uint8 subjectType, uint256 subject) public view returns (uint256) {
         return _activeStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject));
     }
 
@@ -488,6 +494,23 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable {
         emit TreasurySet(newTreasury);
     }
 
+    // Mininimum Stake
+
+    /**
+    * Sets minimum stake for subject type. To be controlled by governance
+    */
+    function setMinStake(uint8 subjectType, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
+        emit MinStakeChanged(amount, _minimumStakes[subjectType]);
+        _minimumStakes[subjectType] = amount;
+    }
+
+    function getMinStake(uint8 subjectType) external view returns (uint256) {
+        return _minimumStakes[subjectType];
+    }
+    function isStakedOverMin(uint8 subjectType, uint256 subject) external view returns (bool) {
+        return activeStakeFor(subjectType, subject) >= _minimumStakes[subjectType];
+    }
+
     function setURI(string memory newUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setURI(newUri);
     }
@@ -500,5 +523,5 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable {
         return super._msgData();
     }
 
-    uint256[41] private __gap;
+    uint256[40] private __gap;
 }

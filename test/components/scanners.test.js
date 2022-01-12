@@ -3,12 +3,8 @@ const { expect } = require('chai');
 const { prepare } = require('../fixture');
 
 
-const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
-const prepareCommit = (...args)  => ethers.utils.solidityKeccak256([ 'bytes32', 'address', 'string', 'uint256[]' ], args);
-
-
 describe('Scanner Registry', function () {
-  prepare();
+  prepare({ minStake: '100' });
 
   beforeEach(async function () {
     this.accounts.getAccount('scanner');
@@ -22,8 +18,15 @@ describe('Scanner Registry', function () {
     .to.emit(this.scanners, 'ScannerUpdated').withArgs(SCANNER_ID, 1);
 
     expect(await this.scanners.getScanner(SCANNER_ID)).to.be.equal(1);
-
+    expect(await this.scanners.isRegistered(SCANNER_ID)).to.be.equal(true);
     expect(await this.scanners.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
+  });
+
+  it('public register fails if minStake = 0', async function () {
+    await expect(this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '0')).to.not.be.reverted;
+    await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1))
+    .to.be.revertedWith('ScannerRegistryEnable: public registration only when staking activated')
+
   });
 
   it('admin register', async function () {
@@ -99,7 +102,16 @@ describe('Scanner Registry', function () {
 
   describe('enable and disable', async function () {
     beforeEach(async function () {
+      const SCANNER_ID = this.accounts.scanner.address;
       await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1)).to.be.not.reverted;
+      await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_ID, '100');
+
+    });
+
+    it('isEnable is false for non registered scanners, even if staked', async function() {
+      const randomScanner = ethers.Wallet.createRandom().address;
+      await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, randomScanner, '100');
+      expect(await this.scanners.isEnabled(randomScanner)).to.be.equal(false);
     });
 
     describe('manager', async function () {
@@ -219,6 +231,46 @@ describe('Scanner Registry', function () {
         const SCANNER_ID = this.accounts.scanner.address;
 
         await expect(this.scanners.connect(this.accounts.other).disableScanner(SCANNER_ID, 3)).to.be.reverted;
+      });
+    });
+
+    describe('stake', async function () {
+
+
+      it('re-enable', async function () {
+        const SCANNER_ID = this.accounts.scanner.address;
+
+        await expect(this.scanners.connect(this.accounts.scanner).disableScanner(SCANNER_ID, 1))
+        .to.emit(this.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, false, 1, false);
+
+        await expect(this.scanners.connect(this.accounts.scanner).enableScanner(SCANNER_ID, 1))
+        .to.emit(this.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, true, 1, true);
+
+        expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
+      });
+
+      it('cannot enable if staked under minimum', async function () {
+        const SCANNER_ID = this.accounts.scanner.address;
+        const SCANNER_SUBJECT_ID = ethers.BigNumber.from(SCANNER_ID);
+        await expect(this.scanners.connect(this.accounts.scanner).disableScanner(SCANNER_ID, 1))
+        .to.emit(this.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, false, 1, false);
+        await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '10000');
+        await expect(this.scanners.connect(this.accounts.scanner).enableScanner(SCANNER_ID, 1))
+        .to.be.revertedWith("ScannerRegistryEnable: scanner staked under minimum");
+        await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_SUBJECT_ID, '10000');
+        await expect(this.scanners.connect(this.accounts.scanner).enableScanner(SCANNER_ID, 1))
+        .to.emit(this.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, true, 1, true);
+        expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
+      });
+
+      it('isEnabled reacts to stake changes', async function () {
+        const SCANNER_ID = this.accounts.scanner.address;
+        const SCANNER_SUBJECT_ID = ethers.BigNumber.from(SCANNER_ID);
+        expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
+        await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '10000');
+        expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(false);
+        await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_SUBJECT_ID, '10000');
+        expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
       });
     });
   });

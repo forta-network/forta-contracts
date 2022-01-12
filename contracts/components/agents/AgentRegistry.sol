@@ -15,6 +15,7 @@ contract AgentRegistry is
     AgentRegistryMetadata,
     AgentRegistryEnumerable
 {
+    string public constant version = "0.1.2";
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -38,11 +39,11 @@ contract AgentRegistry is
         super._agentUpdate(agentId, newMetadata, newChainIds);
     }
 
-    function _msgSender() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore) returns (address sender) {
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryEnable) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryEnable) returns (bytes calldata) {
         return super._msgData();
     }
 

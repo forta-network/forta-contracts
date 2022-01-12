@@ -27,10 +27,10 @@ contract VestingWalletV2 is VestingWallet {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address           public immutable l2EscrowTemplate;
 
-    uint256           public           historicalBalanceMinimum;
+    uint256           public           historicalBalanceMin;
 
     event TokensBridged(address indexed l2Escrow, address indexed l2Manager, uint256 amount);
-    event HistoricalBalanceMinimumChanged(uint256 newValue, uint256 oldValue);
+    event HistoricalBalanceMinChanged(uint256 newValue, uint256 oldValue);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
@@ -74,7 +74,7 @@ contract VestingWalletV2 is VestingWallet {
         require(amount > 0, "VestingWalletV2: amount cannot be 0");
         require(l2Manager!= address(0), "VestingWalletV2: l2Manager cannot be address 0");
         // lock historicalBalance
-        historicalBalanceMinimum = _historicalBalance(l1Token);
+        historicalBalanceMin = _historicalBalance(l1Token);
 
         // compute l2Escrow address
         address l2Escrow = Clones.predictDeterministicAddress(
@@ -107,7 +107,7 @@ contract VestingWalletV2 is VestingWallet {
         returns (uint256)
     {
         if (token == l1Token) {
-            return Math.max(super._historicalBalance(token), historicalBalanceMinimum);
+            return Math.max(super._historicalBalance(token), historicalBalanceMin);
         } else {
             return super._historicalBalance(token);
         }
@@ -120,14 +120,14 @@ contract VestingWalletV2 is VestingWallet {
         public
         onlyOwner()
     {
-        emit HistoricalBalanceMinimumChanged(value, historicalBalanceMinimum);
-        historicalBalanceMinimum = value;
+        emit HistoricalBalanceMinChanged(value, historicalBalanceMin);
+        historicalBalanceMin = value;
     }
 
     function updateHistoricalBalanceBridged(int256 update)
         public
         onlyOwner()
     {
-        setHistoricalBalanceBridged((historicalBalanceMinimum.toInt256() + update).toUint256());
+        setHistoricalBalanceBridged((historicalBalanceMin.toInt256() + update).toUint256());
     }
 }

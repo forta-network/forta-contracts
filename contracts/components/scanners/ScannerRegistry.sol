@@ -15,6 +15,7 @@ contract ScannerRegistry is
     ScannerRegistryEnable,
     ScannerRegistryMetadata
 {
+    string public constant version = "0.1.1";
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -30,15 +31,19 @@ contract ScannerRegistry is
         __ERC721_init(__name, __symbol);
     }
 
+    function register(address owner, uint256 chainId) public virtual override(ScannerRegistryCore, ScannerRegistryEnable) {
+        super.register(owner, chainId);
+    }
+
     function _scannerUpdate(uint256 scannerId, uint256 chainId) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) {
         super._scannerUpdate(scannerId, chainId);
     }
 
-    function _msgSender() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore) returns (address sender) {
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (bytes calldata) {
         return super._msgData();
     }
 
