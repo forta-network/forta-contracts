@@ -25,6 +25,7 @@ abstract contract BaseComponentUpgradeable is
     Multicall,
     UUPSUpgradeable
 {
+    
     // Access control for the upgrade process
     function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(UPGRADER_ROLE) {
     }

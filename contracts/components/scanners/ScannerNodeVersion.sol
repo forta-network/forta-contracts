@@ -16,6 +16,8 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
      */
     string public scannerNodeVersion;
 
+    string public constant version = "0.1.0";
+
     event ScannerNodeVersionUpdated(string newVersion, string oldVersion);
 
     /// @custom:oz-upgrades-unsafe-allow constructor

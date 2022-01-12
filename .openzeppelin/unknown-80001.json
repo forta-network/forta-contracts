@@ -203,10 +203,10 @@
             "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:80"
           },
           {
-            "contract": "FortaBridged",
+            "contract": "FortaBridgedPolygon",
             "label": "childChainManagerProxy",
             "type": "t_address",
-            "src": "contracts/token/FortaBridged.sol:7"
+            "src": "contracts/token/FortaBridgedPolygon.sol:7"
           }
         ],
         "types": {
@@ -1864,10 +1864,10 @@
             "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:81"
           },
           {
-            "contract": "FortaBridged",
+            "contract": "FortaBridgedPolygon",
             "label": "childChainManagerProxy",
             "type": "t_address",
-            "src": "contracts/token/FortaBridged.sol:7"
+            "src": "contracts/token/FortaBridgedPolygon.sol:7"
           }
         ],
         "types": {

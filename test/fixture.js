@@ -43,7 +43,8 @@ function prepare(config = {}) {
       this.access    .connect(this.accounts.admin).grantRole(this.roles.AGENT_ADMIN,   this.accounts.manager.address    ),
       this.access    .connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN, this.accounts.manager.address    ),
       this.access    .connect(this.accounts.admin).grantRole(this.roles.DISPATCHER,    this.accounts.manager.address    ),
-      this.access    .connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address),
+      this.access    .connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address    ),
+      this.access    .connect(this.accounts.admin).grantRole(this.roles.REWARDS_ADMIN, this.accounts.admin.address      ),
       this.token     .connect(this.accounts.admin).grantRole(this.roles.MINTER,        this.accounts.minter.address     ),
       this.token     .connect(this.accounts.admin).grantRole(this.roles.WHITELISTER,   this.accounts.whitelister.address),
       this.otherToken.connect(this.accounts.admin).grantRole(this.roles.MINTER,        this.accounts.minter.address     ),
@@ -59,6 +60,12 @@ function prepare(config = {}) {
       this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address   ),
       this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address             ),
     ].map(txPromise => txPromise.then(tx => tx.wait()).catch(() => {})));
+
+    // Upgrades
+    // Agents v0.1.2
+    await this.agents.connect(this.accounts.admin).setStakeController(this.contracts.staking.address)
+    // Scanners v0.1.1
+    await this.scanners.connect(this.accounts.admin).setStakeController(this.contracts.staking.address)
 
     // Prep for tests that need minimum stake
     if (config.minStake) {

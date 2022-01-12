@@ -100,7 +100,7 @@ async function migrate(config = {}) {
     DEBUG(`[1] forwarder: ${contracts.forwarder.address}`);
 
     contracts.token = await ethers.getContractFactory(
-        config.l2enable ? 'FortaBridged' : 'Forta',
+        config.l2enable ? 'FortaBridgedPolygon' : 'Forta',
         deployer
     ).then(factory => utils.tryFetchProxy(
         CACHE,
@@ -163,7 +163,7 @@ async function migrate(config = {}) {
         'agents',
         factory,
         'uups',
-        [ contracts.access.address, contracts.router.address, 'Forta Agents', 'FAgents',  contracts.staking.address ],
+        [ contracts.access.address, contracts.router.address, 'Forta Agents', 'FAgents' ],
         { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
     ));
 
@@ -174,7 +174,7 @@ async function migrate(config = {}) {
         'scanners',
         factory,
         'uups',
-        [ contracts.access.address, contracts.router.address, 'Forta Scanners', 'FScanners', contracts.staking.address ],
+        [ contracts.access.address, contracts.router.address, 'Forta Scanners', 'FScanners' ],
         { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
     ));
 
@@ -217,6 +217,7 @@ async function migrate(config = {}) {
         DISPATCHER:           ethers.utils.id('DISPATCHER_ROLE'),
         SLASHER:              ethers.utils.id('SLASHER_ROLE'),
         SWEEPER:              ethers.utils.id('SWEEPER_ROLE'),
+        REWARDS_ADMIN:        ethers.utils.id('REWARDS_ADMIN_ROLE'), 
         SCANNER_VERSION:      ethers.utils.id('SCANNER_VERSION_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 

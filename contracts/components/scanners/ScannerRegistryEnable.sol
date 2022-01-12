@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./ScannerRegistryManaged.sol";
-import "../utils/MinStakeAware.sol";
+import "../utils/StakeAware.sol";
 
-abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAwareUpgradeable {
+abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeAwareUpgradeable {
     using BitMaps for BitMaps.BitMap;
 
     enum Permission {
@@ -21,14 +21,20 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAware
 
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, Permission permission, bool value);
 
-    
+    /**
+    * Check if scanner is enabled
+    * @param scannerId token Id
+    * @return true if the scanner is registered, has not been disabled, and is staked over minimum value.
+    * Returns false if otherwise
+    */
     function isEnabled(uint256 scannerId) public view virtual returns (bool) {
-        // Permission.length < 256 → we don't have to loop
-        return _disabled[scannerId]._data[0] == 0 && _isStakedOverMinimum(SCANNER_SUBJECT, scannerId); 
+        return isRegistered(scannerId) &&
+            _getDisableFlags(scannerId) == 0 &&
+            _isStakedOverMin(SCANNER_SUBJECT, scannerId); 
     }
 
     function register(address owner, uint256 chainId) virtual override public {
-        require(_getMinStake(SCANNER_SUBJECT) > 0, "ScannerRegistryEnable: staking for public registration not enabled");
+        require(_getMinStake(SCANNER_SUBJECT) > 0, "ScannerRegistryEnable: public registration available if staking activated");
         super.register(owner, chainId);
     }
 
@@ -36,7 +42,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAware
      * @dev Enable/Disable scaner
      */
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_isStakedOverMinimum(SCANNER_SUBJECT, scannerId), "ScannerRegistryEnable: scanner staked under minimum");
+        require(_isStakedOverMin(SCANNER_SUBJECT, scannerId), "ScannerRegistryEnable: scanner staked under minimum");
         require(_hasPermission(scannerId, permission), "ScannerRegistryEnable: invalid permission");
         _enable(scannerId, permission, true);
     }
@@ -60,6 +66,11 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, MinStakeAware
         _afterScannerEnable(scannerId, permission, enable);
     }
 
+    /**
+     * Get the disabled flags for an agentId. Permission (uint8) is used for indexing, so we don't
+     * need to loop. 
+     * If not disabled, all flags will be 0
+     */
     function _getDisableFlags(uint256 scannerId) internal view returns (uint256) {
         return _disabled[scannerId]._data[0];
     }

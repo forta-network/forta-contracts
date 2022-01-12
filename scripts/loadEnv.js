@@ -35,7 +35,7 @@ async function loadEnv(config = {}) {
     provider.network.ensAddress = await CACHE.get('ens-registry') || provider.network.ensAddress;
 
     const contracts = await Promise.all(Object.entries({
-        token:     chainType                    && utils.attach(chainType & CHAIN_TYPE.ROOT ? 'Forta' : 'FortaBridged', 'forta.eth'                    ).then(contract => contract.connect(deployer)),
+        token:     chainType                    && utils.attach(chainType & CHAIN_TYPE.ROOT ? 'Forta' : 'FortaBridgedPolygon', 'forta.eth'                    ).then(contract => contract.connect(deployer)),
         access:    chainType & CHAIN_TYPE.CHILD && utils.attach('AccessManager',                                        'access.forta.eth'             ).then(contract => contract.connect(deployer)),
         dispatch:  chainType & CHAIN_TYPE.CHILD && utils.attach('Dispatch',                                             'dispatch.forta.eth'           ).then(contract => contract.connect(deployer)),
         router:    chainType & CHAIN_TYPE.CHILD && utils.attach('Router',                                               'router.forta.eth'             ).then(contract => contract.connect(deployer)),
@@ -60,6 +60,7 @@ async function loadEnv(config = {}) {
         DISPATCHER:    ethers.utils.id('DISPATCHER_ROLE'),
         SLASHER:       ethers.utils.id('SLASHER_ROLE'),
         SWEEPER:       ethers.utils.id('SWEEPER_ROLE'),
+        REWARDS_ADMIN: ethers.utils.id('REWARDS_ADMIN_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
     return {

@@ -18,14 +18,14 @@ describe('Scanner Registry', function () {
     .to.emit(this.scanners, 'ScannerUpdated').withArgs(SCANNER_ID, 1);
 
     expect(await this.scanners.getScanner(SCANNER_ID)).to.be.equal(1);
-
+    expect(await this.scanners.isRegistered(SCANNER_ID)).to.be.equal(true);
     expect(await this.scanners.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
   });
 
   it('public register fails if minStake = 0', async function () {
     await expect(this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '0')).to.not.be.reverted;
     await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1))
-    .to.be.revertedWith('ScannerRegistryEnable: staking for public registration not enabled')
+    .to.be.revertedWith('ScannerRegistryEnable: public registration available if staking activated')
 
   });
 
@@ -106,6 +106,12 @@ describe('Scanner Registry', function () {
       await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1)).to.be.not.reverted;
       await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_ID, '100');
 
+    });
+
+    it('isEnable is false for non registered scanners, even if staked', async function() {
+      const randomScanner = ethers.Wallet.createRandom().address;
+      await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, randomScanner, '100');
+      expect(await this.scanners.isEnabled(randomScanner)).to.be.equal(false);
     });
 
     describe('manager', async function () {

@@ -16,6 +16,8 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
 
     mapping(bytes4 => EnumerableSet.AddressSet) private _routingTable;
 
+    string public constant version = "0.1.0";
+    
     event RoutingUpdated(bytes4 indexed sig, address indexed target, bool enable);
 
     /// @custom:oz-upgrades-unsafe-allow constructor

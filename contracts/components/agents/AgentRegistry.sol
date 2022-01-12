@@ -15,6 +15,7 @@ contract AgentRegistry is
     AgentRegistryMetadata,
     AgentRegistryEnumerable
 {
+    string public constant version = "0.1.2";
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -22,14 +23,12 @@ contract AgentRegistry is
         address __manager,
         address __router,
         string calldata __name,
-        string calldata __symbol,
-        address _minStakeController
+        string calldata __symbol
     ) public initializer {
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
         __ERC721_init(__name, __symbol);
-        __MinStakeAwareUpgradeable_init(_minStakeController);
     }
 
     function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryEnumerable) {

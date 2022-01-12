@@ -19,7 +19,7 @@ async function main() {
 
     // contracts.token &&
     // await contracts.token.resolvedAddress.then(address => utils.getFactory(
-    //     chainType & CHAIN_TYPE.ROOT ? 'Forta' : 'FortaBridged',
+    //     chainType & CHAIN_TYPE.ROOT ? 'Forta' : 'FortaBridgedPolygon',
     //     'forta.eth'
     // ).then(factory => utils.performUpgrade(
     //     { address },
