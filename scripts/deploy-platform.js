@@ -191,17 +191,6 @@ async function migrate(config = {}) {
 
     DEBUG(`[8] dispatch: ${contracts.dispatch.address}`);
 
-    contracts.alerts = await ethers.getContractFactory('Alerts', deployer).then(factory => utils.tryFetchProxy(
-        CACHE,
-        'alerts',
-        factory,
-        'uups',
-        [ contracts.access.address, contracts.router.address, contracts.scanners.address ],
-        { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
-    ));
-
-    DEBUG(`[9] alerts: ${contracts.alerts.address}`);
-
     contracts.scannerNodeVersion = await ethers.getContractFactory('ScannerNodeVersion', deployer).then(factory => utils.tryFetchProxy(
         CACHE,
         'scannerNodeVersion',
@@ -211,7 +200,7 @@ async function migrate(config = {}) {
         { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: 'delegatecall' },
     ));
 
-    DEBUG(`[10] scanner node version: ${contracts.scannerNodeVersion.address}`);
+    DEBUG(`[9] scanner node version: ${contracts.scannerNodeVersion.address}`);
 
     // Roles dictionnary
     const roles = await Promise.all(Object.entries({
@@ -278,7 +267,6 @@ async function migrate(config = {}) {
         await registerNode(         'registries.forta.eth', deployer.address,              { ...contracts.ens,                                       });
         await Promise.all([
             registerNode(             'access.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.access.address    }),
-            registerNode(             'alerts.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.alerts.address    }),
             registerNode(           'dispatch.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.dispatch.address  }),
             registerNode(          'forwarder.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.forwarder.address }),
             registerNode(             'router.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.router.address    }),
@@ -301,7 +289,6 @@ async function migrate(config = {}) {
     await Promise.all([
         reverseRegister(contracts.token,                        'forta.eth'),
         reverseRegister(contracts.access,                'access.forta.eth'),
-        reverseRegister(contracts.alerts,                'alerts.forta.eth'),
         reverseRegister(contracts.router,                'router.forta.eth'),
         reverseRegister(contracts.dispatch,            'dispatch.forta.eth'),
         reverseRegister(contracts.staking,              'staking.forta.eth'),

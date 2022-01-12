@@ -44,7 +44,7 @@ library Distributions {
     }
 
     function mint(SignedBalances storage self, address account, int256 amount) internal {
-        require(account != address(0), "mint to the zero address");
+        require(account != address(0), "mint from the zero address");
         self._balances[account] += amount;
         self._totalSupply += amount;
     }

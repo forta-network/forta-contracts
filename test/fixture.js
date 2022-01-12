@@ -80,8 +80,6 @@ function prepare(config = {}) {
       await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.AGENT_SUBJECT_TYPE, config.minStake);
     }
 
-    
-
     __SNAPSHOT_ID__ = await ethers.provider.send('evm_snapshot');
   });
 

@@ -34,7 +34,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeAwareUpg
     }
 
     function register(address owner, uint256 chainId) virtual override public {
-        require(_getMinStake(SCANNER_SUBJECT) > 0, "ScannerRegistryEnable: public registration only when staking activated");
+        require(_getMinStake(SCANNER_SUBJECT) > 0, "ScannerRegistryEnable: public registration available if staking activated");
         super.register(owner, chainId);
     }
 

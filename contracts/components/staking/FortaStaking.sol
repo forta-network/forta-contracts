@@ -74,7 +74,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     address private _treasury;
 
     // minimum stake per subject type
-    mapping(uint8 => uint256) _minimumStakes;
+    mapping(uint8 => uint256) private _minStakes;
 
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
     event WithdrawalInitiated(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint64 deadline);
@@ -500,15 +500,15 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     * Sets minimum stake for subject type. To be controlled by governance
     */
     function setMinStake(uint8 subjectType, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
-        emit MinStakeChanged(amount, _minimumStakes[subjectType]);
-        _minimumStakes[subjectType] = amount;
+        emit MinStakeChanged(amount, _minStakes[subjectType]);
+        _minStakes[subjectType] = amount;
     }
 
     function getMinStake(uint8 subjectType) external view returns (uint256) {
-        return _minimumStakes[subjectType];
+        return _minStakes[subjectType];
     }
     function isStakedOverMin(uint8 subjectType, uint256 subject) external view returns (bool) {
-        return activeStakeFor(subjectType, subject) >= _minimumStakes[subjectType];
+        return activeStakeFor(subjectType, subject) >= _minStakes[subjectType];
     }
 
     function setURI(string memory newUri) public onlyRole(DEFAULT_ADMIN_ROLE) {

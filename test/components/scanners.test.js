@@ -25,7 +25,7 @@ describe('Scanner Registry', function () {
   it('public register fails if minStake = 0', async function () {
     await expect(this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '0')).to.not.be.reverted;
     await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1))
-    .to.be.revertedWith('ScannerRegistryEnable: public registration only when staking activated')
+    .to.be.revertedWith('ScannerRegistryEnable: public registration available if staking activated')
 
   });
 

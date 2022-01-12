@@ -37,7 +37,6 @@ async function loadEnv(config = {}) {
     const contracts = await Promise.all(Object.entries({
         token:     chainType                    && utils.attach(chainType & CHAIN_TYPE.ROOT ? 'Forta' : 'FortaBridgedPolygon', 'forta.eth'                    ).then(contract => contract.connect(deployer)),
         access:    chainType & CHAIN_TYPE.CHILD && utils.attach('AccessManager',                                        'access.forta.eth'             ).then(contract => contract.connect(deployer)),
-        alerts:    chainType & CHAIN_TYPE.CHILD && utils.attach('Alerts',                                               'alerts.forta.eth'             ).then(contract => contract.connect(deployer)),
         dispatch:  chainType & CHAIN_TYPE.CHILD && utils.attach('Dispatch',                                             'dispatch.forta.eth'           ).then(contract => contract.connect(deployer)),
         router:    chainType & CHAIN_TYPE.CHILD && utils.attach('Router',                                               'router.forta.eth'             ).then(contract => contract.connect(deployer)),
         staking:   chainType & CHAIN_TYPE.CHILD && utils.attach('FortaStaking',                                         'staking.forta.eth'            ).then(contract => contract.connect(deployer)),

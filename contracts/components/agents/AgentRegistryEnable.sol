@@ -78,7 +78,6 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, StakeAwareUpgradeabl
         _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256)", agentId));
     }
     
-
     function _msgSender() internal view virtual override(ContextUpgradeable, AgentRegistryCore) returns (address sender) {
         return super._msgSender();
     }
