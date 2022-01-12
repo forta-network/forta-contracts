@@ -66,7 +66,7 @@ contract Dispatch is BaseComponentUpgradeable {
     }
 
     function scannerRefAt(uint256 agentId, uint256 pos) external view returns (uint256 scannerId, bool enabled) {
-        scannerId = agentsAt(agentId, pos);
+        scannerId = scannersAt(agentId, pos);
         enabled   = _scanners.isEnabled(agentId);
     }
 
