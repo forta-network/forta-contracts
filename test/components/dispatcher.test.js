@@ -16,7 +16,7 @@ describe('Dispatcher', function () {
     await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, this.AGENT_ID, '100');
     await expect(this.agents.createAgent(this.AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ])).to.be.not.reverted
     await expect(this.agents.connect(this.accounts.manager).enableAgent(this.AGENT_ID, 0)).to.be.not.reverted
-    await this.scanners.connect(this.accounts.manager).adminRegister(this.SCANNER_ID, this.accounts.user1.address, 1);
+    await this.scanners.connect(this.accounts.manager).adminRegister(this.SCANNER_ID, this.accounts.user1.address, 1, 'metadata');
     
   });
 

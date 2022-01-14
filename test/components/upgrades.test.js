@@ -81,7 +81,7 @@ describe('Upgrades testing', function () {
 
 
   
-  describe.only('Scanner Registry', async function() {
+  describe('Scanner Registry', async function() {
     it(' 0.1.0 -> 0.1.1', async function () {
         this.accounts.getAccount('scanner');
         const ScannerRegistry_0_1_0 = await ethers.getContractFactory("ScannerRegistry_0_1_0");
@@ -144,7 +144,6 @@ describe('Upgrades testing', function () {
             expect(await scannerRegistry.isManager(scannerId, this.accounts.user2.address)).to.be.equal(true);
             expect(await scannerRegistry.getManagerCount(scannerId)).to.be.equal(1);
             expect(await scannerRegistry.getManagerAt(scannerId, 0)).to.be.equal(this.accounts.user2.address);
-            console.log(await scannerRegistry.getScanner(scannerId))
 
             expect(await scannerRegistry.getScanner(scannerId).then(scanner => [
                 scanner.chainId.toNumber(),
@@ -157,7 +156,6 @@ describe('Upgrades testing', function () {
             expect(await scannerRegistry.ownerOf(scannerId)).to.be.equal(this.accounts.user1.address);
             expect(await scannerRegistry.isEnabled(scannerId)).to.be.equal(false);
             
-            console.log(await this.contracts.access.hasRole(this.roles.SCANNER_ADMIN, this.accounts.admin.address))
             await scannerRegistry.connect(this.accounts.admin).adminUpdate(scannerId, 55, 'metadata');
             expect(await scannerRegistry.getScanner(scannerId).then(scanner => [
                 scanner.chainId.toNumber(),
