@@ -1,4 +1,4 @@
-const { ethers, upgrades } = require('hardhat');
+const { ethers, upgrades, network } = require('hardhat');
 const { NonceManager     } = require('@ethersproject/experimental');
 const Conf                 = require('conf');
 const pLimit               = require('p-limit');
@@ -22,8 +22,12 @@ const getDefaultProvider = async (
 
 const getDefaultDeployer = async (
     provider,
-    baseDeployer = ethers.Wallet.fromMnemonic(process.env.MNEMONIC || 'test test test test test test test test test test test junk')
+    baseDeployer
 ) => {
+    baseDeployer = baseDeployer ?? ethers.Wallet.fromMnemonic(
+        process.env[`${network.name.toUpperCase()}_MNEMONIC`] ||
+        'test test test test test test test test test test test junk'
+    )
     const deployer = new NonceManager(baseDeployer).connect(provider);
     await deployer.getTransactionCount().then(nonce => deployer.setTransactionCount(nonce));
     deployer.address = await deployer.getAddress();
