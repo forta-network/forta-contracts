@@ -11,9 +11,10 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
 
     mapping(uint256 => ScannerMetadata) private _scannerMetadata;
 
-    function getScanner(uint256 scannerId) public view returns (uint256 chainIds) {
+    function getScanner(uint256 scannerId) public view returns (uint256 chainId, string memory metadata) {
         return (
-            _scannerMetadata[scannerId].chainId
+            _scannerMetadata[scannerId].chainId,
+            _scannerMetadata[scannerId].metadata
         );
     }
 

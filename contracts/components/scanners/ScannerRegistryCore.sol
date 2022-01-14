@@ -29,12 +29,24 @@ abstract contract ScannerRegistryCore is
     }
 
     function _register(address scanner, address owner, uint256 chainId, string calldata metadata) public {
-        uint256 scannerId = uint256(uint160(scanner));
+        uint256 scannerId = scannerAddressToId(scanner);
         _mint(owner, scannerId);
 
         _beforeScannerUpdate(scannerId, chainId, metadata);
         _scannerUpdate(scannerId, chainId, metadata);
         _afterScannerUpdate(scannerId, chainId, metadata);
+    }
+
+    function adminUpdate(address scanner, uint256 chainId, string calldata metadata) public onlyRole(SCANNER_ADMIN_ROLE) {
+        uint256 scannerId = scannerAddressToId(scanner);
+        require(isRegistered(scannerId), "ScannerRegistryCore: scanner must be registered");
+        _beforeScannerUpdate(scannerId, chainId, metadata);
+        _scannerUpdate(scannerId, chainId, metadata);
+        _afterScannerUpdate(scannerId, chainId, metadata);
+    }
+
+    function scannerAddressToId(address scanner) public pure returns(uint256) {
+        return uint256(uint160(scanner));
     }
 
     /**
@@ -50,6 +62,7 @@ abstract contract ScannerRegistryCore is
     function _afterScannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterScannerUpdate(uint256)", scannerId));
     }
+
 
     function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (address sender) {
         return super._msgSender();
