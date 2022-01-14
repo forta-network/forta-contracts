@@ -31,12 +31,19 @@ contract ScannerRegistry is
         __ERC721_init(__name, __symbol);
     }
 
-    function register(address owner, uint256 chainId) public virtual override(ScannerRegistryCore, ScannerRegistryEnable) {
-        super.register(owner, chainId);
+    function register(address owner, uint256 chainId, string calldata metadata) public virtual override(ScannerRegistryCore, ScannerRegistryEnable) {
+        super.register(owner, chainId, metadata);
     }
 
-    function _scannerUpdate(uint256 scannerId, uint256 chainId) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) {
-        super._scannerUpdate(scannerId, chainId);
+    function _scannerUpdate(
+        uint256 scannerId,
+        uint256 chainId,
+        string calldata metadata
+    ) internal virtual override(
+        ScannerRegistryCore,
+        ScannerRegistryMetadata
+    ) {
+        super._scannerUpdate(scannerId, chainId, metadata);
     }
 
     function _msgSender() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (address sender) {
