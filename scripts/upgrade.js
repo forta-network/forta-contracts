@@ -32,7 +32,7 @@ async function main() {
         await contracts.access.grantRole(UPGRADER_ROLE,      deployer.address        ).then(tx => tx.wait());
         console.log('Granted upgrader role to: ', deployer.address)
     }
-    
+    // TODO: change call methods according to contract version (checking current you can infer next)
     const AgentRegistry = await ethers.getContractFactory('AgentRegistry');
     const newAgentRegistry = await upgrades.upgradeProxy(
         contracts.agents.address,
@@ -90,7 +90,3 @@ main()
         console.error(error);
         process.exit(1);
     });
-
-module.exports = {
-    upgradeImpl
-}
