@@ -1,18 +1,15 @@
 const { ethers, upgrades } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
-
-const { upgradeImpl } = require('../../scripts/upgrade');
+const { BigNumber } = require('@ethersproject/bignumber')
 
 const prepareCommit = (...args)  => ethers.utils.solidityKeccak256([ 'bytes32', 'address', 'string', 'uint256[]' ], args);
 
-let chainId;
 let originalScanners, originalAgents
 describe('Upgrades testing', function () {
   prepare();
   before(async function() {
     const network = await ethers.provider.getNetwork();
-    chainId = network.chainId;
     
   })
   
@@ -99,21 +96,30 @@ describe('Upgrades testing', function () {
         );
         await originalScanners.deployed();
 
-        const SCANNER_ID = this.accounts.scanner.address;
+        const SCANNERS = [
+            this.accounts.scanner,
+            this.accounts.user1
+        ]
 
-        await originalScanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1)
-        await originalScanners.connect(this.accounts.user1).setManager(SCANNER_ID, this.accounts.user2.address, true)
-        await originalScanners.connect(this.accounts.manager).disableScanner(SCANNER_ID, 0)
+        var chainId = 1;
+        for (var i = 0; i<SCANNERS.length; i++) {
+            const scannerId = SCANNERS[i].address
+            await originalScanners.connect(SCANNERS[i]).register(this.accounts.user1.address, chainId)
+            await originalScanners.connect(this.accounts.user1).setManager(scannerId, this.accounts.user2.address, true)
+            await originalScanners.connect(this.accounts.manager).disableScanner(scannerId, 0)
 
-        expect(await originalScanners.isEnabled(SCANNER_ID)).to.be.equal(false);
-        expect(await originalScanners.isManager(SCANNER_ID, this.accounts.user2.address)).to.be.equal(true);
-        expect(await originalScanners.getManagerCount(SCANNER_ID)).to.be.equal(1);
-        expect(await originalScanners.getManagerAt(SCANNER_ID, 0)).to.be.equal(this.accounts.user2.address);
+            expect(await originalScanners.isEnabled(scannerId)).to.be.equal(false);
+            expect(await originalScanners.isManager(scannerId, this.accounts.user2.address)).to.be.equal(true);
+            expect(await originalScanners.getManagerCount(scannerId)).to.be.equal(1);
+            expect(await originalScanners.getManagerAt(scannerId, 0)).to.be.equal(this.accounts.user2.address);
 
-        expect(await originalScanners.getScanner(SCANNER_ID)).to.be.equal(1);
-        // expect(await this.scanners.isRegistered(SCANNER_ID)).to.be.equal(true); Not existing in previous
-        expect(await originalScanners.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
-        expect(await originalScanners.isEnabled(SCANNER_ID)).to.be.equal(false);
+            expect(await originalScanners.getScanner(scannerId)).to.be.equal(chainId);
+            // expect(await this.scanners.isRegistered(SCANNER_ID)).to.be.equal(true); Not existing in previous
+            expect(await originalScanners.ownerOf(scannerId)).to.be.equal(this.accounts.user1.address);
+            expect(await originalScanners.isEnabled(scannerId)).to.be.equal(false);
+            chainId ++;
+        }
+        chainId = 1;
 
         const NewImplementation = await ethers.getContractFactory('ScannerRegistry');
         const scannerRegistry = await upgrades.upgradeProxy(
@@ -129,17 +135,38 @@ describe('Upgrades testing', function () {
                 unsafeSkipStorageCheck: true
             }
         );
-        expect(await scannerRegistry.getStakeController()).to.be.equal(this.contracts.staking.address)
-        expect(await scannerRegistry.version()).to.be.equal('0.1.1')
-        expect(await scannerRegistry.isEnabled(SCANNER_ID)).to.be.equal(false);
-        expect(await scannerRegistry.isManager(SCANNER_ID, this.accounts.user2.address)).to.be.equal(true);
-        expect(await scannerRegistry.getManagerCount(SCANNER_ID)).to.be.equal(1);
-        expect(await scannerRegistry.getManagerAt(SCANNER_ID, 0)).to.be.equal(this.accounts.user2.address);
+        await this.contracts.access.grantRole(this.roles.SCANNER_ADMIN, this.accounts.admin.address)
+        for (const scanner of SCANNERS) {
+            const scannerId = scanner.address;
+            expect(await scannerRegistry.getStakeController()).to.be.equal(this.contracts.staking.address)
+            expect(await scannerRegistry.version()).to.be.equal('0.1.1')
+            expect(await scannerRegistry.isEnabled(scannerId)).to.be.equal(false);
+            expect(await scannerRegistry.isManager(scannerId, this.accounts.user2.address)).to.be.equal(true);
+            expect(await scannerRegistry.getManagerCount(scannerId)).to.be.equal(1);
+            expect(await scannerRegistry.getManagerAt(scannerId, 0)).to.be.equal(this.accounts.user2.address);
 
-        expect(await scannerRegistry.getScanner(SCANNER_ID)).to.be.equal(1);
-        expect(await scannerRegistry.isRegistered(SCANNER_ID)).to.be.equal(true);
-        expect(await scannerRegistry.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
-        expect(await scannerRegistry.isEnabled(SCANNER_ID)).to.be.equal(false);
+            expect(await scannerRegistry.getScanner(scannerId).then(scanner => [
+                scanner.chainId.toNumber(),
+                scanner.metadata,
+              ])).to.be.deep.equal([
+                chainId,
+                '',
+              ]);
+            expect(await scannerRegistry.isRegistered(scannerId)).to.be.equal(true);
+            expect(await scannerRegistry.ownerOf(scannerId)).to.be.equal(this.accounts.user1.address);
+            expect(await scannerRegistry.isEnabled(scannerId)).to.be.equal(false);
+            
+            await scannerRegistry.connect(this.accounts.admin).adminUpdate(scannerId, 55, 'metadata');
+            expect(await scannerRegistry.getScanner(scannerId).then(scanner => [
+                scanner.chainId.toNumber(),
+                scanner.metadata,
+              ])).to.be.deep.equal([
+                55,
+                'metadata',
+              ]);
+            chainId ++;
+        }
+        
 
     })
   })

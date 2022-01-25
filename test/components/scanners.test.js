@@ -1,6 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
+const { BigNumber } = require('@ethersproject/bignumber')
 
 
 describe('Scanner Registry', function () {
@@ -13,18 +14,18 @@ describe('Scanner Registry', function () {
   it('register', async function () {
     const SCANNER_ID = this.accounts.scanner.address;
 
-    await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1))
+    await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1, 'metadata'))
     .to.emit(this.scanners, 'Transfer').withArgs(ethers.constants.AddressZero, this.accounts.user1.address, SCANNER_ID)
-    .to.emit(this.scanners, 'ScannerUpdated').withArgs(SCANNER_ID, 1);
+    .to.emit(this.scanners, 'ScannerUpdated').withArgs(SCANNER_ID, 1, 'metadata');
 
-    expect(await this.scanners.getScanner(SCANNER_ID)).to.be.equal(1);
+    expect(await this.scanners.getScanner(SCANNER_ID)).to.be.deep.equal([BigNumber.from(1), 'metadata']);
     expect(await this.scanners.isRegistered(SCANNER_ID)).to.be.equal(true);
     expect(await this.scanners.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
   });
 
   it('public register fails if minStake = 0', async function () {
     await expect(this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '0')).to.not.be.reverted;
-    await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1))
+    await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1, 'metadata'))
     .to.be.revertedWith('ScannerRegistryEnable: public registration available if staking activated')
 
   });
@@ -32,25 +33,43 @@ describe('Scanner Registry', function () {
   it('admin register', async function () {
     const SCANNER_ID = this.accounts.scanner.address;
 
-    await expect(this.scanners.connect(this.accounts.manager).adminRegister(SCANNER_ID, this.accounts.user1.address, 1))
+    await expect(this.scanners.connect(this.accounts.manager).adminRegister(SCANNER_ID, this.accounts.user1.address, 1, 'metadata'))
     .to.emit(this.scanners, 'Transfer').withArgs(ethers.constants.AddressZero, this.accounts.user1.address, SCANNER_ID)
-    .to.emit(this.scanners, 'ScannerUpdated').withArgs(SCANNER_ID, 1);
+    .to.emit(this.scanners, 'ScannerUpdated').withArgs(SCANNER_ID, 1, 'metadata');
 
-    expect(await this.scanners.getScanner(SCANNER_ID)).to.be.equal(1);
+    expect(await this.scanners.getScanner(SCANNER_ID)).to.be.deep.equal([BigNumber.from(1), 'metadata']);
 
     expect(await this.scanners.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
   });
 
-  it('admin register - pretected', async function () {
+  it('admin register - protected', async function () {
     const SCANNER_ID = this.accounts.scanner.address;
 
-    await expect(this.scanners.connect(this.accounts.user1).adminRegister(SCANNER_ID, this.accounts.user1.address, 1))
+    await expect(this.scanners.connect(this.accounts.user1).adminRegister(SCANNER_ID, this.accounts.user1.address, 1, 'metadata'))
+    .to.be.revertedWith(`MissingRole("${this.roles.SCANNER_ADMIN}", "${this.accounts.user1.address}")`);
+  });
+
+  it('admin update', async function () {
+    const SCANNER_ID = this.accounts.scanner.address;
+    await this.scanners.connect(this.accounts.manager).adminRegister(SCANNER_ID, this.accounts.user1.address, 1, 'metadata')
+
+    await expect(this.scanners.connect(this.accounts.manager).adminUpdate(SCANNER_ID, 55, 'metadata2'))
+    .to.emit(this.scanners, 'ScannerUpdated').withArgs(SCANNER_ID, 55, 'metadata2');
+
+    expect(await this.scanners.getScanner(SCANNER_ID)).to.be.deep.equal([BigNumber.from(55), 'metadata2']);
+
+    expect(await this.scanners.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
+  });
+
+  it('admin update - protected', async function () {
+    const SCANNER_ID = this.accounts.scanner.address;
+    await expect(this.scanners.connect(this.accounts.user1).adminUpdate(SCANNER_ID, 2, 'metadata2'))
     .to.be.revertedWith(`MissingRole("${this.roles.SCANNER_ADMIN}", "${this.accounts.user1.address}")`);
   });
 
   describe('managers', function () {
     beforeEach(async function () {
-      await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1)).to.be.not.reverted;
+      await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1, 'metadata')).to.be.not.reverted;
     });
 
     it('add manager', async function () {
@@ -103,7 +122,7 @@ describe('Scanner Registry', function () {
   describe('enable and disable', async function () {
     beforeEach(async function () {
       const SCANNER_ID = this.accounts.scanner.address;
-      await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1)).to.be.not.reverted;
+      await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1, 'metadata')).to.be.not.reverted;
       await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_ID, '100');
 
     });

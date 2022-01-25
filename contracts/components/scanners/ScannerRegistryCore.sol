@@ -9,47 +9,60 @@ abstract contract ScannerRegistryCore is
     BaseComponentUpgradeable,
     ERC721Upgradeable
 {
-    event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId);
+    event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata);
 
     modifier onlyOwnerOf(uint256 scannerId) {
         require(_msgSender() == ownerOf(scannerId), "ScannerRegistryCore: Restricted to scanner owner");
         _;
     }
 
-    function adminRegister(address scanner, address owner, uint256 chainId) public onlyRole(SCANNER_ADMIN_ROLE) {
-        _register(scanner, owner, chainId);
+    function adminRegister(address scanner, address owner, uint256 chainId, string calldata metadata) public onlyRole(SCANNER_ADMIN_ROLE) {
+        _register(scanner, owner, chainId, metadata);
     }
 
     function isRegistered(uint256 scannerId) public view returns(bool) {
         return _exists(scannerId);
     }
 
-    function register(address owner, uint256 chainId) virtual public {
-        _register(_msgSender(), owner, chainId);
+    function register(address owner, uint256 chainId, string calldata metadata) virtual public {
+        _register(_msgSender(), owner, chainId, metadata);
     }
 
-    function _register(address scanner, address owner, uint256 chainId) public {
-        uint256 scannerId = uint256(uint160(scanner));
+    function _register(address scanner, address owner, uint256 chainId, string calldata metadata) public {
+        uint256 scannerId = scannerAddressToId(scanner);
         _mint(owner, scannerId);
 
-        _beforeScannerUpdate(scannerId, chainId);
-        _scannerUpdate(scannerId, chainId);
-        _afterScannerUpdate(scannerId, chainId);
+        _beforeScannerUpdate(scannerId, chainId, metadata);
+        _scannerUpdate(scannerId, chainId, metadata);
+        _afterScannerUpdate(scannerId, chainId, metadata);
+    }
+
+    function adminUpdate(address scanner, uint256 chainId, string calldata metadata) public onlyRole(SCANNER_ADMIN_ROLE) {
+        uint256 scannerId = scannerAddressToId(scanner);
+        require(isRegistered(scannerId), "ScannerRegistryCore: scanner must be registered");
+        _beforeScannerUpdate(scannerId, chainId, metadata);
+        _scannerUpdate(scannerId, chainId, metadata);
+        _afterScannerUpdate(scannerId, chainId, metadata);
+    }
+
+    function scannerAddressToId(address scanner) public pure returns(uint256) {
+        return uint256(uint160(scanner));
     }
 
     /**
      * Hook: Scanner metadata change (create)
      */
-    function _beforeScannerUpdate(uint256 scannerId, uint256 chainId) internal virtual {
+    function _beforeScannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
     }
 
-    function _scannerUpdate(uint256 scannerId, uint256 chainId) internal virtual {
-        emit ScannerUpdated(scannerId, chainId);
+    function _scannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
+        emit ScannerUpdated(scannerId, chainId, metadata);
     }
 
-    function _afterScannerUpdate(uint256 scannerId, uint256 chainId) internal virtual {
+    function _afterScannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
         _emitHook(abi.encodeWithSignature("hook_afterScannerUpdate(uint256)", scannerId));
     }
+
 
     function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (address sender) {
         return super._msgSender();

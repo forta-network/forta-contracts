@@ -1,4 +1,4 @@
-const { ethers, upgrades } = require('hardhat');
+const { ethers, upgrades, network } = require('hardhat');
 const chalk = require('chalk');
 const assert = require('assert');
 const { NonceManager } = require('@ethersproject/experimental');
@@ -166,7 +166,10 @@ async function main() {
   const provider = new ethers.providers.FallbackProvider([ ethers.provider ], 1);
   // create new wallet on top of the wrapped provider
   const deployer = new NonceManager(
-    ethers.Wallet.fromMnemonic(process.env.MNEMONIC || 'test test test test test test test test test test test junk')
+    ethers.Wallet.fromMnemonic(
+        process.env[`${network.name.toUpperCase()}_MNEMONIC`] ||
+        'test test test test test test test test test test test junk'
+    )
   ).connect(provider);
 
   deployer.address = await deployer.getAddress();

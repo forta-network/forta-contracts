@@ -128,5 +128,5 @@ contract Dispatch is BaseComponentUpgradeable {
         );
     }
 
-    uint256[46] private __gap;
+    uint256[48] private __gap;
 }
