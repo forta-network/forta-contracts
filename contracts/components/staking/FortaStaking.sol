@@ -73,8 +73,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     // treasury for slashing
     address private _treasury;
 
-    // minimum stake per subject type
-    mapping(uint8 => uint256) private _minStakes;
+    // stake subject parameters for each subject
+    mapping(uint8 => IStakeSubject) private _stakeSubjectHandlers;
 
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
     event WithdrawalInitiated(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint64 deadline);
@@ -85,6 +85,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     event Released(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
+    event MaxStakeReached(uint8 indexed subjectType, uint256 indexed subject);
 
     modifier onlyValidSubjectType(uint8 subjectType) {
         require(
@@ -138,6 +139,14 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
      */
     function inactiveStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
         return _inactiveStake.balanceOf(FortaStakingUtils.subjectToInactive(subjectType, subject));
+    }
+
+    /**
+     * @dev Get total stake for a subject (active + inactive)
+     */
+    function totalStakeFor(uint8 subjectType, uint256 subject) public view returns (uint256) {
+        return _activeStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject)) + 
+            _inactiveStake.balanceOf(FortaStakingUtils.subjectToInactive(subjectType, subject));
     }
 
     /**
@@ -195,8 +204,12 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
 
     /**
      * @dev Deposit `stakeValue` tokens for a given `subject`, and mint the corresponding shares.
+     * will return tokens staked over maximum for the subject.
+     * If stakeValue would drive the stake over the maximum, only stakeValue - excess is transferred, but transaction will
+     * not fail.
      * NOTE: Subject type is necessary because we can't infer subject ID uniqueness between scanners, agents, etc
      * Emits a ERC1155.TransferSingle event and StakeDeposited (to allow accounting per subject type)
+     * Emits MaxStakeReached(subjectType, activeSharesId)
      */
     function deposit(uint8 subjectType, uint256 subject, uint256 stakeValue)
         public
@@ -205,14 +218,14 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     {
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        uint256 inboundStake = getInboundStake(subjectType, subject, stakeValue);
+        uint256 sharesValue = _stakeToActiveShares(activeSharesId, inboundStake);
+        SafeERC20.safeTransferFrom(stakedToken, staker, address(this), inboundStake);
 
-        uint256 sharesValue = _stakeToActiveShares(activeSharesId, stakeValue);
-        SafeERC20.safeTransferFrom(stakedToken, staker, address(this), stakeValue);
-
-        _activeStake.mint(activeSharesId, stakeValue);
+        _activeStake.mint(activeSharesId, inboundStake);
         _mint(staker, activeSharesId, sharesValue, new bytes(0));
-        emit StakeDeposited(subjectType, subject, staker, stakeValue);
-        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
+        emit StakeDeposited(subjectType, subject, staker, inboundStake);
+        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, inboundStake));
         return sharesValue;
     }
 
@@ -494,22 +507,39 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         emit TreasurySet(newTreasury);
     }
 
-    // Mininimum Stake
+
+    // IStakeController
 
     /**
-    * Sets minimum stake for subject type. To be controlled by governance
+    * Sets stake subject handler stake for subject type.
     */
-    function setMinStake(uint8 subjectType, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
-        emit MinStakeChanged(amount, _minStakes[subjectType]);
-        _minStakes[subjectType] = amount;
+    function setStakeSubjectHandler(uint8 subjectType, IStakeSubject subjectHandler) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
+        emit StakeSubjectHandlerChanged(address(subjectHandler), address(_stakeSubjectHandlers[subjectType]));
+        _stakeSubjectHandlers[subjectType] = subjectHandler;
     }
 
-    function getMinStake(uint8 subjectType) external view returns (uint256) {
-        return _minStakes[subjectType];
+
+    // Max stake helper
+
+    /**
+    * Calculates how max of the incoming stake fits for subject.
+    * Emits MaxStakeReached(subjectType, activeSharesId)
+    * @param subjectType valid subect type
+    * @param subject the id of the subject
+    * @param stakeValue stake sent by staker
+    * @return stakeValue - excess
+    */
+    function getInboundStake(uint8 subjectType, uint256 subject, uint256 stakeValue) internal returns (uint256) {
+        int256 excess = int256(totalStakeFor(subjectType, subject) + stakeValue) - int256(_stakeSubjectHandlers[subjectType].getStakeThreshold(subject).max);
+        if (excess >= 0) {
+            emit MaxStakeReached(subjectType, subject);
+            return stakeValue - uint256(excess);
+        } else {
+            return stakeValue;
+        }
     }
-    function isStakedOverMin(uint8 subjectType, uint256 subject) external view returns (bool) {
-        return activeStakeFor(subjectType, subject) >= _minStakes[subjectType];
-    }
+
+    // Overrides
 
     function setURI(string memory newUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setURI(newUri);

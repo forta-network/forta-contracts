@@ -46,6 +46,12 @@ contract ScannerRegistry is
         super._scannerUpdate(scannerId, chainId, metadata);
     }
 
+    function _isStakedOverMin(uint256 scannerId) internal virtual override view returns(bool) {
+        (uint256 chainId, ) = getScanner(scannerId);
+        return getStakeController().totalStakeFor(SCANNER_SUBJECT, scannerId) >= getStakeThreshold(chainId).min;
+    }
+    
+
     function _msgSender() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (address sender) {
         return super._msgSender();
     }

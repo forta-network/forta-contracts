@@ -1,8 +1,16 @@
 pragma solidity ^0.8.0;
+
 interface IStakeController {
-  event MinStakeChanged(uint256 newMinStake, uint256 oldMinStake);
-  
-  function setMinStake(uint8 subjectType, uint256 amount) external; 
-  function getMinStake(uint8 subjectType) external view returns (uint256);
-  function isStakedOverMin(uint8 subjectType, uint256 subject) external view returns (bool);
+    event StakeSubjectHandlerChanged(address newHandler, address oldHandler);
+    function setStakeSubjectHandler(uint8 subjectType, IStakeSubject subjectHandler) external;
+    function totalStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256); 
+    
+}
+interface IStakeSubject {
+    struct StakeThreshold {
+        uint256 min;
+        uint256 max;
+    }
+    function getStakeThreshold(uint256 subject) external view returns (StakeThreshold memory);
+    function isStakedOverMin(uint256 subject) external view returns (bool);
 }
