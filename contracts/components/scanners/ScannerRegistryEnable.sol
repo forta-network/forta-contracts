@@ -18,10 +18,10 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeSubjectU
     }
 
     mapping(uint256 => BitMaps.BitMap) private _disabled;
-    mapping(uint256 => StakeThreshold) private _stakeThresholds;
+    mapping(uint256 => StakeThreshold) internal _stakeThresholds;
 
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, Permission permission, bool value);
-    event StakeThresholdChanged(uint256 indexed chainId, uint256 newMin, uint256 newMax, uint256 oldMin, uint256 oldMax);
+    event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max);
 
     /**
     * Check if scanner is enabled
@@ -96,14 +96,12 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeSubjectU
     * Stake
     */
     function setStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(SCANNER_ADMIN_ROLE) {
-        emit StakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max, _stakeThresholds[chainId].min, _stakeThresholds[chainId].max);
+        require(newStakeThreshold.max > newStakeThreshold.min, "ScannerRegistryEnable: StakeThreshold max <= min");
+        emit StakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max);
         _stakeThresholds[chainId] = newStakeThreshold;
     }
 
-    function getStakeThreshold(uint256 chainId) public view returns(StakeThreshold memory) {
-        return _stakeThresholds[chainId];
-    }
-
+    
 
     /**
      * Overrides
@@ -116,5 +114,5 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeSubjectU
         return super._msgData();
     }
 
-    uint256[49] private __gap;
+    uint256[48] private __gap;
 }

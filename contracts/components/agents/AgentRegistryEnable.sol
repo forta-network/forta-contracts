@@ -19,7 +19,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, StakeSubjectUpgradea
     StakeThreshold private _stakeThreshold;
     
     event AgentEnabled(uint256 indexed agentId, bool indexed enabled, Permission permission, bool value);
-    event StakeThresholdChanged(uint256 newMin, uint256 newMax, uint256 oldMin, uint256 oldMax);
+    event StakeThresholdChanged(uint256 min, uint256 max);
 
     /**
      * Check if agent is enabled
@@ -84,8 +84,9 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, StakeSubjectUpgradea
      * Stake
      */
     function setStakeThreshold(StakeThreshold memory newStakeThreshold) external onlyRole(AGENT_ADMIN_ROLE) {
-        emit StakeThresholdChanged(newStakeThreshold.min, newStakeThreshold.max, _stakeThreshold.min, _stakeThreshold.max);
+        require(newStakeThreshold.max > newStakeThreshold.min, "AgentRegistryEnable: StakeThreshold max <= min");
         _stakeThreshold = newStakeThreshold;
+        emit StakeThresholdChanged(newStakeThreshold.min, newStakeThreshold.max);
     }
 
     /**
@@ -95,8 +96,17 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, StakeSubjectUpgradea
         return _stakeThreshold;
     }
 
+    /**
+     * Checks if agent is staked over minimium stake
+     * @param subject agentId
+     * @return true if agent is staked over the minimum threshold, or staking is not yet enabled (stakeController = 0).
+     * false otherwise
+     */
     function _isStakedOverMin(uint256 subject) internal override view returns(bool) {
-        return getStakeController().totalStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min;
+        if (address(getStakeController()) == address(0)) {
+            return true;
+        }
+        return getStakeController().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min;
     }
     
     /**

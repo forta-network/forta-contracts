@@ -10,8 +10,7 @@ import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 
 import "./FortaStakingUtils.sol";
-import "./FortaStakingSubjectTypes.sol";
-import "./IStakeController.sol";
+import "./FortaStakingParameters.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
@@ -42,7 +41,7 @@ interface IRewardReceiver {
  * to quick devaluation in case of slashing event for the corresponding subject. Thus, trading of such shares should be
  * be done very carefully.
  */
-contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, IStakeController {
+contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, SubjectTypeValidator {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;
@@ -73,8 +72,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     // treasury for slashing
     address private _treasury;
 
-    // stake subject parameters for each subject
-    mapping(uint8 => IStakeSubject) private _stakeSubjectHandlers;
+    FortaStakingParameters private _stakingParameters;
 
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
     event WithdrawalInitiated(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint64 deadline);
@@ -85,16 +83,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     event Released(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
+    event StakeParametersManagerSet(address indexed newManager, address indexed oldManager);
     event MaxStakeReached(uint8 indexed subjectType, uint256 indexed subject);
-
-    modifier onlyValidSubjectType(uint8 subjectType) {
-        require(
-            subjectType == SCANNER_SUBJECT ||
-            subjectType == AGENT_SUBJECT,
-            "FortaStaking: invalid subjectType"
-        );
-        _;
-    }
 
     string public constant version = "0.1.0";
 
@@ -141,13 +131,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         return _inactiveStake.balanceOf(FortaStakingUtils.subjectToInactive(subjectType, subject));
     }
 
-    /**
-     * @dev Get total stake for a subject (active + inactive)
-     */
-    function totalStakeFor(uint8 subjectType, uint256 subject) public view returns (uint256) {
-        return _activeStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject)) + 
-            _inactiveStake.balanceOf(FortaStakingUtils.subjectToInactive(subjectType, subject));
-    }
 
     /**
      * @dev Get total stake inactive for withdrawal of all subjects
@@ -216,9 +199,11 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         onlyValidSubjectType(subjectType)
         returns (uint256)
     {
+        require(address(_stakingParameters) != address(0), "FortaStaking: staking parameters unset");
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
-        uint256 inboundStake = getInboundStake(subjectType, subject, stakeValue);
+        uint256 inboundStake = _getInboundStake(subjectType, subject, stakeValue);
+
         uint256 sharesValue = _stakeToActiveShares(activeSharesId, inboundStake);
         SafeERC20.safeTransferFrom(stakedToken, staker, address(this), inboundStake);
 
@@ -227,6 +212,29 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         emit StakeDeposited(subjectType, subject, staker, inboundStake);
         _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, inboundStake));
         return sharesValue;
+    }
+
+    // Max stake helper
+
+    /**
+    * Calculates how max of the incoming stake fits for subject.
+    * Emits MaxStakeReached(subjectType, activeSharesId)
+    * @param subjectType valid subect type
+    * @param subject the id of the subject
+    * @param stakeValue stake sent by staker
+    * @return stakeValue - excess
+    */
+    function _getInboundStake(uint8 subjectType, uint256 subject, uint256 stakeValue) private returns (uint256) {
+        int256 excess = 
+            int256(activeStakeFor(subjectType, subject) + stakeValue)
+            -
+            int256(_stakingParameters.maxStakeFor(subjectType, subject));
+        if (excess >= 0) {
+            emit MaxStakeReached(subjectType, subject);
+            return stakeValue - uint256(excess);
+        } else {
+            return stakeValue;
+        }
     }
 
     /**
@@ -507,37 +515,13 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         emit TreasurySet(newTreasury);
     }
 
-
-    // IStakeController
-
-    /**
-    * Sets stake subject handler stake for subject type.
-    */
-    function setStakeSubjectHandler(uint8 subjectType, IStakeSubject subjectHandler) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
-        emit StakeSubjectHandlerChanged(address(subjectHandler), address(_stakeSubjectHandlers[subjectType]));
-        _stakeSubjectHandlers[subjectType] = subjectHandler;
+    // Admin: change staking parameters manager
+    function setStakingParametersManager(FortaStakingParameters newStakingParameters) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(address(newStakingParameters) != address(0), "FortaStaking: cannot set address 0");
+        emit StakeParametersManagerSet(address(newStakingParameters), address(_stakingParameters));
+        _stakingParameters = newStakingParameters;
     }
 
-
-    // Max stake helper
-
-    /**
-    * Calculates how max of the incoming stake fits for subject.
-    * Emits MaxStakeReached(subjectType, activeSharesId)
-    * @param subjectType valid subect type
-    * @param subject the id of the subject
-    * @param stakeValue stake sent by staker
-    * @return stakeValue - excess
-    */
-    function getInboundStake(uint8 subjectType, uint256 subject, uint256 stakeValue) internal returns (uint256) {
-        int256 excess = int256(totalStakeFor(subjectType, subject) + stakeValue) - int256(_stakeSubjectHandlers[subjectType].getStakeThreshold(subject).max);
-        if (excess >= 0) {
-            emit MaxStakeReached(subjectType, subject);
-            return stakeValue - uint256(excess);
-        } else {
-            return stakeValue;
-        }
-    }
 
     // Overrides
 

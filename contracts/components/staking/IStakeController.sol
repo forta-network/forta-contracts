@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 interface IStakeController {
     event StakeSubjectHandlerChanged(address newHandler, address oldHandler);
     function setStakeSubjectHandler(uint8 subjectType, IStakeSubject subjectHandler) external;
-    function totalStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256); 
-    
+    function activeStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
+    function maxStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
+    function minStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
 }
 interface IStakeSubject {
     struct StakeThreshold {

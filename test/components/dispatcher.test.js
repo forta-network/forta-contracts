@@ -2,10 +2,11 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { BigNumber } = require('@ethersproject/bignumber')
+const { formatEther } = require('@ethersproject/units')
 
 
 describe('Dispatcher', function () {
-  prepare({ minStake: '100' });
+  prepare({ stake: { min: '100', max: '500' }});
 
   beforeEach(async function () {
     this.accounts.getAccount('scanner');
@@ -27,7 +28,8 @@ describe('Dispatcher', function () {
 
   it('link', async function () {
     const hashBefore = await this.dispatch.scannerHash(this.SCANNER_ID);
-
+    console.log(formatEther(await this.staking.activeStakeFor(this.stakingSubjects.SCANNER_SUBJECT_TYPE, this.SCANNER_SUBJECT_ID)))
+    expect(this.scanners.isStakedOverMin(this.SCANNER_ID)).to.be(true)
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
     .to.emit(this.dispatch, 'Link').withArgs(this.AGENT_ID, this.SCANNER_ID, true);
 
@@ -35,7 +37,7 @@ describe('Dispatcher', function () {
   });
 
   it('link fails if scanner not staked over minimum', async function () {
-    await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '10000');
+    await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000' });
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
     .to.be.revertedWith('Dispatch: Scanner disabled')
   });
@@ -47,7 +49,7 @@ describe('Dispatcher', function () {
   });
 
   it('link fails if agent not staked over minimum', async function () {
-    await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.AGENT_SUBJECT_TYPE, '10000');
+    await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000' });
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
     .to.be.revertedWith('Dispatch: Agent disabled')
   });
