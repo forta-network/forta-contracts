@@ -24,9 +24,9 @@ describe('Scanner Registry', function () {
   });
 
   it('public register fails if minStake = 0', async function () {
-    await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '0' }, 1).to.not.be.reverted;
+    await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '0' }, 1);
     await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1, 'metadata'))
-    .to.be.revertedWith('ScannerRegistryEnable: public registration available if staking activated')
+    .to.be.revertedWith('ScannerRegistryEnable: public registration available if staking activated');
 
   });
 

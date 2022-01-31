@@ -210,7 +210,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _activeStake.mint(activeSharesId, inboundStake);
         _mint(staker, activeSharesId, sharesValue, new bytes(0));
         emit StakeDeposited(subjectType, subject, staker, inboundStake);
-        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, inboundStake));
+        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
         return sharesValue;
     }
 
