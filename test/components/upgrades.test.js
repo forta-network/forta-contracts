@@ -69,8 +69,7 @@ describe('Upgrades testing', function () {
             }
         );
         await this.contracts.stakingParameters.setStakeSubjectHandler(1, agentRegistry.address)
-        await agentRegistry.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min });
-        await agentRegistry.setStakeThreshold({ max: '100', min: '12' });
+        await agentRegistry.connect(this.accounts.manager).setStakeThreshold({ max: '10000', min: '0' });
         expect(await agentRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address)
         expect(await agentRegistry.version()).to.be.equal('0.1.2')
         expect(await agentRegistry.isCreated(AGENT_ID)).to.be.equal(true);
@@ -139,8 +138,7 @@ describe('Upgrades testing', function () {
             }
         );
         await this.contracts.stakingParameters.setStakeSubjectHandler(0, scannerRegistry.address)
-        await scannerRegistry.setStakeThreshold({ max: '100', min: '12' }, 1);
-        await scannerRegistry.setStakeThreshold({ max: '100', min: '12' }, 2);
+        await scannerRegistry.connect(this.accounts.manager).setStakeThreshold({ max: '100', min: '0' }, 1);
 
         await this.contracts.access.grantRole(this.roles.SCANNER_ADMIN, this.accounts.admin.address)
         for (const scanner of SCANNERS) {
