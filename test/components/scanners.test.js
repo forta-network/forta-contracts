@@ -127,12 +127,6 @@ describe('Scanner Registry', function () {
 
     });
 
-    it('isEnable is false for non registered scanners, even if staked', async function() {
-      const randomScanner = ethers.Wallet.createRandom().address;
-      await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, randomScanner, '100');
-      expect(await this.scanners.isEnabled(randomScanner)).to.be.equal(false);
-    });
-
     describe('manager', async function () {
       it('disable', async function () {
         const SCANNER_ID = this.accounts.scanner.address;

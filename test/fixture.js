@@ -56,7 +56,6 @@ function prepare(config = {}) {
     ].map(txPromise => txPromise.then(tx => tx.wait()).catch(() => {})));
 
     DEBUG("Fixture: setup roles");
-
     await Promise.all([
       this.token     .connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address  ),
       this.token     .connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address   ),
@@ -69,10 +68,13 @@ function prepare(config = {}) {
     DEBUG("Fixture: setup whitelist");
 
     // Prep for tests that need minimum stake
-    console.log(config)
     if (config.stake) {
+
       await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
-      await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));
+      if (!config.childChain) {
+        //Bridged FORT does not have mint()
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));
+      }
       this.accounts.staker = this.accounts.user1
       await this.token.connect(this.accounts.staker).approve(this.staking.address, ethers.constants.MaxUint256);
       this.stakingSubjects = {};

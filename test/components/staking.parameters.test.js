@@ -70,6 +70,20 @@ describe('Forta Staking Parameters', function () {
             expect(await this.scanners.connect(this.accounts.user1).isStakedOverMin(subject3)).to.equal(false);
 
         });
+
+        it ('cannot stake on unknown scanner', async function () {
+            await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, ethers.BigNumber.from(ethers.Wallet.createRandom().address), '101'))
+            .to.be.revertedWith("FS: max stake 0 or not found")
+
+        });
+
+        it ('cannot stake without max cap set', async function () {
+            const subjectInUnititializedChain = ethers.Wallet.createRandom().address
+            await this.scanners.connect(this.accounts.manager).adminRegister(ethers.utils.hexValue(subjectInUnititializedChain), this.accounts.user1.address, 3, 'metadata')
+            await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subjectInUnititializedChain, '101'))
+            .to.be.revertedWith("FS: max stake 0 or not found")
+
+        });
         
         it ('cannot set unauthorized', async function () {
             await expect(this.scanners.connect(this.accounts.user1).setStakeThreshold({ max: '500', min: '100' }, 1))
@@ -140,6 +154,13 @@ describe('Forta Staking Parameters', function () {
             expect(await this.agents.connect(this.accounts.user1).isStakedOverMin(AGENT_ID_2)).to.equal(false);
 
         });
+
+        it ('cannot stake on unknown agent', async function () {
+            await expect(this.staking.connect(this.accounts.user1).deposit(subjectType2, '8743926583', '101'))
+            .to.be.revertedWith("FS: max stake 0 or not found")
+
+        });
+
         
         it ('cannot set unauthorized', async function () {
             await expect(this.agents.connect(this.accounts.user1).setStakeThreshold({ max: '500', min: '100' }))
@@ -190,7 +211,7 @@ describe('Forta Staking Parameters', function () {
 
         it('subject type must be valid', async function () {
             await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubjectHandler(4, this.contracts.staking.address))
-            .to.be.revertedWith("SubjectTypeValidator: invalid subjectType");
+            .to.be.revertedWith("STV: invalid subjectType");
         });
     })
 });

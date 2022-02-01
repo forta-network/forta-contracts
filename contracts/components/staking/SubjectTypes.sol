@@ -10,7 +10,7 @@ contract SubjectTypeValidator {
         require(
             subjectType == SCANNER_SUBJECT ||
             subjectType == AGENT_SUBJECT,
-            "SubjectTypeValidator: invalid subjectType"
+            "STV: invalid subjectType"
         );
         _;
     }

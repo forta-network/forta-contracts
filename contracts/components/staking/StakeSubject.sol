@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "../staking/IStakeController.sol";
-import "../staking/FortaStakingSubjectTypes.sol";
+import "../staking/SubjectTypes.sol";
 import "../Roles.sol";
 import "../utils/AccessManaged.sol";
 

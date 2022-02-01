@@ -10,7 +10,8 @@ import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 
 import "./FortaStakingUtils.sol";
-import "./FortaStakingParameters.sol";
+import "./SubjectTypes.sol";
+import "./IStakeController.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
@@ -72,7 +73,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     // treasury for slashing
     address private _treasury;
 
-    FortaStakingParameters private _stakingParameters;
+    IStakeController private _stakingParameters;
 
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
     event WithdrawalInitiated(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint64 deadline);
@@ -190,6 +191,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * will return tokens staked over maximum for the subject.
      * If stakeValue would drive the stake over the maximum, only stakeValue - excess is transferred, but transaction will
      * not fail.
+     * Reverts if max stake for subjectType not set, or subject not found
      * NOTE: Subject type is necessary because we can't infer subject ID uniqueness between scanners, agents, etc
      * Emits a ERC1155.TransferSingle event and StakeDeposited (to allow accounting per subject type)
      * Emits MaxStakeReached(subjectType, activeSharesId)
@@ -199,7 +201,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         onlyValidSubjectType(subjectType)
         returns (uint256)
     {
-        require(address(_stakingParameters) != address(0), "FortaStaking: staking parameters unset");
+        require(address(_stakingParameters) != address(0), "FS: staking parameters unset");
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         uint256 inboundStake = _getInboundStake(subjectType, subject, stakeValue);
@@ -225,6 +227,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     * @return stakeValue - excess
     */
     function _getInboundStake(uint8 subjectType, uint256 subject, uint256 stakeValue) private returns (uint256) {
+        require(_stakingParameters.maxStakeFor(subjectType, subject) > 0, "FS: max stake 0 or not found");
         int256 excess = 
             int256(activeStakeFor(subjectType, subject) + stakeValue)
             -
@@ -476,7 +479,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
                     _released[ids[i]].transfer(from, to, virtualRelease);
                 }
             } else {
-                require(from == address(0) || to == address(0), "Withdrawal shares are not transferable");
+                require(from == address(0) || to == address(0), "FS: Inactive shares untransferrable");
             }
         }
 
@@ -516,8 +519,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     // Admin: change staking parameters manager
-    function setStakingParametersManager(FortaStakingParameters newStakingParameters) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(address(newStakingParameters) != address(0), "FortaStaking: cannot set address 0");
+    function setStakingParametersManager(IStakeController newStakingParameters) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(address(newStakingParameters) != address(0), "FS: cannot set address 0");
         emit StakeParametersManagerSet(address(newStakingParameters), address(_stakingParameters));
         _stakingParameters = newStakingParameters;
     }

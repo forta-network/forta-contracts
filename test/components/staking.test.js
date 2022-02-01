@@ -246,7 +246,7 @@ describe('Forta Staking', function () {
 
       it('invalid subjectType', async function () {
         await expect(this.staking.connect(this.accounts.user1).deposit(9, subject1, '100'))
-        .to.be.revertedWith('SubjectTypeValidator: invalid subjectType');
+        .to.be.revertedWith('STV: invalid subjectType');
       });
     });
 
@@ -344,7 +344,7 @@ describe('Forta Staking', function () {
     it ('cannot reward to invalid subjectType', async function () {
 
       await expect(this.staking.connect(this.accounts.user1).reward(9, subject1, '10'))
-      .to.be.revertedWith('SubjectTypeValidator: invalid subjectType');
+      .to.be.revertedWith('STV: invalid subjectType');
     });
 
     it ('can reward to non zero subject', async function () {
