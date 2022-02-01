@@ -75,6 +75,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
 
     // minimum stake per subject type
     mapping(uint8 => uint256) private _minStakes;
+    mapping(uint8 => uint256) private _maxStakes;
 
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
     event WithdrawalInitiated(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint64 deadline);
@@ -85,12 +86,15 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     event Released(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
+    event MinStakeChanged(uint256 newMinStake, uint256 oldMinStake);
+    event MaxStakeChanged(uint256 newMaxStake, uint256 oldMaxStake);
+    event MaxStakeReached(uint8 indexed subjectType, uint256 indexed subject);
 
     modifier onlyValidSubjectType(uint8 subjectType) {
         require(
             subjectType == SCANNER_SUBJECT ||
             subjectType == AGENT_SUBJECT,
-            "FortaStaking: invalid subjectType"
+            "FS: invalid subjectType"
         );
         _;
     }
@@ -195,6 +199,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
 
     /**
      * @dev Deposit `stakeValue` tokens for a given `subject`, and mint the corresponding shares.
+     * If stake goes over max for the subject, only the needed tokens will be staked
      * NOTE: Subject type is necessary because we can't infer subject ID uniqueness between scanners, agents, etc
      * Emits a ERC1155.TransferSingle event and StakeDeposited (to allow accounting per subject type)
      */
@@ -205,7 +210,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     {
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
-
+        stakeValue = _getInboundStake(subjectType, subject, stakeValue);
         uint256 sharesValue = _stakeToActiveShares(activeSharesId, stakeValue);
         SafeERC20.safeTransferFrom(stakedToken, staker, address(this), stakeValue);
 
@@ -214,6 +219,27 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         emit StakeDeposited(subjectType, subject, staker, stakeValue);
         _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
         return sharesValue;
+    }
+
+        // Max stake helper
+
+    /**
+    * Calculates how max of the incoming stake fits for subject.
+    * Emits MaxStakeReached(subjectType, activeSharesId)
+    * @param subjectType valid subect type
+    * @param subject the id of the subject
+    * @param stakeValue stake sent by staker
+    * @return stakeValue - excess
+    */
+    function _getInboundStake(uint8 subjectType, uint256 subject, uint256 stakeValue) private returns (uint256) {
+        require(_maxStakes[subjectType] > 0, "FS: max stake 0");
+        uint256 stakeLeft = _maxStakes[subjectType] - activeStakeFor(subjectType, subject);
+        if (stakeValue >= stakeLeft) { emit MaxStakeReached(subjectType, subject); }
+        stakeValue = Math.min(
+            stakeValue, // what the user wants to stake
+            stakeLeft // what is actually left
+        );
+        return stakeValue;
     }
 
     /**
@@ -259,10 +285,10 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     {
         address staker = _msgSender();
         uint256 inactiveSharesId = FortaStakingUtils.subjectToInactive(subjectType, subject);
-        require(!_frozen[FortaStakingUtils.inactiveToActive(inactiveSharesId)], "Subject unstaking is currently frozen");
+        require(!_frozen[FortaStakingUtils.inactiveToActive(inactiveSharesId)], "FS: Subject frozen");
 
         Timers.Timestamp storage timer = _lockingDelay[FortaStakingUtils.inactiveToActive(inactiveSharesId)][staker];
-        require(timer.isExpired(), 'Withdrawal is not ready');
+        require(timer.isExpired(), 'FS: Withdrawal not ready');
         timer.reset();
         emit WithdrawalExecuted(subjectType, subject, staker);
 
@@ -294,7 +320,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         uint256 inactiveStake     = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
 
         uint256 maxSlashableStake = FullMath.mulDiv(9, 10, activeStake + inactiveStake);
-        require(stakeValue <= maxSlashableStake, "Stake to be slashed is over 90%");
+        require(stakeValue <= maxSlashableStake, "FS: slashed stake over 90%");
 
         uint256 slashFromActive   = FullMath.mulDiv(activeStake, activeStake + inactiveStake, stakeValue);
         uint256 slashFromInactive = stakeValue - slashFromActive;
@@ -455,7 +481,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
                     _released[ids[i]].transfer(from, to, virtualRelease);
                 }
             } else {
-                require(from == address(0) || to == address(0), "Withdrawal shares are not transferable");
+                require(from == address(0) || to == address(0), "FS: untransferrable withdrawal shares");
             }
         }
 
@@ -497,15 +523,17 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     // Mininimum Stake
 
     /**
-    * Sets minimum stake for subject type. To be controlled by governance
+    * Sets stake params for subject type. To be controlled by governance
     */
-    function setMinStake(uint8 subjectType, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
-        emit MinStakeChanged(amount, _minStakes[subjectType]);
-        _minStakes[subjectType] = amount;
+    function setStakeParams(uint8 subjectType, uint256 min, uint256 max) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
+        emit MinStakeChanged(min, _minStakes[subjectType]);
+        emit MaxStakeChanged(max, _maxStakes[subjectType]);
+        _minStakes[subjectType] = min;
+        _maxStakes[subjectType] = max;
     }
 
-    function getMinStake(uint8 subjectType) external view returns (uint256) {
-        return _minStakes[subjectType];
+    function getStakeParams(uint8 subjectType) external view returns (uint256 min, uint256 max) {
+        return (_minStakes[subjectType], _maxStakes[subjectType]);
     }
     function isStakedOverMin(uint8 subjectType, uint256 subject) external view returns (bool) {
         return activeStakeFor(subjectType, subject) >= _minStakes[subjectType];
@@ -523,5 +551,5 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         return super._msgData();
     }
 
-    uint256[40] private __gap;
+    uint256[39] private __gap;
 }
