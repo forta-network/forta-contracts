@@ -101,8 +101,6 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeSubjectU
         _stakeThresholds[chainId] = newStakeThreshold;
     }
 
-    
-
     /**
      * Overrides
      */

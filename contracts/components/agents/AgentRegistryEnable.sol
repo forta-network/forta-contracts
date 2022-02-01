@@ -120,5 +120,5 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, StakeSubjectUpgradea
         return super._msgData();
     }
 
-    uint256[48] private __gap;
+    uint256[47] private __gap;
 }
