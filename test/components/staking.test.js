@@ -4,8 +4,9 @@ const { prepare } = require('../fixture');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
 
 const LOCKED_OFFSET = ethers.BigNumber.from(2).pow(160);
+const SUBJECT_1_ADDRESS = '0x727E5FCcb9e2367555373e90E637500BCa5Da40c'
 const subjects = [
-  [ ethers.BigNumber.from(ethers.Wallet.createRandom().address), 0 ],// Scanner id, scanner type
+  [ ethers.BigNumber.from(SUBJECT_1_ADDRESS), 0 ],// Scanner id, scanner type
   [ ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), 1 ]// Agent id, agent type
 ]
 const [
@@ -31,7 +32,7 @@ describe('Forta Staking', function () {
     await this.token.connect(this.accounts.user2).approve(this.staking.address, ethers.constants.MaxUint256);
     await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
 
-    await this.scanners.connect(this.accounts.manager).adminRegister(ethers.utils.hexValue(subject1), this.accounts.user1.address, 1, 'metadata')
+    await this.scanners.connect(this.accounts.manager).adminRegister(SUBJECT_1_ADDRESS, this.accounts.user1.address, 1, 'metadata')
   });
 
   describe('Deposit / Withdraw', function () {
