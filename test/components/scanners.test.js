@@ -5,7 +5,7 @@ const { BigNumber } = require('@ethersproject/bignumber')
 
 
 describe('Scanner Registry', function () {
-  prepare({ minStake: '100' });
+  prepare({ stake: { min: '100', max: '500' }});
 
   beforeEach(async function () {
     this.accounts.getAccount('scanner');
@@ -24,7 +24,7 @@ describe('Scanner Registry', function () {
   });
 
   it('public register fails if minStake = 0', async function () {
-    await expect(this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '0')).to.not.be.reverted;
+    await expect(this.staking.connect(this.accounts.admin).setStakeParams(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '0', '100000'))
     await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1, 'metadata'))
     .to.be.revertedWith('ScannerRegistryEnable: public registration available if staking activated')
 
@@ -273,7 +273,7 @@ describe('Scanner Registry', function () {
         const SCANNER_SUBJECT_ID = ethers.BigNumber.from(SCANNER_ID);
         await expect(this.scanners.connect(this.accounts.scanner).disableScanner(SCANNER_ID, 1))
         .to.emit(this.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, false, 1, false);
-        await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '10000');
+        await this.staking.connect(this.accounts.admin).setStakeParams(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '10000', '100000')
         await expect(this.scanners.connect(this.accounts.scanner).enableScanner(SCANNER_ID, 1))
         .to.be.revertedWith("ScannerRegistryEnable: scanner staked under minimum");
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_SUBJECT_ID, '10000');
@@ -286,7 +286,7 @@ describe('Scanner Registry', function () {
         const SCANNER_ID = this.accounts.scanner.address;
         const SCANNER_SUBJECT_ID = ethers.BigNumber.from(SCANNER_ID);
         expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
-        await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '10000');
+        await expect(this.staking.connect(this.accounts.admin).setStakeParams(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '10000', '100000'))
         expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(false);
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_SUBJECT_ID, '10000');
         expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);

@@ -526,6 +526,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     * Sets stake params for subject type. To be controlled by governance
     */
     function setStakeParams(uint8 subjectType, uint256 min, uint256 max) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
+        require(min < max, "FS: min >= max");
         emit MinStakeChanged(min, _minStakes[subjectType]);
         emit MaxStakeChanged(max, _maxStakes[subjectType]);
         _minStakes[subjectType] = min;

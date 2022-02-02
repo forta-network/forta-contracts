@@ -67,17 +67,19 @@ function prepare(config = {}) {
     // Scanners v0.1.1
     await this.scanners.connect(this.accounts.admin).setStakeController(this.contracts.staking.address)
 
-    // Prep for tests that need minimum stake
-    if (config.minStake) {
+    // Prep for tests that need stake thresholds
+    if (config.stake) {
       await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
-      await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('1000'));
+      if (!config.childChain) {
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('1000'));
+      }
       this.accounts.staker = this.accounts.user1
       await this.token.connect(this.accounts.staker).approve(this.staking.address, ethers.constants.MaxUint256);
       this.stakingSubjects = {};
       this.stakingSubjects.SCANNER_SUBJECT_TYPE = 0;
       this.stakingSubjects.AGENT_SUBJECT_TYPE = 1;
-      await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, config.minStake);
-      await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.AGENT_SUBJECT_TYPE, config.minStake);
+      await this.staking.connect(this.accounts.admin).setStakeParams(this.stakingSubjects.SCANNER_SUBJECT_TYPE, config.stake.min, config.stake.max);
+      await this.staking.connect(this.accounts.admin).setStakeParams(this.stakingSubjects.AGENT_SUBJECT_TYPE, config.stake.min, config.stake.max);
     }
 
     __SNAPSHOT_ID__ = await ethers.provider.send('evm_snapshot');

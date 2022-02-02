@@ -5,7 +5,7 @@ const { BigNumber } = require('@ethersproject/bignumber')
 
 
 describe('Dispatcher', function () {
-  prepare({ minStake: '100' });
+  prepare({ stake: { min: '100', max: '500' }});
 
   beforeEach(async function () {
     this.accounts.getAccount('scanner');
@@ -35,7 +35,7 @@ describe('Dispatcher', function () {
   });
 
   it('link fails if scanner not staked over minimum', async function () {
-    await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '10000');
+    await expect(this.staking.connect(this.accounts.admin).setStakeParams(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '10000', '100000'))
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
     .to.be.revertedWith('Dispatch: Scanner disabled')
   });
@@ -47,7 +47,7 @@ describe('Dispatcher', function () {
   });
 
   it('link fails if agent not staked over minimum', async function () {
-    await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.AGENT_SUBJECT_TYPE, '10000');
+    await this.staking.connect(this.accounts.admin).setStakeParams(this.stakingSubjects.AGENT_SUBJECT_TYPE, '10000', '100000')
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
     .to.be.revertedWith('Dispatch: Agent disabled')
   });
