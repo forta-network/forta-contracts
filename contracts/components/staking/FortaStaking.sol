@@ -86,8 +86,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     event Released(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
-    event MinStakeChanged(uint256 newMinStake, uint256 oldMinStake);
-    event MaxStakeChanged(uint256 newMaxStake, uint256 oldMaxStake);
+    event StakeThresholdChanged(uint8 indexed subjectType, uint256 min, uint256 max);
     event MaxStakeReached(uint8 indexed subjectType, uint256 indexed subject);
 
     modifier onlyValidSubjectType(uint8 subjectType) {
@@ -226,7 +225,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         return sharesValue;
     }
 
-
     /**
     * Calculates how much of the incoming stake fits for subject.
     * @param subjectType valid subect type
@@ -236,17 +234,17 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     * @return true if reached max
     */
     function _getInboundStake(uint8 subjectType, uint256 subject, uint256 stakeValue) private view returns (uint256, bool) {
-        int256 stakeLeft = int256(_maxStakes[subjectType]) - int256(activeStakeFor(subjectType, subject));
-        if (stakeLeft <= 0) {
+        if (activeStakeFor(subjectType, subject) >= _maxStakes[subjectType]) {
             return (0, true);
         } else {
+            uint256 stakeLeft = _maxStakes[subjectType] - activeStakeFor(subjectType, subject);
             return (
                 Math.min(
                     stakeValue, // what the user wants to stake
-                    uint256(stakeLeft) // what is actually left
+                    stakeLeft // what is actually left
                 ),
-                uint256(stakeLeft) <= stakeValue
-            );
+                activeStakeFor(subjectType, subject) + stakeValue >= _maxStakes[subjectType]
+            ); 
         }
     }
 
@@ -535,8 +533,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     */
     function setStakeParams(uint8 subjectType, uint256 min, uint256 max) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
         require(min < max, "FS: min >= max");
-        emit MinStakeChanged(min, _minStakes[subjectType]);
-        emit MaxStakeChanged(max, _maxStakes[subjectType]);
+        emit StakeThresholdChanged(subjectType, min, max);
         _minStakes[subjectType] = min;
         _maxStakes[subjectType] = max;
     }

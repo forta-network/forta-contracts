@@ -250,15 +250,15 @@ describe('Forta Staking', function () {
 
       it('stake over max because of reduced maxStake does not transfer tokens', async function () {
 
+        await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, MAX_STAKE-1))
+        .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.staking.address, MAX_STAKE-1)
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, active1, MAX_STAKE-1)
+        .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType1, subject1, this.accounts.user1.address, MAX_STAKE-1);
+        await this.staking.connect(this.accounts.admin).setStakeParams(subjectType1, '90', MAX_STAKE - 10)
         await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100'))
-        .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.staking.address, '100')
-        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, active1, '100')
-        .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType1, subject1, this.accounts.user1.address, '100');
-        await this.staking.connect(this.accounts.admin).setStakeParams(subjectType1, '90', '99')
-        await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100'))
-        .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.staking.address, '1')
-        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, active1, '1')
-        .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType1, subject1, this.accounts.user1.address, '1')
+        .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.staking.address, '0')
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, active1, '0')
+        .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType1, subject1, this.accounts.user1.address, '0')
         .to.emit(this.staking, 'MaxStakeReached').withArgs(subjectType1, subject1);
         
         
@@ -759,8 +759,7 @@ describe('Forta Staking', function () {
     it ('happy path', async function () {
       expect(await this.staking.getStakeParams(subjectType1)).to.deep.equal([BigNumber.from('100'), BigNumber.from('500')]);
       await expect(this.staking.connect(this.accounts.admin).setStakeParams(subjectType1, '1000', '10000'))
-      .to.emit(this.staking, 'MinStakeChanged').withArgs('1000','100')
-      .to.emit(this.staking, 'MaxStakeChanged').withArgs('10000','500');
+      .to.emit(this.staking, 'StakeThresholdChanged').withArgs(subjectType1, '1000','10000')
       
       expect(await this.staking.getStakeParams(subjectType1)).to.deep.equal([BigNumber.from('1000'), BigNumber.from('10000')]);
       expect(await this.staking.connect(this.accounts.user1).isStakedOverMin(subjectType1, subject1)).to.equal(false);
