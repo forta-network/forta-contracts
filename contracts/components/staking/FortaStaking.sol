@@ -199,7 +199,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
 
     /**
      * @dev Deposit `stakeValue` tokens for a given `subject`, and mint the corresponding shares.
-     * If stake goes over max for the subject, only the needed tokens will be staked
+     * Deposited stake may capped if the full amount causes stake to go over max for the subject.
      * NOTE: Subject type is necessary because we can't infer subject ID uniqueness between scanners, agents, etc
      * Emits a ERC1155.TransferSingle event and StakeDeposited (to allow accounting per subject type)
      */
