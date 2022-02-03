@@ -235,11 +235,10 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         require(_maxStakes[subjectType] > 0, "FS: max stake 0");
         uint256 stakeLeft = _maxStakes[subjectType] - activeStakeFor(subjectType, subject);
         if (stakeValue >= stakeLeft) { emit MaxStakeReached(subjectType, subject); }
-        stakeValue = Math.min(
+        return Math.min(
             stakeValue, // what the user wants to stake
             stakeLeft // what is actually left
         );
-        return stakeValue;
     }
 
     /**
