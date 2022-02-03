@@ -224,7 +224,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         // Max stake helper
 
     /**
-    * Calculates how max of the incoming stake fits for subject.
+    * Calculates how much of the incoming stake fits for subject.
     * Emits MaxStakeReached(subjectType, activeSharesId)
     * @param subjectType valid subect type
     * @param subject the id of the subject
