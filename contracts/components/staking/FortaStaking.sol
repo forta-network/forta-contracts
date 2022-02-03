@@ -232,7 +232,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     * @param subjectType valid subect type
     * @param subject the id of the subject
     * @param stakeValue stake sent by staker
-    * @return (stake, reachedMax) (stakeValue - excess, true if reached max)
+    * @return stakeValue - excess
+    * @return true if reached max
     */
     function _getInboundStake(uint8 subjectType, uint256 subject, uint256 stakeValue) private view returns (uint256, bool) {
         int256 stakeLeft = int256(_maxStakes[subjectType]) - int256(activeStakeFor(subjectType, subject));
