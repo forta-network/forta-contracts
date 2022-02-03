@@ -247,6 +247,22 @@ describe('Forta Staking', function () {
         .to.emit(this.staking, 'MaxStakeReached').withArgs(subjectType1, subject1);
         
       });
+
+      it('stake over max because of reduced maxStake does not transfer tokens', async function () {
+
+        await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100'))
+        .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.staking.address, '100')
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, active1, '100')
+        .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType1, subject1, this.accounts.user1.address, '100');
+        await this.staking.connect(this.accounts.admin).setStakeParams(subjectType1, '90', '99')
+        await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100'))
+        .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.staking.address, '1')
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, active1, '1')
+        .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType1, subject1, this.accounts.user1.address, '1')
+        .to.emit(this.staking, 'MaxStakeReached').withArgs(subjectType1, subject1);
+        
+        
+      });
       
     });
     

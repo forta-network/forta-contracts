@@ -208,9 +208,14 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         onlyValidSubjectType(subjectType)
         returns (uint256)
     {
+        require(_maxStakes[subjectType] > 0, "FS: max stake 0");
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
-        stakeValue = _getInboundStake(subjectType, subject, stakeValue);
+        bool reachedMax = false;
+        (stakeValue, reachedMax) = _getInboundStake(subjectType, subject, stakeValue);
+        if (reachedMax) {
+            emit MaxStakeReached(subjectType, subject);
+        }
         uint256 sharesValue = _stakeToActiveShares(activeSharesId, stakeValue);
         SafeERC20.safeTransferFrom(stakedToken, staker, address(this), stakeValue);
 
@@ -221,24 +226,27 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         return sharesValue;
     }
 
-        // Max stake helper
 
     /**
     * Calculates how much of the incoming stake fits for subject.
-    * Emits MaxStakeReached(subjectType, activeSharesId)
     * @param subjectType valid subect type
     * @param subject the id of the subject
     * @param stakeValue stake sent by staker
-    * @return stakeValue - excess
+    * @return (stake, reachedMax) (stakeValue - excess, true if reached max)
     */
-    function _getInboundStake(uint8 subjectType, uint256 subject, uint256 stakeValue) private returns (uint256) {
-        require(_maxStakes[subjectType] > 0, "FS: max stake 0");
-        uint256 stakeLeft = _maxStakes[subjectType] - activeStakeFor(subjectType, subject);
-        if (stakeValue >= stakeLeft) { emit MaxStakeReached(subjectType, subject); }
-        return Math.min(
-            stakeValue, // what the user wants to stake
-            stakeLeft // what is actually left
-        );
+    function _getInboundStake(uint8 subjectType, uint256 subject, uint256 stakeValue) private view returns (uint256, bool) {
+        int256 stakeLeft = int256(_maxStakes[subjectType]) - int256(activeStakeFor(subjectType, subject));
+        if (stakeLeft <= 0) {
+            return (0, true);
+        } else {
+            return (
+                Math.min(
+                    stakeValue, // what the user wants to stake
+                    uint256(stakeLeft) // what is actually left
+                ),
+                uint256(stakeLeft) <= stakeValue
+            );
+        }
     }
 
     /**
