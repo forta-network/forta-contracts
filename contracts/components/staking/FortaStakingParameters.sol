@@ -37,7 +37,7 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
     }
 
     function _setFortaStaking(address newFortaStaking) internal {
-        require(newFortaStaking!= address(0), "FortaStakingParameters: cannot set address 0");
+        require(newFortaStaking!= address(0), "FSP: address 0");
         _fortaStaking = FortaStaking(newFortaStaking);
         emit FortaStakingChanged(address(_fortaStaking));
     }
@@ -45,11 +45,9 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
     /**
     * Sets stake subject handler stake for subject type.
     */
-    function setStakeSubjectHandler(uint8 subjectType, IStakeSubject subjectHandler) external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-        onlyValidSubjectType(subjectType) {
-            
-        require(address(subjectHandler) != address(0), "FortaStakingParameters: cannot set address 0");
+    function setStakeSubjectHandler(uint8 subjectType, IStakeSubject subjectHandler) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _onlyValidSubjectType(subjectType);
+        require(address(subjectHandler) != address(0), "FSP: address 0");
         emit StakeSubjectHandlerChanged(address(subjectHandler), address(_stakeSubjectHandlers[subjectType]));
         _stakeSubjectHandlers[subjectType] = subjectHandler;
     }

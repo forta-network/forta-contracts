@@ -204,9 +204,9 @@ describe('Forta Staking Parameters', function () {
         it('admin methods cannot be called with address 0', async function () {
             
             await expect(fortaStakingParameters.connect(this.accounts.admin).setFortaStaking(ethers.constants.AddressZero))
-            .to.be.revertedWith("FortaStakingParameters: cannot set address 0");
+            .to.be.revertedWith("FSP: address 0");
             await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubjectHandler(0, ethers.constants.AddressZero))
-            .to.be.revertedWith("FortaStakingParameters: cannot set address 0");
+            .to.be.revertedWith("FSP: address 0");
         });
 
         it('subject type must be valid', async function () {
