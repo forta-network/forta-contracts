@@ -2,6 +2,7 @@ const { ethers, upgrades, network } = require('hardhat');
 const { NonceManager     } = require('@ethersproject/experimental');
 const Conf                 = require('conf');
 const pLimit               = require('p-limit');
+const DEBUG                = require('debug')('forta:utils');
 
 // override process.env with dotenv
 Object.assign(process.env, require('dotenv').config().parsed);
@@ -99,17 +100,22 @@ function performUpgrade(proxy, factory, opts = {}) {
     .then(contract => upgrades.upgradeProxy(proxy.address, contract, opts));
 }
 
-function tryFetchContract(cache, key, contract, args = []) {
-    return resumeOrDeploy(cache, key, () => contract.deploy(...args)).then(address => contract.attach(address));
+async function tryFetchContract(cache, key, contract, args = [], opts = {}) {
+    await cache.set(`${key}.args`, args);
+    return resumeOrDeploy(cache, key, () => contract.deploy(...args), false).then(address => contract.attach(address));
 }
 
-function tryFetchProxy(cache, key, contract, kind = 'uups', args = [], opts = {}) {
-    return resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind, ...opts })).then(address => contract.attach(address));
+async function tryFetchProxy(cache, key, contract, kind = 'uups', args = [], opts = {}) {
+    await cache.set(`${key}.impl.args`, args);
+    const deployed = await resumeOrDeploy(cache, key, upgrades.deployProxy(contract, args, { kind, ...opts })).then(address => contract.attach(address));
+    const implAddress = await upgrades.erc1967.getImplementationAddress(deployed.address);
+    await cache.set(`${key}.impl.address`, implAddress);
+    return deployed;
 }
 
 async function resumeOrDeploy(cache, key, deploy) {
     let txHash  = await cache.get(`${key}-pending`);
-    let address = await cache.get(key);
+    let address = await cache.get(key) ?? await cache.get(`${key}.address`);
 
     if (!txHash && !address) {
         const contract = await deploy();
@@ -117,16 +123,16 @@ async function resumeOrDeploy(cache, key, deploy) {
         await cache.set(`${key}-pending`, txHash);
         await contract.deployed();
         address = contract.address;
-        await cache.set(key, address);
+        await cache.set(`${key}.address`, address);
     } else if (!address) {
         address = await ethers.provider.getTransaction(txHash)
         .then(tx => tx.wait())
         .then(receipt => receipt.contractAddress);
-        await cache.set(key, address);
+        await cache.set(`${key}.address`, address);
     }
-
     return address;
 }
+
 
 /*********************************************************************************************************************
  *                                                        Time                                                       *

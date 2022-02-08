@@ -4,15 +4,25 @@
 	"token": "0x848F1fF1fa76Dc882Ca2F3521265ba3F27e42158",
 	"router": "0x44F5288D1B5a61cE13595835Aced1191889bB741",
 	"dispatch": "0x77Db997b9Ad5e14386aB367fa47de073b3743248",
-	"forwarder": "0xd0D5882128bCc9Ea213Cc7dd26136F0eC06a8D2F",
+	"forwarder": {
+		"args": []
+	},
 	"scanners": "0x65F22a702F88B53883A89F772449c7667DB9ab9C",
 	"alerts": "0xC0556fC048B0F189F412DBba536aBD1a4ebD1349",
 	"access": "0xB4457590d9f1E03BEF165CC94Ed82C63a1e5bB4d",
 	"agents": "0xA3A0EA252D3cf18B30c3ADa0E013671beEDb4262",
 	"forta-pending": "0x41e14e0e52fd44da773b3e55cdfc74979c2380009ab77478ce10cff8f1c4fe39",
-	"forta": "0x95d9a757ad9C25999ffE93f3067221F04ce1Cc79",
+	"forta": {
+		"impl": {
+			"args": [
+				"0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24"
+			]
+		}
+	},
 	"scannerNodeVersion-pending": "0xda0894eb045edbb3e5f8f85f79e583e17a739a261f152ef5ea7aec3db93ee2e2",
 	"scannerNodeVersion": "0xBeDC289BdE5BA0395CF84927CB3f82b1d2423283",
-	"staking-pending": "0x085e69e0c5fc980c68aca4f66b9b11b10bbf8814199d00d19d05acc61c267693",
-	"staking": "0x0C5edcECfA2704Ae855Df2c8D91d4856386D9407"
+	"staking-pending": "0x98b61d8e4d6007835b9169fb8ff8d58600f5b849ba609e3c052848522f5e3b96",
+	"staking": "0xc054a3DABfFEb0279E62669FB699a33D4cC5fC62",
+	"staking-parameters-pending": "0x1c29787b8ab4e40465d7df8c70e27563ba464791224d752847ea36a6e1ca53d6",
+	"staking-parameters": "0xe6dc38CDb33459823B4f9D1c2d8FE569cA7A1ea5"
 }
