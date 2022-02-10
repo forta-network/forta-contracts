@@ -159,16 +159,16 @@ async function migrate(config = {}) {
 
   
     DEBUG(`[5.1] staking parameters: ${contracts.stakingParameters.address}`);
-    DEBUG('setFortaStaking');
+    DEBUG('setFortaStaking?');
     const stakingUpdatedLogs = await utils.getEventsFromContractCreation(CACHE, 'staking-parameters', 'FortaStakingChanged', contracts.stakingParameters)
-    DEBUG(stakingUpdatedLogs);
     if (stakingUpdatedLogs[stakingUpdatedLogs.length -1]?.args[0] !== contracts.staking.address) {
+        DEBUG('settingFortaStaking');
         await contracts.stakingParameters.connect(deployer).setFortaStaking(contracts.staking.address);
-        DEBUG('setFortaStaking');
     }
     
     const paramsUpdatedLogs = await utils.getEventsFromContractCreation(CACHE, 'staking', 'StakeParamsManagerSet', contracts.staking)
-    DEBUG(paramsUpdatedLogs);
+    DEBUG('setStakingParametersManager?');
+
     if (paramsUpdatedLogs[paramsUpdatedLogs.length -1]?.args[0] !== contracts.stakingParameters.address) {
         await contracts.staking.connect(deployer).setStakingParametersManager(contracts.stakingParameters.address)
         DEBUG('setStakingParametersManager');
@@ -252,7 +252,7 @@ async function migrate(config = {}) {
 
     contracts.scannerNodeVersion = await ethers.getContractFactory('ScannerNodeVersion', deployer).then(factory => utils.tryFetchProxy(
         CACHE,
-        'scannerNodeVersion',
+        'scanner-node-version',
         factory,
         'uups',
         [ contracts.access.address, contracts.router.address ],
@@ -359,7 +359,8 @@ async function migrate(config = {}) {
         // contract.escrow doesn't support reverse registration (not a component)
     ]);
 
-    DEBUG('[11.5] reverse registration')
+    DEBUG('[11.5] reverse registration');
+    await CACHE.set('contracts', Object.keys(contracts).map(utils.kebabize));
 
     return {
         provider,

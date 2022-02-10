@@ -95,9 +95,11 @@ function deployUpgradeable(factory, kind, params = [], opts = {}) {
     .then(f => f.deployed());
 }
 
-function performUpgrade(proxy, factory, opts = {}) {
-    return (typeof factory === 'string' ? getFactory(factory) : Promise.resolve(factory))
-    .then(contract => upgrades.upgradeProxy(proxy.address, contract, opts));
+async function performUpgrade(proxy, factory, opts = {}, cache, key) {
+    const contract = typeof factory === 'string' ? await getFactory(factory) : factory
+    const afterUpgradeContract = await upgrades.upgradeProxy(proxy.address, contract, opts)
+    await saveImplementationParams(cache, key, opts, afterUpgradeContract);
+    return afterUpgradeContract;
 }
 
 async function tryFetchContract(cache, key, contract, args = [], opts = {}) {
@@ -119,11 +121,15 @@ async function migrateAddress(cache, key) {
 
 async function tryFetchProxy(cache, key, contract, kind = 'uups', args = [], opts = {}) {
     const deployed = await resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind, ...opts })).then(address => contract.attach(address));
-    const implAddress = await upgrades.erc1967.getImplementationAddress(deployed.address);
-    await cache.set(`${key}.impl.args`, args);
-    await cache.set(`${key}.impl.address`, implAddress);
-    await saveVersion(key, cache, deployed, true);
+    await saveImplementationParams(cache, key, opts, deployed);
     return deployed;
+}
+
+async function saveImplementationParams(cache, key, opts, contract) {
+    const implAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
+    await cache.set(`${key}.impl.args`, opts.constructorArgs ?? []);
+    await cache.set(`${key}.impl.address`, implAddress);
+    await saveVersion(key, cache, contract, true);
 }
 
 async function getContractVersion(contract, deployParams = {}) {
@@ -148,7 +154,7 @@ async function getContractVersion(contract, deployParams = {}) {
 }
 
 async function saveVersion(key, cache, contract, isProxy) {
-    const impl = isProxy ? '.imp' : '';
+    const impl = isProxy ? '.impl' : '';
     await cache.set(`${key}${impl}.version`, await getContractVersion(contract))
 }
 
@@ -161,13 +167,12 @@ async function resumeOrDeploy(cache, key, deploy) {
         await cache.set(`${key}-pending`, txHash);
         await contract.deployed();
         address = contract.address;
-        await cache.set(`${key}.address`, address);
     } else if (!address) {
         address = await ethers.provider.getTransaction(txHash)
         .then(tx => tx.wait())
         .then(receipt => receipt.contractAddress);
-        await cache.set(`${key}.address`, address);
     }
+    await cache.set(`${key}.address`, address);
     return address;
 }
 
@@ -181,6 +186,22 @@ async function getEventsFromContractCreation(cache, key, eventName, contract, fi
     const filters = contract.filters[eventName](...filterParams);
     return contract.queryFilter(filters, blockNumber, "latest");
 }
+
+/*********************************************************************************************************************
+ *                                                        Strings                                                       *
+ *********************************************************************************************************************/
+
+const kebabize = str => {
+  return str.split('').map((letter, idx) => {
+    return letter.toUpperCase() === letter
+     ? `${idx !== 0 ? '-' : ''}${letter.toLowerCase()}`
+     : letter;
+  }).join('');
+}
+
+const camelize = s => s.replace(/-./g, x=>x[1].toUpperCase());
+const upperCaseFirst = s => s.replace(/^[a-z,A-Z]/, x=>x[0].toUpperCase());
+
 
 
 /*********************************************************************************************************************
@@ -226,5 +247,8 @@ module.exports = {
     dateToTimestamp,
     durationToSeconds,
     getContractVersion,
-    getEventsFromContractCreation
+    getEventsFromContractCreation,
+    kebabize,
+    camelize,
+    upperCaseFirst
 };
