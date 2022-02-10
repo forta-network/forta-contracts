@@ -101,22 +101,60 @@ function performUpgrade(proxy, factory, opts = {}) {
 }
 
 async function tryFetchContract(cache, key, contract, args = [], opts = {}) {
+    const deployed = await resumeOrDeploy(cache, key, () => contract.deploy(...args)).then(address => contract.attach(address));
     await cache.set(`${key}.args`, args);
-    return resumeOrDeploy(cache, key, () => contract.deploy(...args), false).then(address => contract.attach(address));
+    await saveVersion(key, cache, deployed, false);
+    return deployed;
+}
+
+async function migrateAddress(cache, key) {
+    let legacyAddress = await cache.get(key);
+    if (legacyAddress && typeof(legacyAddress) === 'string' && legacyAddress.startsWith('0x')) {
+        await cache.set(`${key}.address`, legacyAddress);
+        return legacyAddress
+    } else {
+        return await cache.get(`${key}.address`);
+    }
 }
 
 async function tryFetchProxy(cache, key, contract, kind = 'uups', args = [], opts = {}) {
-    await cache.set(`${key}.impl.args`, args);
-    const deployed = await resumeOrDeploy(cache, key, upgrades.deployProxy(contract, args, { kind, ...opts })).then(address => contract.attach(address));
+    const deployed = await resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind, ...opts })).then(address => contract.attach(address));
     const implAddress = await upgrades.erc1967.getImplementationAddress(deployed.address);
+    await cache.set(`${key}.impl.args`, args);
     await cache.set(`${key}.impl.address`, implAddress);
+    await saveVersion(key, cache, deployed, true);
     return deployed;
+}
+
+async function getContractVersion(contract, deployParams = {}) {
+    if (contract) {
+        try {
+            return contract['version'] ? await contract.version() : '0.0.0';
+        } catch(e) {
+            // Version not introduced in deployed contract yet
+            return '0.0.0'
+        }
+    } else if (deployParams.address &&  deployParams.provider) {
+        try {
+            const abi = `{"inputs": [],"name": "version","outputs": [{"internalType": "string","name": "","type": "string"}],"stateMutability": "view","type": "function"}`;
+            const versioned = new ethers.Contract(address, abi, provider);
+            return await versioned.version();
+        } catch(e) {
+            // Version not introduced in source code yet
+            return '0.0.0'
+        }
+    }
+    throw new Error('Cannot get contract version. Provide contract object or deployParams');
+}
+
+async function saveVersion(key, cache, contract, isProxy) {
+    const impl = isProxy ? '.imp' : '';
+    await cache.set(`${key}${impl}.version`, await getContractVersion(contract))
 }
 
 async function resumeOrDeploy(cache, key, deploy) {
     let txHash  = await cache.get(`${key}-pending`);
-    let address = await cache.get(key) ?? await cache.get(`${key}.address`);
-
+    let address = await migrateAddress(cache, key);
     if (!txHash && !address) {
         const contract = await deploy();
         txHash = contract.deployTransaction.hash;
@@ -131,6 +169,17 @@ async function resumeOrDeploy(cache, key, deploy) {
         await cache.set(`${key}.address`, address);
     }
     return address;
+}
+
+async function getEventsFromContractCreation(cache, key, eventName, contract, filterParams = []) {
+    let txHash  = await cache.get(`${key}-pending`);
+    if (!txHash) {
+        throw new Error(`${key} deployment transaction not saved`);
+    }
+    let provider = contract.provider ?? contract.signer;
+    const { blockNumber } = await provider.getTransactionReceipt(txHash);
+    const filters = contract.filters[eventName](...filterParams);
+    return contract.queryFilter(filters, blockNumber, "latest");
 }
 
 
@@ -176,4 +225,6 @@ module.exports = {
     tryFetchProxy,
     dateToTimestamp,
     durationToSeconds,
+    getContractVersion,
+    getEventsFromContractCreation
 };

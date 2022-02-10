@@ -37,6 +37,7 @@
     "ethers": "^5.4.6",
     "hardhat": "^2.6.2",
     "hardhat-gas-reporter": "^1.0.4",
+    "semver": "^7.3.5",
     "solidity-coverage": "^0.7.17"
   }
 }

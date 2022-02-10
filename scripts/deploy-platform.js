@@ -3,6 +3,7 @@ const DEBUG                = require('debug')('forta:migration');
 const utils                = require('./utils');
 const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
+const semver = require('semver')
 
 upgrades.silenceWarnings();
 
@@ -155,11 +156,24 @@ async function migrate(config = {}) {
         [ contracts.access.address, contracts.router.address, contracts.staking.address],
         { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: ['delegatecall']},
       ));
+
   
     DEBUG(`[5.1] staking parameters: ${contracts.stakingParameters.address}`);
-
-    await contracts.stakingParameters.connect(deployer).setFortaStaking(contracts.staking.address)
-    await contracts.staking.connect(deployer).setStakingParametersManager(contracts.stakingParameters.address)
+    DEBUG('setFortaStaking');
+    const stakingUpdatedLogs = await utils.getEventsFromContractCreation(CACHE, 'staking-parameters', 'FortaStakingChanged', contracts.stakingParameters)
+    DEBUG(stakingUpdatedLogs);
+    if (stakingUpdatedLogs[stakingUpdatedLogs.length -1]?.args[0] !== contracts.staking.address) {
+        await contracts.stakingParameters.connect(deployer).setFortaStaking(contracts.staking.address);
+        DEBUG('setFortaStaking');
+    }
+    
+    const paramsUpdatedLogs = await utils.getEventsFromContractCreation(CACHE, 'staking', 'StakeParamsManagerSet', contracts.staking)
+    DEBUG(paramsUpdatedLogs);
+    if (paramsUpdatedLogs[paramsUpdatedLogs.length -1]?.args[0] !== contracts.stakingParameters.address) {
+        await contracts.staking.connect(deployer).setStakingParametersManager(contracts.stakingParameters.address)
+        DEBUG('setStakingParametersManager');
+    }
+    
     DEBUG(`[5.2] connected staking params and staking`);
 
     if (config.l2enable) {
@@ -186,8 +200,16 @@ async function migrate(config = {}) {
 
     // Upgrades
     // Agents v0.1.2
-    await contracts.agents.connect(deployer).setStakeController(contracts.stakingParameters.address)
-    await contracts.stakingParameters.connect(deployer).setStakeSubjectHandler(AGENT_SUBJECT, contracts.agents.address)
+    const agentVersion = await utils.getContractVersion(contracts.agents);
+    DEBUG('agentVersion', agentVersion);
+    if (semver.gte(agentVersion, '0.1.2')) {
+        DEBUG('Configuring stake controller');
+
+        if ((await contracts.agents.getStakeController()) !== contracts.stakingParameters.address) {
+            await contracts.agents.connect(deployer).setStakeController(contracts.stakingParameters.address);
+            await contracts.stakingParameters.connect(deployer).setStakeSubjectHandler(AGENT_SUBJECT, contracts.agents.address)
+        }
+    }
 
     DEBUG(`[6.1] staking for agents configured`);
 
@@ -204,8 +226,16 @@ async function migrate(config = {}) {
     DEBUG(`[7] scanners: ${contracts.scanners.address}`);
 
     // Scanners v0.1.1
-    await contracts.scanners.connect(deployer).setStakeController(contracts.stakingParameters.address)
-    await contracts.stakingParameters.connect(deployer).setStakeSubjectHandler(SCANNER_SUBJECT, contracts.scanners.address)
+    const scannersVersion = await utils.getContractVersion(contracts.scanners)
+    DEBUG('scannersVersion', scannersVersion);
+
+    if (semver.gte(scannersVersion, '0.1.1')) {
+        DEBUG('Configuring stake controller')
+        if ((await contracts.scanners.getStakeController()) !== contracts.stakingParameters.address) {
+            await contracts.scanners.connect(deployer).setStakeController(contracts.stakingParameters.address)
+            await contracts.stakingParameters.connect(deployer).setStakeSubjectHandler(SCANNER_SUBJECT, contracts.scanners.address)
+        }
+    }
 
     DEBUG(`[7.1] staking for scanners configured`);
 
