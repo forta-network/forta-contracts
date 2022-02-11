@@ -85,6 +85,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     event Released(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
+    event TokensSwept(address indexed token, address to, uint256 amount);
 
     modifier onlyValidSubjectType(uint8 subjectType) {
         require(
@@ -355,7 +356,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         }
 
         SafeERC20.safeTransfer(token, recipient, amount);
-
+        emit TokensSwept(address(token), recipient, amount);
         return amount;
     }
 
