@@ -47,21 +47,6 @@ describe('VestingWallet ', function () {
             });
                 
             it('authorized v0 -> v2', async function () {
-                this.vesting = await performUpgrade(this.vesting, 'VestingWalletV1', { unsafeAllow: 'delegatecall' });
-                    
-                await Promise.all([
-                    this.vesting.start(),
-                    this.vesting.cliff(),
-                    this.vesting.duration(),
-                    this.vesting.beneficiary(),
-                    this.vesting.owner(),
-                ]).then(([ start, cliff, duration, beneficiary, owner]) => {
-                    expect(start).to.be.equal(allocation.start);
-                    expect(cliff).to.be.equal(allocation.cliff);
-                    expect(duration).to.be.equal(allocation.duration);
-                    expect(beneficiary).to.be.equal(allocation.beneficiary);
-                    expect(owner).to.be.equal(allocation.owner);
-                });
                 this.rootchainmanager = await deploy('RootChainManagerMock');
                 this.predicate         = await this.rootchainmanager.predicate().then(address => attach('PredicatMock', address));
                 this.l2escrowfactory  = ethers.Wallet.createRandom();
