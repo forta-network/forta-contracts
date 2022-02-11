@@ -112,7 +112,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         __Routed_init(__router);
         __UUPSUpgradeable_init();
         __ERC1155_init("");
-
+        __ERC1155Supply_init();
         stakedToken = __stakedToken;
         _withdrawalDelay = __withdrawalDelay;
         _treasury = __treasury;
