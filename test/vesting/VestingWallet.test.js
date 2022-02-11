@@ -57,7 +57,7 @@ describe('VestingWallet', function () {
 
   it('rejects zero address for beneficiary', async function () {
     await expect(deployUpgradeable(
-      'VestingWallet',
+      'VestingWalletV2',
       'uups',
       [
         ethers.constants.AddressZero,
