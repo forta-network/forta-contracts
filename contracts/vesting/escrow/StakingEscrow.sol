@@ -17,9 +17,9 @@ import "../../components/utils/ForwardedContext.sol";
  * 
  * WARNING: DO NOT SEND FORT TOKENS TO THIS CONTRACT. It is designed only to handle bridged
  * tokens from `VestingWallet`, and the rewards that result from staking then in `FortaStaking`
- * If tokens are sent to this contract, they can be bridged back to L1 VestingWallet, but this
- * process will slow down the release rate (not the dates, all the tokens would be releaseble
- * on vesting end).
+ * If FORT tokens are sent to this contract, they can be bridged back to L1 VestingWallet,
+ * but this process will slow down the release rate (not the dates, all FORT would be 
+ * releaseble on vesting end).
  * If you have unvested tokens, interact directly with FortaStaking.
  */
 contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedContext, ERC1155Receiver {
