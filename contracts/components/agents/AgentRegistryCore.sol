@@ -35,7 +35,7 @@ abstract contract AgentRegistryCore is
     function createAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds)
     public
         onlySorted(chainIds)
-        frontrunProtected(keccak256(abi.encodePacked(agentId, owner, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
+        frontrunProtected(keccak256(abi.encode(agentId, owner, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
     {
         _mint(owner, agentId);
         _beforeAgentUpdate(agentId, metadata, chainIds);
@@ -51,7 +51,7 @@ abstract contract AgentRegistryCore is
     public
         onlyOwnerOf(agentId)
         onlySorted(chainIds)
-        frontrunProtected(keccak256(abi.encodePacked(agentId, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
+        frontrunProtected(keccak256(abi.encode(agentId, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
     {
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);
