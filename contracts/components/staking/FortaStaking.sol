@@ -107,6 +107,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         uint64 __withdrawalDelay,
         address __treasury
     ) public initializer {
+        require(__treasury != address(0), "FS: setting address 0");
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
