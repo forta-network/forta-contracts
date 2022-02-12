@@ -218,6 +218,16 @@ describe('Forta Staking', function () {
         await expect(this.staking.connect(this.accounts.user1).deposit(9, subject1, '100'))
         .to.be.revertedWith('FortaStaking: invalid subjectType');
       });
+
+      it('cannot initiate withdraw with no active shares', async function () {
+        await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(1, subject1, '100'))
+        .to.be.revertedWith('FS: No active shares');
+      });
+
+      it('cannot withdraw with no inactive shares', async function () {
+        await expect(this.staking.connect(this.accounts.user1).withdraw(1, subject1, '100'))
+        .to.be.revertedWith('FS: No inactive shares');
+      });
     });
 
     describe('with delay', function () {

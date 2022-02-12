@@ -10,6 +10,7 @@ abstract contract RoutedUpgradeable is AccessManagedUpgradeable {
     event RouterUpdated(address indexed router);
 
     function __Routed_init(address router) internal initializer {
+        require(router != address(0), "Routed: cannot set address 0");
         _router = IRouter(router);
         emit RouterUpdated(router);
     }
@@ -22,6 +23,7 @@ abstract contract RoutedUpgradeable is AccessManagedUpgradeable {
     }
 
     function setRouter(address newRouter) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newRouter != address(0), "Routed: cannot set address 0");
         _router = IRouter(newRouter);
         emit RouterUpdated(newRouter);
     }

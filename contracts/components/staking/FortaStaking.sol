@@ -228,6 +228,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     {
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        require(balanceOf(staker, activeSharesId) != 0, "FS: no active shares");
         uint64 deadline = SafeCast.toUint64(block.timestamp) + _withdrawalDelay;
 
         _lockingDelay[activeSharesId][staker].setDeadline(deadline);
@@ -259,6 +260,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     {
         address staker = _msgSender();
         uint256 inactiveSharesId = FortaStakingUtils.subjectToInactive(subjectType, subject);
+        require(balanceOf(staker, inactiveSharesId) != 0, "FS: no inactive shares");
         require(!_frozen[FortaStakingUtils.inactiveToActive(inactiveSharesId)], "Subject unstaking is currently frozen");
 
         Timers.Timestamp storage timer = _lockingDelay[FortaStakingUtils.inactiveToActive(inactiveSharesId)][staker];
