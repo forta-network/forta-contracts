@@ -221,12 +221,12 @@ describe('Forta Staking', function () {
 
       it('cannot initiate withdraw with no active shares', async function () {
         await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(1, subject1, '100'))
-        .to.be.revertedWith('FS: No active shares');
+        .to.be.revertedWith('FS: no active shares');
       });
 
       it('cannot withdraw with no inactive shares', async function () {
-        await expect(this.staking.connect(this.accounts.user1).withdraw(1, subject1, '100'))
-        .to.be.revertedWith('FS: No inactive shares');
+        await expect(this.staking.connect(this.accounts.user1).withdraw(1, subject1))
+        .to.be.revertedWith('FS: no inactive shares');
       });
     });
 
@@ -475,7 +475,7 @@ describe('Forta Staking', function () {
 
       await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '100')).to.be.not.reverted;
       await expect(this.staking.connect(this.accounts.user1).withdraw(subjectType1, subject1))
-      .to.be.revertedWith('Subject unstaking is currently frozen');
+      .to.be.revertedWith('FS: stake frozen');
     });
 
     it('freeze → unfreeze → withdraw', async function () {
@@ -710,7 +710,7 @@ describe('Forta Staking', function () {
         ethers.utils.hexlify(ethers.utils.zeroPad(subject1, 32)).slice(2)
       );
 
-      await expect(this.staking.connect(this.accounts.slasher).initiateWithdrawal(subjectType1, subject1, '50'))
+      await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '50'))
       .to.emit(this.sink, 'GotSignal').withArgs(
         this.signature + 
         ethers.utils.hexlify(ethers.utils.zeroPad(subjectType1, 32)).slice(2) +

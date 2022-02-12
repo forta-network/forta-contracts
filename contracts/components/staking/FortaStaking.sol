@@ -261,10 +261,10 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         address staker = _msgSender();
         uint256 inactiveSharesId = FortaStakingUtils.subjectToInactive(subjectType, subject);
         require(balanceOf(staker, inactiveSharesId) != 0, "FS: no inactive shares");
-        require(!_frozen[FortaStakingUtils.inactiveToActive(inactiveSharesId)], "Subject unstaking is currently frozen");
+        require(!_frozen[FortaStakingUtils.inactiveToActive(inactiveSharesId)], "FS: stake frozen");
 
         Timers.Timestamp storage timer = _lockingDelay[FortaStakingUtils.inactiveToActive(inactiveSharesId)][staker];
-        require(timer.isExpired(), 'Withdrawal is not ready');
+        require(timer.isExpired(), "FS: not ready");
         timer.reset();
         emit WithdrawalExecuted(subjectType, subject, staker);
 
@@ -296,7 +296,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         uint256 inactiveStake     = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
 
         uint256 maxSlashableStake = FullMath.mulDiv(9, 10, activeStake + inactiveStake);
-        require(stakeValue <= maxSlashableStake, "Stake to be slashed is over 90%");
+        require(stakeValue <= maxSlashableStake, "FS: slashed over 90%");
 
         uint256 slashFromActive   = FullMath.mulDiv(activeStake, activeStake + inactiveStake, stakeValue);
         uint256 slashFromInactive = stakeValue - slashFromActive;
@@ -457,7 +457,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
                     _released[ids[i]].transfer(from, to, virtualRelease);
                 }
             } else {
-                require(from == address(0) || to == address(0), "Withdrawal shares are not transferable");
+                require(from == address(0) || to == address(0), "FS: cant transfer inactive");
             }
         }
 
