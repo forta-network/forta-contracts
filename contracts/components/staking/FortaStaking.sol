@@ -293,6 +293,10 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         uint256 activeStake       = _activeStake.balanceOf(activeSharesId);
         uint256 inactiveStake     = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
 
+        // We set the slash limit at 90% of the stake, so new depositors on slashed pools (with now 0 stake) won't mint 
+        // an amounts of shares so big that they might cause overflows. 
+        // New shares = pool shares * new staked amount / pool stake
+        // See deposit and _stakeToActiveShares methods.
         uint256 maxSlashableStake = FullMath.mulDiv(9, 10, activeStake + inactiveStake);
         require(stakeValue <= maxSlashableStake, "Stake to be slashed is over 90%");
 
