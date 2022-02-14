@@ -10,7 +10,8 @@ import "../utils/ForwardedContext.sol";
 import "../../tools/ENSReverseRegistration.sol";
 import "./IRouter.sol";
 
-// This should be BaseComponentUpgradeable, because BaseComponentUpgradeable is Routed
+// This should be BaseComponentUpgradeable, but it can't be because BaseComponentUpgradeable is Routed, so we
+// share almost the same inheritance structure.
 contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgradeable, Multicall {
     using EnumerableSet for EnumerableSet.AddressSet;
 
