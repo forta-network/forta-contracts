@@ -28,7 +28,7 @@ import "./StakingEscrowUtils.sol";
 contract StakingEscrowFactory {
     FortaBridgedPolygon  public immutable token;
     FortaStaking  public immutable staking;
-    StakingEscrow public immutable template;
+    address public immutable template;
 
     event NewStakingEscrow(address indexed escrow, address indexed vesting, address indexed manager);
 
@@ -36,11 +36,11 @@ contract StakingEscrowFactory {
         require(__trustedForwarder != address(0), "StakingEscrowFactory: __trustedForwarder cannot be address 0");
         token    = FortaBridgedPolygon(address(__staking.stakedToken()));
         staking  = __staking;
-        template = new StakingEscrow(
+        template = address(new StakingEscrow(
             __trustedForwarder,
             token,
             staking
-        );
+        ));
     }
 
     /**
@@ -57,7 +57,7 @@ contract StakingEscrowFactory {
         require(vesting != address(0), "StakingEscrowFactory: vesting cannot be address 0");
         require(manager != address(0), "StakingEscrowFactory: manager cannot be address 0");
         address instance = Clones.cloneDeterministic(
-            address(template),
+            template,
             StakingEscrowUtils.computeSalt(vesting, manager)
         );
         StakingEscrow(instance).initialize(vesting, manager);
@@ -79,7 +79,7 @@ contract StakingEscrowFactory {
         address manager
     ) public view returns (address) {
         return Clones.predictDeterministicAddress(
-            address(template),
+            template,
             StakingEscrowUtils.computeSalt(vesting, manager)
         );
     }
