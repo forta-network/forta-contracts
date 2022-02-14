@@ -67,6 +67,8 @@ contract Forwarder is EIP712WithNonce {
         payable
         returns (bool, bytes memory)
     {
+        // Failed transactions will not consume a nonce. 
+        // Either execute a transaction with the same nonce or use cancelTransaction(ForwardRequest, bytes)
         _verifyAndConsumeNonce(req.from, req.nonce); // revert if failure
 
         require(
@@ -96,5 +98,27 @@ contract Forwarder is EIP712WithNonce {
           }
         }
         return (success, returndata);
+    }
+
+    /**
+    * Consumes a nonce if the signature and deadline are valid.
+    * @param req  ForwardRequest to be executed
+    * @param signature EIP-712 signature of the ForwardRequest
+    */
+    function cancelTransaction(ForwardRequest calldata req, bytes calldata signature) external {
+        _verifyAndConsumeNonce(req.from, req.nonce); // revert if failure
+
+        require(
+            req.deadline == 0 || req.deadline > block.timestamp,
+            "Forwarder: deadline expired"
+        );
+        require(
+            SignatureChecker.isValidSignatureNow(
+                req.from,
+                _hashTypedDataV4(keccak256(abi.encode(_FORWARDREQUEST_TYPEHASH, req.from, req.to, req.value, req.gas, req.nonce, req.deadline, keccak256(req.data)))),
+                signature
+            ),
+            "Forwarder: signature does not match request"
+        );
     }
 }

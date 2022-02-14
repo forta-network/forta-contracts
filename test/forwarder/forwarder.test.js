@@ -177,5 +177,24 @@ describe('Forwarder', function () {
       await expect(this.contracts.forwarder.connect(this.accounts.other).execute(forwardRequest1b, signature1b))
       .to.emit(this.contracts.forwarder, 'NonceUsed').withArgs(this.accounts.admin.address, 0, 1);
     });
+
+    it('canceling transactions', async function () {
+        // Gas the relayer will forward to the external contract to execute grantRole. Tx gasLimit is estimated by ethers.js
+        const gas = await this.contracts.access.estimateGas.grantRole(this.roles.SCANNER_ADMIN, grantee.address)
+        const { data } = await this.contracts.access.populateTransaction.grantRole(this.roles.SCANNER_ADMIN, grantee.address)
+  
+        const forwardRequest = {
+          ...defaultRequest,
+          to: this.contracts.access.address,
+          from: this.accounts.other.address,
+          gas: gas,
+          data: data,
+        };
+        const signature = await this.accounts.other._signTypedData(domain, types, forwardRequest)
+
+        await expect(this.contracts.forwarder.connect(this.accounts.other).cancelTransaction(forwardRequest, signature))
+        .to.emit(this.contracts.forwarder, 'NonceUsed').withArgs(this.accounts.other.address, 0, 0);
+
+      });
   });
 });
