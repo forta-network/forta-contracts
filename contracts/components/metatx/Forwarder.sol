@@ -13,11 +13,11 @@ abstract contract EIP712WithNonce is EIP712 {
         return _domainSeparatorV4();
     }
 
-    function getNonce(address from) public view virtual returns (uint256) {
+    function getNonce(address from) external view virtual returns (uint256) {
         return _nonces[from][0];
     }
 
-    function getNonce(address from, uint256 timeline) public view virtual returns (uint256) {
+    function getNonce(address from, uint256 timeline) external view virtual returns (uint256) {
         return _nonces[from][timeline];
     }
 
@@ -63,7 +63,7 @@ contract Forwarder is EIP712WithNonce {
      * @return (success, returnData) of the executed request 
      */
     function execute(ForwardRequest calldata req, bytes calldata signature)
-        public
+        external
         payable
         returns (bool, bytes memory)
     {
