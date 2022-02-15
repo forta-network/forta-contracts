@@ -13,7 +13,7 @@
 
 // Copied from https://gist.github.com/Recmo/04c55bacfb5e4b4420f4ad0f0df96bed
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 library FullMath {
     /**

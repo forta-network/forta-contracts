@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicensed
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../BaseComponentUpgradeable.sol";
 import "../scanners/ScannerRegistry.sol";
