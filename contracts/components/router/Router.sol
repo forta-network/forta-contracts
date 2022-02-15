@@ -31,7 +31,7 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
     function hookHandler(bytes calldata payload) external override {
         bytes4 sig = bytes4(payload[:4]);
         uint256 length = _routingTable[sig].length();
-        for (uint256 i = 0; i < length; ++i) {
+        for (uint256 i = 0; i < length; i++) {
             // Lazy, don't worry about calls failing here
             (bool success, bytes memory returndata) = _routingTable[sig].at(i).call(payload);
             success;

@@ -26,35 +26,35 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /**
-     * @param beneficiary_ Account that will receive vested tokens.
-     * @param admin_ Account that will be able to upgrade the contract, if a non-zero address.
-     * @param start_ Timestamp when vesting starts (seconds since UNIX epoch).
-     * @param cliff_ Duration of the cliff period (seconds). No tokens will vest before this time passes.
-     * @param duration_ Duration of the entire vesting period (seconds).
+     * @param __duration Account that will receive vested tokens.
+     * @param __admin Account that will be able to upgrade the contract, if a non-zero address.
+     * @param __start Timestamp when vesting starts (seconds since UNIX epoch).
+     * @param __cliff Duration of the cliff period (seconds). No tokens will vest before this time passes.
+     * @param __duration Duration of the entire vesting period (seconds).
      */
     function initialize(
-        address beneficiary_,
-        address admin_,
-        uint256 start_,
-        uint256 cliff_,
-        uint256 duration_
+        address __beneficiary,
+        address __admin,
+        uint256 __start,
+        uint256 __cliff,
+        uint256 __duration
     ) external initializer {
-        require(beneficiary_ != address(0x0), "VestingWallet: beneficiary is zero address");
-        require(cliff_ <= duration_, "VestingWallet: duration is shorter than cliff");
+        require(__beneficiary != address(0x0), "VestingWallet: beneficiary is zero address");
+        require(__cliff <= __duration, "VestingWallet: duration is shorter than cliff");
 
         __Ownable_init();
         __UUPSUpgradeable_init();
 
-        if (admin_ == address(0)) {
+        if (__admin == address(0)) {
             renounceOwnership();
         } else {
-            transferOwnership(admin_);
+            transferOwnership(__admin);
         }
 
-        _beneficiary = beneficiary_;
-        _start = start_;
-        _cliff = cliff_;
-        _duration = duration_;
+        _beneficiary = __beneficiary;
+        _start = __start;
+        _cliff = __cliff;
+        _duration = __duration;
     }
 
     function beneficiary() public view virtual returns (address) {
