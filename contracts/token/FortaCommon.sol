@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
@@ -43,6 +43,8 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
     }
 
     // Allow the upgrader to set ENS reverse registration
+    // NOTE: Forta token has a different role structure than contracts under component, by order of deployment.
+    // instead of ENS_MANAGER_ROLE, here s the token ADMIN who has permission.
     function setName(address ensRegistry, string calldata ensName) external onlyRole(ADMIN_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
