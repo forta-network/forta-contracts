@@ -135,10 +135,10 @@ describe('Staking Escrow', function () {
 
       describe('withdrawal', function () {
         it('protected', async function () {
-          await expect(this.escrow.initiateWithdrawal(subjectType, subject, this.value))
+          await expect(this.escrow.functions['initiateWithdrawal(uint8,uint256,uint256)'](subjectType, subject, this.value))
           .to.be.revertedWith('restricted to manager');
 
-          await expect(this.escrow.initiateFullWithdrawal(subjectType, subject))
+          await expect(this.escrow.functions['initiateWithdrawal(uint8,uint256)'](subjectType, subject))
           .to.be.revertedWith('restricted to manager');
 
           await expect(this.escrow.withdraw(subjectType, subject))
@@ -146,7 +146,7 @@ describe('Staking Escrow', function () {
         });
 
         it('authorized', async function () {
-          const tx1 = await this.escrow.connect(this.accounts.manager).initiateWithdrawal(subjectType, subject, this.value);
+          const tx1 = await this.escrow.connect(this.accounts.manager).functions['initiateWithdrawal(uint8,uint256,uint256)'](subjectType, subject, this.value);
           const tx2 = await this.escrow.connect(this.accounts.manager).withdraw(subjectType, subject);
 
           await expect(tx1)
@@ -162,7 +162,7 @@ describe('Staking Escrow', function () {
 
         it('authorized - full', async function () {
           const initialBalance = await this.token.balanceOf(this.escrow.address);
-          const tx1 = await this.escrow.connect(this.accounts.manager).initiateFullWithdrawal(subjectType, subject);
+          const tx1 = await this.escrow.connect(this.accounts.manager).functions['initiateWithdrawal(uint8,uint256)'](subjectType, subject);
           const tx2 = await this.escrow.connect(this.accounts.manager).withdraw(subjectType, subject);
           await expect(tx1)
           .to.emit(this.staking, 'WithdrawalInitiated').withArgs(subjectType, subject, this.escrow.address, await txTimestamp(tx1))

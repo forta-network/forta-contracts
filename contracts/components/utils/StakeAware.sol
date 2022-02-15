@@ -15,18 +15,18 @@ abstract contract StakeAwareUpgradeable is AccessManagedUpgradeable {
         _setStakeController(stakeController);
     }
 
-    function _setStakeController(address stakeController) private {
-        require(stakeController != address(0), "StakeAwareUpgradeable: stakeController cannot be address(0)");
-        _stakeController = IStakeController(stakeController);
-        emit StakeControllerUpdated(stakeController);
-    }
-
     function setStakeController(address stakeController) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setStakeController(stakeController);
     }
 
     function getStakeController() public view returns(address) {
         return address(_stakeController);
+    }
+
+    function _setStakeController(address stakeController) private {
+        require(stakeController != address(0), "StakeAwareUpgradeable: stakeController cannot be address(0)");
+        _stakeController = IStakeController(stakeController);
+        emit StakeControllerUpdated(stakeController);
     }
 
     function _isStakedOverMin(uint8 subjectType, uint256 subject) internal view returns(bool) {
