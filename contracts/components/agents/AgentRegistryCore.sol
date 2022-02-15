@@ -11,7 +11,6 @@ abstract contract AgentRegistryCore is
     FrontRunningProtection,
     ERC721Upgradeable
 {
-    event AgentCommitted(bytes32 indexed commit);
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
 
     modifier onlyOwnerOf(uint256 agentId) {
@@ -29,7 +28,6 @@ abstract contract AgentRegistryCore is
 
     function prepareAgent(bytes32 commit) public {
         _frontrunCommit(commit);
-        emit AgentCommitted(commit);
     }
 
     function createAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds)
