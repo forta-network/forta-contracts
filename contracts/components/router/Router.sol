@@ -41,9 +41,9 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
 
     function setRoutingTable(bytes4 sig, address target, bool enable) external onlyRole(ROUTER_ADMIN_ROLE) {
         if (enable) {
-            _routingTable[sig].add(target);
+            require(_routingTable[sig].add(target), "Router: already routed");
         } else {
-            _routingTable[sig].remove(target);
+            require(_routingTable[sig].remove(target), "Router: not in routing table");
         }
         emit RoutingUpdated(sig, target, enable);
     }
