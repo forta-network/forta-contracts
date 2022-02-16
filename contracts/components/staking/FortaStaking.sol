@@ -212,7 +212,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         _activeStake.mint(activeSharesId, stakeValue);
         _mint(staker, activeSharesId, sharesValue, new bytes(0));
         emit StakeDeposited(subjectType, subject, staker, stakeValue);
-        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
+        // NOTE: hooks will be reintroduced (with more info) when first use case is implemented. For now they are removed
+        // to reduce attack surface.
+        // _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
         return sharesValue;
     }
 
@@ -242,8 +244,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         _mint(staker, FortaStakingUtils.activeToInactive(activeSharesId), inactiveShares, new bytes(0));
 
         emit WithdrawalInitiated(subjectType, subject, staker, deadline);
-
-        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
+        // NOTE: hooks will be reintroduced (with more info) when first use case is implemented. For now they are removed
+        // to reduce attack surface.
+        // _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
         return deadline;
     }
 
@@ -272,8 +275,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         _inactiveStake.burn(inactiveSharesId, stakeValue);
         _burn(staker, inactiveSharesId, inactiveShares);
         SafeERC20.safeTransfer(stakedToken, staker, stakeValue);
-
-        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
+        // NOTE: hooks will be reintroduced (with more info) when first use case is implemented. For now they are removed
+        // to reduce attack surface.
+        // _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
 
         return stakeValue;
     }
@@ -305,8 +309,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue);
 
         emit Slashed(subjectType, subject, _msgSender(), stakeValue);
-
-        _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
+        // NOTE: hooks will be reintroduced (with more info) when first use case is implemented. For now they are removed
+        // to reduce attack surface.
+        // _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
 
         return stakeValue;
     }
