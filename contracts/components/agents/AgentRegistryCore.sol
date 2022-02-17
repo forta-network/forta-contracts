@@ -4,15 +4,20 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponentUpgradeable.sol";
+import "../staking/StakeSubject.sol";
 import "../../tools/FrontRunningProtection.sol";
 
 abstract contract AgentRegistryCore is
     BaseComponentUpgradeable,
     FrontRunningProtection,
-    ERC721Upgradeable
+    ERC721Upgradeable,
+    StakeSubjectUpgradeable
 {
+    StakeThreshold private _stakeThreshold;
+
     event AgentCommitted(bytes32 indexed commit);
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
+    event StakeThresholdChanged(uint256 min, uint256 max);
 
     modifier onlyOwnerOf(uint256 agentId) {
         require(_msgSender() == ownerOf(agentId), "AgentRegistryCore: Restricted to agent owner");
@@ -59,6 +64,36 @@ abstract contract AgentRegistryCore is
     }
 
     /**
+    * Stake
+    */
+    function setStakeThreshold(StakeThreshold memory newStakeThreshold) external onlyRole(AGENT_ADMIN_ROLE) {
+        require(newStakeThreshold.max > newStakeThreshold.min, "AgentRegistryEnable: StakeThreshold max <= min");
+        _stakeThreshold = newStakeThreshold;
+        emit StakeThresholdChanged(newStakeThreshold.min, newStakeThreshold.max);
+    }
+
+    /**
+     @dev stake threshold common for all agents
+    */
+    function getStakeThreshold(uint256 /*subject*/) public override view returns (StakeThreshold memory) {
+        return _stakeThreshold;
+    }
+
+    /**
+     * Checks if agent is staked over minimium stake
+     * @param subject agentId
+     * @return true if agent is staked over the minimum threshold, or staking is not yet enabled (stakeController = 0).
+     * false otherwise
+     */
+    function _isStakedOverMin(uint256 subject) internal override view returns(bool) {
+        if (address(getStakeController()) == address(0)) {
+            return true;
+        }
+        return getStakeController().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min;
+    }
+
+
+    /**
      * Hook: Agent metadata change (create/update)
      */
     function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
@@ -80,5 +115,5 @@ abstract contract AgentRegistryCore is
         return super._msgData();
     }
 
-    uint256[45] private __gap;
+    uint256[48] private __gap;
 }

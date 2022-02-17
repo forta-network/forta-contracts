@@ -47,5 +47,5 @@ contract AgentRegistry is
         return super._msgData();
     }
 
-    uint256[50] private __gap;
+    uint256[45] private __gap;
 }
