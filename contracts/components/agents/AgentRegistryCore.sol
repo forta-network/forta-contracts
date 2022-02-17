@@ -13,7 +13,7 @@ abstract contract AgentRegistryCore is
     ERC721Upgradeable,
     StakeSubjectUpgradeable
 {
-    StakeThreshold private _stakeThreshold;
+    StakeThreshold private _stakeThreshold; // 2 storage slots
 
     event AgentCommitted(bytes32 indexed commit);
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
@@ -115,5 +115,5 @@ abstract contract AgentRegistryCore is
         return super._msgData();
     }
 
-    uint256[48] private __gap;
+    uint256[43] private __gap; // 50 - 2 (_stakeThreshold) - 5 StakeSubjectUpgradeable
 }
