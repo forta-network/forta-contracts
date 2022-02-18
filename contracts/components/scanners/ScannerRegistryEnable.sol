@@ -87,7 +87,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeAwareUpg
     }
 
     function _afterScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256)", scannerId));
+        _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256,uint8,bool)", scannerId, uint8(permission), value));
     }
 
     function _msgSender() internal view virtual override(ContextUpgradeable, ScannerRegistryCore) returns (address sender) {

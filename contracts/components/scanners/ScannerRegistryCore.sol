@@ -60,7 +60,7 @@ abstract contract ScannerRegistryCore is
     }
 
     function _afterScannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterScannerUpdate(uint256)", scannerId));
+        _emitHook(abi.encodeWithSignature("hook_afterScannerUpdate(uint256,uint256,string)", scannerId, chainId, metadata));
     }
 
 
