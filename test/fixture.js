@@ -80,8 +80,8 @@ function prepare(config = {}) {
       this.stakingSubjects = {};
       this.stakingSubjects.SCANNER_SUBJECT_TYPE = 0;
       this.stakingSubjects.AGENT_SUBJECT_TYPE = 1;
-      await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min });
-      await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min }, 1);
+      await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min , activated: config.stake.activated });
+      await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated }, 1);
 
       DEBUG("Fixture: stake configured");
     }
