@@ -26,7 +26,7 @@ describe('Scanner Registry', function () {
   it('public register fails if minStake = 0', async function () {
     await expect(this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '0')).to.not.be.reverted;
     await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1, 'metadata'))
-    .to.be.revertedWith('ScannerRegistryEnable: public registration available if staking activated')
+    .to.be.revertedWith('PublicRegistrationDisabled(1)')
 
   });
 
@@ -275,7 +275,7 @@ describe('Scanner Registry', function () {
         .to.emit(this.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, false, 1, false);
         await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '10000');
         await expect(this.scanners.connect(this.accounts.scanner).enableScanner(SCANNER_ID, 1))
-        .to.be.revertedWith("ScannerRegistryEnable: scanner staked under minimum");
+        .to.be.revertedWith(`StakedUnderMinimum(${ethers.BigNumber.from(SCANNER_ID).toString()})`);
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_SUBJECT_ID, '10000');
         await expect(this.scanners.connect(this.accounts.scanner).enableScanner(SCANNER_ID, 1))
         .to.emit(this.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, true, 1, true);

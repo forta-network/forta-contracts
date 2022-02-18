@@ -18,6 +18,9 @@ contract Dispatch is BaseComponentUpgradeable {
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
 
+    error Disabled(string name);
+    error InvalidId(string name, uint256 id);
+
     event Link(uint256 agentId, uint256 scannerId, bool enable);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -71,8 +74,8 @@ contract Dispatch is BaseComponentUpgradeable {
     }
 
     function link(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        require(_agents.isEnabled(agentId), "Dispatch: Agent disabled");
-        require(_scanners.isEnabled(scannerId), "Dispatch: Scanner disabled");
+        if (!_agents.isEnabled(agentId)) revert Disabled("Agent");
+        if (!_scanners.isEnabled(scannerId)) revert Disabled("Scanner");
 
         scannerToAgents[scannerId].add(agentId);
         agentToScanners[agentId].add(scannerId);
@@ -81,8 +84,8 @@ contract Dispatch is BaseComponentUpgradeable {
     }
 
     function unlink(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        require(_agents.isCreated(agentId), "Dispatch: invalid agent id");
-        require(_scanners.isRegistered(scannerId), "Dispatch: invalid scanner id");
+        if (!_agents.isCreated(agentId)) revert InvalidId("Agent", agentId);
+        if (!_scanners.isRegistered(scannerId)) revert InvalidId("Scanner", scannerId);
 
         scannerToAgents[scannerId].remove(agentId);
         agentToScanners[agentId].remove(scannerId);

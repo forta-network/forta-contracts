@@ -86,12 +86,18 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
 
+    error InvalidSubjectType(uint8 subjectType);
+    error WithdrawalNotReady();
+    error SlashingOver90Percent();
+    error WithdrawalSharesNotTransferible();
+
     modifier onlyValidSubjectType(uint8 subjectType) {
-        require(
-            subjectType == SCANNER_SUBJECT ||
-            subjectType == AGENT_SUBJECT,
-            "FortaStaking: invalid subjectType"
-        );
+        if (
+            !(
+                subjectType == SCANNER_SUBJECT ||
+                subjectType == AGENT_SUBJECT
+            )
+        ) revert InvalidSubjectType(subjectType);
         _;
     }
 
@@ -262,7 +268,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         require(!_frozen[FortaStakingUtils.inactiveToActive(inactiveSharesId)], "Subject unstaking is currently frozen");
 
         Timers.Timestamp storage timer = _lockingDelay[FortaStakingUtils.inactiveToActive(inactiveSharesId)][staker];
-        require(timer.isExpired(), 'Withdrawal is not ready');
+        if (!timer.isExpired()) revert WithdrawalNotReady();
         timer.reset();
         emit WithdrawalExecuted(subjectType, subject, staker);
 
@@ -294,7 +300,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         uint256 inactiveStake     = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
 
         uint256 maxSlashableStake = FullMath.mulDiv(9, 10, activeStake + inactiveStake);
-        require(stakeValue <= maxSlashableStake, "Stake to be slashed is over 90%");
+        if (stakeValue > maxSlashableStake) revert SlashingOver90Percent();
 
         uint256 slashFromActive   = FullMath.mulDiv(activeStake, activeStake + inactiveStake, stakeValue);
         uint256 slashFromInactive = stakeValue - slashFromActive;
@@ -455,7 +461,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
                     _released[ids[i]].transfer(from, to, virtualRelease);
                 }
             } else {
-                require(from == address(0) || to == address(0), "Withdrawal shares are not transferable");
+                if (!(from == address(0) || to == address(0))) revert WithdrawalSharesNotTransferible();
             }
         }
 

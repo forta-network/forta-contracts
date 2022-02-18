@@ -40,7 +40,7 @@ describe('Forta', function () {
     describe('non-authorized', function () {
       it('to non-whitelisted', async function () {
         await expect(this.token.connect(this.accounts.minter).mint(this.accounts.nonwhitelist.address, 1))
-          .to.be.revertedWith(`Forta: receiver is not whitelisted`);
+          .to.be.revertedWith(`NotWhitelisted("receiver", "${this.accounts.nonwhitelist.address}")`);
       });
 
       it('to whitelisted', async function () {

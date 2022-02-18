@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "../../errors/GeneralErrors.sol";
 import "../staking/IStakeController.sol";
 import "../staking/FortaStakingSubjectTypes.sol";
 import "../Roles.sol";
@@ -16,7 +17,7 @@ abstract contract StakeAwareUpgradeable is AccessManagedUpgradeable {
     }
 
     function _setStakeController(address stakeController) private {
-        require(stakeController != address(0), "StakeAwareUpgradeable: stakeController cannot be address(0)");
+        if (stakeController == address(0)) revert ZeroAddress("stakeController");
         _stakeController = IStakeController(stakeController);
         emit StakeControllerUpdated(stakeController);
     }

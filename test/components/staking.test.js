@@ -216,7 +216,7 @@ describe('Forta Staking', function () {
 
       it('invalid subjectType', async function () {
         await expect(this.staking.connect(this.accounts.user1).deposit(9, subject1, '100'))
-        .to.be.revertedWith('FortaStaking: invalid subjectType');
+        .to.be.revertedWith('InvalidSubjectType(9)');
       });
     });
 
@@ -314,7 +314,7 @@ describe('Forta Staking', function () {
     it ('cannot reward to invalid subjectType', async function () {
 
       await expect(this.staking.connect(this.accounts.user1).reward(9, subject1, '10'))
-      .to.be.revertedWith('FortaStaking: invalid subjectType');
+      .to.be.revertedWith('InvalidSubjectType(9)');
     });
 
     it ('can reward to non zero subject', async function () {
@@ -733,7 +733,7 @@ describe('Forta Staking', function () {
 
     it ('cannot set min stake for invalid subject', async function () {
       await expect(this.staking.connect(this.accounts.admin).setMinStake(33, '999'))
-      .to.be.revertedWith('FortaStaking: invalid subjectType');
+      .to.be.revertedWith('InvalidSubjectType(33)');
     });
     it ('cannot set unauthorized', async function () {
       await expect(this.staking.connect(this.accounts.user1).setMinStake(33, '999'))

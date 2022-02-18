@@ -32,13 +32,13 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, StakeAwareUpgradeabl
     }
 
     function enableAgent(uint256 agentId, Permission permission) public virtual {
-        require(_isStakedOverMin(AGENT_SUBJECT, agentId), "AgentRegistryEnable: agent staked under minimum");
-        require(_hasPermission(agentId, permission), "AgentRegistryEnable: invalid permission");
+        if (!_isStakedOverMin(AGENT_SUBJECT, agentId)) revert StakedUnderMinimum(agentId);
+        if (!_hasPermission(agentId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), agentId);
         _enable(agentId, permission, true);
     }
 
     function disableAgent(uint256 agentId, Permission permission) public virtual {
-        require(_hasPermission(agentId, permission), "AgentRegistryEnable: invalid permission");
+        if (!_hasPermission(agentId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), agentId);
         _enable(agentId, permission, false);
     }
 

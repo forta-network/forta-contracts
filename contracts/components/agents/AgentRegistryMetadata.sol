@@ -13,6 +13,8 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
     mapping(uint256 => AgentMetadata) private _agentMetadata;
     mapping(bytes32 => bool) private _agentMetadataUniqueness;
 
+    error MetadataNotUnique(bytes32 hash);
+
     function getAgent(uint256 agentId) public view returns (uint256 version, string memory metadata, uint256[] memory chainIds) {
         return (
             _agentMetadata[agentId].version,
@@ -26,7 +28,7 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
 
         bytes32 oldHash = keccak256(bytes(_agentMetadata[agentId].metadata));
         bytes32 newHash = keccak256(bytes(newMetadata));
-        require(!_agentMetadataUniqueness[newHash], "AgentRegistryMetadata: metadata should be a unique property");
+        if (_agentMetadataUniqueness[newHash]) revert MetadataNotUnique(newHash);
         _agentMetadataUniqueness[newHash] = true;
         _agentMetadataUniqueness[oldHash] = false;
 

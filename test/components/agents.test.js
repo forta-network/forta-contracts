@@ -243,7 +243,7 @@ describe('Agent Registry', function () {
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
         await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.AGENT_SUBJECT_TYPE, '10000');
         await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0))
-        .to.be.revertedWith("AgentRegistryEnable: agent staked under minimum");
+        .to.be.revertedWith(`StakedUnderMinimum(${ethers.BigNumber.from(AGENT_ID).toString()})`);
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, AGENT_ID, '10000');
         await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0))
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 0, true);

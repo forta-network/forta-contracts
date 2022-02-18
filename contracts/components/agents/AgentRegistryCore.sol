@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/FrontRunningProtection.sol";
+import "../../errors/GeneralErrors.sol";
 
 abstract contract AgentRegistryCore is
     BaseComponentUpgradeable,
@@ -14,8 +15,9 @@ abstract contract AgentRegistryCore is
     event AgentCommitted(bytes32 indexed commit);
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
 
+
     modifier onlyOwnerOf(uint256 agentId) {
-        require(_msgSender() == ownerOf(agentId), "AgentRegistryCore: Restricted to agent owner");
+        if (_msgSender() != ownerOf(agentId)) revert SenderNotOwner(_msgSender(), agentId);
         _;
     }
 

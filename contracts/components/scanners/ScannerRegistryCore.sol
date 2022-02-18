@@ -4,15 +4,18 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponentUpgradeable.sol";
+import "../../errors/GeneralErrors.sol";
 
 abstract contract ScannerRegistryCore is
     BaseComponentUpgradeable,
     ERC721Upgradeable
 {
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata);
+    
+    error ScannerNotRegistered(address scanner);
 
     modifier onlyOwnerOf(uint256 scannerId) {
-        require(_msgSender() == ownerOf(scannerId), "ScannerRegistryCore: Restricted to scanner owner");
+        if (_msgSender() != ownerOf(scannerId)) revert SenderNotOwner(_msgSender(), scannerId);
         _;
     }
 
@@ -39,7 +42,7 @@ abstract contract ScannerRegistryCore is
 
     function adminUpdate(address scanner, uint256 chainId, string calldata metadata) public onlyRole(SCANNER_ADMIN_ROLE) {
         uint256 scannerId = scannerAddressToId(scanner);
-        require(isRegistered(scannerId), "ScannerRegistryCore: scanner must be registered");
+        if (!isRegistered(scannerId)) revert ScannerNotRegistered(scanner);
         _beforeScannerUpdate(scannerId, chainId, metadata);
         _scannerUpdate(scannerId, chainId, metadata);
         _afterScannerUpdate(scannerId, chainId, metadata);

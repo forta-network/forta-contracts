@@ -21,6 +21,8 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeAwareUpg
 
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, Permission permission, bool value);
 
+    error PublicRegistrationDisabled(uint256 chainId);
+
     /**
     * Check if scanner is enabled
     * @param scannerId token Id
@@ -34,7 +36,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeAwareUpg
     }
 
     function register(address owner, uint256 chainId, string calldata metadata) virtual override public {
-        require(_getMinStake(SCANNER_SUBJECT) > 0, "ScannerRegistryEnable: public registration available if staking activated");
+        if (_getMinStake(SCANNER_SUBJECT) == 0) revert PublicRegistrationDisabled(chainId);
         super.register(owner, chainId, metadata);
     }
 
@@ -42,13 +44,13 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeAwareUpg
      * @dev Enable/Disable scaner
      */
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_isStakedOverMin(SCANNER_SUBJECT, scannerId), "ScannerRegistryEnable: scanner staked under minimum");
-        require(_hasPermission(scannerId, permission), "ScannerRegistryEnable: invalid permission");
+        if (!_isStakedOverMin(SCANNER_SUBJECT, scannerId)) revert StakedUnderMinimum(scannerId);
+        if (!_hasPermission(scannerId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), scannerId);
         _enable(scannerId, permission, true);
     }
 
     function disableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_hasPermission(scannerId, permission), "ScannerRegistryEnable: invalid permission");
+        if (!_hasPermission(scannerId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), scannerId);
         _enable(scannerId, permission, false);
     }
 

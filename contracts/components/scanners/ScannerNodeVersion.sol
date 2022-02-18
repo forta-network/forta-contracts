@@ -20,6 +20,8 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
 
     event ScannerNodeVersionUpdated(string newVersion, string oldVersion);
 
+    error SameScannerNodeVersion();
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -34,10 +36,9 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
     }
 
     function setScannerNodeVersion(string calldata version) public onlyRole(SCANNER_VERSION_ROLE) {
-        require(
-            keccak256(abi.encodePacked(scannerNodeVersion)) != keccak256(abi.encodePacked(version)),
-            "must update to different scannerNodeVersion"
-        );
+        if(
+            keccak256(abi.encodePacked(scannerNodeVersion)) == keccak256(abi.encodePacked(version))
+        ) revert SameScannerNodeVersion();
         emit ScannerNodeVersionUpdated(version, scannerNodeVersion);
         scannerNodeVersion = version;
     }
