@@ -41,5 +41,5 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
         emit ManagerEnabled(scannerId, manager, enable);
     }
 
-    uint256[44] private __gap;
+    uint256[49] private __gap;
 }

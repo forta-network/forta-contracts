@@ -14,7 +14,7 @@ describe('Upgrades testing', function () {
   })
   
   describe('Agent Registry', async function() {
-    it.only(' 0.1.1 -> 0.1.2', async function () {
+    it(' 0.1.1 -> 0.1.2', async function () {
         
         const AgentRegistry_0_1_1 = await ethers.getContractFactory("AgentRegistry_0_1_1");
         originalAgents = await upgrades.deployProxy(

@@ -4,9 +4,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./ScannerRegistryManaged.sol";
-import "../staking/StakeSubject.sol";
 
-abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeSubjectUpgradeable {
+abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
     using BitMaps for BitMaps.BitMap;
 
     enum Permission {
@@ -18,10 +17,8 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeSubjectU
     }
 
     mapping(uint256 => BitMaps.BitMap) private _disabled;
-    mapping(uint256 => StakeThreshold) internal _stakeThresholds;
 
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, Permission permission, bool value);
-    event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max);
 
     /**
     * Check if scanner is enabled
@@ -33,11 +30,6 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeSubjectU
         return isRegistered(scannerId) &&
             _getDisableFlags(scannerId) == 0 &&
             _isStakedOverMin(scannerId); 
-    }
-
-    function register(address owner, uint256 chainId, string calldata metadata) virtual override public {
-        require(_stakeThresholds[chainId].min > 0, "ScannerRegistryEnable: public registration available if staking activated");
-        super.register(owner, chainId, metadata);
     }
 
     /**
@@ -92,25 +84,13 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeSubjectU
         _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256)", scannerId));
     }
 
-    /**
-    * Stake
-    */
-    function setStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(SCANNER_ADMIN_ROLE) {
-        require(newStakeThreshold.max > newStakeThreshold.min, "ScannerRegistryEnable: StakeThreshold max <= min");
-        emit StakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max);
-        _stakeThresholds[chainId] = newStakeThreshold;
-    }
-
-    /**
-     * Overrides
-     */
-    function _msgSender() internal view virtual override(ContextUpgradeable, ScannerRegistryCore) returns (address sender) {
+    function _msgSender() internal view virtual override(ScannerRegistryCore) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(ContextUpgradeable, ScannerRegistryCore) returns (bytes calldata) {
+    function _msgData() internal view virtual override(ScannerRegistryCore) returns (bytes calldata) {
         return super._msgData();
     }
 
-    uint256[48] private __gap;
+    uint256[49] private __gap;
 }
