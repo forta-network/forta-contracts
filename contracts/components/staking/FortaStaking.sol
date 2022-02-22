@@ -97,6 +97,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     error WithdrawalNotReady();
     error SlashingOver90Percent();
     error WithdrawalSharesNotTransferible();
+    error FrozenSubject();
 
     modifier onlyValidSubjectType(uint8 subjectType) {
         if (
@@ -278,7 +279,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     {
         address staker = _msgSender();
         uint256 inactiveSharesId = FortaStakingUtils.subjectToInactive(subjectType, subject);
-        require(!_frozen[FortaStakingUtils.inactiveToActive(inactiveSharesId)], "Subject unstaking is currently frozen");
+        if (_frozen[FortaStakingUtils.inactiveToActive(inactiveSharesId)]) revert FrozenSubject();
 
         Timers.Timestamp storage timer = _lockingDelay[FortaStakingUtils.inactiveToActive(inactiveSharesId)][staker];
         if (!timer.isExpired()) revert WithdrawalNotReady();

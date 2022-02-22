@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "../errors/GeneralErrors.sol";
 
 contract VestingWalletV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -20,8 +21,10 @@ contract VestingWalletV1 is OwnableUpgradeable, UUPSUpgradeable {
 
     event TokensReleased(address indexed token, uint256 amount);
 
+    error DurationShorterThanCliff();
+
     modifier onlyBeneficiary() {
-        require(beneficiary() == _msgSender(), "VestingWallet: access restricted to beneficiary");
+        if (beneficiary() != _msgSender()) revert DoesNotHaveAccess(_msgSender(), "beneficiary");
         _;
     }
 
@@ -39,8 +42,8 @@ contract VestingWalletV1 is OwnableUpgradeable, UUPSUpgradeable {
         uint256 cliff_,
         uint256 duration_
     ) external initializer {
-        require(beneficiary_ != address(0x0), "VestingWallet: beneficiary is zero address");
-        require(cliff_ <= duration_, "VestingWallet: duration is shorter than cliff");
+        if (beneficiary_ == address(0x0)) revert ZeroAddress("beneficiary_");
+        if(cliff_ > duration_) revert DurationShorterThanCliff();
 
         __Ownable_init();
         __UUPSUpgradeable_init();

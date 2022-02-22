@@ -465,7 +465,7 @@ describe('Forta Staking', function () {
 
       await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '100')).to.be.not.reverted;
       await expect(this.staking.connect(this.accounts.user1).withdraw(subjectType1, subject1))
-      .to.be.revertedWith('Subject unstaking is currently frozen');
+      .to.be.revertedWith('FrozenSubject()');
     });
 
     it('freeze → unfreeze → withdraw', async function () {

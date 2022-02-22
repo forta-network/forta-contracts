@@ -5,9 +5,12 @@ error ZeroAddress(string name);
 error ZeroAmount(string name);
 error EmptyArray(string name);
 error UnorderedArray(string name);
+error UnsupportedInterface(string name);
 
 error SenderNotOwner(address sender, uint256 ownedId);
+error DoesNotHaveAccess(address sender, string access);
 
 error StakedUnderMinimum(uint256 subject);
 
+// Permission here refers to XXXRegistry.sol Permission enums
 error DoesNotHavePermission(address sender, uint8 permission, uint256 id);
