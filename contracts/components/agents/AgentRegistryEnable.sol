@@ -6,6 +6,12 @@ import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "./AgentRegistryCore.sol";
 import "../utils/StakeAware.sol";
 
+/**
+* @dev AgentRegistry methods and state handling disabling and enabling agents, and
+* recognizing stake changes that might disable an agent.
+* NOTE: This contract was deployed before StakeAwareUpgradeable was created, so __StakeAwareUpgradeable_init
+* is not called.
+*/
 abstract contract AgentRegistryEnable is AgentRegistryCore, StakeAwareUpgradeable {
     using BitMaps for BitMaps.BitMap;
 

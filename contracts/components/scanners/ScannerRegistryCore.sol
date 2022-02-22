@@ -61,7 +61,7 @@ abstract contract ScannerRegistryCore is
      * @param chainId that the scanner will monitor.
      * @param metadata IPFS pointer to scanner's metadata JSON
      */
-    function _register(address scanner, address owner, uint256 chainId, string calldata metadata) public {
+    function _register(address scanner, address owner, uint256 chainId, string calldata metadata) internal {
         uint256 scannerId = scannerAddressToId(scanner);
         _mint(owner, scannerId);
 

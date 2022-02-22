@@ -41,6 +41,12 @@ interface IRewardReceiver {
  * ERC1155 shares representing active stake are transferable, and can be used in an AMM. Their value is however subject
  * to quick devaluation in case of slashing event for the corresponding subject. Thus, trading of such shares should be
  * be done very carefully.
+ * 
+ * WARNING: To stake from another smart contract (smart contract wallets included), it must be fully ERC1155 compatible,
+ * implementing ERC1155Receiver. If not, minting of active and inactive shares will fail.
+ * Do not deposit on the constructor if you don't implement ERC1155Receiver. During the construction, the miniting will
+ * succeed but you will not be able to withdraw or mint new shares from the contract. If this happens, transfer your
+ * shares to an EOA or fully ERC1155 compatible contract.
  */
 contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, IStakeController {
     using Distributions for Distributions.Balances;
@@ -85,6 +91,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
     event Released(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
+    event TokensSwept(address indexed token, address to, uint256 amount);
 
     modifier onlyValidSubjectType(uint8 subjectType) {
         require(
@@ -119,7 +126,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         __Routed_init(__router);
         __UUPSUpgradeable_init();
         __ERC1155_init("");
-
+        __ERC1155Supply_init();
         stakedToken = __stakedToken;
         _withdrawalDelay = __withdrawalDelay;
         _treasury = __treasury;
@@ -227,10 +234,16 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
      * @notice Deposit `stakeValue` tokens for a given `subject`, and mint the corresponding active ERC1155 shares.
      * @dev Subject type is necessary because we can't infer subject ID uniqueness between scanners, agents, etc
      * Emits a ERC1155.TransferSingle event and StakeDeposited (to allow accounting per subject type)
+     * WARNING: To stake from another smart contract (smart contract wallets included), it must be fully ERC1155 compatible,
+     * implementing ERC1155Receiver. If not, minting of active and inactive shares will fail.
+     * Do not deposit on the constructor if you don't implement ERC1155Receiver. During the construction, the miniting will
+     * succeed but you will not be able to withdraw or mint new shares from the contract. If this happens, transfer your
+     * shares to an EOA or fully ERC1155 compatible contract.
      * @param subjectType agents, scanner or future types of stake subject. See FortaStakingSubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @param stakeValue amount of staked token.
      * @return amount of ERC1155 active shares minted.
+     *
      */
     function deposit(uint8 subjectType, uint256 subject, uint256 stakeValue)
         public
@@ -413,7 +426,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
         }
 
         SafeERC20.safeTransfer(token, recipient, amount);
-
+        emit TokensSwept(address(token), recipient, amount);
         return amount;
     }
 
