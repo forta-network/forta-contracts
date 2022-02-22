@@ -83,7 +83,7 @@ describe('Agent Registry', function () {
         await network.provider.send('evm_increaseTime', [ 300 ]);
 
         await expect(this.agents.createAgent(...args))
-        .to.be.revertedWith('Values must be sorted');
+        .to.be.revertedWith('UnorderedArray("chainIds")');
       });
 
       it('update', async function () {

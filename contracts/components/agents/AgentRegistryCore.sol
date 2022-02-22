@@ -22,9 +22,9 @@ abstract contract AgentRegistryCore is
     }
 
     modifier onlySorted(uint256[] memory array) {
-        require(array.length > 0, "AgentRegistryCore: At least one chain id required");
+        if (array.length == 0 ) revert EmptyArray("chainIds");
         for (uint256 i = 1; i < array.length; ++i ) {
-            require(array[i] > array[i-1], "AgentRegistryCore: Values must be sorted");
+            if (array[i] <= array[i-1]) revert UnorderedArray("chainIds");
         }
         _;
     }

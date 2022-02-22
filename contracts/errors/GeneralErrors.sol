@@ -4,6 +4,7 @@ pragma solidity ^0.8.4;
 error ZeroAddress(string name);
 error ZeroAmount(string name);
 error EmptyArray(string name);
+error UnorderedArray(string name);
 
 error SenderNotOwner(address sender, uint256 ownedId);
 
