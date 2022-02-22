@@ -10,22 +10,53 @@ abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
     EnumerableSet.UintSet private _allAgents;
     mapping(uint256 => EnumerableSet.UintSet) private _chainAgents;
 
+    /**
+     * Agent count.
+     * @dev Helper for external iteration.
+     * @return total amount of registered agents.
+     */
     function getAgentCount() public view returns (uint256) {
         return _allAgents.length();
     }
 
+    /**
+     * Agent id at index in _allAgents array.
+     * @dev Helper for external iteration.
+     * @param index of agent in _allAgents array.
+     * @return agentId at index.
+     */
     function getAgentByIndex(uint256 index) public view returns (uint256) {
         return _allAgents.at(index);
     }
 
+    /**
+     * Registered agent count by chainId.
+     * @dev Helper for external iteration.
+     * @param chainId.
+     * @return agent total registered by chainId.
+     */
     function getAgentCountByChain(uint256 chainId) public view returns (uint256) {
         return _chainAgents[chainId].length();
     }
 
+    /**
+     * Agent id at index, by chainId
+     * @dev Helper for external iteration.
+     * @param chainId where the agent was registered.
+     * @param index of agent in _chainAgents[chainId] array.
+     * @return agentId at index for that chainId.
+     */
     function getAgentByChainAndIndex(uint256 chainId, uint256 index) public view returns (uint256) {
         return _chainAgents[chainId].at(index);
     }
 
+    /**
+     * @notice hook fired before agent creation or update.
+     * @dev stores agent in _allAgents if it wasn't there, manages agent arrays by chain.
+     * @param agentId ERC1155 token id of the agent to be created or updated.
+     * @param newMetadata IPFS pointer to agent's metadata JSON.
+     * @param newChainIds ordered list of chainIds where the agent wants to run.
+     */
     function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
         super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
 

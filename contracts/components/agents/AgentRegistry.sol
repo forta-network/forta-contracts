@@ -19,6 +19,13 @@ contract AgentRegistry is
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
+    /**
+     * @notice Initializer method, access point to initialize inheritance tree.
+     * @param __manager address of AccessManager.
+     * @param __router address of Router.
+     * @param __name ERC1155 token name.
+     * @param __symbol ERC1155 token symbol.
+     */
     function initialize(
         address __manager,
         address __router,
@@ -31,18 +38,38 @@ contract AgentRegistry is
         __ERC721_init(__name, __symbol);
     }
 
+    /**
+     * @notice Inheritance disambiguation for hook fired befire agent update (and creation).
+     * @param agentId id of the agent.
+     * @param newMetadata IPFS pointer to agent's metadata
+     * @param newChainIds chain ids that the agent wants to scan
+     */
     function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryEnumerable) {
         super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
     }
 
+    /**
+     * @notice Obligatory inheritance disambiguation for hook fired for agent update (and creation).
+     * @param agentId id of the agent.
+     * @param newMetadata IPFS pointer to agent's metadata
+     * @param newChainIds chain ids that the agent wants to scan
+     */
     function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
         super._agentUpdate(agentId, newMetadata, newChainIds);
     }
 
+    /**
+     * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.
+     * @inheritdoc ForwardedContext
+     */
     function _msgSender() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryEnable) returns (address sender) {
         return super._msgSender();
     }
 
+    /**
+     * @notice Helper to get msg.data if not a meta transaction, forwarder data in metatx if it is.
+     * @inheritdoc ForwardedContext
+     */
     function _msgData() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryEnable) returns (bytes calldata) {
         return super._msgData();
     }
