@@ -50,6 +50,8 @@ contract FortaBridgedPolygon is FortaCommon {
      *
      * If the receiver is not whitelisted when the deposit happens, tokens are minted but not
      * usable until the receiver goes through the whitelisting process.
+     * @param user the destination address for the tokens.
+     * @param depositData encoded data sent by the bridge.
      */
     function deposit(address user, bytes calldata depositData) external flashWhitelistRole(user) {
         require(msg.sender == childChainManagerProxy, "FortaBridgedPolygon: only childChainManagerProxy can deposit");
@@ -58,6 +60,10 @@ contract FortaBridgedPolygon is FortaCommon {
         _mint(user, amount);
     }
 
+    /**
+     * @dev Burns tokens in L2 so Polygon's PoS bridge will unlock them in L1.
+     * @param amount of tokens to send to L1
+     */
     function withdraw(uint256 amount) external {
         _burn(msg.sender, amount);
     }
@@ -68,6 +74,8 @@ contract FortaBridgedPolygon is FortaCommon {
      * the address of the receiver on the parent chain so that the burn event is correct.
      *
      * In order to do so, the receiver address must be temporarily granted WHITELIST_ROLE.
+     * @param amount of tokens to send to L1
+     * @param receiver destination address in L1
      */
     function withdrawTo(uint256 amount, address receiver) external flashWhitelistRole(receiver) {
         _transfer(msg.sender, receiver, amount);

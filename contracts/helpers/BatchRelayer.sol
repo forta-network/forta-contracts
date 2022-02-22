@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
+/**
+ * @notice Helper contract for deploy scripts for batch transactions.
+ */
 contract BatchRelayer is Ownable {
   function relay(address target, bytes[] calldata data) external onlyOwner() returns (bytes[] memory results) {
     results = new bytes[](data.length);

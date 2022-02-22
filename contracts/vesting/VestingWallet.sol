@@ -79,6 +79,8 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
 
     /**
     * @dev Release the tokens that have vested by the specified timestamp.
+    * WARNING: thoroughly review the token to be released code before executing.
+    * @param token address of vested ERC20 tokens
     */
     function release(address token) public {
         uint256 releasable = Math.min(
@@ -91,7 +93,10 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /**
-     * @dev Calculates the amount that has already vested.
+     * @dev Calculates the amount that has already vested in `timestamp`.
+     * @param token address of vested ERC20 tokens.
+     * @param timestamp date to check vesting schedule.
+     * @return vested tokens.
      */
     function vestedAmount(address token, uint256 timestamp) public virtual view returns (uint256) {
         if (timestamp < start() + cliff()) {
@@ -103,24 +108,16 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
         }
     }
 
-    /**
-     * @dev Calculates the historical balance (current balance + already released balance).
-     */
+    /// Calculates the historical balance (current balance + already released balance).
     function _historicalBalance(address token) internal virtual view returns (uint256) {
         return IERC20(token).balanceOf(address(this)) + released(token);
     }
 
-    /**
-     * @dev Delegate voting right
-     */
+    /// Delegate voting right for `token` to `delegatee`
     function delegate(address token, address delegatee) public onlyBeneficiary() {
         ERC20Votes(token).delegate(delegatee);
     }
 
-    /**
-     * Access control for the upgrade process
-     */
-    function _authorizeUpgrade(address newImplementation)
-    internal virtual override onlyOwner()
-    {}
+    /// Access control for the upgrade process
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyOwner() {}
 }

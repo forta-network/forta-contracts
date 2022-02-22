@@ -46,10 +46,10 @@ contract VestingWalletV2 is VestingWallet {
     }
 
     /**
-     * Bridge token to L2
-     *
-     * In case the beneficiary is a smart contract, bridging that way might be dangerous. In such cases,
+     * @notice Bridge token to L2
+     * @dev In case the beneficiary is a smart contract, bridging that way might be dangerous. In such cases,
      * {bridge(uint256,address)} should be prefered.
+     * @param amount of tokens to be bridged
      */
     function bridge(uint256 amount)
         public
@@ -60,11 +60,12 @@ contract VestingWalletV2 is VestingWallet {
     }
 
     /**
-     * Bridge token to L2, with custom escrow manager on L2.
-     *
-     * Using a custom escrow manager is needed if the beneficiary isn't valid on the child chain, for example if it
+     * @notice Bridge token to L2, with custom escrow manager on L2.
+     * @dev Using a custom escrow manager is needed if the beneficiary isn't valid on the child chain, for example if it
      * is a smart wallet that doesn't exist at the same address on the child chain. If the beneficiary of the contract
      * is a smart wallet valid on both chain, it must be explicitelly mentioned as the manager.
+     * @dev amount of tokens to be bridged.
+     * @dev l2Manager the address that will be controller generated StakinEscrow in L2
      */
     function bridge(uint256 amount, address l2Manager)
         public
@@ -96,9 +97,7 @@ contract VestingWalletV2 is VestingWallet {
         emit TokensBridged(l2Escrow, l2Manager, amount);
     }
 
-    /**
-     * Historical balance override to keep vesting speed when tokens are bridged.
-     */
+    /// Historical balance override to keep vesting speed when tokens are bridged.
     function _historicalBalance(address token)
         internal
         virtual
@@ -113,9 +112,11 @@ contract VestingWalletV2 is VestingWallet {
         }
     }
 
+    // Admin operations
+
     /**
-     * Admin operations
-     */
+     * @dev Sets historical balance min. Only use if there is an imbalance between L1 VestingWallet and L2 StakingEscrow
+     */ 
     function setHistoricalBalanceBridged(uint256 value)
         public
         onlyOwner()
@@ -124,6 +125,9 @@ contract VestingWalletV2 is VestingWallet {
         historicalBalanceMin = value;
     }
 
+    /**
+     * @dev Sets historical balance bridged. Only use if there is an imbalance between L1 VestingWallet and L2 StakingEscrow
+     */ 
     function updateHistoricalBalanceBridged(int256 update)
         public
         onlyOwner()

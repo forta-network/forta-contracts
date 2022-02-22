@@ -182,6 +182,10 @@ contract Dispatch is BaseComponentUpgradeable {
         _scanners = ScannerRegistry(newScannerRegistry);
     }
 
+    /**
+     * Method to hash the amount of scanners an agent is running in, and their status
+     * @dev method marked for deprecation in next version.
+     */
     function agentHash(uint256 agentId) external view returns (uint256 length, bytes32 manifest) {
         uint256[] memory scanners = agentToScanners[agentId].values();
         bool[]    memory enabled = new bool[](scanners.length);
@@ -196,6 +200,14 @@ contract Dispatch is BaseComponentUpgradeable {
         );
     }
 
+    /**
+     * @dev method used by Scanner Node software to know if their list of assigned agents has changed,
+     * their enabled state or version has changed so they can start managing changes
+     * (loading new agent images, removing not assigned agents, updating agents...).
+     * @param scannerId ERC1155 token id of the scanner.
+     * @return length amount of agents.
+     * @return manifest keccak256 of list of agents, list of agentVersion and list of enabled states.
+     */
     function scannerHash(uint256 scannerId) external view returns (uint256 length, bytes32 manifest) {
         uint256[] memory agents  = scannerToAgents[scannerId].values();
         uint256[] memory agentVersion = new uint256[](agents.length);
