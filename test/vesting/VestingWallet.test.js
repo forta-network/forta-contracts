@@ -57,7 +57,7 @@ describe('VestingWallet', function () {
 
   it('rejects zero address for beneficiary', async function () {
     await expect(deployUpgradeable(
-      'VestingWallet',
+      'VestingWalletV2',
       'uups',
       [
         ethers.constants.AddressZero,
@@ -66,7 +66,15 @@ describe('VestingWallet', function () {
         this.cliff,
         this.end - this.start, // duration
       ],
-      { unsafeAllow: 'delegatecall' },
+      {
+        constructorArgs: [
+          this.rootchainmanager.address,
+          this.token.address,
+          this.l2escrowfactory.address,
+          this.l2escrowtemplate.address,
+        ],
+        unsafeAllow: 'delegatecall',
+      },
     )).to.be.revertedWith('VestingWallet: beneficiary is zero address');
   });
 
