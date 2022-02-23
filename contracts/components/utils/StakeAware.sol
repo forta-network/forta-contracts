@@ -11,6 +11,10 @@ abstract contract StakeAwareUpgradeable is AccessManagedUpgradeable {
 
     event StakeControllerUpdated(address indexed newstakeController);
 
+    /*
+    * @dev: For contracts made StakeAwareUpgradeable via upgrade, initializer call is not available.
+    * Use setStakeController(stakeController) when upgrading instead.
+    */
     function __StakeAwareUpgradeable_init(address stakeController) internal initializer {
         _setStakeController(stakeController);
     }
