@@ -51,7 +51,6 @@ abstract contract AgentRegistryCore is
     public
         onlyOwnerOf(agentId)
         onlySorted(chainIds)
-        frontrunProtected(keccak256(abi.encodePacked(agentId, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
     {
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);
