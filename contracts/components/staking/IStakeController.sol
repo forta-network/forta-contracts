@@ -7,6 +7,7 @@ interface IStakeController {
     function activeStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
     function maxStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
     function minStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
+    function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns(bool);
 }
 interface IStakeSubject {
     struct StakeThreshold {
