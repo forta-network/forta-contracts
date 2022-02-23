@@ -491,6 +491,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
 
     // Admin: change recipient of slashed funds
     function setTreasury(address newTreasury) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newTreasury != address(0), "FS: setting address 0");
         _treasury = newTreasury;
         emit TreasurySet(newTreasury);
     }
