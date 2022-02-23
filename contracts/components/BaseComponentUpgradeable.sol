@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/utils/Multicall.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./Roles.sol";
 import "./utils/AccessManaged.sol";
+import "./utils/IVersioned.sol";
 import "./utils/ForwardedContext.sol";
 import "./utils/Routed.sol";
 import "../tools/ENSReverseRegistration.sol";
@@ -23,7 +24,8 @@ abstract contract BaseComponentUpgradeable is
     AccessManagedUpgradeable,
     RoutedUpgradeable,
     Multicall,
-    UUPSUpgradeable
+    UUPSUpgradeable,
+    IVersioned
 {
     
     // Access control for the upgrade process
