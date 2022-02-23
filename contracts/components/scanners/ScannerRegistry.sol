@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "../BaseComponentUpgradeable.sol";
-
 import "./ScannerRegistryCore.sol";
 import "./ScannerRegistryManaged.sol";
 import "./ScannerRegistryEnable.sol";
