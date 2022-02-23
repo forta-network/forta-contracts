@@ -75,7 +75,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, StakeAwareUpgradeabl
     }
 
     function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterScannerUpdate(uint256,uint8,bool)", agentId, uint8(permission), value));
+        _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256,uint8,bool)", agentId, uint8(permission), value));
     }
     
     function _msgSender() internal view virtual override(ContextUpgradeable, AgentRegistryCore) returns (address sender) {
