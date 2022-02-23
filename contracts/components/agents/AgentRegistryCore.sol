@@ -11,8 +11,12 @@ abstract contract AgentRegistryCore is
     FrontRunningProtection,
     ERC721Upgradeable
 {
+    // Initially 0 because the frontrunning protection starts disabled.
+    uint256 public frontRunningDelay; // __gap[45] -> __gap[44]
+
     event AgentCommitted(bytes32 indexed commit);
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
+    event FrontRunningDelaySet(uint256 delay);
 
     modifier onlyOwnerOf(uint256 agentId) {
         require(_msgSender() == ownerOf(agentId), "AgentRegistryCore: Restricted to agent owner");
@@ -35,7 +39,7 @@ abstract contract AgentRegistryCore is
     function createAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds)
     public
         onlySorted(chainIds)
-        frontrunProtected(keccak256(abi.encodePacked(agentId, owner, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
+        frontrunProtected(keccak256(abi.encodePacked(agentId, owner, metadata, chainIds)), frontRunningDelay)
     {
         _mint(owner, agentId);
         _beforeAgentUpdate(agentId, metadata, chainIds);
@@ -55,6 +59,15 @@ abstract contract AgentRegistryCore is
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);
         _afterAgentUpdate(agentId, metadata, chainIds);
+    }
+
+    /**
+     * @dev allows AGENT_ADMIN_ROLE to activate frontrunning protection for agents
+     * @param delay in seconds
+     */
+    function setFrontRunningDelay(uint256 delay) external onlyRole(AGENT_ADMIN_ROLE) {
+        frontRunningDelay = delay;
+        emit FrontRunningDelaySet(delay);
     }
 
     /**
@@ -79,5 +92,5 @@ abstract contract AgentRegistryCore is
         return super._msgData();
     }
 
-    uint256[45] private __gap;
+    uint256[44] private __gap;
 }
