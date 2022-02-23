@@ -10,6 +10,8 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
     bytes32 public constant ADMIN_ROLE       = keccak256("ADMIN_ROLE");
     bytes32 public constant WHITELISTER_ROLE = keccak256("WHITELISTER_ROLE");
     bytes32 public constant WHITELIST_ROLE   = keccak256("WHITELIST_ROLE");
+    
+    bool public whitelistDisabled; // __gap[50] -> __gap[49]
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -33,8 +35,10 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
 
     // Only allow transfer to whitelisted accounts
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
-        require(from == address(0) || hasRole(WHITELIST_ROLE, from), "Forta: sender is not whitelisted");
-        require(to   == address(0) || hasRole(WHITELIST_ROLE, to), "Forta: receiver is not whitelisted");
+        if (!whitelistDisabled) {
+            require(from == address(0) || hasRole(WHITELIST_ROLE, from), "Forta: sender is not whitelisted");
+            require(to   == address(0) || hasRole(WHITELIST_ROLE, to), "Forta: receiver is not whitelisted");
+        }
         super._beforeTokenTransfer(from, to, amount);
     }
 
@@ -46,4 +50,14 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
     function setName(address ensRegistry, string calldata ensName) external onlyRole(ADMIN_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
+
+    // Disable whitelisting of the token. 
+    // The whitelist functionality is going to be removed via contract upgrade to remove the checks in 
+    // _beforeTokenTransfer and be more gas efficient. In case an upgrade is too risky for some reason,
+    // this methods ensure our comprise to publish the token and keep decentralizing Forta.
+    function disableWhitelist() public onlyRole(WHITELISTER_ROLE) {
+        whitelistDisabled = true;
+    }
+
+    uint256[49] private __gap; 
 }
