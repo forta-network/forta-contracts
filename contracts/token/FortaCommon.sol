@@ -44,7 +44,7 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
 
     // Allow the upgrader to set ENS reverse registration
     // NOTE: Forta token has a different role structure than contracts under component, by order of deployment.
-    // instead of ENS_MANAGER_ROLE, here s the token ADMIN who has permission.
+    // instead of ENS_MANAGER_ROLE, here the token ADMIN has permission.
     function setName(address ensRegistry, string calldata ensName) external onlyRole(ADMIN_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
