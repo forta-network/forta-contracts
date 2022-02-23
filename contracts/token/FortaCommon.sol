@@ -53,7 +53,7 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
 
     // Disable whitelisting of the token. 
     // The whitelist functionality is going to be removed via contract upgrade to remove the checks in 
-    // _beforeTokenTransfer and be more gas efficient). In case an upgrade is too risky for some reason,
+    // _beforeTokenTransfer and be more gas efficient. In case an upgrade is too risky for some reason,
     // this methods ensure our comprise to publish the token and keep decentralizing Forta.
     function disableWhitelist() public onlyRole(WHITELISTER_ROLE) {
         whitelistDisabled = true;
