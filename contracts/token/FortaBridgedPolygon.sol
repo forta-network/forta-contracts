@@ -22,7 +22,7 @@ contract FortaBridgedPolygon is FortaCommon {
     address public immutable childChainManagerProxy;
 
     modifier flashWhitelistRole(address user) {
-        bool missing = !hasRole(WHITELIST_ROLE, user);
+        bool missing = !hasRole(WHITELIST_ROLE, user) && !whitelistDisabled;
 
         if (missing) {
             _grantRole(WHITELIST_ROLE, user);
@@ -73,4 +73,6 @@ contract FortaBridgedPolygon is FortaCommon {
         _transfer(msg.sender, receiver, amount);
         _burn(receiver, amount);
     }
+
+    uint256[49] private __gap; 
 }
