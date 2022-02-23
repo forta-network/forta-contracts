@@ -44,7 +44,7 @@ interface IRewardReceiver {
  * 
  * WARNING: To stake from another smart contract (smart contract wallets included), it must be fully ERC1155 compatible,
  * implementing ERC1155Receiver. If not, minting of active and inactive shares will fail.
- * Do not deposit on the constructor if you don't implement ERC1155Receiver. During the construction, the miniting will
+ * Do not deposit on the constructor if you don't implement ERC1155Receiver. During the construction, the minting will
  * succeed but you will not be able to withdraw or mint new shares from the contract. If this happens, transfer your
  * shares to an EOA or fully ERC1155 compatible contract.
  */
@@ -207,7 +207,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, ISt
      *
      * WARNING: To stake from another smart contract (smart contract wallets included), it must be fully ERC1155 compatible,
      * implementing ERC1155Receiver. If not, minting of active and inactive shares will fail.
-     * Do not deposit on the constructor if you don't implement ERC1155Receiver. During the construction, the miniting will
+     * Do not deposit on the constructor if you don't implement ERC1155Receiver. During the construction, the minting will
      * succeed but you will not be able to withdraw or mint new shares from the contract. If this happens, transfer your
      * shares to an EOA or fully ERC1155 compatible contract.
      */
