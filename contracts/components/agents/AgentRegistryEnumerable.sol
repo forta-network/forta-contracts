@@ -46,7 +46,7 @@ abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
                 _chainAgents[newChainIds[j++]].add(agentId);
             } else { // chainIds are the same do nothing
                 i++;
-                ++j;
+                j++;
             }
         }
     }
