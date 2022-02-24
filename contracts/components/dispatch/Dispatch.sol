@@ -74,8 +74,8 @@ contract Dispatch is BaseComponentUpgradeable {
         require(_agents.isEnabled(agentId), "Dispatch: Agent disabled");
         require(_scanners.isEnabled(scannerId), "Dispatch: Scanner disabled");
 
-        scannerToAgents[scannerId].add(agentId);
-        agentToScanners[agentId].add(scannerId);
+        require(scannerToAgents[scannerId].add(agentId), "Dispatch: Agent already linked");
+        require(agentToScanners[agentId].add(scannerId), "Dispatch: Scanner already linked");
 
         emit Link(agentId, scannerId, true);
     }
@@ -84,8 +84,8 @@ contract Dispatch is BaseComponentUpgradeable {
         require(_agents.isCreated(agentId), "Dispatch: invalid agent id");
         require(_scanners.isRegistered(scannerId), "Dispatch: invalid scanner id");
 
-        scannerToAgents[scannerId].remove(agentId);
-        agentToScanners[agentId].remove(scannerId);
+        require(scannerToAgents[scannerId].remove(agentId), "Dispatch: Agent already unlinked");
+        require(agentToScanners[agentId].remove(scannerId), "Dispatch: Scanner already unlinked");
 
         emit Link(agentId, scannerId, false);
     }
