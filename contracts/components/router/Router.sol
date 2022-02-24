@@ -7,16 +7,18 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../Roles.sol";
 import "../utils/AccessManaged.sol";
 import "../utils/ForwardedContext.sol";
+import "../utils/IVersioned.sol";
 import "../../tools/ENSReverseRegistration.sol";
 import "./IRouter.sol";
 
-// This should be BaseComponent, because BaseComponent is Routed
-contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgradeable, Multicall {
+// This should be BaseComponentUpgradeable, because BaseComponentUpgradeable is Routed
+contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgradeable, Multicall, IVersioned {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     mapping(bytes4 => EnumerableSet.AddressSet) private _routingTable;
     mapping(bytes4 => bool) private _revertsOnFail;
 
+    uint256 private constant SIGNATURE_SIZE = 4;
     string public constant version = "0.1.0";
 
     event RoutingUpdated(bytes4 indexed sig, address indexed target, bool enable, bool revertsOnFail);
@@ -30,7 +32,7 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
     }
 
     function hookHandler(bytes calldata payload) external override {
-        bytes4 sig = bytes4(payload[:4]);
+        bytes4 sig = bytes4(payload[:SIGNATURE_SIZE]);
         uint256 length = _routingTable[sig].length();
         for (uint256 i = 0; i < length; ++i) {
             (bool success, bytes memory returndata) = _routingTable[sig].at(i).call(payload);
