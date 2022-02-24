@@ -24,7 +24,7 @@ The process to develop, test and deploy new implementations are as follow:
 4.1 Deploy an upgradeable proxy with the base implementation, found in `components/_old/<component_folder>/<ComponentName>_X_Y_Z`. If not there, generate a flattened version obtained from verified contracts in relevant block explorer (Etherscan, Polyscan...) and add it.
 4.2 Initialize all the state of the contract, assert the values are there.
 4.3 Upgrade to the new implementation
-4.4 Check the output from `upgrades-plugin`. You may need to activate the flag `unsafeSkipStorageCheck` to deploy.
+4.4 Check the output from `upgrades-plugin`. If gap sizes changed, you may need to activate the flag `unsafeSkipStorageCheck` to deploy.
 4.5 Assert the values of the state have not changed.
 5. Execute the script `scripts/storageToTable` to print a markdown table of the before and after implementations (you may need to execute `test/components/upgrades.test.js` with `it.only(<relevant_test>)` so both old and new implementations are present in `.openzeppelin/unknown-31337.json`)
 6. Visualize and assert that the sum of the storage reserved is the same before and after, and that the new gaps are adjusted correctly. If the test in 4.5 passes this is probably correct, if that test fails, something will not add up.
