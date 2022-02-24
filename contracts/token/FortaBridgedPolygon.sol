@@ -45,9 +45,9 @@ contract FortaBridgedPolygon is FortaCommon {
 
     /**
      * @dev To avoid token locked on the parent chains not being correctly represented on the
-     * child chain, this should NEVER revert. Consequently, we might have to temporarily grant
+     * child chain, this should NEVER revert (exception: _mint can revert if totalSupply() <= _maxSupply()).
+     * Consequently, we might have to temporarily grant
      * WHITELIST_ROLE to the receiver.
-     *
      * If the receiver is not whitelisted when the deposit happens, tokens are minted but not
      * usable until the receiver goes through the whitelisting process.
      */

@@ -398,8 +398,12 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     /**
-     * @dev Sweep all token that might be mistakenly sent to the contract. This covers both unrelated tokens and staked
-     * tokens that would be sent through a direct transfer.
+     * @dev Sweep all the balance of a token that might be mistakenly sent to FortaStaking.
+     * This covers both unrelated tokens and staked tokens that would be sent through a direct transfer.
+     * @param token ERC20 token that we attempt to sweep
+     * @param recipient destination address of the swept tokens
+     * @return amount of tokens swept. For unrelated tokens is FortaStaking's balance, for stakedToken its
+     * the balance over the active stake + inactive stake + rewards 
      */
     function sweep(IERC20 token, address recipient) public onlyRole(SWEEPER_ROLE) returns (uint256) {
         uint256 amount = token.balanceOf(address(this));
