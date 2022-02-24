@@ -4,6 +4,13 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "./AgentRegistryCore.sol";
 
+
+/**
+* @dev AgentRegistry methods and state handling disabling and enabling agents, and
+* recognizing stake changes that might disable an agent.
+* NOTE: This contract was deployed before StakeAwareUpgradeable was created, so __StakeAwareUpgradeable_init
+* is not called.
+*/
 abstract contract AgentRegistryEnable is AgentRegistryCore {
     using BitMaps for BitMaps.BitMap;
 

@@ -13,11 +13,15 @@ abstract contract AgentRegistryCore is
     ERC721Upgradeable,
     StakeSubjectUpgradeable
 {
+    
     StakeThreshold private _stakeThreshold; // 2 storage slots
+    // Initially 0 because the frontrunning protection starts disabled.
+    uint256 public frontRunningDelay;
 
     event AgentCommitted(bytes32 indexed commit);
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
     event StakeThresholdChanged(uint256 min, uint256 max);
+    event FrontRunningDelaySet(uint256 delay);
 
     modifier onlyOwnerOf(uint256 agentId) {
         require(_msgSender() == ownerOf(agentId), "AgentRegistryCore: Restricted to agent owner");
@@ -40,7 +44,7 @@ abstract contract AgentRegistryCore is
     function createAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds)
     public
         onlySorted(chainIds)
-        frontrunProtected(keccak256(abi.encodePacked(agentId, owner, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
+        frontrunProtected(keccak256(abi.encodePacked(agentId, owner, metadata, chainIds)), frontRunningDelay)
     {
         _mint(owner, agentId);
         _beforeAgentUpdate(agentId, metadata, chainIds);
@@ -56,7 +60,6 @@ abstract contract AgentRegistryCore is
     public
         onlyOwnerOf(agentId)
         onlySorted(chainIds)
-        frontrunProtected(keccak256(abi.encodePacked(agentId, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
     {
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);
@@ -92,6 +95,14 @@ abstract contract AgentRegistryCore is
         return getStakeController().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min;
     }
 
+    /**
+     * @dev allows AGENT_ADMIN_ROLE to activate frontrunning protection for agents
+     * @param delay in seconds
+     */
+    function setFrontRunningDelay(uint256 delay) external onlyRole(AGENT_ADMIN_ROLE) {
+        frontRunningDelay = delay;
+        emit FrontRunningDelaySet(delay);
+    }
 
     /**
      * Hook: Agent metadata change (create/update)
@@ -115,5 +126,5 @@ abstract contract AgentRegistryCore is
         return super._msgData();
     }
 
-    uint256[43] private __gap; // 50 - 2 (_stakeThreshold) - 5 StakeSubjectUpgradeable
+    uint256[42] private __gap; // 50 - 1 (frontRunningDelay) - 2 (_stakeThreshold) - 5 StakeSubjectUpgradeable
 }
