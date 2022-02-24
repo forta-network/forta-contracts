@@ -2,15 +2,19 @@
 pragma solidity ^0.8.4;
 
 import "../staking/IStakeController.sol";
-import "../staking/FortaStakingSubjectTypes.sol";
+import "../staking/SubjectTypes.sol";
 import "../Roles.sol";
-import "./AccessManaged.sol";
+import "../utils/AccessManaged.sol";
 
-abstract contract StakeAwareUpgradeable is AccessManagedUpgradeable {
+abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSubject {
     IStakeController private _stakeController;
 
     event StakeControllerUpdated(address indexed newstakeController);
 
+    /*
+    * @dev: For contracts made StakeAwareUpgradeable via upgrade, initializer call is not available.
+    * Use setStakeController(stakeController) when upgrading instead.
+    */
     function __StakeAwareUpgradeable_init(address stakeController) internal initializer {
         _setStakeController(stakeController);
     }
@@ -25,17 +29,17 @@ abstract contract StakeAwareUpgradeable is AccessManagedUpgradeable {
         _setStakeController(stakeController);
     }
 
-    function getStakeController() public view returns(address) {
-        return address(_stakeController);
+    function getStakeController() public view returns(IStakeController) {
+        return _stakeController;
     }
 
-    function _isStakedOverMin(uint8 subjectType, uint256 subject) internal view returns(bool) {
-        return _stakeController.isStakedOverMin(subjectType, subject);
+
+    function isStakedOverMin(uint256 subject) external virtual override view returns(bool) {
+        return _isStakedOverMin(subject);
     }
 
-    function _getMinStake(uint8 subjectType) internal view returns (uint256) {
-        return _stakeController.getMinStake(subjectType);
-    }
+    function _isStakedOverMin(uint256 subject) internal virtual view returns(bool);
+
 
     uint256[4] private __gap;
 }

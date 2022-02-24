@@ -43,30 +43,30 @@ contract Dispatch is BaseComponentUpgradeable {
         return _scanners;
     }
 
-    function agentsFor(uint256 scannerId) public view returns (uint256) {
+    function numAgentsFor(uint256 scannerId) public view returns (uint256) {
         return scannerToAgents[scannerId].length();
     }
 
-    function scannersFor(uint256 agentId) public view returns (uint256) {
+    function numScannersFor(uint256 agentId) public view returns (uint256) {
         return agentToScanners[agentId].length();
     }
 
-    function agentsAt(uint256 scannerId, uint256 pos) public view returns (uint256) {
+    function agentAt(uint256 scannerId, uint256 pos) public view returns (uint256) {
         return scannerToAgents[scannerId].at(pos);
     }
 
     function agentRefAt(uint256 scannerId, uint256 pos) external view returns (uint256 agentId, bool enabled, uint256 agentVersion, string memory metadata, uint256[] memory chainIds) {
-        agentId = agentsAt(scannerId, pos);
+        agentId = agentAt(scannerId, pos);
         enabled = _agents.isEnabled(agentId);
         (agentVersion, metadata, chainIds) = _agents.getAgent(agentId);
     }
 
-    function scannersAt(uint256 agentId, uint256 pos) public view returns (uint256) {
+    function scannerAt(uint256 agentId, uint256 pos) public view returns (uint256) {
         return agentToScanners[agentId].at(pos);
     }
 
     function scannerRefAt(uint256 agentId, uint256 pos) external view returns (uint256 scannerId, bool enabled) {
-        scannerId = scannersAt(agentId, pos);
+        scannerId = scannerAt(agentId, pos);
         enabled   = _scanners.isEnabled(agentId);
     }
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.0;
 
 bytes32 constant DEFAULT_ADMIN_ROLE = bytes32(0);
 // Routing

@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
+contract VestingWalletV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer
     {}
@@ -123,4 +123,6 @@ contract VestingWallet is OwnableUpgradeable, UUPSUpgradeable {
     function _authorizeUpgrade(address newImplementation)
     internal virtual override onlyOwner()
     {}
+
+    uint256[45] private __gap;
 }

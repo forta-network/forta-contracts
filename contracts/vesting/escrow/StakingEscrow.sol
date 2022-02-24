@@ -14,6 +14,13 @@ import "../../components/utils/ForwardedContext.sol";
  * This contract contains some immutable parameters, common to all instances, that are set at
  * construction and some "normal" storage-based parameters that are instance specific and set
  * during initialization.
+ * 
+ * WARNING: DO NOT SEND FORT TOKENS TO THIS CONTRACT. It is designed only to handle bridged
+ * tokens from `VestingWallet`, and the rewards that result from staking then in `FortaStaking`
+ * If FORT tokens are sent to this contract, they can be bridged back to L1 VestingWallet,
+ * but this process will slow down the release rate (not the dates, all FORT would be 
+ * releaseble on vesting end).
+ * If you have unvested tokens, interact directly with FortaStaking.
  */
 contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedContext, ERC1155Receiver {
     FortaBridgedPolygon public immutable l2token;

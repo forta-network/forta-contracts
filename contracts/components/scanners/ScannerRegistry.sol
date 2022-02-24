@@ -46,6 +46,28 @@ contract ScannerRegistry is
         super._scannerUpdate(scannerId, chainId, metadata);
     }
 
+    /**
+     * Checks if scanner is staked over minimium stake
+     * @param scannerId scanner
+     * @return true if scanner is staked over the minimum threshold for that chainId, or staking is not yet enabled (stakeController = 0).
+     * false otherwise
+     */
+    function _isStakedOverMin(uint256 scannerId) internal virtual override view returns(bool) {
+        if (address(getStakeController()) == address(0)) {
+            return true;
+        }
+        return getStakeController().activeStakeFor(SCANNER_SUBJECT, scannerId) >= _getStakeThreshold(scannerId).min;
+    }
+
+    function _getStakeThreshold(uint256 subject) private view returns(StakeThreshold memory) {
+        (uint256 chainId, ) = getScanner(subject);
+        return _stakeThresholds[chainId];
+    }
+
+    function getStakeThreshold(uint256 subject) external view returns(StakeThreshold memory) {
+        return _getStakeThreshold(subject);
+    }
+
     function _msgSender() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (address sender) {
         return super._msgSender();
     }

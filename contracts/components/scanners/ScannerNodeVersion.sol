@@ -33,13 +33,13 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
         
     }
 
-    function setScannerNodeVersion(string calldata version) public onlyRole(SCANNER_VERSION_ROLE) {
+    function setScannerNodeVersion(string calldata newVersion) public onlyRole(SCANNER_VERSION_ROLE) {
         require(
-            keccak256(abi.encodePacked(scannerNodeVersion)) != keccak256(abi.encodePacked(version)),
+            keccak256(abi.encodePacked(scannerNodeVersion)) != keccak256(abi.encodePacked(newVersion)),
             "must update to different scannerNodeVersion"
         );
-        emit ScannerNodeVersionUpdated(version, scannerNodeVersion);
-        scannerNodeVersion = version;
+        emit ScannerNodeVersionUpdated(newVersion, scannerNodeVersion);
+        scannerNodeVersion = newVersion;
     }
 
     uint256[49] private __gap;
