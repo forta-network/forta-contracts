@@ -715,8 +715,9 @@ describe('Forta Staking', function () {
       await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;
       await this.router.connect(this.accounts.admin).setRoutingTable(this.signature, this.sink.address, true);
     });
-
-    it('signals are emitted', async function () {
+    
+    // NOTE: skipped until the reintroduction of hooks on the Router
+    it.skip('signals are emitted', async function () {
       await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100'))
       .to.emit(this.sink, 'GotSignal').withArgs(
         this.signature + 

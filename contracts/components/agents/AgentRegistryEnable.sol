@@ -82,7 +82,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, StakeSubjectUpgradea
     }
 
     function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256)", agentId));
+        _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256,uint8,bool)", agentId, uint8(permission), value));
     }
 
     /**

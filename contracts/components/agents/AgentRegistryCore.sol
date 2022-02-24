@@ -81,7 +81,7 @@ abstract contract AgentRegistryCore is
     }
 
     function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256)", agentId));
+        _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256,string,uint256[])", agentId, newMetadata, newChainIds));
     }
 
     function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (address sender) {
