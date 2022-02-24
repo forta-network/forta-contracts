@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
@@ -34,7 +33,7 @@ contract Forwarder is EIP712WithNonce {
      * @return (success, returnData) of the executed request 
      */
     function execute(ForwardRequest calldata req, bytes calldata signature)
-        public
+        external
         payable
         returns (bool, bytes memory)
     {
