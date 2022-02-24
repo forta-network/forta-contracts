@@ -424,10 +424,13 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * If staking from a contract, said contract may optionally implement ERC165 for IRewardReceiver
      * Emits a Release event.
      */
-    function releaseReward(uint8 subjectType, uint256 subject, address account) public returns (uint256) {
-        _onlyValidSubjectType(subjectType);
-        uint256 value = availableReward(subjectType, subject, account);
+    function releaseReward(uint8 subjectType, uint256 subject, address account)
+        public
+        onlyValidSubjectType(subjectType)
+        returns (uint256)
+    {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        uint256 value = _availableReward(activeSharesId, account);
         _rewards.burn(activeSharesId, value);
         _released[activeSharesId].mint(account, SafeCast.toInt256(value));
 
@@ -442,16 +445,31 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         return value;
     }
 
+
     /**
      * @dev Amount of reward tokens owed by given `account` for its current or past share for a given `subject`.
+     * @param activeSharesId ERC1155 id representing the active shares of a subject / subjectType pair.
+     * @param account address of the staker
+     * @return rewards available for staker on that subject.
      */
-    function availableReward(uint8 subjectType, uint256 subject, address account) public view returns (uint256) {
-        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+    function _availableReward(uint256 activeSharesId, address account) internal view returns (uint256) {
         return SafeCast.toUint256(
             SafeCast.toInt256(_historicalRewardFraction(activeSharesId, balanceOf(account, activeSharesId)))
             -
             _released[activeSharesId].balanceOf(account)
         );
+    }
+
+    /**
+     * @dev Amount of reward tokens owed by given `account` for its current or past share for a given `subject`.
+     * @param subjectType type of staking subject (see FortaStakingSubjectTypes.sol)
+     * @param subject ID of subject
+     * @param account address of the staker
+     * @return rewards available for staker on that subject.
+     */
+    function availableReward(uint8 subjectType, uint256 subject, address account) external view returns (uint256) {
+        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        return _availableReward(activeSharesId, account);
     }
 
     /**
