@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 // These are the roles used in the components of the Forta system, except
 // Forta token itself, that needs to define it's own roles for consistency accross chains
