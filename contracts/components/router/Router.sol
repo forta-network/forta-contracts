@@ -7,11 +7,12 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../Roles.sol";
 import "../utils/AccessManaged.sol";
 import "../utils/ForwardedContext.sol";
+import "../utils/IVersioned.sol";
 import "../../tools/ENSReverseRegistration.sol";
 import "./IRouter.sol";
 
 // This should be BaseComponentUpgradeable, because BaseComponentUpgradeable is Routed
-contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgradeable, Multicall {
+contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgradeable, Multicall, IVersioned {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     mapping(bytes4 => EnumerableSet.AddressSet) private _routingTable;

@@ -28,7 +28,7 @@ abstract contract ScannerRegistryCore is
         _register(_msgSender(), owner, chainId, metadata);
     }
 
-    function _register(address scanner, address owner, uint256 chainId, string calldata metadata) public {
+    function _register(address scanner, address owner, uint256 chainId, string calldata metadata) internal {
         uint256 scannerId = scannerAddressToId(scanner);
         _mint(owner, scannerId);
 
