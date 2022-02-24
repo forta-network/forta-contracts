@@ -84,6 +84,10 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
         _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256)", scannerId));
     }
 
+
+    /**
+     * Overrides
+     */
     function _msgSender() internal view virtual override(ScannerRegistryCore) returns (address sender) {
         return super._msgSender();
     }
