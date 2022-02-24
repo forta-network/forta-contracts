@@ -116,7 +116,7 @@ contract VestingWalletV2 is VestingWalletV1 {
     /**
      * Admin operations
      */
-    function setHistoricalBalanceBridged(uint256 value)
+    function setHistoricalBalanceMin(uint256 value)
         public
         onlyOwner()
     {
@@ -124,11 +124,11 @@ contract VestingWalletV2 is VestingWalletV1 {
         historicalBalanceMin = value;
     }
 
-    function updateHistoricalBalanceBridged(int256 update)
+    function updateHistoricalBalanceMin(int256 update)
         public
         onlyOwner()
     {
-        setHistoricalBalanceBridged((historicalBalanceMin.toInt256() + update).toUint256());
+        setHistoricalBalanceMin((historicalBalanceMin.toInt256() + update).toUint256());
     }
 
     uint256[45] private __gap;
