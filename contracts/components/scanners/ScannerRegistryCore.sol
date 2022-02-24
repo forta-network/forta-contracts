@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
@@ -28,7 +28,7 @@ abstract contract ScannerRegistryCore is
         _register(_msgSender(), owner, chainId, metadata);
     }
 
-    function _register(address scanner, address owner, uint256 chainId, string calldata metadata) public {
+    function _register(address scanner, address owner, uint256 chainId, string calldata metadata) internal {
         uint256 scannerId = scannerAddressToId(scanner);
         _mint(owner, scannerId);
 
@@ -60,7 +60,7 @@ abstract contract ScannerRegistryCore is
     }
 
     function _afterScannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterScannerUpdate(uint256)", scannerId));
+        _emitHook(abi.encodeWithSignature("hook_afterScannerUpdate(uint256,uint256,string)", scannerId, chainId, metadata));
     }
 
 
