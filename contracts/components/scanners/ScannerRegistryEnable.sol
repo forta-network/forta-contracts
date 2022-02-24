@@ -6,6 +6,12 @@ import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "./ScannerRegistryManaged.sol";
 import "../staking/StakeSubject.sol";
 
+/**
+* @dev ScannerRegistry methods and state handling disabling and enabling scanners, and
+* recognizing stake changes that might disable a scanner.
+* NOTE: This contract was deployed before StakeAwareUpgradeable was created, so __StakeAwareUpgradeable_init
+* is not called.
+*/
 abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeSubjectUpgradeable {
     using BitMaps for BitMaps.BitMap;
 
