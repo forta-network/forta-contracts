@@ -5,7 +5,7 @@ const { subjectToActive, subjectToInactive } = require('../../scripts/utils/stak
 
 const LOCKED_OFFSET = ethers.BigNumber.from(2).pow(160);
 const subjects = [
-    [ ethers.BigNumber.from(ethers.Wallet.createRandom().address), 0 ],// Scanner id, scanner type
+    [ '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 0 ],// Scanner id, scanner type
     [ ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), 1 ]// Agent id, agent type
 ]
 const [
@@ -13,7 +13,7 @@ const [
     [ subject2, subjectType2, active2, inactive2 ]
 
 ] = subjects.map(items => [items[0], items[1], subjectToActive(items[1], items[0]), subjectToInactive(items[1], items[0])])
-const subject3Address = ethers.Wallet.createRandom().address
+const subject3Address = '0xfA73331f4C0E5db9706040968BfA16f2FDFd1b76'; // ethers.Wallet.createRandom().address sometimes creates invalid address
 const subject3 = ethers.BigNumber.from(subject3Address);
 const prepareCommit = (...args)  => ethers.utils.solidityKeccak256([ 'bytes32', 'address', 'string', 'uint256[]' ], args);
 

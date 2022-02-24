@@ -713,7 +713,7 @@ describe('Forta Staking', function () {
       await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
       await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.ROUTER_ADMIN, this.accounts.admin.address)).to.be.not.reverted;
       await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;
-      await this.router.connect(this.accounts.admin).setRoutingTable(this.signature, this.sink.address, true);
+      await this.router.connect(this.accounts.admin).setRoutingTable(this.signature, this.sink.address, true, false);
     });
     
     // NOTE: skipped until the reintroduction of hooks on the Router
