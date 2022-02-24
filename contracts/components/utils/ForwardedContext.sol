@@ -5,8 +5,11 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
 abstract contract ForwardedContext is ContextUpgradeable {
+
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address private immutable _trustedForwarder;
+
+    uint256 private constant ADDRESS_SIZE_BYTES = 20;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address trustedForwarder) {
@@ -19,7 +22,7 @@ abstract contract ForwardedContext is ContextUpgradeable {
 
     function _msgSender() internal view virtual override returns (address sender) {
         if (isTrustedForwarder(msg.sender)) {
-            return address(bytes20(msg.data[msg.data.length - 20: msg.data.length]));
+            return address(bytes20(msg.data[msg.data.length - ADDRESS_SIZE_BYTES: msg.data.length]));
         } else {
             return super._msgSender();
         }
@@ -27,7 +30,7 @@ abstract contract ForwardedContext is ContextUpgradeable {
 
     function _msgData() internal view virtual override returns (bytes calldata) {
         if (isTrustedForwarder(msg.sender)) {
-            return msg.data[:msg.data.length - 20];
+            return msg.data[:msg.data.length - ADDRESS_SIZE_BYTES];
         } else {
             return super._msgData();
         }
