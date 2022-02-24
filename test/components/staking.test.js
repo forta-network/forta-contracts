@@ -4,8 +4,9 @@ const { prepare } = require('../fixture');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
 
 const LOCKED_OFFSET = ethers.BigNumber.from(2).pow(160);
+const SUBJECT_1_ADDRESS = '0x727E5FCcb9e2367555373e90E637500BCa5Da40c'
 const subjects = [
-  [ ethers.BigNumber.from(ethers.Wallet.createRandom().address), 0 ],// Scanner id, scanner type
+  [ ethers.BigNumber.from(SUBJECT_1_ADDRESS), 0 ],// Scanner id, scanner type
   [ ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), 1 ]// Agent id, agent type
 ]
 const [
@@ -13,9 +14,9 @@ const [
   [ subject2, subjectType2, active2, inactive2 ],
 ] = subjects.map(items => [items[0], items[1], subjectToActive(items[1], items[0]), subjectToInactive(items[1], items[0])])
 const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
-
+const MAX_STAKE = '10000'
 describe('Forta Staking', function () {
-  prepare();
+  prepare({ stake: { min: '1', max: MAX_STAKE}});
 
   beforeEach(async function () {
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
@@ -30,6 +31,8 @@ describe('Forta Staking', function () {
     await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
     await this.token.connect(this.accounts.user2).approve(this.staking.address, ethers.constants.MaxUint256);
     await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
+
+    await this.scanners.connect(this.accounts.manager).adminRegister(SUBJECT_1_ADDRESS, this.accounts.user1.address, 1, 'metadata')
   });
 
   describe('Deposit / Withdraw', function () {
@@ -40,6 +43,7 @@ describe('Forta Staking', function () {
         expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user1.address)).to.be.equal('0');
         expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('0');
         expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('0');
+
 
         await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100'))
         .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.staking.address, '100')
@@ -214,9 +218,36 @@ describe('Forta Staking', function () {
 
       });
 
+      it('stake over max does not transfer tokens', async function () {
+        expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.be.equal('0');
+        expect(await this.staking.totalActiveStake()).to.be.equal('0');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user1.address)).to.be.equal('0');
+        expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('0');
+        expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('0');
+
+
+        await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100'))
+        .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.staking.address, '100')
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, active1, '100')
+        .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType1, subject1, this.accounts.user1.address, '100');
+        const difference = ethers.BigNumber.from(MAX_STAKE).sub('100')
+        await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, MAX_STAKE))
+        .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.staking.address, difference)
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, active1, difference)
+        .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType1, subject1, this.accounts.user1.address, difference)
+        .to.emit(this.staking, 'MaxStakeReached').withArgs(subjectType1, subject1);
+
+        await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, MAX_STAKE))
+        .to.emit(this.token, 'Transfer').withArgs(this.accounts.user1.address, this.staking.address, '0')
+        .to.emit(this.staking, 'TransferSingle').withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, active1, '0')
+        .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType1, subject1, this.accounts.user1.address, '0')
+        .to.emit(this.staking, 'MaxStakeReached').withArgs(subjectType1, subject1);
+
+      });
+
       it('invalid subjectType', async function () {
         await expect(this.staking.connect(this.accounts.user1).deposit(9, subject1, '100'))
-        .to.be.revertedWith('FortaStaking: invalid subjectType');
+        .to.be.revertedWith('STV: invalid subjectType');
       });
     });
 
@@ -314,7 +345,7 @@ describe('Forta Staking', function () {
     it ('cannot reward to invalid subjectType', async function () {
 
       await expect(this.staking.connect(this.accounts.user1).reward(9, subject1, '10'))
-      .to.be.revertedWith('FortaStaking: invalid subjectType');
+      .to.be.revertedWith('STV: invalid subjectType');
     });
 
     it ('can reward to non zero subject', async function () {
@@ -465,7 +496,7 @@ describe('Forta Staking', function () {
 
       await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '100')).to.be.not.reverted;
       await expect(this.staking.connect(this.accounts.user1).withdraw(subjectType1, subject1))
-      .to.be.revertedWith('Subject unstaking is currently frozen');
+      .to.be.revertedWith('FS: stake frozen');
     });
 
     it('freeze → unfreeze → withdraw', async function () {
@@ -709,35 +740,4 @@ describe('Forta Staking', function () {
     });
   });
 
-  describe('Min Stake', function () {
-    it ('happy path', async function () {
-      expect(await this.staking.getMinStake(subjectType1)).to.equal(0);
-      await expect(this.staking.connect(this.accounts.admin).setMinStake(subjectType1, '1000'))
-      .to.emit(this.staking, 'MinStakeChanged').withArgs('1000','0');
-      expect(await this.staking.getMinStake(subjectType1)).to.equal('1000');
-      expect(await this.staking.connect(this.accounts.user1).isStakedOverMin(subjectType1, subject1)).to.equal(false);
-      await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '1000')).to.not.be.reverted;
-      expect(await this.staking.connect(this.accounts.user1).isStakedOverMin(subjectType1, subject1)).to.equal(true);
-
-    });
-
-    it ('changing general minimum stake reflects on previous staked values', async function () {
-      await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '1000')).to.not.be.reverted;
-      await expect(this.staking.connect(this.accounts.admin).setMinStake(subjectType1, '1001')).to.not.be.reverted;
-      expect(await this.staking.connect(this.accounts.user1).isStakedOverMin(subjectType1, subject1)).to.equal(false);
-      await expect(this.staking.connect(this.accounts.admin).setMinStake(subjectType1, '999'))
-      .to.emit(this.staking, 'MinStakeChanged').withArgs('999','1001');
-      expect(await this.staking.connect(this.accounts.user1).isStakedOverMin(subjectType1, subject1)).to.equal(true);
-
-    });
-
-    it ('cannot set min stake for invalid subject', async function () {
-      await expect(this.staking.connect(this.accounts.admin).setMinStake(33, '999'))
-      .to.be.revertedWith('FortaStaking: invalid subjectType');
-    });
-    it ('cannot set unauthorized', async function () {
-      await expect(this.staking.connect(this.accounts.user1).setMinStake(33, '999'))
-      .to.be.revertedWith(`MissingRole("${this.roles.DEFAULT_ADMIN}", "${this.accounts.user1.address}")`);
-    });
-  });
 });
