@@ -85,7 +85,7 @@ const printAgentRegistries = () => {
 }
 
 async function main() {
-    /*
+    
     console.log('AgentRegistry_0_1_1')
     const originalRows = storageLayoutToRows(storageAgentRegistry_0_1_1).map(x => x.row)
     console.log('---------------------------------')
@@ -98,7 +98,7 @@ async function main() {
     for (var i = 0; i < size; i++) {
         console.log(`${emptyRowIfUndefined(originalRows[i])} ${emptyRowIfUndefined(laterRows[i])}`)
     }
-    */
+    /*
     
     console.log('ScannerRegistry_0_1_0 ')
     const originalRows = storageLayoutToRows(storageScannerRegistry_0_1_0).map(x => x.row)
@@ -112,7 +112,7 @@ async function main() {
     for (var i = 0; i < size; i++) {
         console.log(`${emptyRowIfUndefined(originalRows[i])} ${emptyRowIfUndefined(laterRows[i])}`)
     }
-    
+    */
 }
 
 main()
