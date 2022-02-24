@@ -33,8 +33,7 @@ describe('Agent Registry', function () {
         await expect(this.agents.connect(this.accounts.manager).setFrontRunningDelay('1800'))
         .to.emit(this.agents, 'FrontRunningDelaySet').withArgs(ethers.BigNumber.from('1800'));
 
-        await expect(this.agents.prepareAgent(prepareCommit(...args)))
-        .to.emit(this.agents, 'AgentCommitted').withArgs(prepareCommit(...args));
+        await this.agents.prepareAgent(prepareCommit(...args));
 
         await expect(this.agents.createAgent(...args))
         .to.be.revertedWith('Commit not ready');
@@ -60,8 +59,9 @@ describe('Agent Registry', function () {
         await expect(this.agents.connect(this.accounts.manager).setFrontRunningDelay('100'))
         .to.emit(this.agents, 'FrontRunningDelaySet').withArgs(ethers.BigNumber.from('100'));
 
-        await expect(this.agents.prepareAgent(prepareCommit(...args)))
-        .to.emit(this.agents, 'AgentCommitted').withArgs(prepareCommit(...args));
+        const { blockNumber } = await this.agents.prepareAgent(prepareCommit(...args));
+        const { timestamp } = await ethers.provider.getBlock(blockNumber);
+        expect(await this.agents.getCommitTimestamp(prepareCommit(...args))).to.be.equal(timestamp)
 
         await network.provider.send('evm_increaseTime', [ 300 ]);
 
@@ -95,8 +95,9 @@ describe('Agent Registry', function () {
       it('unordered chainID', async function () {
         const args = [ AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1, 42, 3, 4, 5 ] ];
 
-        await expect(this.agents.prepareAgent(prepareCommit(...args)))
-        .to.emit(this.agents, 'AgentCommitted').withArgs(prepareCommit(...args));
+        const { blockNumber } = await this.agents.prepareAgent(prepareCommit(...args));
+        const { timestamp } = await ethers.provider.getBlock(blockNumber);
+        expect(await this.agents.getCommitTimestamp(prepareCommit(...args))).to.be.equal(timestamp)
 
         await network.provider.send('evm_increaseTime', [ 300 ]);
 
@@ -114,8 +115,9 @@ describe('Agent Registry', function () {
         expect(await this.agents.getAgentCountByChain(4)).to.be.equal('0');
         expect(await this.agents.getAgentCountByChain(5)).to.be.equal('0');
 
-        await expect(this.agents.prepareAgent(prepareCommit(...args)))
-        .to.emit(this.agents, 'AgentCommitted').withArgs(prepareCommit(...args));
+        const { blockNumber } = await this.agents.prepareAgent(prepareCommit(...args));
+        const { timestamp } = await ethers.provider.getBlock(blockNumber);
+        expect(await this.agents.getCommitTimestamp(prepareCommit(...args))).to.be.equal(timestamp)
 
         await network.provider.send('evm_increaseTime', [ 300 ]);
 

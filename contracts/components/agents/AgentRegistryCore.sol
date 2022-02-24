@@ -14,7 +14,6 @@ abstract contract AgentRegistryCore is
     // Initially 0 because the frontrunning protection starts disabled.
     uint256 public frontRunningDelay; // __gap[45] -> __gap[44]
 
-    event AgentCommitted(bytes32 indexed commit);
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
     event FrontRunningDelaySet(uint256 delay);
 
@@ -33,7 +32,6 @@ abstract contract AgentRegistryCore is
 
     function prepareAgent(bytes32 commit) public {
         _frontrunCommit(commit);
-        emit AgentCommitted(commit);
     }
 
     function createAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds)
