@@ -7,7 +7,7 @@ library FortaStakingUtils {
      * setting bit 9 (to mark as active) and masking subjectType in
      */
     function subjectToActive(uint8 subjectType, uint256 subject) internal pure returns (uint256) {
-        return (uint256(keccak256(abi.encodePacked(subjectType, subject))) << 9 | uint16(256)) | subjectType;
+        return (uint256(keccak256(abi.encodePacked(subjectType, subject))) << 9 | uint16(256)) | uint256(subjectType);
     }
 
     /**
@@ -15,7 +15,7 @@ library FortaStakingUtils {
      * letting bit 9 unset (to mark as inactive) and masking subjectType in
      */
     function subjectToInactive(uint8 subjectType, uint256 subject) internal pure returns (uint256) {
-        return (uint256(keccak256(abi.encodePacked(subjectType, subject))) << 9) | subjectType;
+        return (uint256(keccak256(abi.encodePacked(subjectType, subject))) << 9) | uint256(subjectType);
     }
 
     /**
