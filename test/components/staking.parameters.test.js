@@ -78,7 +78,7 @@ describe('Forta Staking Parameters', function () {
         });
 
         it ('cannot stake without max cap set', async function () {
-            const subjectInUnititializedChain = ethers.Wallet.createRandom().address
+            const subjectInUnititializedChain = '0xC1d2871D19fa888871ed30250598cAde38894Ea3';
             await this.scanners.connect(this.accounts.manager).adminRegister(ethers.utils.hexValue(subjectInUnititializedChain), this.accounts.user1.address, 3, 'metadata')
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subjectInUnititializedChain, '101'))
             .to.be.revertedWith("FS: max stake 0 or not found")

@@ -49,7 +49,7 @@ contract VestingWalletV2 is VestingWalletV1 {
      * Bridge token to L2
      *
      * In case the beneficiary is a smart contract, bridging that way might be dangerous. In such cases,
-     * {bridge(uint256,address)} should be prefered.
+     * {bridge(uint256,address)} should be preferred.
      */
     function bridge(uint256 amount)
         public
@@ -64,7 +64,7 @@ contract VestingWalletV2 is VestingWalletV1 {
      *
      * Using a custom escrow manager is needed if the beneficiary isn't valid on the child chain, for example if it
      * is a smart wallet that doesn't exist at the same address on the child chain. If the beneficiary of the contract
-     * is a smart wallet valid on both chain, it must be explicitelly mentioned as the manager.
+     * is a smart wallet valid on both chain, it must be explicitly mentioned as the manager.
      */
     function bridge(uint256 amount, address l2Manager)
         public

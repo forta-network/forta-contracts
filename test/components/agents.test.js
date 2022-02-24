@@ -236,7 +236,7 @@ describe('Agent Registry', function () {
     });
 
     describe('hybrid', async function () {
-      it('owner cannot reenable after admin disable', async function () {
+      it('owner cannot re-enable after admin disable', async function () {
         await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0))
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
 
@@ -246,7 +246,7 @@ describe('Agent Registry', function () {
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
       });
 
-      it('admin cannot reenable after owner disable', async function () {
+      it('admin cannot re-enable after owner disable', async function () {
         await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1))
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
 

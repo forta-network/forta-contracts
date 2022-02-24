@@ -23,11 +23,11 @@ library FullMath {
     function mulDiv(uint256 numerator, uint256 denominator, uint256 target) internal pure returns (uint256 partialAmount) {
         // 512-bit multiply [prod1 prod0] = target * numerator
         // Compute the product mod 2**256 and mod 2**256 - 1
-        // then use the Chinese Remiander Theorem to reconstruct
+        // then use the Chinese Remainder Theorem to reconstruct
         // the 512 bit result. The result is stored in two 256
         // variables such that product = prod1 * 2**256 + prod0
         uint256 prod0; // Least significant 256 bits of the product
-        uint256 prod1; // Most siginificant 256 bits of the product
+        uint256 prod1; // Most significant 256 bits of the product
         assembly {
             let mm := mulmod(target, numerator, not(0))
             prod0 := mul(target, numerator)
@@ -83,7 +83,7 @@ library FullMath {
             // It works by observing that in twos-complement negation, all
             // bits change from most significant up to (but not including) the
             // least significant set bit change. If we 'and' the original value
-            // withthe negated value only the least significant set bit remains.
+            // with the negated value only the least significant set bit remains.
             let twos := and(sub(0, denominator), denominator)
 
             // Factor powers of two out of denominator
@@ -118,19 +118,19 @@ library FullMath {
             //    3 * denominator^2 =  denominator^(-1)   mod 2^4
             //    3 * denominator^3 = 1    mod 2^4
             let inv := mul(3, mul(denominator, denominator))
-            // Now use Newton-Raphson itteration to improve the precision.
+            // Now use Newton-Raphson iteration to improve the precision.
             // We want to find the root of the equation:
             //
             //         f(x) = x - 1 / d   (where d = denominator)
             //
-            // Newton-Rhapson itteration then is
+            // Newton-Rhapson iteration then is
             //
             //               f(x)            d - 1 / x
             //    x' = x -  -------   = x - ----------- = x * (2 - d * x)
             //               f'(x)            1 / x^2
             //
             // Thanks to Hensel's lifting lemma, this also works in modular
-            // arithmetic. Each itteration will double the number of correct
+            // arithmetic. Each iteration will double the number of correct
             // bits. Counter-intuitively, this works from least significant bits
             // upwards.
             inv := mul(inv, sub(2, mul(denominator, inv))) // inverse mod 2^8

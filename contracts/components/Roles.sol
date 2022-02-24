@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 // These are the roles used in the components of the Forta system, except
-// Forta token itself, that needs to define it's own roles for consistency accross chains
+// Forta token itself, that needs to define it's own roles for consistency across chains
 
 bytes32 constant DEFAULT_ADMIN_ROLE = bytes32(0);
 
@@ -19,6 +19,5 @@ bytes32 constant DISPATCHER_ROLE    = keccak256("DISPATCHER_ROLE");
 bytes32 constant SLASHER_ROLE       = keccak256("SLASHER_ROLE");
 bytes32 constant SWEEPER_ROLE       = keccak256("SWEEPER_ROLE");
 bytes32 constant REWARDS_ADMIN      = keccak256("REWARDS_ADMIN_ROLE");
-
-// Scanner Node Vesion
+// Scanner Node Version
 bytes32 constant SCANNER_VERSION_ROLE = keccak256("SCANNER_VERSION_ROLE");

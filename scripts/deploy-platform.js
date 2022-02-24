@@ -231,7 +231,7 @@ async function migrate(config = {}) {
 
     DEBUG(`[9] scanner node version: ${contracts.scannerNodeVersion.address}`);
 
-    // Roles dictionnary
+    // Roles dictionary
     const roles = await Promise.all(Object.entries({
         DEFAULT_ADMIN:        ethers.constants.HashZero,
         ADMIN:                ethers.utils.id('ADMIN_ROLE'),
