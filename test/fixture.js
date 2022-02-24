@@ -1,6 +1,7 @@
 const { ethers, upgrades } = require('hardhat');
 const migrate = require('../scripts/deploy-platform');
 const utils   = require('../scripts/utils');
+const DEBUG   = require('debug')('forta:migration');
 
 function prepare(config = {}) {
   before(async function() {
@@ -27,10 +28,12 @@ function prepare(config = {}) {
         deployer:               this.accounts.admin,
         childChainManagerProxy: config.childChain && this.accounts.admin.address
     })).then(env => Object.assign(this, env));
+    DEBUG("Fixture: migrated");
 
     // mock contracts
     this.contracts.sink       = await utils.deploy('Sink');
     this.contracts.otherToken = await utils.deployUpgradeable('Forta', 'uups', [ this.deployer.address ]);
+    DEBUG("Fixture: mock contracts");
 
     // Set admin as default signer for all contracts
     Object.assign(this, this.contracts);
@@ -52,6 +55,7 @@ function prepare(config = {}) {
 
     ].map(txPromise => txPromise.then(tx => tx.wait()).catch(() => {})));
 
+    DEBUG("Fixture: setup roles");
     await Promise.all([
       this.token     .connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address  ),
       this.token     .connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address   ),
@@ -61,23 +65,25 @@ function prepare(config = {}) {
       this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address             ),
     ].map(txPromise => txPromise.then(tx => tx.wait()).catch(() => {})));
 
-    // Upgrades
-    // Agents v0.1.2
-    await this.agents.connect(this.accounts.admin).setStakeController(this.contracts.staking.address)
-    // Scanners v0.1.1
-    await this.scanners.connect(this.accounts.admin).setStakeController(this.contracts.staking.address)
+    DEBUG("Fixture: setup whitelist");
 
     // Prep for tests that need minimum stake
-    if (config.minStake) {
+    if (config.stake) {
+
       await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
-      await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('1000'));
+      if (!config.childChain) {
+        //Bridged FORT does not have mint()
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));
+      }
       this.accounts.staker = this.accounts.user1
       await this.token.connect(this.accounts.staker).approve(this.staking.address, ethers.constants.MaxUint256);
       this.stakingSubjects = {};
       this.stakingSubjects.SCANNER_SUBJECT_TYPE = 0;
       this.stakingSubjects.AGENT_SUBJECT_TYPE = 1;
-      await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, config.minStake);
-      await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.AGENT_SUBJECT_TYPE, config.minStake);
+      await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min });
+      await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min }, 1);
+
+      DEBUG("Fixture: stake configured");
     }
 
     __SNAPSHOT_ID__ = await ethers.provider.send('evm_snapshot');
