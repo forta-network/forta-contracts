@@ -18,6 +18,7 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
     mapping(bytes4 => EnumerableSet.AddressSet) private _routingTable;
 
     string public constant version = "0.1.0";
+    uint256 private constant SIGNATURE_SIZE = 4;
     
     event RoutingUpdated(bytes4 indexed sig, address indexed target, bool enable);
 
@@ -30,7 +31,7 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
     }
 
     function hookHandler(bytes calldata payload) external override {
-        bytes4 sig = bytes4(payload[:4]);
+        bytes4 sig = bytes4(payload[:SIGNATURE_SIZE]);
         uint256 length = _routingTable[sig].length();
         for (uint256 i = 0; i < length; ++i) {
             // Lazy, don't worry about calls failing here
