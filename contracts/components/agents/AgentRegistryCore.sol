@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
@@ -11,8 +11,11 @@ abstract contract AgentRegistryCore is
     FrontRunningProtection,
     ERC721Upgradeable
 {
-    event AgentCommitted(bytes32 indexed commit);
+    // Initially 0 because the frontrunning protection starts disabled.
+    uint256 public frontRunningDelay; // __gap[45] -> __gap[44]
+
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
+    event FrontRunningDelaySet(uint256 delay);
 
     modifier onlyOwnerOf(uint256 agentId) {
         require(_msgSender() == ownerOf(agentId), "AgentRegistryCore: Restricted to agent owner");
@@ -29,13 +32,12 @@ abstract contract AgentRegistryCore is
 
     function prepareAgent(bytes32 commit) public {
         _frontrunCommit(commit);
-        emit AgentCommitted(commit);
     }
 
     function createAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds)
     public
         onlySorted(chainIds)
-        frontrunProtected(keccak256(abi.encodePacked(agentId, owner, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
+        frontrunProtected(keccak256(abi.encodePacked(agentId, owner, metadata, chainIds)), frontRunningDelay)
     {
         _mint(owner, agentId);
         _beforeAgentUpdate(agentId, metadata, chainIds);
@@ -51,11 +53,19 @@ abstract contract AgentRegistryCore is
     public
         onlyOwnerOf(agentId)
         onlySorted(chainIds)
-        frontrunProtected(keccak256(abi.encodePacked(agentId, metadata, chainIds)), 0 minutes) // TODO: 0 disables the check
     {
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);
         _afterAgentUpdate(agentId, metadata, chainIds);
+    }
+
+    /**
+     * @dev allows AGENT_ADMIN_ROLE to activate frontrunning protection for agents
+     * @param delay in seconds
+     */
+    function setFrontRunningDelay(uint256 delay) external onlyRole(AGENT_ADMIN_ROLE) {
+        frontRunningDelay = delay;
+        emit FrontRunningDelaySet(delay);
     }
 
     /**
@@ -69,7 +79,7 @@ abstract contract AgentRegistryCore is
     }
 
     function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256)", agentId));
+        _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256,string,uint256[])", agentId, newMetadata, newChainIds));
     }
 
     function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (address sender) {
@@ -80,5 +90,5 @@ abstract contract AgentRegistryCore is
         return super._msgData();
     }
 
-    uint256[45] private __gap;
+    uint256[44] private __gap;
 }

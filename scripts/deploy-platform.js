@@ -1,6 +1,8 @@
 const { ethers, upgrades, network } = require('hardhat');
 const DEBUG                = require('debug')('forta:migration');
 const utils                = require('./utils');
+const SCANNER_SUBJECT = 0;
+const AGENT_SUBJECT = 1;
 
 upgrades.silenceWarnings();
 
@@ -134,7 +136,6 @@ async function migrate(config = {}) {
 
     DEBUG(`[4] router: ${contracts.router.address}`);
 
-
     contracts.staking = await ethers.getContractFactory('FortaStaking', deployer).then(factory => utils.tryFetchProxy(
       CACHE,
       'staking',
@@ -144,7 +145,22 @@ async function migrate(config = {}) {
       { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: ['delegatecall']},
     ));
 
-    DEBUG(`[5] staking: ${contracts.staking.address}`);
+    DEBUG(`[5.0] staking: ${contracts.staking.address}`);
+
+    contracts.stakingParameters = await ethers.getContractFactory('FortaStakingParameters', deployer).then(factory => utils.tryFetchProxy(
+        CACHE,
+        'staking-parameters',
+        factory,
+        'uups',
+        [ contracts.access.address, contracts.router.address, contracts.staking.address],
+        { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: ['delegatecall']},
+      ));
+  
+    DEBUG(`[5.1] staking parameters: ${contracts.stakingParameters.address}`);
+
+    await contracts.stakingParameters.connect(deployer).setFortaStaking(contracts.staking.address)
+    await contracts.staking.connect(deployer).setStakingParametersManager(contracts.stakingParameters.address)
+    DEBUG(`[5.2] connected staking params and staking`);
 
     if (config.l2enable) {
         contracts.escrowFactory = await ethers.getContractFactory('StakingEscrowFactory', deployer).then(factory => utils.tryFetchContract(
@@ -154,7 +170,7 @@ async function migrate(config = {}) {
             [ contracts.forwarder.address, contracts.staking.address ],
         ));
 
-        DEBUG(`[5.2] escrow factory: ${contracts.escrowFactory.address}`);
+        DEBUG(`[5.3] escrow factory: ${contracts.escrowFactory.address}`);
     }
 
     contracts.agents = await ethers.getContractFactory('AgentRegistry', deployer).then(factory => utils.tryFetchProxy(
@@ -168,6 +184,14 @@ async function migrate(config = {}) {
 
     DEBUG(`[6] agents: ${contracts.agents.address}`);
 
+    // Upgrades
+    // Agents v0.1.2
+    await contracts.agents.connect(deployer).setStakeController(contracts.stakingParameters.address)
+    await contracts.stakingParameters.connect(deployer).setStakeSubjectHandler(AGENT_SUBJECT, contracts.agents.address)
+
+    DEBUG(`[6.1] staking for agents configured`);
+
+
     contracts.scanners = await ethers.getContractFactory('ScannerRegistry', deployer).then(factory => utils.tryFetchProxy(
         CACHE,
         'scanners',
@@ -178,6 +202,12 @@ async function migrate(config = {}) {
     ));
 
     DEBUG(`[7] scanners: ${contracts.scanners.address}`);
+
+    // Scanners v0.1.1
+    await contracts.scanners.connect(deployer).setStakeController(contracts.stakingParameters.address)
+    await contracts.stakingParameters.connect(deployer).setStakeSubjectHandler(SCANNER_SUBJECT, contracts.scanners.address)
+
+    DEBUG(`[7.1] staking for scanners configured`);
 
     contracts.dispatch = await ethers.getContractFactory('Dispatch', deployer).then(factory => utils.tryFetchProxy(
         CACHE,
@@ -216,7 +246,7 @@ async function migrate(config = {}) {
         DISPATCHER:           ethers.utils.id('DISPATCHER_ROLE'),
         SLASHER:              ethers.utils.id('SLASHER_ROLE'),
         SWEEPER:              ethers.utils.id('SWEEPER_ROLE'),
-        REWARDS_ADMIN:        ethers.utils.id('REWARDS_ADMIN_ROLE'), 
+        REWARDS_ADMIN:        ethers.utils.id('REWARDS_ADMIN_ROLE'),
         SCANNER_VERSION:      ethers.utils.id('SCANNER_VERSION_ROLE'),
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
@@ -270,6 +300,7 @@ async function migrate(config = {}) {
             registerNode(          'forwarder.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.forwarder.address }),
             registerNode(             'router.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.router.address    }),
             registerNode(            'staking.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.staking.address   }),
+            registerNode(     'staking-params.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.stakingParameters.address   }),
             registerNode(  'agents.registries.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.agents.address    }),
             registerNode('scanners.registries.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.scanners.address  }),
             registerNode('scanner-node-version.forta.eth', deployer.address,              { ...contracts.ens, resolved: contracts.scannerNodeVersion.address  }),
@@ -286,13 +317,14 @@ async function migrate(config = {}) {
     }
 
     await Promise.all([
-        reverseRegister(contracts.token,                        'forta.eth'),
-        reverseRegister(contracts.access,                'access.forta.eth'),
-        reverseRegister(contracts.router,                'router.forta.eth'),
-        reverseRegister(contracts.dispatch,            'dispatch.forta.eth'),
-        reverseRegister(contracts.staking,              'staking.forta.eth'),
-        reverseRegister(contracts.agents,     'agents.registries.forta.eth'),
-        reverseRegister(contracts.scanners, 'scanners.registries.forta.eth'),
+        reverseRegister(contracts.token,                            'forta.eth'),
+        reverseRegister(contracts.access,                    'access.forta.eth'),
+        reverseRegister(contracts.router,                    'router.forta.eth'),
+        reverseRegister(contracts.dispatch,                'dispatch.forta.eth'),
+        reverseRegister(contracts.staking,                  'staking.forta.eth'),
+        reverseRegister(contracts.stakingParameters, 'staking-params.forta.eth'),
+        reverseRegister(contracts.agents,         'agents.registries.forta.eth'),
+        reverseRegister(contracts.scanners,     'scanners.registries.forta.eth'),
         reverseRegister(contracts.scannerNodeVersion, 'scanner-node-version.forta.eth'),
         // contract.escrow doesn't support reverse registration (not a component)
     ]);

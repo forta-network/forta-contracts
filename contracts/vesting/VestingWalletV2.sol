@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./escrow/StakingEscrowUtils.sol";
 import "./IRootChainManager.sol";
-import "./VestingWallet.sol";
+import "./VestingWalletV1.sol";
 
 /**
  * This contract exists on the root chain, where it manages vesting token allocations.
@@ -14,7 +14,7 @@ import "./VestingWallet.sol";
  * cross-chain operations. Proxies (UUPS) can then use this as their implementation and
  * will automatically uses these parameters (hardcoded in the implementation).
  */
-contract VestingWalletV2 is VestingWallet {
+contract VestingWalletV2 is VestingWalletV1 {
     using SafeCast for int256;
     using SafeCast for uint256;
 
@@ -116,7 +116,7 @@ contract VestingWalletV2 is VestingWallet {
     /**
      * Admin operations
      */
-    function setHistoricalBalanceBridged(uint256 value)
+    function setHistoricalBalanceMin(uint256 value)
         public
         onlyOwner()
     {
@@ -124,10 +124,12 @@ contract VestingWalletV2 is VestingWallet {
         historicalBalanceMin = value;
     }
 
-    function updateHistoricalBalanceBridged(int256 update)
+    function updateHistoricalBalanceMin(int256 update)
         public
         onlyOwner()
     {
-        setHistoricalBalanceBridged((historicalBalanceMin.toInt256() + update).toUint256());
+        setHistoricalBalanceMin((historicalBalanceMin.toInt256() + update).toUint256());
     }
+
+    uint256[45] private __gap;
 }
