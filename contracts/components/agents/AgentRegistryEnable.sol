@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "./AgentRegistryCore.sol";
@@ -79,7 +79,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     }
 
     function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256)", agentId));
+        _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256,uint8,bool)", agentId, uint8(permission), value));
     }
 
     /**

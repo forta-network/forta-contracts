@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
@@ -37,7 +37,6 @@ abstract contract AgentRegistryCore is
 
     function prepareAgent(bytes32 commit) public {
         _frontrunCommit(commit);
-        emit AgentCommitted(commit);
     }
 
     function createAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds)
@@ -114,7 +113,7 @@ abstract contract AgentRegistryCore is
     }
 
     function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256)", agentId));
+        _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256,string,uint256[])", agentId, newMetadata, newChainIds));
     }
 
     function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (address sender) {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 library StakingEscrowUtils {
     function computeSalt(address vesting, address manager) internal pure returns (bytes32) {

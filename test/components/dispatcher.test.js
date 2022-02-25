@@ -110,7 +110,7 @@ describe('Dispatcher', function () {
       }
 
       await Promise.all([
-        this.dispatch.agentsFor(this.SCANNER_ID),
+        this.dispatch.numAgentsFor(this.SCANNER_ID),
         this.dispatch.estimateGas.scannerHash(this.SCANNER_ID),
       ]).then(([ count, cost ]) => console.log(`scannerHash gas cost with ${count.toString()} agents: ${cost.toString()}`));
     }

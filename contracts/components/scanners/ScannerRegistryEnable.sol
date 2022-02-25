@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./ScannerRegistryManaged.sol";
 
+/**
+* @dev ScannerRegistry methods and state handling disabling and enabling scanners, and
+* recognizing stake changes that might disable a scanner.
+* NOTE: This contract was deployed before StakeAwareUpgradeable was created, so __StakeAwareUpgradeable_init
+* is not called.
+*/
 abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
     using BitMaps for BitMaps.BitMap;
 
@@ -81,7 +87,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
     }
 
     function _afterScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256)", scannerId));
+        _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256,uint8,bool)", scannerId, uint8(permission), value));
     }
 
 

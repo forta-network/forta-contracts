@@ -6,7 +6,7 @@ const { subjectToActive, subjectToInactive } = require('../../../scripts/utils/s
 
 const LOCKED_OFFSET = ethers.BigNumber.from(2).pow(160);
 const subjects = [
-  [ ethers.BigNumber.from(ethers.Wallet.createRandom().address), 0 ],// Scanner id, scanner type
+  [ ethers.BigNumber.from('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), 0 ],// Scanner id, scanner type
 ]
 const [
   [ subject, subjectType, active, inactive ],

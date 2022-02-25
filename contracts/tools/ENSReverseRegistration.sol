@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import { ENS } from "@ensdomains/ens-contracts/contracts/registry/ENS.sol";
 
