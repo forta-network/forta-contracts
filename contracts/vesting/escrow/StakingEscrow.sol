@@ -32,7 +32,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
 
     error DontBridgeOrStakeRewards();
     
-    /// Checks if _msgSnder() is l2 manager, reverts if not.
+    /// Checks if _msgSender() is l2 manager, reverts if not.
     modifier onlyManager() {
         if (_msgSender() != l2manager) revert DoesNotHaveAccess(_msgSender(), "l2Manager");
         _;
@@ -185,7 +185,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * @param amount of tokens to bridge.
      */
     function bridge(uint256 amount) public onlyManager() vestingBalance(amount) {
-        if (amount == 0) revert ZeroAmount("");
+        if (amount == 0) revert ZeroAmount("amount");
         l2token.withdrawTo(amount, l1vesting);
     }
 
