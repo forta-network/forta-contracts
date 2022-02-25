@@ -41,3 +41,15 @@ The process to develop, test and deploy new implementations are as follow:
 6. Visualize and assert that the sum of the storage reserved is the same before and after, and that the new gaps are adjusted correctly. If the test in 4.5 passes this is probably correct, if that test fails, something will not add up.
 7. Write a script to deploy the upgrade and execute the initializing methods needed.
 8. Add a flattened version of the deployed implementation to `components/_old/<component_folder>/<ComponentName>_X_Y_Z`.
+
+
+## Exporting ABIs for software that does not support custom errors.
+
+Forta contracts use [Solidity's Custom Errors](https://blog.soliditylang.org/2021/04/21/custom-errors/) instead of `require(<test>, '<Error String>')`.
+
+Some other parts of the system do not support this feature in ABIs yet. To generate compatible ABIs:
+
+1. Compile contracts
+2. `npx hardhat run scripts/abisWithoutCustomErrors.js`
+3. Check `.abis-no-errors` folder.
+

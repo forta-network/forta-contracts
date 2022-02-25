@@ -10,3 +10,4 @@ deploy.*.json
 scripts/.cache-31337.json
 .openzeppelin/unknown-31337.json
 .env
+.abis-no-errors
