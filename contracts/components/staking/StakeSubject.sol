@@ -18,19 +18,23 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
     /*
     * @dev: For contracts made StakeAwareUpgradeable via upgrade, initializer call is not available.
     * Use setStakeController(stakeController) when upgrading instead.
+    * @param stakeController address.
     */
     function __StakeAwareUpgradeable_init(address stakeController) internal initializer {
         _setStakeController(stakeController);
     }
 
+    /// Stake controller setter, restricted to DEFAULT_ADMIN_ROLE
     function setStakeController(address stakeController) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setStakeController(stakeController);
     }
 
+    /// Getter for stakeController
     function getStakeController() public view returns(IStakeController) {
         return _stakeController;
     }
 
+    /// Internal setter for StakeController, emits StakeControllerUpdated
     function _setStakeController(address stakeController) private {
         if (stakeController == address(0)) revert ZeroAddress("stakeController");
         _stakeController = IStakeController(stakeController);

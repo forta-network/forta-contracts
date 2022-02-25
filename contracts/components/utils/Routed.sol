@@ -22,7 +22,8 @@ abstract contract RoutedUpgradeable is AccessManagedUpgradeable {
 
     /**
      * @dev Routed contracts can use this method to notify the subscribed observers registered
-     * in Router routing table.
+     * in Router routing table. Hooks may revert on failure or not, as set when calling
+     * Router.setRoutingTable(bytes4 sig, address target, bool enable, bool revertsOnFail)
      * @param data keccak256 of the method signature and param values the listener contracts.
      * will execute.
      */

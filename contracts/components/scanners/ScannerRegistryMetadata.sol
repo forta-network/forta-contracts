@@ -24,6 +24,11 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
         );
     }
     
+    /**
+     * @dev checks the StakeThreshold for the chainId the scanner with id `subject` was registered to monitor.
+     * @param subject ERC1155 token id of the scanner.
+     * @return StakeThreshold registered for `chainId`, or StakeThreshold(0,0,false) if `chainId` not found.
+     */
     function _getStakeThreshold(uint256 subject) override virtual internal view returns(StakeThreshold memory) {
         (uint256 chainId, ) = getScanner(subject);
         return _stakeThresholds[chainId];

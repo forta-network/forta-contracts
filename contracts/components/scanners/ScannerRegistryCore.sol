@@ -100,14 +100,26 @@ abstract contract ScannerRegistryCore is
         return uint256(uint160(scanner));
     }
 
+    /**
+     * @notice Sets stake parameters (min, max, activated) for a `chainId`. Restricted to SCANNER_ADMIN_ROLE
+     * @param newStakeThreshold struct with stake parameters.
+     * @param chainId chain the parameters will affect.
+     */
     function setStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(SCANNER_ADMIN_ROLE) {
         if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
         emit StakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
         _stakeThresholds[chainId] = newStakeThreshold;
     }
 
+    /**
+     * @dev internal getter for _getStakeThreshold, inheriting contracts may define logic to associate
+     * a scanner with a StakeThreshold
+     */
     function _getStakeThreshold(uint256 subject) internal virtual view returns(StakeThreshold memory);
 
+    /**
+     * 
+     */
     function getStakeThreshold(uint256 subject) external view returns(StakeThreshold memory) {
         return _getStakeThreshold(subject);
     }

@@ -52,6 +52,10 @@ contract ScannerRegistry is
         super._scannerUpdate(scannerId, chainId, metadata);
     }
 
+    /**
+     * @dev inheritance disambiguation for _getStakeThreshold
+     * see ScannerRegistryMetadata
+     */
     function _getStakeThreshold(uint256 subject) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) view returns(StakeThreshold memory) {
         return super._getStakeThreshold(subject);
     }
