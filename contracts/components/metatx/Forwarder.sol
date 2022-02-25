@@ -1,38 +1,8 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity ^0.8.0;
-
-import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-
-abstract contract EIP712WithNonce is EIP712 {
-    event NonceUsed(address indexed user, uint256 indexed timeline, uint256 nonce);
-
-    mapping(address => mapping(uint256 => uint256)) private _nonces;
-
-    function DOMAIN_SEPARATOR() external view returns (bytes32) {
-        return _domainSeparatorV4();
-    }
-
-    function getNonce(address from) public view virtual returns (uint256) {
-        return _nonces[from][0];
-    }
-
-    function getNonce(address from, uint256 timeline) public view virtual returns (uint256) {
-        return _nonces[from][timeline];
-    }
-
-    function _verifyAndConsumeNonce(address user, uint256 fullNonce) internal virtual {
-        uint256 timeline = fullNonce >> 128;
-        uint256 nonce    = uint128(fullNonce);
-        uint256 expected = _nonces[user][timeline]++;
-
-        require(nonce == expected, "EIP712WithNonce: invalid-nonce");
-
-        emit NonceUsed(user, timeline, nonce);
-    }
-}
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
+import "./EIP712WithNonce.sol";
 
 contract Forwarder is EIP712WithNonce {
     struct ForwardRequest {
@@ -51,19 +21,22 @@ contract Forwarder is EIP712WithNonce {
     constructor() EIP712("Forwarder", "1") {}
 
     /**
-     * Executes a ForwardRequest (meta-tx) if signature is verified, deadline is met and nonce is valid
-     * NOTE: This implementations allows for out of order execution, by allowing several "timelines" per nonce
+     * @notice Executes a ForwardRequest (meta-tx) if signature is verified, deadline is met and nonce is valid
+     * @dev This implementations allows for out of order execution, by allowing several "timelines" per nonce
      * by splitting the uint256 type space into 128 bit subspaces where each subspace is interpreted as maintaining
      * an ordered timeline. The intent of the design is to allow multiple nonces to be valid at any given time.
      * For a detailed explanation: https://github.com/amxx/permit#out-of-order-execution
      * For an example on how to leverage this functionality, see tests/forwarder/forwarder.test.js
      * Will emit NonceUsed(user, timeline, nonce) for better reporting / UX 
+     * WARNING: failed transactions do not consume a nonce, unlinke regular ethereum transactions. Please make use
+     * of the deadline functionality, and if you want to cancel a request, submit a successful transaction with the same
+     * nonce. 
      * @param req  ForwardRequest to be executed
      * @param signature EIP-712 signature of the ForwardRequest
      * @return (success, returnData) of the executed request 
      */
     function execute(ForwardRequest calldata req, bytes calldata signature)
-        public
+        external
         payable
         returns (bool, bytes memory)
     {
