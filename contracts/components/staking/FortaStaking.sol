@@ -15,6 +15,7 @@ import "./IStakeController.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
+import "../../errors/GeneralErrors.sol";
 
 interface IRewardReceiver {
     function onRewardReceived(uint8 subjectType, uint256 subject, uint256 amount) external;
@@ -98,7 +99,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     error SlashingOver90Percent();
     error WithdrawalSharesNotTransferible();
     error FrozenSubject();
+    error NoActiveShares();
     error NoInactiveShares();
+    error StakeInactiveOrSubjectNotFound();
 
     string public constant version = "0.1.0";
 
@@ -112,7 +115,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint64 __withdrawalDelay,
         address __treasury
     ) public initializer {
-        require(__treasury != address(0), "FS: address 0");
+        if (__treasury == address(0)) revert ZeroAddress("__treasury");
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
@@ -220,8 +223,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         onlyValidSubjectType(subjectType)
         returns (uint256)
     {
-        require(address(_stakingParameters) != address(0), "FS: staking params unset");
-        require(_stakingParameters.isStakeActivatedFor(subjectType, subject), "FS: max stake 0 or not found");
+        if (address(_stakingParameters) == address(0)) revert ZeroAddress("_stakingParameters");
+        if (!_stakingParameters.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         bool reachedMax;
@@ -277,7 +280,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     {
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
-        require(balanceOf(staker, activeSharesId) != 0, "FS: no active shares");
+        if (balanceOf(staker, activeSharesId) == 0) revert NoActiveShares();
         uint64 deadline = SafeCast.toUint64(block.timestamp) + _withdrawalDelay;
 
         _lockingDelay[activeSharesId][staker].setDeadline(deadline);
@@ -564,14 +567,14 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     // Admin: change recipient of slashed funds
     function setTreasury(address newTreasury) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(newTreasury != address(0), "FS: address 0");
+        if (newTreasury == address(0)) revert ZeroAddress("newTreasury");
         _treasury = newTreasury;
         emit TreasurySet(newTreasury);
     }
 
     // Admin: change staking parameters manager
     function setStakingParametersManager(IStakeController newStakingParameters) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(address(newStakingParameters) != address(0), "FS: address 0");
+        if (address(newStakingParameters) == address(0)) revert ZeroAddress("newStakingParameters");
         emit StakeParamsManagerSet(address(newStakingParameters));
         _stakingParameters = newStakingParameters;
     }

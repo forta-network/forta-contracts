@@ -5,6 +5,7 @@ import "./IStakeController.sol";
 import "../BaseComponentUpgradeable.sol";
 import "./SubjectTypes.sol";
 import "./FortaStaking.sol";
+import "../../errors/GeneralErrors.sol";
 
 contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidator, IStakeController {
 
@@ -35,7 +36,7 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
     }
 
     function _setFortaStaking(address newFortaStaking) internal {
-        require(newFortaStaking!= address(0), "FSP: address 0");
+        if (newFortaStaking== address(0)) revert ZeroAddress("newFortaStaking");
         _fortaStaking = FortaStaking(newFortaStaking);
         emit FortaStakingChanged(address(_fortaStaking));
     }
@@ -48,7 +49,7 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
         onlyRole(DEFAULT_ADMIN_ROLE)
         onlyValidSubjectType(subjectType)
     {
-        require(address(subjectHandler) != address(0), "FSP: address 0");
+        if (address(subjectHandler) == address(0)) revert ZeroAddress("subjectHandler");
         emit StakeSubjectHandlerChanged(address(subjectHandler), address(_stakeSubjectHandlers[subjectType]));
         _stakeSubjectHandlers[subjectType] = subjectHandler;
     }

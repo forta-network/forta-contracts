@@ -70,7 +70,7 @@ abstract contract AgentRegistryCore is
     * Stake
     */
     function setStakeThreshold(StakeThreshold memory newStakeThreshold) external onlyRole(AGENT_ADMIN_ROLE) {
-        require(newStakeThreshold.max > newStakeThreshold.min, "AgentRegistryEnable: StakeThreshold max <= min");
+        if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
         _stakeThreshold = newStakeThreshold;
         emit StakeThresholdChanged(newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
     }

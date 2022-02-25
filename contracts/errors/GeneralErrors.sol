@@ -10,7 +10,5 @@ error UnsupportedInterface(string name);
 error SenderNotOwner(address sender, uint256 ownedId);
 error DoesNotHaveAccess(address sender, string access);
 
-error StakedUnderMinimum(uint256 subject);
-
 // Permission here refers to XXXRegistry.sol Permission enums
 error DoesNotHavePermission(address sender, uint8 permission, uint256 id);

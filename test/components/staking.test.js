@@ -252,7 +252,7 @@ describe('Forta Staking', function () {
 
       it('cannot initiate withdraw with no active shares', async function () {
         await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(1, subject1, '100'))
-        .to.be.revertedWith('FS: no active shares');
+        .to.be.revertedWith('NoActiveShares()');
       });
 
       it('cannot withdraw with no inactive shares', async function () {

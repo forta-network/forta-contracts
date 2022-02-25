@@ -63,7 +63,7 @@ abstract contract ScannerRegistryCore is
     * Stake
     */
     function setStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(SCANNER_ADMIN_ROLE) {
-        require(newStakeThreshold.max > newStakeThreshold.min, "ScannerRegistryEnable: StakeThreshold max <= min");
+        if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
         emit StakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
         _stakeThresholds[chainId] = newStakeThreshold;
     }

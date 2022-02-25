@@ -24,6 +24,10 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
 
     event RoutingUpdated(bytes4 indexed sig, address indexed target, bool enable, bool revertsOnFail);
 
+    error HookFailed(bytes4 sig, uint256 at);
+    error AlreadyRouted();
+    error NotInRoutingTable();
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -35,10 +39,10 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
     function hookHandler(bytes calldata payload) external override {
         bytes4 sig = bytes4(payload[:SIGNATURE_SIZE]);
         uint256 length = _routingTable[sig].length();
-        for (uint256 i = 0; i < length; ++i) {
+        for (uint256 i = 0; i < length; i++) {
             (bool success, bytes memory returndata) = _routingTable[sig].at(i).call(payload);
             if (_revertsOnFail[sig]) {
-                require(success, "Router: hook failed");
+                if (!success) revert HookFailed(sig, i);
             }
             success;
             returndata;
@@ -47,10 +51,10 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
 
     function setRoutingTable(bytes4 sig, address target, bool enable, bool revertsOnFail) external onlyRole(ROUTER_ADMIN_ROLE) {
         if (enable) {
-            require(_routingTable[sig].add(target), "Router: already routed");
+            if (!_routingTable[sig].add(target)) revert AlreadyRouted();
             _revertsOnFail[sig] = revertsOnFail;
         } else {
-            require(_routingTable[sig].remove(target), "Router: not in routing table");
+            if (!_routingTable[sig].remove(target)) revert NotInRoutingTable();
             _revertsOnFail[sig] = false;
         }
         emit RoutingUpdated(sig, target, enable, revertsOnFail);

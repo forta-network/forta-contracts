@@ -12,6 +12,9 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
 
     event StakeControllerUpdated(address indexed newstakeController);
 
+    error StakeThresholdMaxLessOrEqualMin();
+    error StakedUnderMinimum(uint256 subject);
+
     /*
     * @dev: For contracts made StakeAwareUpgradeable via upgrade, initializer call is not available.
     * Use setStakeController(stakeController) when upgrading instead.

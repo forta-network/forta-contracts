@@ -135,7 +135,7 @@ describe('Staking Escrow', function () {
       });
 
 
-      describe('withdrawal', function () {
+      describe('withdrawal', function () {;
         it('protected', async function () {
           await expect(this.escrow.functions['initiateWithdrawal(uint8,uint256,uint256)'](subjectType, subject, this.value))
           .to.be.revertedWith('DoesNotHaveAccess("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "l2Manager")');
