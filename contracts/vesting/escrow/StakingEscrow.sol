@@ -148,7 +148,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * not be bridged back, but rather released to another wallet (and potentially bridged back independently).
      */
     function bridge(uint256 amount) public onlyManager() vestingBalance(amount) {
-        if (amount == 0) revert ZeroAmount("");
+        if (amount == 0) revert ZeroAmount("amount");
         l2token.withdrawTo(amount, l1vesting);
     }
 
