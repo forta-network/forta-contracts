@@ -73,7 +73,7 @@ describe('Forwarder', function () {
       const signature = await this.accounts.admin._signTypedData(domain, types, forwardRequest)
 
       await expect(this.contracts.forwarder.connect(this.accounts.other).execute(forwardRequest, signature))
-      .to.be.revertedWith('Forwarder: deadline expired')
+      .to.be.revertedWith('DeadlineExpired()')
     });
 
     it('fails if there is signature mismatch', async function () {
@@ -94,7 +94,7 @@ describe('Forwarder', function () {
       const diffSignature = await this.accounts.admin._signTypedData(domain, types, differentForwardRequest)
 
       await expect(this.contracts.forwarder.connect(this.accounts.other).execute(forwardRequest, diffSignature))
-      .to.be.revertedWith('Forwarder: signature does not match request')
+      .to.be.revertedWith('SignatureDoesNotMatch()')
     });
 
     it('consumes all gas on failure', async function () {
@@ -124,7 +124,7 @@ describe('Forwarder', function () {
       const signature = await this.accounts.admin._signTypedData(domain, types, forwardRequest)
 
       await expect(this.contracts.forwarder.connect(this.accounts.other).execute(forwardRequest, signature))
-      .to.be.revertedWith('EIP712WithNonce: invalid-nonce');
+      .to.be.revertedWith('InvalidNonce(1)');
     });
 
     it('replay protection', async function () {
@@ -135,7 +135,7 @@ describe('Forwarder', function () {
       .to.be.not.reverted;
 
       await expect(this.contracts.forwarder.connect(this.accounts.other).execute(forwardRequest, signature))
-      .to.be.revertedWith('EIP712WithNonce: invalid-nonce');
+      .to.be.revertedWith('InvalidNonce(0)');
     });
 
     it('nonce is updated', async function () {

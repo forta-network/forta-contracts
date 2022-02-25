@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../tools/ENSReverseRegistration.sol";
+import "../errors/GeneralErrors.sol";
 
 abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable {
     bytes32 public constant ADMIN_ROLE       = keccak256("ADMIN_ROLE");
@@ -13,11 +14,13 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
     
     bool public whitelistDisabled; // __gap[50] -> __gap[49]
 
+    error NotWhitelisted(string name, address guilty);
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
     function __FortaCommon_init(address admin) internal initializer {
-        require(admin != address(0), "FortaCommon: admin cannot be address 0");
+        if (admin == address(0)) revert ZeroAddress("admin");
         __AccessControl_init();
         __ERC20_init("Forta", "FORT");
         __ERC20Permit_init("Forta");
@@ -36,8 +39,8 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
     // Only allow transfer to whitelisted accounts
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         if (!whitelistDisabled) {
-            require(from == address(0) || hasRole(WHITELIST_ROLE, from), "Forta: sender is not whitelisted");
-            require(to   == address(0) || hasRole(WHITELIST_ROLE, to), "Forta: receiver is not whitelisted");
+            if (!(from == address(0) || hasRole(WHITELIST_ROLE, from))) revert NotWhitelisted("sender", from);
+            if (!(to   == address(0) || hasRole(WHITELIST_ROLE, to))) revert NotWhitelisted("receiver", to);
         }
         super._beforeTokenTransfer(from, to, amount);
     }

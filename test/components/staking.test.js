@@ -247,17 +247,17 @@ describe('Forta Staking', function () {
 
       it('invalid subjectType', async function () {
         await expect(this.staking.connect(this.accounts.user1).deposit(9, subject1, '100'))
-        .to.be.revertedWith('STV: invalid subjectType');
+        .to.be.revertedWith('InvalidSubjectType(9)');
       });
 
       it('cannot initiate withdraw with no active shares', async function () {
         await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(1, subject1, '100'))
-        .to.be.revertedWith('FS: no active shares');
+        .to.be.revertedWith('NoActiveShares()');
       });
 
       it('cannot withdraw with no inactive shares', async function () {
         await expect(this.staking.connect(this.accounts.user1).withdraw(1, subject1))
-        .to.be.revertedWith('FS: no inactive shares');
+        .to.be.revertedWith('NoInactiveShares()');
       });
     });
 
@@ -355,7 +355,7 @@ describe('Forta Staking', function () {
     it ('cannot reward to invalid subjectType', async function () {
 
       await expect(this.staking.connect(this.accounts.user1).reward(9, subject1, '10'))
-      .to.be.revertedWith('STV: invalid subjectType');
+      .to.be.revertedWith('InvalidSubjectType(9)');
     });
 
     it ('can reward to non zero subject', async function () {
@@ -506,7 +506,7 @@ describe('Forta Staking', function () {
 
       await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '100')).to.be.not.reverted;
       await expect(this.staking.connect(this.accounts.user1).withdraw(subjectType1, subject1))
-      .to.be.revertedWith('FS: stake frozen');
+      .to.be.revertedWith('FrozenSubject()');
     });
 
     it('freeze → unfreeze → withdraw', async function () {
@@ -750,5 +750,4 @@ describe('Forta Staking', function () {
       );
     });
   });
-
 });

@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponentUpgradeable.sol";
 import "../staking/StakeSubject.sol";
+import "../../errors/GeneralErrors.sol";
 
 abstract contract ScannerRegistryCore is
     BaseComponentUpgradeable,
@@ -15,9 +16,12 @@ abstract contract ScannerRegistryCore is
     
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata);
     event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
+    
+    error ScannerNotRegistered(address scanner);
+    error PublicRegistrationDisabled(uint256 chainId);
 
     modifier onlyOwnerOf(uint256 scannerId) {
-        require(_msgSender() == ownerOf(scannerId), "ScannerRegistryCore: Restricted to scanner owner");
+        if (_msgSender() != ownerOf(scannerId)) revert SenderNotOwner(_msgSender(), scannerId);
         _;
     }
 
@@ -30,7 +34,7 @@ abstract contract ScannerRegistryCore is
     }
 
     function register(address owner, uint256 chainId, string calldata metadata) virtual public {
-        require(_stakeThresholds[chainId].activated, "ScannerRegistryEnable: public registration available if staking activated");
+        if (!(_stakeThresholds[chainId].activated)) revert PublicRegistrationDisabled(chainId);
         _register(_msgSender(), owner, chainId, metadata);
     }
 
@@ -45,7 +49,7 @@ abstract contract ScannerRegistryCore is
 
     function adminUpdate(address scanner, uint256 chainId, string calldata metadata) public onlyRole(SCANNER_ADMIN_ROLE) {
         uint256 scannerId = scannerAddressToId(scanner);
-        require(isRegistered(scannerId), "ScannerRegistryCore: scanner must be registered");
+        if (!isRegistered(scannerId)) revert ScannerNotRegistered(scanner);
         _beforeScannerUpdate(scannerId, chainId, metadata);
         _scannerUpdate(scannerId, chainId, metadata);
         _afterScannerUpdate(scannerId, chainId, metadata);
@@ -59,7 +63,7 @@ abstract contract ScannerRegistryCore is
     * Stake
     */
     function setStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(SCANNER_ADMIN_ROLE) {
-        require(newStakeThreshold.max > newStakeThreshold.min, "ScannerRegistryEnable: StakeThreshold max <= min");
+        if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
         emit StakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
         _stakeThresholds[chainId] = newStakeThreshold;
     }

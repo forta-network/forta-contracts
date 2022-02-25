@@ -15,6 +15,7 @@ import "./IStakeController.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 import "../../tools/FullMath.sol";
+import "../../errors/GeneralErrors.sol";
 
 interface IRewardReceiver {
     function onRewardReceived(uint8 subjectType, uint256 subject, uint256 amount) external;
@@ -94,14 +95,13 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     event MaxStakeReached(uint8 indexed subjectType, uint256 indexed subject);
     event TokensSwept(address indexed token, address to, uint256 amount);
 
-    modifier onlyValidSubjectType(uint8 subjectType) {
-        require(
-            subjectType == SCANNER_SUBJECT ||
-            subjectType == AGENT_SUBJECT,
-            "FortaStaking: invalid subjectType"
-        );
-        _;
-    }
+    error WithdrawalNotReady();
+    error SlashingOver90Percent();
+    error WithdrawalSharesNotTransferible();
+    error FrozenSubject();
+    error NoActiveShares();
+    error NoInactiveShares();
+    error StakeInactiveOrSubjectNotFound();
 
     string public constant version = "0.1.0";
 
@@ -115,7 +115,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint64 __withdrawalDelay,
         address __treasury
     ) public initializer {
-        require(__treasury != address(0), "FS: address 0");
+        if (__treasury == address(0)) revert ZeroAddress("__treasury");
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
@@ -220,11 +220,11 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      */
     function deposit(uint8 subjectType, uint256 subject, uint256 stakeValue)
         public
+        onlyValidSubjectType(subjectType)
         returns (uint256)
     {
-        _onlyValidSubjectType(subjectType);
-        require(address(_stakingParameters) != address(0), "FS: staking params unset");
-        require(_stakingParameters.isStakeActivatedFor(subjectType, subject), "FS: max stake 0 or not found");
+        if (address(_stakingParameters) == address(0)) revert ZeroAddress("_stakingParameters");
+        if (!_stakingParameters.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         bool reachedMax;
@@ -275,12 +275,12 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      */
     function initiateWithdrawal(uint8 subjectType, uint256 subject, uint256 sharesValue)
         public
+        onlyValidSubjectType(subjectType)
         returns (uint64)
     {
-        _onlyValidSubjectType(subjectType);
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
-        require(balanceOf(staker, activeSharesId) != 0, "FS: no active shares");
+        if (balanceOf(staker, activeSharesId) == 0) revert NoActiveShares();
         uint64 deadline = SafeCast.toUint64(block.timestamp) + _withdrawalDelay;
 
         _lockingDelay[activeSharesId][staker].setDeadline(deadline);
@@ -308,16 +308,16 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      */
     function withdraw(uint8 subjectType, uint256 subject)
         public
+        onlyValidSubjectType(subjectType)
         returns (uint256)
     {
-        _onlyValidSubjectType(subjectType);
         address staker = _msgSender();
         uint256 inactiveSharesId = FortaStakingUtils.subjectToInactive(subjectType, subject);
-        require(balanceOf(staker, inactiveSharesId) != 0, "FS: no inactive shares");
-        require(!_frozen[FortaStakingUtils.inactiveToActive(inactiveSharesId)], "FS: stake frozen");
+        if (balanceOf(staker, inactiveSharesId) == 0) revert NoInactiveShares();
+        if (_frozen[FortaStakingUtils.inactiveToActive(inactiveSharesId)]) revert FrozenSubject();
 
         Timers.Timestamp storage timer = _lockingDelay[FortaStakingUtils.inactiveToActive(inactiveSharesId)][staker];
-        require(timer.isExpired(), "FS: not ready");
+        if (!timer.isExpired()) revert WithdrawalNotReady();
         timer.reset();
         emit WithdrawalExecuted(subjectType, subject, staker);
 
@@ -342,9 +342,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     function slash(uint8 subjectType, uint256 subject, uint256 stakeValue)
         public
         onlyRole(SLASHER_ROLE)
+        onlyValidSubjectType(subjectType)
         returns (uint256)
     {
-        _onlyValidSubjectType(subjectType);
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         uint256 activeStake       = _activeStake.balanceOf(activeSharesId);
         uint256 inactiveStake     = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
@@ -354,7 +354,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         // New shares = pool shares * new staked amount / pool stake
         // See deposit and _stakeToActiveShares methods.
         uint256 maxSlashableStake = FullMath.mulDiv(9, 10, activeStake + inactiveStake);
-        require(stakeValue <= maxSlashableStake, "FS: slashed over 90%");
+        if (stakeValue > maxSlashableStake) revert SlashingOver90Percent();
 
         uint256 slashFromActive   = FullMath.mulDiv(activeStake, activeStake + inactiveStake, stakeValue);
         uint256 slashFromInactive = stakeValue - slashFromActive;
@@ -380,8 +380,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     function freeze(uint8 subjectType, uint256 subject, bool frozen)
         public
         onlyRole(SLASHER_ROLE)
+        onlyValidSubjectType(subjectType)
     {
-        _onlyValidSubjectType(subjectType);
+        
         _frozen[FortaStakingUtils.subjectToActive(subjectType, subject)] = frozen;
         emit Froze(subjectType, subject, _msgSender(), frozen);
     }
@@ -392,8 +393,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     *
     * Emits a Reward event.
     */
-    function reward(uint8 subjectType, uint256 subject, uint256 value) public {   
-        _onlyValidSubjectType(subjectType);
+    function reward(uint8 subjectType, uint256 subject, uint256 value) public onlyValidSubjectType(subjectType)  {   
         SafeERC20.safeTransferFrom(stakedToken, _msgSender(), address(this), value);
         _rewards.mint(FortaStakingUtils.subjectToActive(subjectType, subject), value);
 
@@ -447,7 +447,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
         return value;
     }
-
 
     /**
      * @dev Amount of reward tokens owed by given `account` for its current or past share for a given `subject`.
@@ -533,7 +532,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
                     _released[ids[i]].transfer(from, to, virtualRelease);
                 }
             } else {
-                require(from == address(0) || to == address(0), "FS: cant transfer inactive");
+                if (!(from == address(0) || to == address(0))) revert WithdrawalSharesNotTransferible();
             }
         }
 
@@ -568,14 +567,14 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     // Admin: change recipient of slashed funds
     function setTreasury(address newTreasury) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(newTreasury != address(0), "FS: address 0");
+        if (newTreasury == address(0)) revert ZeroAddress("newTreasury");
         _treasury = newTreasury;
         emit TreasurySet(newTreasury);
     }
 
     // Admin: change staking parameters manager
     function setStakingParametersManager(IStakeController newStakingParameters) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(address(newStakingParameters) != address(0), "FS: address 0");
+        if (address(newStakingParameters) == address(0)) revert ZeroAddress("newStakingParameters");
         emit StakeParamsManagerSet(address(newStakingParameters));
         _stakingParameters = newStakingParameters;
     }

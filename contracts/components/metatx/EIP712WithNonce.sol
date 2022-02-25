@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 abstract contract EIP712WithNonce is EIP712 {
     event NonceUsed(address indexed user, uint256 indexed timeline, uint256 nonce);
 
+    error InvalidNonce(uint256 nonce);
+
     mapping(address => mapping(uint256 => uint256)) private _nonces;
 
     function DOMAIN_SEPARATOR() external view returns (bytes32) {
@@ -29,7 +31,7 @@ abstract contract EIP712WithNonce is EIP712 {
         uint256 nonce    = uint128(fullNonce);
         uint256 expected = _nonces[user][timeline]++;
 
-        require(nonce == expected, "EIP712WithNonce: invalid-nonce");
+        if (nonce != expected) revert InvalidNonce(nonce);
 
         emit NonceUsed(user, timeline, nonce);
     }

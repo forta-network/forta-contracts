@@ -18,6 +18,11 @@ contract Dispatch is BaseComponentUpgradeable {
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
 
+    error Disabled(string name);
+    error InvalidId(string name, uint256 id);
+    error AlreadyLinked(string name, uint256 id);
+    error AlreadyUnlinked(string name, uint256 id);
+
     event Link(uint256 agentId, uint256 scannerId, bool enable);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -71,21 +76,21 @@ contract Dispatch is BaseComponentUpgradeable {
     }
 
     function link(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        require(_agents.isEnabled(agentId), "Dispatch: Agent disabled");
-        require(_scanners.isEnabled(scannerId), "Dispatch: Scanner disabled");
+        if (!_agents.isEnabled(agentId)) revert Disabled("Agent");
+        if (!_scanners.isEnabled(scannerId)) revert Disabled("Scanner");
 
-        require(scannerToAgents[scannerId].add(agentId), "Dispatch: Agent already linked");
-        require(agentToScanners[agentId].add(scannerId), "Dispatch: Scanner already linked");
+        if (!scannerToAgents[scannerId].add(agentId)) revert AlreadyLinked("Agent", agentId);
+        if (!agentToScanners[agentId].add(scannerId)) revert AlreadyLinked("Scanner", scannerId);
 
         emit Link(agentId, scannerId, true);
     }
 
     function unlink(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        require(_agents.isCreated(agentId), "Dispatch: invalid agent id");
-        require(_scanners.isRegistered(scannerId), "Dispatch: invalid scanner id");
+        if (!_agents.isCreated(agentId)) revert InvalidId("Agent", agentId);
+        if (!_scanners.isRegistered(scannerId)) revert InvalidId("Scanner", scannerId);
 
-        require(scannerToAgents[scannerId].remove(agentId), "Dispatch: Agent already unlinked");
-        require(agentToScanners[agentId].remove(scannerId), "Dispatch: Scanner already unlinked");
+        if (!(scannerToAgents[scannerId].remove(agentId))) revert AlreadyUnlinked("Agent", agentId);
+        if (!(agentToScanners[agentId].remove(scannerId))) revert AlreadyUnlinked("Scanner", scannerId);
 
         emit Link(agentId, scannerId, false);
     }

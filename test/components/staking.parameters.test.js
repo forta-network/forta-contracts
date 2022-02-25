@@ -73,7 +73,7 @@ describe('Forta Staking Parameters', function () {
 
         it ('cannot stake on unknown scanner', async function () {
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, ethers.BigNumber.from(ethers.Wallet.createRandom().address), '101'))
-            .to.be.revertedWith("FS: max stake 0 or not found")
+            .to.be.revertedWith("StakeInactiveOrSubjectNotFound()")
 
         });
 
@@ -81,7 +81,7 @@ describe('Forta Staking Parameters', function () {
             const subjectInUnititializedChain = '0x2379D02aaA56a24F3d8c076927CA1552BA78BA5e';
             await this.scanners.connect(this.accounts.manager).adminRegister(ethers.utils.hexValue(subjectInUnititializedChain), this.accounts.user1.address, 3, 'metadata');
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subjectInUnititializedChain, '101'))
-            .to.be.revertedWith("FS: max stake 0 or not found");
+            .to.be.revertedWith("StakeInactiveOrSubjectNotFound()");
 
         });
         
@@ -92,7 +92,7 @@ describe('Forta Staking Parameters', function () {
 
         it ('cannot set min > max', async function () {
             await expect(this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '50', min: '100', activated: true }, 1))
-            .to.be.revertedWith(`ScannerRegistryEnable: StakeThreshold max <= min`);
+            .to.be.revertedWith(`StakeThresholdMaxLessOrEqualMin()`);
         });
 
 
@@ -157,7 +157,7 @@ describe('Forta Staking Parameters', function () {
 
         it ('cannot stake on unknown agent', async function () {
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType2, '8743926583', '101'))
-            .to.be.revertedWith("FS: max stake 0 or not found")
+            .to.be.revertedWith("StakeInactiveOrSubjectNotFound()")
 
         });
 
@@ -169,7 +169,7 @@ describe('Forta Staking Parameters', function () {
 
         it ('cannot set min > max', async function () {
             await expect(this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '50', min: '100', activated: true }))
-            .to.be.revertedWith(`AgentRegistryEnable: StakeThreshold max <= min`);
+            .to.be.revertedWith(`StakeThresholdMaxLessOrEqualMin()`);
         });
 
 
@@ -204,14 +204,14 @@ describe('Forta Staking Parameters', function () {
         it('admin methods cannot be called with address 0', async function () {
             
             await expect(fortaStakingParameters.connect(this.accounts.admin).setFortaStaking(ethers.constants.AddressZero))
-            .to.be.revertedWith("FSP: address 0");
+            .to.be.revertedWith('ZeroAddress("newFortaStaking")');
             await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubjectHandler(0, ethers.constants.AddressZero))
-            .to.be.revertedWith("FSP: address 0");
+            .to.be.revertedWith('ZeroAddress("subjectHandler")');
         });
 
         it('subject type must be valid', async function () {
             await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubjectHandler(4, this.contracts.staking.address))
-            .to.be.revertedWith("STV: invalid subjectType");
+            .to.be.revertedWith("InvalidSubjectType(4)");
         });
     })
 });

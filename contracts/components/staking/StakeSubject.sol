@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+import "../../errors/GeneralErrors.sol";
 import "../staking/IStakeController.sol";
 import "../staking/SubjectTypes.sol";
 import "../Roles.sol";
@@ -10,6 +11,9 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
     IStakeController private _stakeController;
 
     event StakeControllerUpdated(address indexed newstakeController);
+
+    error StakeThresholdMaxLessOrEqualMin();
+    error StakedUnderMinimum(uint256 subject);
 
     /*
     * @dev: For contracts made StakeAwareUpgradeable via upgrade, initializer call is not available.
@@ -28,7 +32,7 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
     }
 
     function _setStakeController(address stakeController) private {
-        require(stakeController != address(0), "StakeAwareUpgradeable: stakeController cannot be address(0)");
+        if (stakeController == address(0)) revert ZeroAddress("stakeController");
         _stakeController = IStakeController(stakeController);
         emit StakeControllerUpdated(stakeController);
     }

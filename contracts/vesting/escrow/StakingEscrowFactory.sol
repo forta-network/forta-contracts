@@ -4,6 +4,8 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./StakingEscrow.sol";
 import "./StakingEscrowUtils.sol";
+import "../../errors/GeneralErrors.sol";
+
 
 /**
  * Factory in charge of creating escrow instances for the vesting wallets. This factory, and the escrow instances are
@@ -33,7 +35,7 @@ contract StakingEscrowFactory {
     event NewStakingEscrow(address indexed escrow, address indexed vesting, address indexed manager);
 
     constructor(address __trustedForwarder, FortaStaking __staking) {
-        require(__trustedForwarder != address(0), "StakingEscrowFactory: __trustedForwarder cannot be address 0");
+        if (__trustedForwarder == address(0)) revert ZeroAddress("__trustedForwarder");
         token    = FortaBridgedPolygon(address(__staking.stakedToken()));
         staking  = __staking;
         template = address(new StakingEscrow(
@@ -54,8 +56,8 @@ contract StakingEscrowFactory {
         address vesting,
         address manager
     ) public returns (address) {
-        require(vesting != address(0), "StakingEscrowFactory: vesting cannot be address 0");
-        require(manager != address(0), "StakingEscrowFactory: manager cannot be address 0");
+        if (vesting == address(0)) revert ZeroAddress("vesting");
+        if (manager == address(0)) revert ZeroAddress("manager");
         address instance = Clones.cloneDeterministic(
             template,
             StakingEscrowUtils.computeSalt(vesting, manager)

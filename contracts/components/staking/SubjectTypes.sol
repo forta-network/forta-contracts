@@ -6,12 +6,13 @@ uint8 constant AGENT_SUBJECT = 1;
 
 contract SubjectTypeValidator {
 
-    // @dev: not a modifier for contract size reasons
-    function  _onlyValidSubjectType(uint8 subjectType) pure internal {
-        require(
-            subjectType == SCANNER_SUBJECT ||
-            subjectType == AGENT_SUBJECT,
-            "STV: invalid subjectType"
-        );
+    error InvalidSubjectType(uint8 subjectType);
+
+    modifier  onlyValidSubjectType(uint8 subjectType) {
+        if (
+            subjectType != SCANNER_SUBJECT &&
+            subjectType != AGENT_SUBJECT
+        ) revert InvalidSubjectType(subjectType);
+        _;
     }
 }

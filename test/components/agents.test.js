@@ -19,7 +19,7 @@ describe('Agent Registry', function () {
       await expect(this.agents.connect(this.accounts.manager).setFrontRunningDelay('1800'))
         .to.emit(this.agents, 'FrontRunningDelaySet').withArgs(ethers.BigNumber.from('1800'));
       await expect(this.agents.createAgent(...args))
-        .to.be.revertedWith('Commit not ready');
+        .to.be.revertedWith('CommitNotReady()');
     });
 
     it('setting delay is protected', async function () {
@@ -36,7 +36,7 @@ describe('Agent Registry', function () {
         await this.agents.prepareAgent(prepareCommit(...args));
 
         await expect(this.agents.createAgent(...args))
-        .to.be.revertedWith('Commit not ready');
+        .to.be.revertedWith('CommitNotReady()');
       });
 
       it('no delay', async function () {
@@ -102,7 +102,7 @@ describe('Agent Registry', function () {
         await network.provider.send('evm_increaseTime', [ 300 ]);
 
         await expect(this.agents.createAgent(...args))
-        .to.be.revertedWith('Values must be sorted');
+        .to.be.revertedWith('UnorderedArray("chainIds")');
       });
 
       it('update', async function () {
@@ -263,7 +263,7 @@ describe('Agent Registry', function () {
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
         await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true });
         await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0))
-        .to.be.revertedWith("AgentRegistryEnable: agent staked under minimum");
+        .to.be.revertedWith(`StakedUnderMinimum(${ethers.BigNumber.from(AGENT_ID).toString()})`);
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, AGENT_ID, '10000');
         await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0))
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 0, true);

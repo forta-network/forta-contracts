@@ -8,6 +8,7 @@ import "../Roles.sol";
 import "../utils/ForwardedContext.sol";
 import "../utils/IVersioned.sol";
 import "../../tools/ENSReverseRegistration.sol";
+import "../../errors/GeneralErrors.sol";
 
 // This cannot be BaseComponentUpgradeable, because BaseComponentUpgradeable is AccessManagedUpgradeable
 contract AccessManager is ForwardedContext, AccessControlUpgradeable, UUPSUpgradeable, Multicall, IVersioned {
@@ -18,7 +19,7 @@ contract AccessManager is ForwardedContext, AccessControlUpgradeable, UUPSUpgrad
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
     function initialize(address __admin) external initializer {
-        require(__admin != address(0), "AccessManager: __admin cannot be address 0");
+        if (__admin == address(0)) revert ZeroAddress("__admin");
         __AccessControl_init();
         __UUPSUpgradeable_init();
         _grantRole(DEFAULT_ADMIN_ROLE, __admin);

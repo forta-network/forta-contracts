@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../staking/StakeSubject.sol";
 import "../../tools/FrontRunningProtection.sol";
+import "../../errors/GeneralErrors.sol";
 
 abstract contract AgentRegistryCore is
     BaseComponentUpgradeable,
@@ -22,15 +23,16 @@ abstract contract AgentRegistryCore is
     event StakeThresholdChanged(uint256 min, uint256 max, bool activated);
     event FrontRunningDelaySet(uint256 delay);
 
+
     modifier onlyOwnerOf(uint256 agentId) {
-        require(_msgSender() == ownerOf(agentId), "AgentRegistryCore: Restricted to agent owner");
+        if (_msgSender() != ownerOf(agentId)) revert SenderNotOwner(_msgSender(), agentId);
         _;
     }
 
     modifier onlySorted(uint256[] memory array) {
-        require(array.length > 0, "AgentRegistryCore: At least one chain id required");
+        if (array.length == 0 ) revert EmptyArray("chainIds");
         for (uint256 i = 1; i < array.length; i++ ) {
-            require(array[i] > array[i-1], "AgentRegistryCore: Values must be sorted");
+            if (array[i] <= array[i-1]) revert UnorderedArray("chainIds");
         }
         _;
     }
@@ -68,7 +70,7 @@ abstract contract AgentRegistryCore is
     * Stake
     */
     function setStakeThreshold(StakeThreshold memory newStakeThreshold) external onlyRole(AGENT_ADMIN_ROLE) {
-        require(newStakeThreshold.max > newStakeThreshold.min, "AgentRegistryEnable: StakeThreshold max <= min");
+        if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
         _stakeThreshold = newStakeThreshold;
         emit StakeThresholdChanged(newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
     }

@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "../../token/FortaBridgedPolygon.sol";
 import "../../components/staking/FortaStaking.sol";
 import "../../components/utils/ForwardedContext.sol";
+import "../../errors/GeneralErrors.sol";
 
 /**
  * Logic for the escrow that handles vesting tokens, on the child chain, for a vesting wallet
@@ -29,13 +30,15 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
     address      public           l2manager;
     uint256      public           pendingReward;
 
+    error DontBridgeOrStakeRewards();
+
     modifier onlyManager() {
-        require(_msgSender() == l2manager, "restricted to manager");
+        if (_msgSender() != l2manager) revert DoesNotHaveAccess(_msgSender(), "l2Manager");
         _;
     }
 
     modifier vestingBalance(uint256 amount) {
-        require(l2token.balanceOf(address(this)) >= amount + pendingReward, "rewards should not be bridged or staked");
+        if (l2token.balanceOf(address(this)) < amount + pendingReward) revert DontBridgeOrStakeRewards();
         _;
     }
 
@@ -52,8 +55,8 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
         address __l1vesting,
         address __l2manager
     ) public initializer {
-        require(__l1vesting != address(0), "StakingEscrow: __l1vesting cannot be address 0");
-        require(__l2manager != address(0), "StakingEscrow: __l1vesting cannot be address 0");
+        if (__l1vesting == address(0)) revert ZeroAddress("__l1vesting");
+        if (__l2manager == address(0)) revert ZeroAddress("__l2manager");
         l1vesting = __l1vesting;
         l2manager = __l2manager;
     }
@@ -145,7 +148,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * not be bridged back, but rather released to another wallet (and potentially bridged back independently).
      */
     function bridge(uint256 amount) public onlyManager() vestingBalance(amount) {
-        require(amount > 0, "StakingEscrow: amount must be > 0");
+        if (amount == 0) revert ZeroAmount("amount");
         l2token.withdrawTo(amount, l1vesting);
     }
 
@@ -169,7 +172,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * Hook for reward accounting
      */
     function onRewardReceived(uint8, uint256, uint256 amount) public {
-        require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
+        if (msg.sender != address(l2staking)) revert DoesNotHaveAccess(msg.sender, "l2staking");
         pendingReward += amount;
     }
 
@@ -177,12 +180,12 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * This account is going to hold staking shares
      */
     function onERC1155Received(address, address, uint256, uint256, bytes calldata) external view returns (bytes4) {
-        require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
+        if (msg.sender != address(l2staking)) revert DoesNotHaveAccess(msg.sender, "l2staking");
         return this.onERC1155Received.selector;
     }
 
     function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata) external view returns (bytes4) {
-        require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
+        if (msg.sender != address(l2staking)) revert DoesNotHaveAccess(msg.sender, "l2staking");
         return this.onERC1155BatchReceived.selector;
     }
 }

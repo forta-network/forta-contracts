@@ -42,13 +42,13 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
      * @dev Enable/Disable scaner
      */
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_isStakedOverMin(scannerId), "ScannerRegistryEnable: scanner staked under minimum");
-        require(_hasPermission(scannerId, permission), "ScannerRegistryEnable: invalid permission");
+        if (!_isStakedOverMin(scannerId)) revert StakedUnderMinimum(scannerId);
+        if (!_hasPermission(scannerId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), scannerId);
         _enable(scannerId, permission, true);
     }
 
     function disableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_hasPermission(scannerId, permission), "ScannerRegistryEnable: invalid permission");
+        if (!_hasPermission(scannerId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), scannerId);
         _enable(scannerId, permission, false);
     }
 

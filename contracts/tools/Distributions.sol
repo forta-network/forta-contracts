@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+import "../errors/GeneralErrors.sol";
+
 library Distributions {
     struct Balances {
         mapping(uint256 => uint256) _balances;
@@ -44,20 +46,20 @@ library Distributions {
     }
 
     function mint(SignedBalances storage self, address account, int256 amount) internal {
-        require(account != address(0), "mint from the zero address");
+        if (account == address(0)) revert ZeroAddress("mint");
         self._balances[account] += amount;
         self._totalSupply += amount;
     }
 
     function burn(SignedBalances storage self, address account, int256 amount) internal {
-        require(account != address(0), "burn from the zero address");
+        if(account == address(0)) revert ZeroAddress("burn");
         self._balances[account] -= amount;
         self._totalSupply -= amount;
     }
 
     function transfer(SignedBalances storage self, address from, address to, int256 amount) internal {
-        require(from != address(0), "transfer from the zero address");
-        require(to != address(0), "transfer to the zero address");
+        if (from == address(0)) revert ZeroAddress("from");
+        if (to == address(0)) revert ZeroAddress("to");
         self._balances[from] -= amount;
         self._balances[to] += amount;
     }

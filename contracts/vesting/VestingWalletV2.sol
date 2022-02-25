@@ -32,6 +32,8 @@ contract VestingWalletV2 is VestingWalletV1 {
     event TokensBridged(address indexed l2Escrow, address indexed l2Manager, uint256 amount);
     event HistoricalBalanceMinChanged(uint256 newValue, uint256 oldValue);
 
+    error BridgingToContract();
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         address _rootChainManager,
@@ -55,7 +57,7 @@ contract VestingWalletV2 is VestingWalletV1 {
         public
         virtual
     {
-        require(!Address.isContract(beneficiary()), "Caution: beneficiary is a contract");
+        if (Address.isContract(beneficiary())) revert BridgingToContract();
         bridge(amount, beneficiary());
     }
 
@@ -71,8 +73,8 @@ contract VestingWalletV2 is VestingWalletV1 {
         virtual
         onlyBeneficiary()
     {
-        require(amount > 0, "VestingWalletV2: amount cannot be 0");
-        require(l2Manager!= address(0), "VestingWalletV2: l2Manager cannot be address 0");
+        if (amount == 0) revert ZeroAmount("");
+        if (l2Manager== address(0)) revert ZeroAddress("l2Manager");
         // lock historicalBalance
         historicalBalanceMin = _historicalBalance(l1Token);
 

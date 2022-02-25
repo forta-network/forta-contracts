@@ -98,7 +98,7 @@ describe('Staking Escrow', function () {
           });
 
           it('protected', async function () {
-            await expect(this.escrow.releaseAllReward(this.accounts.manager.address)).to.be.revertedWith('restricted to manager');
+            await expect(this.escrow.releaseAllReward(this.accounts.manager.address)).to.be.revertedWith(`DoesNotHaveAccess("${this.accounts.admin.address}", "l2Manager")`);
           });
 
           it('authorized', async function () {
@@ -135,16 +135,16 @@ describe('Staking Escrow', function () {
       });
 
 
-      describe('withdrawal', function () {
+      describe('withdrawal', function () {;
         it('protected', async function () {
           await expect(this.escrow.functions['initiateWithdrawal(uint8,uint256,uint256)'](subjectType, subject, this.value))
-          .to.be.revertedWith('restricted to manager');
+          .to.be.revertedWith('DoesNotHaveAccess("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "l2Manager")');
 
           await expect(this.escrow.functions['initiateWithdrawal(uint8,uint256)'](subjectType, subject))
-          .to.be.revertedWith('restricted to manager');
+          .to.be.revertedWith('DoesNotHaveAccess("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "l2Manager")');
 
           await expect(this.escrow.withdraw(subjectType, subject))
-          .to.be.revertedWith('restricted to manager');
+          .to.be.revertedWith('DoesNotHaveAccess("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "l2Manager")');
         });
 
         it('authorized', async function () {

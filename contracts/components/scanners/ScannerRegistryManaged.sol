@@ -12,8 +12,10 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
 
     event ManagerEnabled(uint256 indexed scannerId, address indexed manager, bool enabled);
 
+    error SenderNotManager(address sender, uint256 scannerId);
+
     modifier onlyManagerOf(uint256 scannerId) {
-        require(_managers[scannerId].contains(_msgSender()), "ScannerRegistryManaged: Restricted to scanner owner");
+        if (!_managers[scannerId].contains(_msgSender())) revert SenderNotManager(_msgSender(), scannerId);
         _;
     }
 

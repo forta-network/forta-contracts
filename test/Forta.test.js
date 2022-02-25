@@ -40,7 +40,7 @@ describe('Forta', function () {
         describe('non-authorized', function () {
             it('to non-whitelisted', async function () {
                 await expect(this.token.connect(this.accounts.minter).mint(this.accounts.nonwhitelist.address, 1))
-                .to.be.revertedWith(`Forta: receiver is not whitelisted`);
+                .to.be.revertedWith(`NotWhitelisted("receiver", "${this.accounts.nonwhitelist.address}")`);
             });
             
             it('to whitelisted', async function () {
@@ -53,20 +53,24 @@ describe('Forta', function () {
         describe('disable whitelist', function () {
             it('transfer after disable whitelist', async function () {
                 await expect(this.token.connect(this.accounts.minter).mint(this.accounts.nonwhitelist.address, 1))
-                .to.be.revertedWith(`Forta: receiver is not whitelisted`);
+                .to.be.revertedWith(`NotWhitelisted("receiver", "${this.accounts.nonwhitelist.address}")`);
                 await this.token.connect(this.accounts.whitelister).disableWhitelist();
                 await expect(this.token.connect(this.accounts.minter).mint(this.accounts.nonwhitelist.address, 1))
                 .to.emit(this.token, 'Transfer')
                 .withArgs(ethers.constants.AddressZero, this.accounts.nonwhitelist.address, 1);
             });
-
+        });
+        
+        describe('non-authorized', function () {
+            it('to non-whitelisted', async function () {
+                await expect(this.token.connect(this.accounts.minter).mint(this.accounts.nonwhitelist.address, 1))
+                .to.be.revertedWith(`NotWhitelisted("receiver", "${this.accounts.nonwhitelist.address}")`);
+            });
             it('protected', async function () {
                 await expect(this.token.connect(this.accounts.nonwhitelist).disableWhitelist())
                 .to.be.revertedWith(`AccessControl: account ${this.accounts.nonwhitelist.address.toLowerCase()} is missing role ${this.roles.WHITELISTER}`);
-
+                
             });
-            
-            
         });
     });
 });

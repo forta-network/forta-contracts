@@ -21,6 +21,8 @@ contract FortaBridgedPolygon is FortaCommon {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable childChainManagerProxy;
 
+    error DepositOnlyByChildChainManager();
+
     modifier flashWhitelistRole(address user) {
         bool missing = !hasRole(WHITELIST_ROLE, user) && !whitelistDisabled;
 
@@ -35,7 +37,7 @@ contract FortaBridgedPolygon is FortaCommon {
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address _childChainManagerProxy) {
-        require(_childChainManagerProxy != address(0), "FortaBridgedPolygon: setting address 0");
+        if (_childChainManagerProxy == address(0)) revert ZeroAddress("_childChainManagerProxy");
         childChainManagerProxy = _childChainManagerProxy;
     }
 
@@ -52,7 +54,7 @@ contract FortaBridgedPolygon is FortaCommon {
      * usable until the receiver goes through the whitelisting process.
      */
     function deposit(address user, bytes calldata depositData) external flashWhitelistRole(user) {
-        require(msg.sender == childChainManagerProxy, "FortaBridgedPolygon: only childChainManagerProxy can deposit");
+        if (msg.sender != childChainManagerProxy) revert DepositOnlyByChildChainManager();
 
         uint256 amount = abi.decode(depositData, (uint256));
         _mint(user, amount);
