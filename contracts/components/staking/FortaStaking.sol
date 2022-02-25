@@ -223,7 +223,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     {
         _onlyValidSubjectType(subjectType);
         require(address(_stakingParameters) != address(0), "FS: staking params unset");
-        require(_stakingParameters.maxStakeFor(subjectType, subject) > 0, "FS: max stake 0 or not found");
+        require(_stakingParameters.isStakeActivatedFor(subjectType, subject), "FS: max stake 0 or not found");
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         bool reachedMax;

@@ -25,7 +25,7 @@ The process to develop, test and deploy new implementations are as follow:
 
 1. Ensure that the contract inherits from `IVersioned` (if it is `BaseControllerUpgradeable` it will).
 2. Bump the version accordingly.
-3. Develop according to good practices, modify __gap length to accomodate new state.
+3. Develop according to good practices, modify __gap length to accomodate new state, add comments with storage accounting in contract variables and __gap values.
 4. Write an upgradeability test in `test/components/upgrades.test.js`.
 4.1 Deploy an upgradeable proxy with the base implementation, found in `components/_old/<component_folder>/<ComponentName>_X_Y_Z`. 
     If not there, either:

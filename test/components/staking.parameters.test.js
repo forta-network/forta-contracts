@@ -37,8 +37,8 @@ describe('Forta Staking Parameters', function () {
             expect(await this.stakingParameters.minStakeFor(subjectType1, subject1)).to.equal(0);
             expect(await this.scanners.isStakedOverMin(subject1)).to.equal(true);
             
-            await expect(this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100' }, 1))
-            .to.emit(this.scanners, 'StakeThresholdChanged').withArgs('1', '100','500');
+            await expect(this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100', activated: true }, 1))
+            .to.emit(this.scanners, 'StakeThresholdChanged').withArgs('1', '100','500', true);
             expect(await this.stakingParameters.minStakeFor(subjectType1, subject1)).to.equal(100);
             expect(await this.stakingParameters.maxStakeFor(subjectType1, subject1)).to.equal(500);
             
@@ -49,23 +49,23 @@ describe('Forta Staking Parameters', function () {
         });
         
         it('changing general minimum stake reflects on previous staked values', async function () {
-            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100' }, 1)
+            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100', activated: true }, 1)
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '101')).to.not.be.reverted;
-            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '200' }, 1)
+            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '200', activated: true }, 1)
             expect(await this.scanners.isStakedOverMin(subject1)).to.equal(false);
-            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '10' }, 1)
+            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '10', activated: true }, 1)
             expect(await this.scanners.isStakedOverMin(subject1)).to.equal(true);
 
         });
 
         it ('different stake per chainId', async function () {
-            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100' }, 1)
-            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '200' }, 2)
+            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100', activated: true }, 1)
+            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '200', activated: true }, 2)
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '101')).to.not.be.reverted;
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject3, '200')).to.not.be.reverted;
             expect(await this.scanners.connect(this.accounts.user1).isStakedOverMin(subject1)).to.equal(true);
             expect(await this.scanners.connect(this.accounts.user1).isStakedOverMin(subject3)).to.equal(true);
-            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '300' }, 2)
+            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '300', activated: true }, 2)
             expect(await this.scanners.connect(this.accounts.user1).isStakedOverMin(subject1)).to.equal(true);
             expect(await this.scanners.connect(this.accounts.user1).isStakedOverMin(subject3)).to.equal(false);
 
@@ -78,20 +78,20 @@ describe('Forta Staking Parameters', function () {
         });
 
         it ('cannot stake without max cap set', async function () {
-            const subjectInUnititializedChain = '0xC1d2871D19fa888871ed30250598cAde38894Ea3';
-            await this.scanners.connect(this.accounts.manager).adminRegister(ethers.utils.hexValue(subjectInUnititializedChain), this.accounts.user1.address, 3, 'metadata')
+            const subjectInUnititializedChain = '0x2379D02aaA56a24F3d8c076927CA1552BA78BA5e';
+            await this.scanners.connect(this.accounts.manager).adminRegister(ethers.utils.hexValue(subjectInUnititializedChain), this.accounts.user1.address, 3, 'metadata');
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subjectInUnititializedChain, '101'))
-            .to.be.revertedWith("FS: max stake 0 or not found")
+            .to.be.revertedWith("FS: max stake 0 or not found");
 
         });
         
         it ('cannot set unauthorized', async function () {
-            await expect(this.scanners.connect(this.accounts.user1).setStakeThreshold({ max: '500', min: '100' }, 1))
+            await expect(this.scanners.connect(this.accounts.user1).setStakeThreshold({ max: '500', min: '100', activated: true }, 1))
             .to.be.revertedWith(`MissingRole("${this.roles.SCANNER_ADMIN}", "${this.accounts.user1.address}")`);
         });
 
         it ('cannot set min > max', async function () {
-            await expect(this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '50', min: '100' }, 1))
+            await expect(this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '50', min: '100', activated: true }, 1))
             .to.be.revertedWith(`ScannerRegistryEnable: StakeThreshold max <= min`);
         });
 
@@ -117,8 +117,8 @@ describe('Forta Staking Parameters', function () {
             expect(await this.stakingParameters.minStakeFor(subjectType2, AGENT_ID_1)).to.equal(0);
             expect(await this.agents.isStakedOverMin(AGENT_ID_1)).to.equal(true);
             
-            await expect(this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100' }))
-            .to.emit(this.agents, 'StakeThresholdChanged').withArgs('100','500');
+            await expect(this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100', activated: true }))
+            .to.emit(this.agents, 'StakeThresholdChanged').withArgs('100','500', true);
             expect(await this.stakingParameters.minStakeFor(subjectType2, AGENT_ID_1)).to.equal(100);
             expect(await this.stakingParameters.maxStakeFor(subjectType2, AGENT_ID_1)).to.equal(500);
             
@@ -130,26 +130,26 @@ describe('Forta Staking Parameters', function () {
         
         it('changing general minimum stake reflects on previous staked values', async function () {
 
-            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100' })
+            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100', activated: true })
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType2, AGENT_ID_1, '101')).to.not.be.reverted;
 
-            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '200' })
+            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '200', activated: true })
 
             expect(await this.agents.isStakedOverMin(AGENT_ID_1)).to.equal(false);
 
-            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '10' })
+            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '10', activated: true })
 
             expect(await this.agents.isStakedOverMin(AGENT_ID_1)).to.equal(true);
 
         });
 
         it ('same stake min for all agents', async function () {
-            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100' })
+            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100', activated: true })
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType2, AGENT_ID_1, '101')).to.not.be.reverted;
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType2, AGENT_ID_2, '200')).to.not.be.reverted;
             expect(await this.agents.connect(this.accounts.user1).isStakedOverMin(AGENT_ID_1)).to.equal(true);
             expect(await this.agents.connect(this.accounts.user1).isStakedOverMin(AGENT_ID_2)).to.equal(true);
-            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '300' })
+            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '300', activated: true })
             expect(await this.agents.connect(this.accounts.user1).isStakedOverMin(AGENT_ID_1)).to.equal(false);
             expect(await this.agents.connect(this.accounts.user1).isStakedOverMin(AGENT_ID_2)).to.equal(false);
 
@@ -163,12 +163,12 @@ describe('Forta Staking Parameters', function () {
 
         
         it ('cannot set unauthorized', async function () {
-            await expect(this.agents.connect(this.accounts.user1).setStakeThreshold({ max: '500', min: '100' }))
+            await expect(this.agents.connect(this.accounts.user1).setStakeThreshold({ max: '500', min: '100', activated: true }))
             .to.be.revertedWith(`MissingRole("${this.roles.AGENT_ADMIN}", "${this.accounts.user1.address}")`);
         });
 
         it ('cannot set min > max', async function () {
-            await expect(this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '50', min: '100' }))
+            await expect(this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '50', min: '100', activated: true }))
             .to.be.revertedWith(`AgentRegistryEnable: StakeThreshold max <= min`);
         });
 

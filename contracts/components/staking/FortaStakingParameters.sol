@@ -61,6 +61,10 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
         return _stakeSubjectHandlers[subjectType].getStakeThreshold(subject).min;
     }
 
+    function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns(bool) {
+        return _stakeSubjectHandlers[subjectType].getStakeThreshold(subject).activated;
+    }
+
     function activeStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
         return _fortaStaking.activeStakeFor(subjectType, subject);
     }

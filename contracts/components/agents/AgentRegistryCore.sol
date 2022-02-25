@@ -13,13 +13,13 @@ abstract contract AgentRegistryCore is
     ERC721Upgradeable,
     StakeSubjectUpgradeable
 {
-    
-    StakeThreshold private _stakeThreshold; // 2 storage slots
+    StakeThreshold private _stakeThreshold; // 3 storage slots
     // Initially 0 because the frontrunning protection starts disabled.
     uint256 public frontRunningDelay;
-
+    
+    event AgentCommitted(bytes32 indexed commit);
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
-    event StakeThresholdChanged(uint256 min, uint256 max);
+    event StakeThresholdChanged(uint256 min, uint256 max, bool activated);
     event FrontRunningDelaySet(uint256 delay);
 
     modifier onlyOwnerOf(uint256 agentId) {
@@ -70,7 +70,7 @@ abstract contract AgentRegistryCore is
     function setStakeThreshold(StakeThreshold memory newStakeThreshold) external onlyRole(AGENT_ADMIN_ROLE) {
         require(newStakeThreshold.max > newStakeThreshold.min, "AgentRegistryEnable: StakeThreshold max <= min");
         _stakeThreshold = newStakeThreshold;
-        emit StakeThresholdChanged(newStakeThreshold.min, newStakeThreshold.max);
+        emit StakeThresholdChanged(newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
     }
 
     /**
@@ -124,5 +124,5 @@ abstract contract AgentRegistryCore is
         return super._msgData();
     }
 
-    uint256[42] private __gap; // 50 - 1 (frontRunningDelay) - 2 (_stakeThreshold) - 5 StakeSubjectUpgradeable
+    uint256[41] private __gap; // 50 - 1 (frontRunningDelay) - 3 (_stakeThreshold) - 5 StakeSubjectUpgradeable
 }

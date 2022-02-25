@@ -6,7 +6,7 @@ const { formatEther } = require('@ethersproject/units')
 
 
 describe('Dispatcher', function () {
-  prepare({ stake: { min: '100', max: '500' }});
+  prepare({ stake: { min: '100', max: '500', activated: true }});
 
   beforeEach(async function () {
     this.accounts.getAccount('scanner');
@@ -36,7 +36,7 @@ describe('Dispatcher', function () {
   });
 
   it('link fails if scanner not staked over minimum', async function () {
-    await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000' }, 1);
+    await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
     .to.be.revertedWith('Dispatch: Scanner disabled')
   });
@@ -48,7 +48,7 @@ describe('Dispatcher', function () {
   });
 
   it('link fails if agent not staked over minimum', async function () {
-    await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000' });
+    await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true });
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
     .to.be.revertedWith('Dispatch: Agent disabled')
   });

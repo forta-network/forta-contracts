@@ -16,7 +16,7 @@ const [
 const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
 const MAX_STAKE = '10000'
 describe('Forta Staking', function () {
-  prepare({ stake: { min: '1', max: MAX_STAKE}});
+  prepare({ stake: { min: '1', max: MAX_STAKE, activated: true }});
 
   beforeEach(async function () {
     await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);

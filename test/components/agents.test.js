@@ -11,7 +11,7 @@ const prepareCommit = (...args)  => ethers.utils.solidityKeccak256([ 'bytes32', 
 
 
 describe('Agent Registry', function () {
-  prepare({ stake: { min: '100', max: '500' }});
+  prepare({ stake: { min: '100', max: '500', activated: true }});
 
   describe('create and update', function () {
     it('missing prepare if delay set', async function () {
@@ -261,7 +261,7 @@ describe('Agent Registry', function () {
       it('cannot enable if staked under minimum', async function () {
         await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0))
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
-        await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000' });
+        await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true });
         await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0))
         .to.be.revertedWith("AgentRegistryEnable: agent staked under minimum");
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, AGENT_ID, '10000');
@@ -272,7 +272,7 @@ describe('Agent Registry', function () {
 
       it('isEnabled reacts to stake changes', async function () {
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
-        await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000' });
+        await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true });
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, AGENT_ID, '10000');
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);

@@ -14,7 +14,7 @@ abstract contract ScannerRegistryCore is
     mapping(uint256 => StakeThreshold) internal _stakeThresholds;
     
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata);
-    event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max);
+    event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
 
     modifier onlyOwnerOf(uint256 scannerId) {
         require(_msgSender() == ownerOf(scannerId), "ScannerRegistryCore: Restricted to scanner owner");
@@ -30,7 +30,7 @@ abstract contract ScannerRegistryCore is
     }
 
     function register(address owner, uint256 chainId, string calldata metadata) virtual public {
-        require(_stakeThresholds[chainId].min > 0, "ScannerRegistryEnable: public registration available if staking activated");
+        require(_stakeThresholds[chainId].activated, "ScannerRegistryEnable: public registration available if staking activated");
         _register(_msgSender(), owner, chainId, metadata);
     }
 
@@ -60,7 +60,7 @@ abstract contract ScannerRegistryCore is
     */
     function setStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(SCANNER_ADMIN_ROLE) {
         require(newStakeThreshold.max > newStakeThreshold.min, "ScannerRegistryEnable: StakeThreshold max <= min");
-        emit StakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max);
+        emit StakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
         _stakeThresholds[chainId] = newStakeThreshold;
     }
 
