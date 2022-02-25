@@ -177,5 +177,6 @@ describe('Forwarder', function () {
       await expect(this.contracts.forwarder.connect(this.accounts.other).execute(forwardRequest1b, signature1b))
       .to.emit(this.contracts.forwarder, 'NonceUsed').withArgs(this.accounts.admin.address, 0, 1);
     });
+
   });
 });

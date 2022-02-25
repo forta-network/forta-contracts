@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../BaseComponentUpgradeable.sol";
 
@@ -32,7 +32,6 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
-        
     }
 
     function setScannerNodeVersion(string calldata version) public onlyRole(SCANNER_VERSION_ROLE) {

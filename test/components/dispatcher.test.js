@@ -2,22 +2,23 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { BigNumber } = require('@ethersproject/bignumber')
+const { formatEther } = require('@ethersproject/units')
 
 
 describe('Dispatcher', function () {
-  prepare({ minStake: '100' });
+  prepare({ stake: { min: '100', max: '500', activated: true }});
 
   beforeEach(async function () {
     this.accounts.getAccount('scanner');
     this.SCANNER_ID = this.accounts.scanner.address;
     this.AGENT_ID   = ethers.utils.hexlify(ethers.utils.randomBytes(32));
     this.SCANNER_SUBJECT_ID = BigNumber.from(this.SCANNER_ID);
+    // Create Agent and Scanner
+    await this.agents.createAgent(this.AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ])
+    await this.scanners.connect(this.accounts.manager).adminRegister(this.SCANNER_ID, this.accounts.user1.address, 1, 'metadata');
+    // Stake
     await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, this.SCANNER_SUBJECT_ID, '100');
     await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, this.AGENT_ID, '100');
-    await expect(this.agents.createAgent(this.AGENT_ID, this.accounts.user1.address, 'Metadata1', [ 1 , 3, 4, 5 ])).to.be.not.reverted
-    await expect(this.agents.connect(this.accounts.manager).enableAgent(this.AGENT_ID, 0)).to.be.not.reverted
-    await this.scanners.connect(this.accounts.manager).adminRegister(this.SCANNER_ID, this.accounts.user1.address, 1, 'metadata');
-    
   });
 
   it('protected', async function () {
@@ -27,7 +28,7 @@ describe('Dispatcher', function () {
 
   it('link', async function () {
     const hashBefore = await this.dispatch.scannerHash(this.SCANNER_ID);
-
+    expect(await this.scanners.isStakedOverMin(this.SCANNER_ID)).to.be.equal(true)
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
     .to.emit(this.dispatch, 'Link').withArgs(this.AGENT_ID, this.SCANNER_ID, true);
 
@@ -35,7 +36,7 @@ describe('Dispatcher', function () {
   });
 
   it('link fails if scanner not staked over minimum', async function () {
-    await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.SCANNER_SUBJECT_TYPE, '10000');
+    await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
     .to.be.revertedWith('Disabled("Scanner")')
   });
@@ -47,7 +48,7 @@ describe('Dispatcher', function () {
   });
 
   it('link fails if agent not staked over minimum', async function () {
-    await this.staking.connect(this.accounts.admin).setMinStake(this.stakingSubjects.AGENT_SUBJECT_TYPE, '10000');
+    await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true });
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
     .to.be.revertedWith('Disabled("Agent")')
   });
@@ -109,7 +110,7 @@ describe('Dispatcher', function () {
       }
 
       await Promise.all([
-        this.dispatch.agentsFor(this.SCANNER_ID),
+        this.dispatch.numAgentsFor(this.SCANNER_ID),
         this.dispatch.estimateGas.scannerHash(this.SCANNER_ID),
       ]).then(([ count, cost ]) => console.log(`scannerHash gas cost with ${count.toString()} agents: ${cost.toString()}`));
     }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./StakingEscrow.sol";
@@ -30,7 +30,7 @@ import "../../errors/GeneralErrors.sol";
 contract StakingEscrowFactory {
     FortaBridgedPolygon  public immutable token;
     FortaStaking  public immutable staking;
-    StakingEscrow public immutable template;
+    address public immutable template;
 
     event NewStakingEscrow(address indexed escrow, address indexed vesting, address indexed manager);
 
@@ -38,11 +38,11 @@ contract StakingEscrowFactory {
         if (__trustedForwarder == address(0)) revert ZeroAddress("__trustedForwarder");
         token    = FortaBridgedPolygon(address(__staking.stakedToken()));
         staking  = __staking;
-        template = new StakingEscrow(
+        template = address(new StakingEscrow(
             __trustedForwarder,
             token,
             staking
-        );
+        ));
     }
 
     /**
@@ -59,7 +59,7 @@ contract StakingEscrowFactory {
         if (vesting == address(0)) revert ZeroAddress("vesting");
         if (manager == address(0)) revert ZeroAddress("manager");
         address instance = Clones.cloneDeterministic(
-            address(template),
+            template,
             StakingEscrowUtils.computeSalt(vesting, manager)
         );
         StakingEscrow(instance).initialize(vesting, manager);
@@ -81,7 +81,7 @@ contract StakingEscrowFactory {
         address manager
     ) public view returns (address) {
         return Clones.predictDeterministicAddress(
-            address(template),
+            template,
             StakingEscrowUtils.computeSalt(vesting, manager)
         );
     }

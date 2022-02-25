@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -46,30 +46,30 @@ contract Dispatch is BaseComponentUpgradeable {
         return _scanners;
     }
 
-    function agentsFor(uint256 scannerId) public view returns (uint256) {
+    function numAgentsFor(uint256 scannerId) public view returns (uint256) {
         return scannerToAgents[scannerId].length();
     }
 
-    function scannersFor(uint256 agentId) public view returns (uint256) {
+    function numScannersFor(uint256 agentId) public view returns (uint256) {
         return agentToScanners[agentId].length();
     }
 
-    function agentsAt(uint256 scannerId, uint256 pos) public view returns (uint256) {
+    function agentAt(uint256 scannerId, uint256 pos) public view returns (uint256) {
         return scannerToAgents[scannerId].at(pos);
     }
 
     function agentRefAt(uint256 scannerId, uint256 pos) external view returns (uint256 agentId, bool enabled, uint256 agentVersion, string memory metadata, uint256[] memory chainIds) {
-        agentId = agentsAt(scannerId, pos);
+        agentId = agentAt(scannerId, pos);
         enabled = _agents.isEnabled(agentId);
         (agentVersion, metadata, chainIds) = _agents.getAgent(agentId);
     }
 
-    function scannersAt(uint256 agentId, uint256 pos) public view returns (uint256) {
+    function scannerAt(uint256 agentId, uint256 pos) public view returns (uint256) {
         return agentToScanners[agentId].at(pos);
     }
 
     function scannerRefAt(uint256 agentId, uint256 pos) external view returns (uint256 scannerId, bool enabled) {
-        scannerId = scannersAt(agentId, pos);
+        scannerId = scannerAt(agentId, pos);
         enabled   = _scanners.isEnabled(agentId);
     }
 
@@ -77,8 +77,8 @@ contract Dispatch is BaseComponentUpgradeable {
         if (!_agents.isEnabled(agentId)) revert Disabled("Agent");
         if (!_scanners.isEnabled(scannerId)) revert Disabled("Scanner");
 
-        scannerToAgents[scannerId].add(agentId);
-        agentToScanners[agentId].add(scannerId);
+        require(scannerToAgents[scannerId].add(agentId), "Dispatch: Agent already linked");
+        require(agentToScanners[agentId].add(scannerId), "Dispatch: Scanner already linked");
 
         emit Link(agentId, scannerId, true);
     }
@@ -87,8 +87,8 @@ contract Dispatch is BaseComponentUpgradeable {
         if (!_agents.isCreated(agentId)) revert InvalidId("Agent", agentId);
         if (!_scanners.isRegistered(scannerId)) revert InvalidId("Scanner", scannerId);
 
-        scannerToAgents[scannerId].remove(agentId);
-        agentToScanners[agentId].remove(scannerId);
+        require(scannerToAgents[scannerId].remove(agentId), "Dispatch: Agent already unlinked");
+        require(agentToScanners[agentId].remove(scannerId), "Dispatch: Scanner already unlinked");
 
         emit Link(agentId, scannerId, false);
     }
@@ -105,7 +105,7 @@ contract Dispatch is BaseComponentUpgradeable {
         uint256[] memory scanners = agentToScanners[agentId].values();
         bool[]    memory enabled = new bool[](scanners.length);
 
-        for (uint256 i = 0; i < scanners.length; ++i) {
+        for (uint256 i = 0; i < scanners.length; i++) {
             enabled[i] = _scanners.isEnabled(scanners[i]);
         }
 
@@ -120,7 +120,7 @@ contract Dispatch is BaseComponentUpgradeable {
         uint256[] memory agentVersion = new uint256[](agents.length);
         bool[]    memory enabled = new bool[](agents.length);
 
-        for (uint256 i = 0; i < agents.length; ++i) {
+        for (uint256 i = 0; i < agents.length; i++) {
             (agentVersion[i],,) = _agents.getAgent(agents[i]);
             enabled[i]     = _agents.isEnabled(agents[i]);
         }

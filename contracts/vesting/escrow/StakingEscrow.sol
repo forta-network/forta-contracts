@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
@@ -93,7 +93,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
     /**
      * Overload: initiate withdrawal of the full stake amount
      */
-    function initiateFullWithdrawal(uint8 subjectType, uint256 subject) public returns (uint64) {
+    function initiateWithdrawal(uint8 subjectType, uint256 subject) public returns (uint64) {
         return initiateWithdrawal(
             subjectType,
             subject,

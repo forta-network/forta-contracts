@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -43,5 +43,5 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
         emit ManagerEnabled(scannerId, manager, enable);
     }
 
-    uint256[44] private __gap;
+    uint256[49] private __gap;
 }
