@@ -249,6 +249,16 @@ describe('Forta Staking', function () {
         await expect(this.staking.connect(this.accounts.user1).deposit(9, subject1, '100'))
         .to.be.revertedWith('STV: invalid subjectType');
       });
+
+      it('cannot initiate withdraw with no active shares', async function () {
+        await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(1, subject1, '100'))
+        .to.be.revertedWith('FS: no active shares');
+      });
+
+      it('cannot withdraw with no inactive shares', async function () {
+        await expect(this.staking.connect(this.accounts.user1).withdraw(1, subject1))
+        .to.be.revertedWith('FS: no inactive shares');
+      });
     });
 
     describe('with delay', function () {
@@ -713,10 +723,11 @@ describe('Forta Staking', function () {
       await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
       await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.ROUTER_ADMIN, this.accounts.admin.address)).to.be.not.reverted;
       await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;
-      await this.router.connect(this.accounts.admin).setRoutingTable(this.signature, this.sink.address, true);
+      await this.router.connect(this.accounts.admin).setRoutingTable(this.signature, this.sink.address, true, false);
     });
-
-    it('signals are emitted', async function () {
+    
+    // NOTE: skipped until the reintroduction of hooks on the Router
+    it.skip('signals are emitted', async function () {
       await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100'))
       .to.emit(this.sink, 'GotSignal').withArgs(
         this.signature + 
@@ -731,7 +742,7 @@ describe('Forta Staking', function () {
         ethers.utils.hexlify(ethers.utils.zeroPad(subject1, 32)).slice(2)
       );
 
-      await expect(this.staking.connect(this.accounts.slasher).initiateWithdrawal(subjectType1, subject1, '50'))
+      await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '50'))
       .to.emit(this.sink, 'GotSignal').withArgs(
         this.signature + 
         ethers.utils.hexlify(ethers.utils.zeroPad(subjectType1, 32)).slice(2) +

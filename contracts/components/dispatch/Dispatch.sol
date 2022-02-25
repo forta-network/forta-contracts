@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -43,30 +43,30 @@ contract Dispatch is BaseComponentUpgradeable {
         return _scanners;
     }
 
-    function agentsFor(uint256 scannerId) public view returns (uint256) {
+    function numAgentsFor(uint256 scannerId) public view returns (uint256) {
         return scannerToAgents[scannerId].length();
     }
 
-    function scannersFor(uint256 agentId) public view returns (uint256) {
+    function numScannersFor(uint256 agentId) public view returns (uint256) {
         return agentToScanners[agentId].length();
     }
 
-    function agentsAt(uint256 scannerId, uint256 pos) public view returns (uint256) {
+    function agentAt(uint256 scannerId, uint256 pos) public view returns (uint256) {
         return scannerToAgents[scannerId].at(pos);
     }
 
     function agentRefAt(uint256 scannerId, uint256 pos) external view returns (uint256 agentId, bool enabled, uint256 agentVersion, string memory metadata, uint256[] memory chainIds) {
-        agentId = agentsAt(scannerId, pos);
+        agentId = agentAt(scannerId, pos);
         enabled = _agents.isEnabled(agentId);
         (agentVersion, metadata, chainIds) = _agents.getAgent(agentId);
     }
 
-    function scannersAt(uint256 agentId, uint256 pos) public view returns (uint256) {
+    function scannerAt(uint256 agentId, uint256 pos) public view returns (uint256) {
         return agentToScanners[agentId].at(pos);
     }
 
     function scannerRefAt(uint256 agentId, uint256 pos) external view returns (uint256 scannerId, bool enabled) {
-        scannerId = scannersAt(agentId, pos);
+        scannerId = scannerAt(agentId, pos);
         enabled   = _scanners.isEnabled(agentId);
     }
 
@@ -74,8 +74,8 @@ contract Dispatch is BaseComponentUpgradeable {
         require(_agents.isEnabled(agentId), "Dispatch: Agent disabled");
         require(_scanners.isEnabled(scannerId), "Dispatch: Scanner disabled");
 
-        scannerToAgents[scannerId].add(agentId);
-        agentToScanners[agentId].add(scannerId);
+        require(scannerToAgents[scannerId].add(agentId), "Dispatch: Agent already linked");
+        require(agentToScanners[agentId].add(scannerId), "Dispatch: Scanner already linked");
 
         emit Link(agentId, scannerId, true);
     }
@@ -84,8 +84,8 @@ contract Dispatch is BaseComponentUpgradeable {
         require(_agents.isCreated(agentId), "Dispatch: invalid agent id");
         require(_scanners.isRegistered(scannerId), "Dispatch: invalid scanner id");
 
-        scannerToAgents[scannerId].remove(agentId);
-        agentToScanners[agentId].remove(scannerId);
+        require(scannerToAgents[scannerId].remove(agentId), "Dispatch: Agent already unlinked");
+        require(agentToScanners[agentId].remove(scannerId), "Dispatch: Scanner already unlinked");
 
         emit Link(agentId, scannerId, false);
     }
