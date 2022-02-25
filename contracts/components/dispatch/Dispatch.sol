@@ -102,7 +102,7 @@ contract Dispatch is BaseComponentUpgradeable {
         uint256[] memory scanners = agentToScanners[agentId].values();
         bool[]    memory enabled = new bool[](scanners.length);
 
-        for (uint256 i = 0; i < scanners.length; ++i) {
+        for (uint256 i = 0; i < scanners.length; i++) {
             enabled[i] = _scanners.isEnabled(scanners[i]);
         }
 
@@ -117,7 +117,7 @@ contract Dispatch is BaseComponentUpgradeable {
         uint256[] memory agentVersion = new uint256[](agents.length);
         bool[]    memory enabled = new bool[](agents.length);
 
-        for (uint256 i = 0; i < agents.length; ++i) {
+        for (uint256 i = 0; i < agents.length; i++) {
             (agentVersion[i],,) = _agents.getAgent(agents[i]);
             enabled[i]     = _agents.isEnabled(agents[i]);
         }

@@ -30,7 +30,6 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
-        
     }
 
     function setScannerNodeVersion(string calldata newVersion) public onlyRole(SCANNER_VERSION_ROLE) {

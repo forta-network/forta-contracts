@@ -45,8 +45,8 @@ abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
             } else if (oldChainIds[i] > newChainIds[j]) { // new chain smaller, add it
                 _chainAgents[newChainIds[j++]].add(agentId);
             } else { // chainIds are the same do nothing
-                ++i;
-                ++j;
+                i++;
+                j++;
             }
         }
     }

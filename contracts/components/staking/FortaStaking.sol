@@ -514,7 +514,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
         // Order is important here, we must do the virtual release, which uses totalSupply(activeSharesId) in
         // _historicalRewardFraction, BEFORE the super call updates the totalSupply()
-        for (uint256 i = 0; i < ids.length; ++i) {
+        for (uint256 i = 0; i < ids.length; i++) {
             if (FortaStakingUtils.isActive(ids[i])) {
                 // Mint, burn, or transfer of subject shares would by default affect the distribution of the
                 // currently available reward for the subject. We create a "virtual release" that should preserve

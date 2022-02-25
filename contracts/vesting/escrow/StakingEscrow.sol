@@ -90,7 +90,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
     /**
      * Overload: initiate withdrawal of the full stake amount
      */
-    function initiateFullWithdrawal(uint8 subjectType, uint256 subject) public returns (uint64) {
+    function initiateWithdrawal(uint8 subjectType, uint256 subject) public returns (uint64) {
         return initiateWithdrawal(
             subjectType,
             subject,

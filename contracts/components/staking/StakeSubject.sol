@@ -19,12 +19,6 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
         _setStakeController(stakeController);
     }
 
-    function _setStakeController(address stakeController) private {
-        require(stakeController != address(0), "StakeAwareUpgradeable: stakeController cannot be address(0)");
-        _stakeController = IStakeController(stakeController);
-        emit StakeControllerUpdated(stakeController);
-    }
-
     function setStakeController(address stakeController) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setStakeController(stakeController);
     }
@@ -33,6 +27,11 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
         return _stakeController;
     }
 
+    function _setStakeController(address stakeController) private {
+        require(stakeController != address(0), "StakeAwareUpgradeable: stakeController cannot be address(0)");
+        _stakeController = IStakeController(stakeController);
+        emit StakeControllerUpdated(stakeController);
+    }
 
     function isStakedOverMin(uint256 subject) external virtual override view returns(bool) {
         return _isStakedOverMin(subject);
