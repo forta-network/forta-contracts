@@ -100,7 +100,9 @@ abstract contract AgentRegistryCore is
         _afterAgentUpdate(agentId, metadata, chainIds);
     }
 
-    
+    /**
+     @dev StakeThreshold setter, common to all Agents. Restricted to AGENT_ADMIN_ROLE, emits StakeThresholdChanged
+    */
     function setStakeThreshold(StakeThreshold memory newStakeThreshold) external onlyRole(AGENT_ADMIN_ROLE) {
         if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
         _stakeThreshold = newStakeThreshold;

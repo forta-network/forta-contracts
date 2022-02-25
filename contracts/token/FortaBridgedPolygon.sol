@@ -41,6 +41,10 @@ contract FortaBridgedPolygon is FortaCommon {
         childChainManagerProxy = _childChainManagerProxy;
     }
 
+    /**
+     * @notice Initializer method, access point to initialize inheritance tree.
+     * @param admin address that will be ADMIN_ROLE.
+     */
     function initialize(address admin) public initializer {
         __FortaCommon_init(admin);
     }

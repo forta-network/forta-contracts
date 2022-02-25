@@ -118,7 +118,7 @@ abstract contract ScannerRegistryCore is
     function _getStakeThreshold(uint256 subject) internal virtual view returns(StakeThreshold memory);
 
     /**
-     * 
+     * @notice Getter for StakeThreshold for the scanner with id `subject`
      */
     function getStakeThreshold(uint256 subject) external view returns(StakeThreshold memory) {
         return _getStakeThreshold(subject);

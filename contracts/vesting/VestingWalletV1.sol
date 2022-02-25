@@ -60,22 +60,27 @@ contract VestingWalletV1 is OwnableUpgradeable, UUPSUpgradeable {
         _duration = duration_;
     }
 
+    /// address that owns the vested tokens.
     function beneficiary() public view virtual returns (address) {
         return _beneficiary;
     }
 
+    /// start of the vesting period (UNIX timestamp).
     function start() public view virtual returns (uint256) {
         return _start;
     }
 
+    /// Duration after start() when lineal vesting schedule starts.
     function cliff() public view virtual returns (uint256) {
         return _cliff;
     }
 
+    /// Length of the vesting period in seconds.
     function duration() public view virtual returns (uint256) {
         return _duration;
     }
 
+    /// Amount of tokens released from the VestingWallet.
     function released(address token) public view returns (uint256) {
         return _released[token];
     }

@@ -41,6 +41,8 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
         emit StakeControllerUpdated(stakeController);
     }
 
+    /// Returns true if `subject` amount of staked tokens is bigger or equal the minimum stake set
+    /// for it. It's for contracts implementing `StakeSubjectUpgradeable` to decide what that means.
     function isStakedOverMin(uint256 subject) external virtual override view returns(bool) {
         return _isStakedOverMin(subject);
     }
