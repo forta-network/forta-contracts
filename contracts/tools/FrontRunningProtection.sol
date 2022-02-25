@@ -16,7 +16,7 @@ contract FrontRunningProtection {
      * Use it to enforce the need of a previous commit within duration
      * Will consume the commit if we are within deadline
      * @param commit the commit ID
-     * @param duration duration in miliseconds
+     * @param duration duration in seconds
      */
     modifier frontrunProtected(bytes32 commit, uint256 duration) {
         uint256 timestamp = _commits[commit];

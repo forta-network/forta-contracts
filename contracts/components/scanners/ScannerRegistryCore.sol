@@ -113,7 +113,7 @@ abstract contract ScannerRegistryCore is
     }
 
     /**
-     * Checks if scanner is staked over minimium stake
+     * Checks if scanner is staked over minimum stake
      * @param scannerId scanner
      * @return true if scanner is staked over the minimum threshold for that chainId, or staking is not yet enabled (stakeController = 0).
      * false otherwise

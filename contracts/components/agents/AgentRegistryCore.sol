@@ -57,7 +57,7 @@ abstract contract AgentRegistryCore is
      * @notice Agent creation method. Mints an ERC1155 token with the agent id for the owner and stores metadata.
      * @dev fires _before and _after hooks within the inheritance tree.
      * If front run protection is enabled (disabled by default), it will check if the keccak256 hash of the parameters
-     * has been commited in prepareAgent(bytes32).
+     * has been committed in prepareAgent(bytes32).
      * @param agentId ERC1155 token id of the agent to be created.
      * @param owner address to have ownership privileges in the agent methods.
      * @param metadata IPFS pointer to agent's metadata JSON.
@@ -115,7 +115,7 @@ abstract contract AgentRegistryCore is
     }
 
     /**
-     * Checks if agent is staked over minimium stake
+     * Checks if agent is staked over minimum stake
      * @param subject agentId
      * @return true if agent is staked over the minimum threshold, or staking is not yet enabled (stakeController = 0).
      * false otherwise
