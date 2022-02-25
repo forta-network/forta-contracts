@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165CheckerUpgradeable.sol";
 import "../Roles.sol";
+import "../../errors/GeneralErrors.sol";
 
 abstract contract AccessManagedUpgradeable is ContextUpgradeable {
 
@@ -31,7 +32,7 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
      * @param manager address of AccessManager.
      */
     function __AccessManaged_init(address manager) internal initializer {
-        require(manager.supportsInterface(type(IAccessControl).interfaceId), "AccessManaged: manager must be IAccessControl");
+        if (!manager.supportsInterface(type(IAccessControl).interfaceId)) revert UnsupportedInterface("IAccessControl");
         _accessControl = IAccessControl(manager);
         emit AccessManagerUpdated(manager);
     }
@@ -51,7 +52,7 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
      * @param newManager address of the new instance of AccessManager.
      */
     function setAccessManager(address newManager) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(newManager.supportsInterface(type(IAccessControl).interfaceId), "AccessManaged: newManager must be IAccessControl");
+        if (!newManager.supportsInterface(type(IAccessControl).interfaceId)) revert UnsupportedInterface("IAccessControl");
         _accessControl = IAccessControl(newManager);
         emit AccessManagerUpdated(newManager);
     }

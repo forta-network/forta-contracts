@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../tools/ENSReverseRegistration.sol";
+import "../errors/GeneralErrors.sol";
 
 abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable {
     bytes32 public constant ADMIN_ROLE       = keccak256("ADMIN_ROLE");
     bytes32 public constant WHITELISTER_ROLE = keccak256("WHITELISTER_ROLE");
     bytes32 public constant WHITELIST_ROLE   = keccak256("WHITELIST_ROLE");
+    
+    bool public whitelistDisabled; // __gap[50] -> __gap[49]
+
+    error NotWhitelisted(string name, address guilty);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -20,7 +25,7 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
      * @param admin address for the ADMIN_ROLE of the token.
      */
     function __FortaCommon_init(address admin) internal initializer {
-        require(admin != address(0), "FortaCommon: admin cannot be address 0");
+        if (admin == address(0)) revert ZeroAddress("admin");
         __AccessControl_init();
         __ERC20_init("Forta", "FORT");
         __ERC20Permit_init("Forta");
@@ -38,8 +43,10 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
 
     /// Only allow transfer to whitelisted accounts
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
-        require(from == address(0) || hasRole(WHITELIST_ROLE, from), "Forta: sender is not whitelisted");
-        require(to   == address(0) || hasRole(WHITELIST_ROLE, to), "Forta: receiver is not whitelisted");
+        if (!whitelistDisabled) {
+            if (!(from == address(0) || hasRole(WHITELIST_ROLE, from))) revert NotWhitelisted("sender", from);
+            if (!(to   == address(0) || hasRole(WHITELIST_ROLE, to))) revert NotWhitelisted("receiver", to);
+        }
         super._beforeTokenTransfer(from, to, amount);
     }
 
@@ -47,8 +54,20 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
     function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(ADMIN_ROLE) {
     }
 
-    /// Allow the upgrader to set ENS reverse registration
+    // Allow the upgrader to set ENS reverse registration
+    // NOTE: Forta token has a different role structure than contracts under component, by order of deployment.
+    // instead of ENS_MANAGER_ROLE, here the token ADMIN has permission.
     function setName(address ensRegistry, string calldata ensName) external onlyRole(ADMIN_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
+
+    // Disable whitelisting of the token. 
+    // The whitelist functionality is going to be removed via contract upgrade to remove the checks in 
+    // _beforeTokenTransfer and be more gas efficient. In case an upgrade is too risky for some reason,
+    // this methods ensure our comprise to publish the token and keep decentralizing Forta.
+    function disableWhitelist() public onlyRole(WHITELISTER_ROLE) {
+        whitelistDisabled = true;
+    }
+
+    uint256[49] private __gap; 
 }

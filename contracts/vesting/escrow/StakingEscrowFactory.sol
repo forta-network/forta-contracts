@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./StakingEscrow.sol";
 import "./StakingEscrowUtils.sol";
+import "../../errors/GeneralErrors.sol";
+
 
 /**
  * Factory in charge of creating escrow instances for the vesting wallets. This factory, and the escrow instances are
@@ -28,19 +30,19 @@ import "./StakingEscrowUtils.sol";
 contract StakingEscrowFactory {
     FortaBridgedPolygon  public immutable token;
     FortaStaking  public immutable staking;
-    StakingEscrow public immutable template;
+    address public immutable template;
 
     event NewStakingEscrow(address indexed escrow, address indexed vesting, address indexed manager);
 
     constructor(address __trustedForwarder, FortaStaking __staking) {
-        require(__trustedForwarder != address(0), "StakingEscrowFactory: __trustedForwarder cannot be address 0");
+        if (__trustedForwarder == address(0)) revert ZeroAddress("__trustedForwarder");
         token    = FortaBridgedPolygon(address(__staking.stakedToken()));
         staking  = __staking;
-        template = new StakingEscrow(
+        template = address(new StakingEscrow(
             __trustedForwarder,
             token,
             staking
-        );
+        ));
     }
 
     /**
@@ -54,10 +56,10 @@ contract StakingEscrowFactory {
         address vesting,
         address manager
     ) public returns (address) {
-        require(vesting != address(0), "StakingEscrowFactory: vesting cannot be address 0");
-        require(manager != address(0), "StakingEscrowFactory: manager cannot be address 0");
+        if (vesting == address(0)) revert ZeroAddress("vesting");
+        if (manager == address(0)) revert ZeroAddress("manager");
         address instance = Clones.cloneDeterministic(
-            address(template),
+            template,
             StakingEscrowUtils.computeSalt(vesting, manager)
         );
         StakingEscrow(instance).initialize(vesting, manager);
@@ -79,7 +81,7 @@ contract StakingEscrowFactory {
         address manager
     ) public view returns (address) {
         return Clones.predictDeterministicAddress(
-            address(template),
+            template,
             StakingEscrowUtils.computeSalt(vesting, manager)
         );
     }

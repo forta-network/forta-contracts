@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 library FortaStakingUtils {
     /**
@@ -10,7 +10,7 @@ library FortaStakingUtils {
      * @return ERC1155 token id representing active shares.
      */
     function subjectToActive(uint8 subjectType, uint256 subject) internal pure returns (uint256) {
-        return (uint256(keccak256(abi.encodePacked(subjectType, subject))) << 9 | uint16(256)) | subjectType;
+        return (uint256(keccak256(abi.encodePacked(subjectType, subject))) << 9 | uint16(256)) | uint256(subjectType);
     }
 
     /**
@@ -21,7 +21,7 @@ library FortaStakingUtils {
      * @return ERC1155 token id representing inactive shares.
      */
     function subjectToInactive(uint8 subjectType, uint256 subject) internal pure returns (uint256) {
-        return (uint256(keccak256(abi.encodePacked(subjectType, subject))) << 9) | subjectType;
+        return (uint256(keccak256(abi.encodePacked(subjectType, subject))) << 9) | uint256(subjectType);
     }
 
     /**

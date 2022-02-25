@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "./AgentRegistryCore.sol";
 
@@ -12,6 +12,8 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
 
     mapping(uint256 => AgentMetadata) private _agentMetadata;
     mapping(bytes32 => bool) private _agentMetadataUniqueness;
+
+    error MetadataNotUnique(bytes32 hash);
 
     /**
      * @notice Gets agent metadata, version and chain Ids.
@@ -40,7 +42,7 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
 
         bytes32 oldHash = keccak256(bytes(_agentMetadata[agentId].metadata));
         bytes32 newHash = keccak256(bytes(newMetadata));
-        require(!_agentMetadataUniqueness[newHash], "AgentRegistryMetadata: metadata should be a unique property");
+        if (_agentMetadataUniqueness[newHash]) revert MetadataNotUnique(newHash);
         _agentMetadataUniqueness[newHash] = true;
         _agentMetadataUniqueness[oldHash] = false;
 

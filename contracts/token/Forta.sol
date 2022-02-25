@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "./FortaCommon.sol";
 
@@ -26,4 +26,6 @@ contract Forta is FortaCommon {
     function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
         _mint(to, amount);
     }
+
+    uint256[50] private __gap; 
 }

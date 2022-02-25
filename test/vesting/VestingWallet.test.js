@@ -75,7 +75,7 @@ describe('VestingWallet', function () {
         ],
         unsafeAllow: 'delegatecall',
       },
-    )).to.be.revertedWith('VestingWallet: beneficiary is zero address');
+    )).to.be.revertedWith('ZeroAddress("beneficiary_")');
   });
 
   it('create vesting contract', async function () {
@@ -121,7 +121,7 @@ describe('VestingWallet', function () {
       expect(await this.token.delegates(this.vesting.address)).to.be.equal(ethers.constants.AddressZero);
 
       await expect(this.vesting.delegate(this.token.address, this.accounts.other.address))
-        .to.be.revertedWith(`VestingWallet: access restricted to beneficiary`);
+        .to.be.revertedWith(`DoesNotHaveAccess("${this.accounts.admin.address}", "beneficiary")`);
 
       expect(await this.token.delegates(this.vesting.address)).to.be.equal(ethers.constants.AddressZero);
     });
@@ -140,7 +140,7 @@ describe('VestingWallet', function () {
   describe('bridge token', function () {
     it('protected', async function () {
       await expect(this.vesting.functions['bridge(uint256)'](this.amount))
-      .to.be.revertedWith('VestingWallet: access restricted to beneficiary')
+      .to.be.revertedWith(`DoesNotHaveAccess("${this.accounts.admin.address}", "beneficiary")`);
     });
 
     it('beneficiary can bridge', async function () {

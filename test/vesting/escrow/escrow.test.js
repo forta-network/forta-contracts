@@ -6,7 +6,7 @@ const { subjectToActive, subjectToInactive } = require('../../../scripts/utils/s
 
 const LOCKED_OFFSET = ethers.BigNumber.from(2).pow(160);
 const subjects = [
-  [ ethers.BigNumber.from(ethers.Wallet.createRandom().address), 0 ],// Scanner id, scanner type
+  [ ethers.BigNumber.from('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), 0 ],// Scanner id, scanner type
 ]
 const [
   [ subject, subjectType, active, inactive ],
@@ -14,7 +14,7 @@ const [
 const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
 
 describe('Staking Escrow', function () {
-  prepare({ childChain: true });
+  prepare({ childChain: true, stake: { min: '1', max: ethers.utils.parseEther('10000000'), activated: true } });
 
   beforeEach(async function () {
     this.accounts.getAccount('manager');
@@ -32,6 +32,8 @@ describe('Staking Escrow', function () {
       this.token.connect(this.accounts.user2).approve(this.staking.address, ethers.constants.MaxUint256),
       this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256),
     ])
+
+    await this.scanners.connect(this.accounts.manager).adminRegister(ethers.utils.hexValue(subject), this.accounts.user1.address, 1, 'metadata')
   });
 
   describe('with funded escrow wallet', async function () {
@@ -96,7 +98,7 @@ describe('Staking Escrow', function () {
           });
 
           it('protected', async function () {
-            await expect(this.escrow.releaseAllReward(this.accounts.manager.address)).to.be.revertedWith('restricted to manager');
+            await expect(this.escrow.releaseAllReward(this.accounts.manager.address)).to.be.revertedWith(`DoesNotHaveAccess("${this.accounts.admin.address}", "l2Manager")`);
           });
 
           it('authorized', async function () {
@@ -133,20 +135,20 @@ describe('Staking Escrow', function () {
       });
 
 
-      describe('withdrawal', function () {
+      describe('withdrawal', function () {;
         it('protected', async function () {
-          await expect(this.escrow.initiateWithdrawal(subjectType, subject, this.value))
-          .to.be.revertedWith('restricted to manager');
+          await expect(this.escrow.functions['initiateWithdrawal(uint8,uint256,uint256)'](subjectType, subject, this.value))
+          .to.be.revertedWith('DoesNotHaveAccess("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "l2Manager")');
 
-          await expect(this.escrow.initiateFullWithdrawal(subjectType, subject))
-          .to.be.revertedWith('restricted to manager');
+          await expect(this.escrow.functions['initiateWithdrawal(uint8,uint256)'](subjectType, subject))
+          .to.be.revertedWith('DoesNotHaveAccess("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "l2Manager")');
 
           await expect(this.escrow.withdraw(subjectType, subject))
-          .to.be.revertedWith('restricted to manager');
+          .to.be.revertedWith('DoesNotHaveAccess("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "l2Manager")');
         });
 
         it('authorized', async function () {
-          const tx1 = await this.escrow.connect(this.accounts.manager).initiateWithdrawal(subjectType, subject, this.value);
+          const tx1 = await this.escrow.connect(this.accounts.manager).functions['initiateWithdrawal(uint8,uint256,uint256)'](subjectType, subject, this.value);
           const tx2 = await this.escrow.connect(this.accounts.manager).withdraw(subjectType, subject);
 
           await expect(tx1)
@@ -162,7 +164,7 @@ describe('Staking Escrow', function () {
 
         it('authorized - full', async function () {
           const initialBalance = await this.token.balanceOf(this.escrow.address);
-          const tx1 = await this.escrow.connect(this.accounts.manager).initiateFullWithdrawal(subjectType, subject);
+          const tx1 = await this.escrow.connect(this.accounts.manager).functions['initiateWithdrawal(uint8,uint256)'](subjectType, subject);
           const tx2 = await this.escrow.connect(this.accounts.manager).withdraw(subjectType, subject);
           await expect(tx1)
           .to.emit(this.staking, 'WithdrawalInitiated').withArgs(subjectType, subject, this.escrow.address, await txTimestamp(tx1))

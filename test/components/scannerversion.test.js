@@ -17,7 +17,7 @@ describe('Scanner Node Software Version', function () {
     })
     it('reverts setting same version', async function () {
       this.scannerNodeVersion.connect(this.accounts.admin).setScannerNodeVersion(VERSION_1)
-      await expect(this.scannerNodeVersion.connect(this.accounts.admin).setScannerNodeVersion(VERSION_1)).to.be.revertedWith("must update to different scannerNodeVersion");
+      await expect(this.scannerNodeVersion.connect(this.accounts.admin).setScannerNodeVersion(VERSION_1)).to.be.revertedWith("SameScannerNodeVersion()");
     })
     it('restricted', async function () {
       await expect(this.scannerNodeVersion.connect(this.accounts.other).setScannerNodeVersion(VERSION_2)).to.be.reverted;

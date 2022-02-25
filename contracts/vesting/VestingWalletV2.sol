@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
@@ -32,6 +32,8 @@ contract VestingWalletV2 is VestingWalletV1 {
     event TokensBridged(address indexed l2Escrow, address indexed l2Manager, uint256 amount);
     event HistoricalBalanceMinChanged(uint256 newValue, uint256 oldValue);
 
+    error BridgingToContract();
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         address _rootChainManager,
@@ -48,32 +50,32 @@ contract VestingWalletV2 is VestingWalletV1 {
     /**
      * @notice Bridge token to L2
      * @dev In case the beneficiary is a smart contract, bridging that way might be dangerous. In such cases,
-     * {bridge(uint256,address)} should be prefered.
+     * bridge(uint256,address) should be prefered.
      * @param amount of tokens to be bridged
      */
     function bridge(uint256 amount)
         public
         virtual
     {
-        require(!Address.isContract(beneficiary()), "Caution: beneficiary is a contract");
+        if (Address.isContract(beneficiary())) revert BridgingToContract();
         bridge(amount, beneficiary());
     }
 
     /**
      * @notice Bridge token to L2, with custom escrow manager on L2.
      * @dev Using a custom escrow manager is needed if the beneficiary isn't valid on the child chain, for example if it
-     * is a smart wallet that doesn't exist at the same address on the child chain. If the beneficiary of the contract
-     * is a smart wallet valid on both chain, it must be explicitelly mentioned as the manager.
+     * is a smart wallet that doesn't exist at the same address on the child chain. 
+     * If the beneficiary of the contract is a smart wallet valid on both chains, it must be explicitelly mentioned as the manager.
      * @dev amount of tokens to be bridged.
-     * @dev l2Manager the address that will be controller generated StakinEscrow in L2
+     * @dev l2Manager the address that will be controller generated StakinEscrow in L2.
      */
     function bridge(uint256 amount, address l2Manager)
         public
         virtual
         onlyBeneficiary()
     {
-        require(amount > 0, "VestingWalletV2: amount cannot be 0");
-        require(l2Manager!= address(0), "VestingWalletV2: l2Manager cannot be address 0");
+        if (amount == 0) revert ZeroAmount("");
+        if (l2Manager== address(0)) revert ZeroAddress("l2Manager");
         // lock historicalBalance
         historicalBalanceMin = _historicalBalance(l1Token);
 
@@ -115,9 +117,9 @@ contract VestingWalletV2 is VestingWalletV1 {
     // Admin operations
 
     /**
-     * @dev Sets historical balance min. Only use if there is an imbalance between L1 VestingWallet and L2 StakingEscrow
+     * @dev Sets historical balance minimum. Only use if there is an imbalance between L1 VestingWallet and L2 StakingEscrow
      */ 
-    function setHistoricalBalanceBridged(uint256 value)
+    function setHistoricalBalanceMin(uint256 value)
         public
         onlyOwner()
     {
@@ -126,13 +128,13 @@ contract VestingWalletV2 is VestingWalletV1 {
     }
 
     /**
-     * @dev Sets historical balance bridged. Only use if there is an imbalance between L1 VestingWallet and L2 StakingEscrow
+     * @dev Sets  historical balance. Only use if there is an imbalance between L1 VestingWallet and L2 StakingEscrow
      */ 
-    function updateHistoricalBalanceBridged(int256 update)
+    function updateHistoricalBalanceMin(int256 update)
         public
         onlyOwner()
     {
-        setHistoricalBalanceBridged((historicalBalanceMin.toInt256() + update).toUint256());
+        setHistoricalBalanceMin((historicalBalanceMin.toInt256() + update).toUint256());
     }
 
     uint256[45] private __gap;

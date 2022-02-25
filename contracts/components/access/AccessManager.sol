@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/Multicall.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../Roles.sol";
 import "../utils/ForwardedContext.sol";
+import "../utils/IVersioned.sol";
 import "../../tools/ENSReverseRegistration.sol";
+import "../../errors/GeneralErrors.sol";
 
 // This cannot be BaseComponentUpgradeable, because BaseComponentUpgradeable is AccessManagedUpgradeable
-contract AccessManager is ForwardedContext, AccessControlUpgradeable, UUPSUpgradeable, Multicall {
+contract AccessManager is ForwardedContext, AccessControlUpgradeable, UUPSUpgradeable, Multicall, IVersioned {
     
     string public constant version = "0.1.0";
 
@@ -21,7 +23,7 @@ contract AccessManager is ForwardedContext, AccessControlUpgradeable, UUPSUpgrad
      * @param __admin address to be the DEFAULT_ADMIN_ROLE.
      */
     function initialize(address __admin) external initializer {
-        require(__admin != address(0), "AccessManager: __admin cannot be address 0");
+        if (__admin == address(0)) revert ZeroAddress("__admin");
         __AccessControl_init();
         __UUPSUpgradeable_init();
         _grantRole(DEFAULT_ADMIN_ROLE, __admin);

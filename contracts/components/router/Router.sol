@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/Multicall.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -7,18 +7,26 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../Roles.sol";
 import "../utils/AccessManaged.sol";
 import "../utils/ForwardedContext.sol";
+import "../utils/IVersioned.sol";
 import "../../tools/ENSReverseRegistration.sol";
 import "./IRouter.sol";
 
-// This should be BaseComponentUpgradeable, because BaseComponentUpgradeable is Routed
-contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgradeable, Multicall {
+// This should be BaseComponentUpgradeable, but it can't be because BaseComponentUpgradeable is Routed, so we
+// share almost the same inheritance structure.
+contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgradeable, Multicall, IVersioned {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     mapping(bytes4 => EnumerableSet.AddressSet) private _routingTable;
+    mapping(bytes4 => bool) private _revertsOnFail;
 
+    uint256 private constant SIGNATURE_SIZE = 4;
     string public constant version = "0.1.0";
-    
-    event RoutingUpdated(bytes4 indexed sig, address indexed target, bool enable);
+
+    event RoutingUpdated(bytes4 indexed sig, address indexed target, bool enable, bool revertsOnFail);
+
+    error HookFailed(bytes4 sig, uint256 at);
+    error AlreadyRouted();
+    error NotInRoutingTable();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -38,11 +46,13 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
      * @param payload with the method signature and parameters for the hook to be executed
      */
     function hookHandler(bytes calldata payload) external override {
-        bytes4 sig = bytes4(payload[:4]);
+        bytes4 sig = bytes4(payload[:SIGNATURE_SIZE]);
         uint256 length = _routingTable[sig].length();
-        for (uint256 i = 0; i < length; ++i) {
-            // Lazy, don't worry about calls failing here
+        for (uint256 i = 0; i < length; i++) {
             (bool success, bytes memory returndata) = _routingTable[sig].at(i).call(payload);
+            if (_revertsOnFail[sig]) {
+                if (!success) revert HookFailed(sig, i);
+            }
             success;
             returndata;
         }
@@ -53,14 +63,17 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
      * @param sig the hook signature to listen to.
      * @param target address of the listening contract.
      * @param enable true if adding to the list, false to remove.
+     * @param revertsOnFail true if hook execution failure should bubble up, false to ignore.
      */
-    function setRoutingTable(bytes4 sig, address target, bool enable) external onlyRole(ROUTER_ADMIN_ROLE) {
+    function setRoutingTable(bytes4 sig, address target, bool enable, bool revertsOnFail) external onlyRole(ROUTER_ADMIN_ROLE) {
         if (enable) {
-            _routingTable[sig].add(target);
+            if (!_routingTable[sig].add(target)) revert AlreadyRouted();
+            _revertsOnFail[sig] = revertsOnFail;
         } else {
-            _routingTable[sig].remove(target);
+            if (!_routingTable[sig].remove(target)) revert NotInRoutingTable();
+            _revertsOnFail[sig] = false;
         }
-        emit RoutingUpdated(sig, target, enable);
+        emit RoutingUpdated(sig, target, enable, revertsOnFail);
     }
 
 
@@ -89,5 +102,5 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
         return super._msgData();
     }
 
-    uint256[49] private __gap;
+    uint256[48] private __gap;
 }

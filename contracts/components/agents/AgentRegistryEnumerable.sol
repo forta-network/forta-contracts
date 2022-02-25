@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./AgentRegistryMetadata.sol";
@@ -62,7 +62,7 @@ abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
 
         (uint256 version,, uint256[] memory oldChainIds) = getAgent(agentId);
 
-        if (version == 0) { _allAgents.add(agentId); }
+        if (version == 0) { _allAgents.add(agentId); } //NOTE: ignoring EnumerableSet.add() bool output; We don't care if already added.
 
         uint256 i = 0;
         uint256 j = 0;
@@ -76,8 +76,8 @@ abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
             } else if (oldChainIds[i] > newChainIds[j]) { // new chain smaller, add it
                 _chainAgents[newChainIds[j++]].add(agentId);
             } else { // chainIds are the same do nothing
-                ++i;
-                ++j;
+                i++;
+                j++;
             }
         }
     }

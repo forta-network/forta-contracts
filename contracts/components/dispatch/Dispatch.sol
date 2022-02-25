@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -17,6 +17,11 @@ contract Dispatch is BaseComponentUpgradeable {
 
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
+
+    error Disabled(string name);
+    error InvalidId(string name, uint256 id);
+    error AlreadyLinked(string name, uint256 id);
+    error AlreadyUnlinked(string name, uint256 id);
 
     event Link(uint256 agentId, uint256 scannerId, bool enable);
 
@@ -64,7 +69,7 @@ contract Dispatch is BaseComponentUpgradeable {
     * @param scannerId ERC1155 token id of the scanner.
     * @return total agents linked to a scanner
     */
-    function agentsFor(uint256 scannerId) public view returns (uint256) {
+    function numAgentsFor(uint256 scannerId) public view returns (uint256) {
         return scannerToAgents[scannerId].length();
     }
 
@@ -74,7 +79,7 @@ contract Dispatch is BaseComponentUpgradeable {
     * @param agentId ERC1155 token id of the agent.
     * @return total scanners running an scanner
     */
-    function scannersFor(uint256 agentId) public view returns (uint256) {
+    function numScannersFor(uint256 agentId) public view returns (uint256) {
         return agentToScanners[agentId].length();
     }
 
@@ -85,7 +90,7 @@ contract Dispatch is BaseComponentUpgradeable {
     * @param pos index for iteration.
     * @return ERC1155 token id of the agent. 
     */
-    function agentsAt(uint256 scannerId, uint256 pos) public view returns (uint256) {
+    function agentAt(uint256 scannerId, uint256 pos) public view returns (uint256) {
         return scannerToAgents[scannerId].at(pos);
     }
 
@@ -101,9 +106,10 @@ contract Dispatch is BaseComponentUpgradeable {
     * @return chainIds ordered
     */
     function agentRefAt(uint256 scannerId, uint256 pos) external view returns (uint256 agentId, bool enabled, uint256 agentVersion, string memory metadata, uint256[] memory chainIds) {
-        agentId = agentsAt(scannerId, pos);
+        agentId = agentAt(scannerId, pos);
         enabled = _agents.isEnabled(agentId);
         (agentVersion, metadata, chainIds) = _agents.getAgent(agentId);
+        return (agentVersion, enabled, agentVersion, metadata, chainIds);
     }
 
     /**
@@ -113,7 +119,7 @@ contract Dispatch is BaseComponentUpgradeable {
     * @param pos index for iteration.
     * @return ERC1155 token id of the scanner. 
     */
-    function scannersAt(uint256 agentId, uint256 pos) public view returns (uint256) {
+    function scannerAt(uint256 agentId, uint256 pos) public view returns (uint256) {
         return agentToScanners[agentId].at(pos);
     }
 
@@ -126,7 +132,7 @@ contract Dispatch is BaseComponentUpgradeable {
     * @return enabled bool if scanner is enabled, false otherwise.
     */
     function scannerRefAt(uint256 agentId, uint256 pos) external view returns (uint256 scannerId, bool enabled) {
-        scannerId = scannersAt(agentId, pos);
+        scannerId = scannerAt(agentId, pos);
         enabled   = _scanners.isEnabled(agentId);
     }
 
@@ -138,11 +144,11 @@ contract Dispatch is BaseComponentUpgradeable {
      * @param scannerId ERC1155 token id of the scanner.
      */
     function link(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        require(_agents.isEnabled(agentId), "Dispatch: Agent disabled");
-        require(_scanners.isEnabled(scannerId), "Dispatch: Scanner disabled");
+        if (!_agents.isEnabled(agentId)) revert Disabled("Agent");
+        if (!_scanners.isEnabled(scannerId)) revert Disabled("Scanner");
 
-        scannerToAgents[scannerId].add(agentId);
-        agentToScanners[agentId].add(scannerId);
+        if (!scannerToAgents[scannerId].add(agentId)) revert AlreadyLinked("Agent", agentId);
+        if (!agentToScanners[agentId].add(scannerId)) revert AlreadyLinked("Scanner", scannerId);
 
         emit Link(agentId, scannerId, true);
     }
@@ -155,11 +161,11 @@ contract Dispatch is BaseComponentUpgradeable {
      * @param scannerId ERC1155 token id of the scanner.
      */
     function unlink(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        require(_agents.isCreated(agentId), "Dispatch: invalid agent id");
-        require(_scanners.isRegistered(scannerId), "Dispatch: invalid scanner id");
+        if (!_agents.isCreated(agentId)) revert InvalidId("Agent", agentId);
+        if (!_scanners.isRegistered(scannerId)) revert InvalidId("Scanner", scannerId);
 
-        scannerToAgents[scannerId].remove(agentId);
-        agentToScanners[agentId].remove(scannerId);
+        if (!(scannerToAgents[scannerId].remove(agentId))) revert AlreadyUnlinked("Agent", agentId);
+        if (!(agentToScanners[agentId].remove(scannerId))) revert AlreadyUnlinked("Scanner", scannerId);
 
         emit Link(agentId, scannerId, false);
     }
@@ -190,7 +196,7 @@ contract Dispatch is BaseComponentUpgradeable {
         uint256[] memory scanners = agentToScanners[agentId].values();
         bool[]    memory enabled = new bool[](scanners.length);
 
-        for (uint256 i = 0; i < scanners.length; ++i) {
+        for (uint256 i = 0; i < scanners.length; i++) {
             enabled[i] = _scanners.isEnabled(scanners[i]);
         }
 
@@ -213,7 +219,7 @@ contract Dispatch is BaseComponentUpgradeable {
         uint256[] memory agentVersion = new uint256[](agents.length);
         bool[]    memory enabled = new bool[](agents.length);
 
-        for (uint256 i = 0; i < agents.length; ++i) {
+        for (uint256 i = 0; i < agents.length; i++) {
             (agentVersion[i],,) = _agents.getAgent(agents[i]);
             enabled[i]     = _agents.isEnabled(agents[i]);
         }

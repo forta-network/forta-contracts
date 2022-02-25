@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "./ScannerRegistryCore.sol";
 
@@ -23,6 +23,11 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
             _scannerMetadata[scannerId].metadata
         );
     }
+    
+    function _getStakeThreshold(uint256 subject) override virtual internal view returns(StakeThreshold memory) {
+        (uint256 chainId, ) = getScanner(subject);
+        return _stakeThresholds[chainId];
+    }
 
     /**
      * @notice internal logic for scanner update.
@@ -33,7 +38,6 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
      */
     function _scannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual override {
         super._scannerUpdate(scannerId, chainId, metadata);
-
         _scannerMetadata[scannerId] = ScannerMetadata({ chainId: chainId, metadata: metadata });
     }
 

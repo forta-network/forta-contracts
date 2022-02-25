@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "./FortaCommon.sol";
 
@@ -21,8 +21,10 @@ contract FortaBridgedPolygon is FortaCommon {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable childChainManagerProxy;
 
+    error DepositOnlyByChildChainManager();
+
     modifier flashWhitelistRole(address user) {
-        bool missing = !hasRole(WHITELIST_ROLE, user);
+        bool missing = !hasRole(WHITELIST_ROLE, user) && !whitelistDisabled;
 
         if (missing) {
             _grantRole(WHITELIST_ROLE, user);
@@ -35,7 +37,7 @@ contract FortaBridgedPolygon is FortaCommon {
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address _childChainManagerProxy) {
-        require(_childChainManagerProxy != address(0), "FortaBridgedPolygon: setting address 0");
+        if (_childChainManagerProxy == address(0)) revert ZeroAddress("_childChainManagerProxy");
         childChainManagerProxy = _childChainManagerProxy;
     }
 
@@ -45,16 +47,16 @@ contract FortaBridgedPolygon is FortaCommon {
 
     /**
      * @dev To avoid token locked on the parent chains not being correctly represented on the
-     * child chain, this should NEVER revert. Consequently, we might have to temporarily grant
+     * child chain, this should NEVER revert (exception: _mint can revert if totalSupply() <= _maxSupply()).
+     * Consequently, we might have to temporarily grant
      * WHITELIST_ROLE to the receiver.
-     *
      * If the receiver is not whitelisted when the deposit happens, tokens are minted but not
      * usable until the receiver goes through the whitelisting process.
      * @param user the destination address for the tokens.
      * @param depositData encoded data sent by the bridge.
      */
     function deposit(address user, bytes calldata depositData) external flashWhitelistRole(user) {
-        require(msg.sender == childChainManagerProxy, "FortaBridgedPolygon: only childChainManagerProxy can deposit");
+        if (msg.sender != childChainManagerProxy) revert DepositOnlyByChildChainManager();
 
         uint256 amount = abi.decode(depositData, (uint256));
         _mint(user, amount);
@@ -81,4 +83,6 @@ contract FortaBridgedPolygon is FortaCommon {
         _transfer(msg.sender, receiver, amount);
         _burn(receiver, amount);
     }
+
+    uint256[49] private __gap; 
 }

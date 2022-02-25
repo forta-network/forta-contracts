@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -12,12 +12,14 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
 
     event ManagerEnabled(uint256 indexed scannerId, address indexed manager, bool enabled);
 
+    error SenderNotManager(address sender, uint256 scannerId);
+
     /**
      * @notice Checks sender (or metatx signer) is manager of the scanner token.
      * @param scannerId ERC1155 token id of the scanner.
      */
     modifier onlyManagerOf(uint256 scannerId) {
-        require(_managers[scannerId].contains(_msgSender()), "ScannerRegistryManaged: Restricted to scanner owner");
+        if (!_managers[scannerId].contains(_msgSender())) revert SenderNotManager(_msgSender(), scannerId);
         _;
     }
 
@@ -67,5 +69,5 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
         emit ManagerEnabled(scannerId, manager, enable);
     }
 
-    uint256[44] private __gap;
+    uint256[49] private __gap;
 }

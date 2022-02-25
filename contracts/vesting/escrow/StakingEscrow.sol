@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "../../token/FortaBridgedPolygon.sol";
 import "../../components/staking/FortaStaking.sol";
 import "../../components/utils/ForwardedContext.sol";
+import "../../errors/GeneralErrors.sol";
 
 /**
  * Logic for the escrow that handles vesting tokens, on the child chain, for a vesting wallet
@@ -29,16 +30,18 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
     address      public           l2manager;
     uint256      public           pendingReward;
 
+    error DontBridgeOrStakeRewards();
+    
     /// Checks if _msgSnder() is l2 manager, reverts if not.
     modifier onlyManager() {
-        require(_msgSender() == l2manager, "restricted to manager");
+        if (_msgSender() != l2manager) revert DoesNotHaveAccess(_msgSender(), "l2Manager");
         _;
     }
 
     /// Checks if `amount` is part of staking rewards, reverts so user don't bridge rewards back to VestingWallet and
     /// decelerates her vesting rate.
     modifier vestingBalance(uint256 amount) {
-        require(l2token.balanceOf(address(this)) >= amount + pendingReward, "rewards should not be bridged or staked");
+        if (l2token.balanceOf(address(this)) < amount + pendingReward) revert DontBridgeOrStakeRewards();
         _;
     }
 
@@ -67,8 +70,8 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
         address __l1vesting,
         address __l2manager
     ) public initializer {
-        require(__l1vesting != address(0), "StakingEscrow: __l1vesting cannot be address 0");
-        require(__l2manager != address(0), "StakingEscrow: __l1vesting cannot be address 0");
+        if (__l1vesting == address(0)) revert ZeroAddress("__l1vesting");
+        if (__l2manager == address(0)) revert ZeroAddress("__l2manager");
         l1vesting = __l1vesting;
         l2manager = __l2manager;
     }
@@ -117,7 +120,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * @param subjectType agents, scanner or future types of stake subject. See FortaStakingSubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
      */
-    function initiateFullWithdrawal(uint8 subjectType, uint256 subject) public returns (uint64) {
+    function initiateWithdrawal(uint8 subjectType, uint256 subject) public returns (uint64) {
         return initiateWithdrawal(
             subjectType,
             subject,
@@ -182,7 +185,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * @param amount of tokens to bridge.
      */
     function bridge(uint256 amount) public onlyManager() vestingBalance(amount) {
-        require(amount > 0, "StakingEscrow: amount must be > 0");
+        if (amount == 0) revert ZeroAmount("");
         l2token.withdrawTo(amount, l1vesting);
     }
 
@@ -206,19 +209,19 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * @dev Hook for reward accounting
      */
     function onRewardReceived(uint8, uint256, uint256 amount) public {
-        require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
+        if (msg.sender != address(l2staking)) revert DoesNotHaveAccess(msg.sender, "l2staking");
         pendingReward += amount;
     }
 
     /// @dev implementation of ERC1155Receiver for single token transfers.
     function onERC1155Received(address, address, uint256, uint256, bytes calldata) external view returns (bytes4) {
-        require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
+        if (msg.sender != address(l2staking)) revert DoesNotHaveAccess(msg.sender, "l2staking");
         return this.onERC1155Received.selector;
     }
 
     /// @dev implementation of ERC1155Receiver for batch token transfers.
     function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata) external view returns (bytes4) {
-        require(msg.sender == address(l2staking), "StakingEscrow: sender must be l2staking");
+        if (msg.sender != address(l2staking)) revert DoesNotHaveAccess(msg.sender, "l2staking");
         return this.onERC1155BatchReceived.selector;
     }
 }

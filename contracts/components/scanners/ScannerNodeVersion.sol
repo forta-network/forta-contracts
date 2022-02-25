@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../BaseComponentUpgradeable.sol";
 
@@ -20,6 +20,8 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
 
     event ScannerNodeVersionUpdated(string newVersion, string oldVersion);
 
+    error SameScannerNodeVersion();
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -35,7 +37,6 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
-        
     }
 
     /**
@@ -45,10 +46,9 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
      * @param version IPFS pointer to the new image.
      */
     function setScannerNodeVersion(string calldata version) public onlyRole(SCANNER_VERSION_ROLE) {
-        require(
-            keccak256(abi.encodePacked(scannerNodeVersion)) != keccak256(abi.encodePacked(version)),
-            "must update to different scannerNodeVersion"
-        );
+        if(
+            keccak256(abi.encodePacked(scannerNodeVersion)) == keccak256(abi.encodePacked(version))
+        ) revert SameScannerNodeVersion();
         emit ScannerNodeVersionUpdated(version, scannerNodeVersion);
         scannerNodeVersion = version;
     }
