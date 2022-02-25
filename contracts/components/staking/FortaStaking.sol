@@ -115,6 +115,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint64 __withdrawalDelay,
         address __treasury
     ) public initializer {
+        require(__treasury != address(0), "FS: address 0");
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
@@ -567,6 +568,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     // Admin: change recipient of slashed funds
     function setTreasury(address newTreasury) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newTreasury != address(0), "FS: address 0");
         _treasury = newTreasury;
         emit TreasurySet(newTreasury);
     }
