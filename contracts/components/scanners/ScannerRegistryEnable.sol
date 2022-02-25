@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./ScannerRegistryManaged.sol";
-import "../utils/StakeAware.sol";
 
 /**
 * @dev ScannerRegistry methods and state handling disabling and enabling scanners, and
@@ -12,7 +11,7 @@ import "../utils/StakeAware.sol";
 * NOTE: This contract was deployed before StakeAwareUpgradeable was created, so __StakeAwareUpgradeable_init
 * is not called.
 */
-abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeAwareUpgradeable {
+abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
     using BitMaps for BitMaps.BitMap;
 
     enum Permission {
@@ -36,19 +35,14 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeAwareUpg
     function isEnabled(uint256 scannerId) public view virtual returns (bool) {
         return isRegistered(scannerId) &&
             _getDisableFlags(scannerId) == 0 &&
-            _isStakedOverMin(SCANNER_SUBJECT, scannerId); 
-    }
-
-    function register(address owner, uint256 chainId, string calldata metadata) virtual override public {
-        require(_getMinStake(SCANNER_SUBJECT) > 0, "ScannerRegistryEnable: public registration available if staking activated");
-        super.register(owner, chainId, metadata);
+            _isStakedOverMin(scannerId); 
     }
 
     /**
      * @dev Enable/Disable scaner
      */
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
-        require(_isStakedOverMin(SCANNER_SUBJECT, scannerId), "ScannerRegistryEnable: scanner staked under minimum");
+        require(_isStakedOverMin(scannerId), "ScannerRegistryEnable: scanner staked under minimum");
         require(_hasPermission(scannerId, permission), "ScannerRegistryEnable: invalid permission");
         _enable(scannerId, permission, true);
     }
@@ -93,14 +87,18 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged, StakeAwareUpg
     }
 
     function _afterScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256)", scannerId));
+        _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256,uint8,bool)", scannerId, uint8(permission), value));
     }
 
-    function _msgSender() internal view virtual override(ContextUpgradeable, ScannerRegistryCore) returns (address sender) {
+
+    /**
+     * Overrides
+     */
+    function _msgSender() internal view virtual override(ScannerRegistryCore) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(ContextUpgradeable, ScannerRegistryCore) returns (bytes calldata) {
+    function _msgData() internal view virtual override(ScannerRegistryCore) returns (bytes calldata) {
         return super._msgData();
     }
 

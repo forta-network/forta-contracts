@@ -21,6 +21,9 @@ abstract contract EIP712WithNonce is EIP712 {
         return _nonces[from][timeline];
     }
 
+    /**
+     * @dev Failed transactions would not consume a nonce, since the reverted transaction won't be able to save in storage.
+     */
     function _verifyAndConsumeNonce(address user, uint256 fullNonce) internal virtual {
         uint256 timeline = fullNonce >> 128;
         uint256 nonce    = uint128(fullNonce);

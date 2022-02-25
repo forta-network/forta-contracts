@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../BaseComponentUpgradeable.sol";
 import "./ScannerRegistryCore.sol";
@@ -30,10 +30,6 @@ contract ScannerRegistry is
         __ERC721_init(__name, __symbol);
     }
 
-    function register(address owner, uint256 chainId, string calldata metadata) public virtual override(ScannerRegistryCore, ScannerRegistryEnable) {
-        super.register(owner, chainId, metadata);
-    }
-
     function _scannerUpdate(
         uint256 scannerId,
         uint256 chainId,
@@ -43,6 +39,10 @@ contract ScannerRegistry is
         ScannerRegistryMetadata
     ) {
         super._scannerUpdate(scannerId, chainId, metadata);
+    }
+
+    function _getStakeThreshold(uint256 subject) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) view returns(StakeThreshold memory) {
+        return super._getStakeThreshold(subject);
     }
 
     function _msgSender() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (address sender) {

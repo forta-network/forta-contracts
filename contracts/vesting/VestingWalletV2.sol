@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
@@ -49,7 +49,7 @@ contract VestingWalletV2 is VestingWalletV1 {
      * Bridge token to L2
      *
      * In case the beneficiary is a smart contract, bridging that way might be dangerous. In such cases,
-     * {bridge(uint256,address)} should be prefered.
+     * {bridge(uint256,address)} should be preferred.
      */
     function bridge(uint256 amount)
         public
@@ -64,7 +64,7 @@ contract VestingWalletV2 is VestingWalletV1 {
      *
      * Using a custom escrow manager is needed if the beneficiary isn't valid on the child chain, for example if it
      * is a smart wallet that doesn't exist at the same address on the child chain. If the beneficiary of the contract
-     * is a smart wallet valid on both chain, it must be explicitelly mentioned as the manager.
+     * is a smart wallet valid on both chain, it must be explicitly mentioned as the manager.
      */
     function bridge(uint256 amount, address l2Manager)
         public
@@ -116,7 +116,7 @@ contract VestingWalletV2 is VestingWalletV1 {
     /**
      * Admin operations
      */
-    function setHistoricalBalanceBridged(uint256 value)
+    function setHistoricalBalanceMin(uint256 value)
         public
         onlyOwner()
     {
@@ -124,11 +124,11 @@ contract VestingWalletV2 is VestingWalletV1 {
         historicalBalanceMin = value;
     }
 
-    function updateHistoricalBalanceBridged(int256 update)
+    function updateHistoricalBalanceMin(int256 update)
         public
         onlyOwner()
     {
-        setHistoricalBalanceBridged((historicalBalanceMin.toInt256() + update).toUint256());
+        setHistoricalBalanceMin((historicalBalanceMin.toInt256() + update).toUint256());
     }
 
     uint256[45] private __gap;
