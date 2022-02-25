@@ -3,7 +3,6 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "./AgentRegistryCore.sol";
-import "../staking/StakeSubject.sol";
 
 /**
 * @dev AgentRegistry methods and state handling disabling and enabling agents, and
@@ -11,7 +10,7 @@ import "../staking/StakeSubject.sol";
 * NOTE: This contract was deployed before StakeAwareUpgradeable was created, so __StakeAwareUpgradeable_init
 * is not called.
 */
-abstract contract AgentRegistryEnable is AgentRegistryCore, StakeSubjectUpgradeable {
+abstract contract AgentRegistryEnable is AgentRegistryCore {
     using BitMaps for BitMaps.BitMap;
 
     enum Permission {
@@ -21,10 +20,8 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, StakeSubjectUpgradea
     }
 
     mapping(uint256 => BitMaps.BitMap) private _disabled;
-    StakeThreshold private _stakeThreshold;
     
     event AgentEnabled(uint256 indexed agentId, bool indexed enabled, Permission permission, bool value);
-    event StakeThresholdChanged(uint256 min, uint256 max);
 
     /**
      * Check if agent is enabled
@@ -86,44 +83,15 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, StakeSubjectUpgradea
     }
 
     /**
-     * Stake
-     */
-    function setStakeThreshold(StakeThreshold memory newStakeThreshold) external onlyRole(AGENT_ADMIN_ROLE) {
-        require(newStakeThreshold.max > newStakeThreshold.min, "AgentRegistryEnable: StakeThreshold max <= min");
-        _stakeThreshold = newStakeThreshold;
-        emit StakeThresholdChanged(newStakeThreshold.min, newStakeThreshold.max);
-    }
-
-    /**
-     @dev stake threshold common for all agents
-    */
-    function getStakeThreshold(uint256 /*subject*/) public override view returns (StakeThreshold memory) {
-        return _stakeThreshold;
-    }
-
-    /**
-     * Checks if agent is staked over minimium stake
-     * @param subject agentId
-     * @return true if agent is staked over the minimum threshold, or staking is not yet enabled (stakeController = 0).
-     * false otherwise
-     */
-    function _isStakedOverMin(uint256 subject) internal override view returns(bool) {
-        if (address(getStakeController()) == address(0)) {
-            return true;
-        }
-        return getStakeController().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min;
-    }
-    
-    /**
      * Override
      */
-    function _msgSender() internal view virtual override(ContextUpgradeable, AgentRegistryCore) returns (address sender) {
+    function _msgSender() internal view virtual override(AgentRegistryCore) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(ContextUpgradeable, AgentRegistryCore) returns (bytes calldata) {
+    function _msgData() internal view virtual override(AgentRegistryCore) returns (bytes calldata) {
         return super._msgData();
     }
 
-    uint256[47] private __gap;
+    uint256[49] private __gap;
 }

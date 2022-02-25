@@ -4,17 +4,22 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponentUpgradeable.sol";
+import "../staking/StakeSubject.sol";
 import "../../tools/FrontRunningProtection.sol";
 
 abstract contract AgentRegistryCore is
     BaseComponentUpgradeable,
     FrontRunningProtection,
-    ERC721Upgradeable
+    ERC721Upgradeable,
+    StakeSubjectUpgradeable
 {
+    
+    StakeThreshold private _stakeThreshold; // 2 storage slots
     // Initially 0 because the frontrunning protection starts disabled.
-    uint256 public frontRunningDelay; // __gap[45] -> __gap[44]
+    uint256 public frontRunningDelay;
 
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
+    event StakeThresholdChanged(uint256 min, uint256 max);
     event FrontRunningDelaySet(uint256 delay);
 
     modifier onlyOwnerOf(uint256 agentId) {
@@ -60,6 +65,35 @@ abstract contract AgentRegistryCore is
     }
 
     /**
+    * Stake
+    */
+    function setStakeThreshold(StakeThreshold memory newStakeThreshold) external onlyRole(AGENT_ADMIN_ROLE) {
+        require(newStakeThreshold.max > newStakeThreshold.min, "AgentRegistryEnable: StakeThreshold max <= min");
+        _stakeThreshold = newStakeThreshold;
+        emit StakeThresholdChanged(newStakeThreshold.min, newStakeThreshold.max);
+    }
+
+    /**
+     @dev stake threshold common for all agents
+    */
+    function getStakeThreshold(uint256 /*subject*/) public override view returns (StakeThreshold memory) {
+        return _stakeThreshold;
+    }
+
+    /**
+     * Checks if agent is staked over minimium stake
+     * @param subject agentId
+     * @return true if agent is staked over the minimum threshold, or staking is not yet enabled (stakeController = 0).
+     * false otherwise
+     */
+    function _isStakedOverMin(uint256 subject) internal override view returns(bool) {
+        if (address(getStakeController()) == address(0)) {
+            return true;
+        }
+        return getStakeController().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min;
+    }
+
+    /**
      * @dev allows AGENT_ADMIN_ROLE to activate frontrunning protection for agents
      * @param delay in seconds
      */
@@ -90,5 +124,5 @@ abstract contract AgentRegistryCore is
         return super._msgData();
     }
 
-    uint256[44] private __gap;
+    uint256[42] private __gap; // 50 - 1 (frontRunningDelay) - 2 (_stakeThreshold) - 5 StakeSubjectUpgradeable
 }

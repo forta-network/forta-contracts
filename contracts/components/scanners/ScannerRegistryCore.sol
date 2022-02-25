@@ -4,12 +4,17 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponentUpgradeable.sol";
+import "../staking/StakeSubject.sol";
 
 abstract contract ScannerRegistryCore is
     BaseComponentUpgradeable,
-    ERC721Upgradeable
+    ERC721Upgradeable,
+    StakeSubjectUpgradeable
 {
+    mapping(uint256 => StakeThreshold) internal _stakeThresholds;
+    
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata);
+    event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max);
 
     modifier onlyOwnerOf(uint256 scannerId) {
         require(_msgSender() == ownerOf(scannerId), "ScannerRegistryCore: Restricted to scanner owner");
@@ -25,6 +30,7 @@ abstract contract ScannerRegistryCore is
     }
 
     function register(address owner, uint256 chainId, string calldata metadata) virtual public {
+        require(_stakeThresholds[chainId].min > 0, "ScannerRegistryEnable: public registration available if staking activated");
         _register(_msgSender(), owner, chainId, metadata);
     }
 
@@ -50,6 +56,34 @@ abstract contract ScannerRegistryCore is
     }
 
     /**
+    * Stake
+    */
+    function setStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(SCANNER_ADMIN_ROLE) {
+        require(newStakeThreshold.max > newStakeThreshold.min, "ScannerRegistryEnable: StakeThreshold max <= min");
+        emit StakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max);
+        _stakeThresholds[chainId] = newStakeThreshold;
+    }
+
+    function _getStakeThreshold(uint256 subject) internal virtual view returns(StakeThreshold memory);
+
+    function getStakeThreshold(uint256 subject) external view returns(StakeThreshold memory) {
+        return _getStakeThreshold(subject);
+    }
+
+    /**
+     * Checks if scanner is staked over minimium stake
+     * @param scannerId scanner
+     * @return true if scanner is staked over the minimum threshold for that chainId, or staking is not yet enabled (stakeController = 0).
+     * false otherwise
+     */
+    function _isStakedOverMin(uint256 scannerId) internal virtual override view returns(bool) {
+        if (address(getStakeController()) == address(0)) {
+            return true;
+        }
+        return getStakeController().activeStakeFor(SCANNER_SUBJECT, scannerId) >= _getStakeThreshold(scannerId).min;
+    }
+
+    /**
      * Hook: Scanner metadata change (create)
      */
     function _beforeScannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
@@ -63,14 +97,13 @@ abstract contract ScannerRegistryCore is
         _emitHook(abi.encodeWithSignature("hook_afterScannerUpdate(uint256,uint256,string)", scannerId, chainId, metadata));
     }
 
-
-    function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (address sender) {
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, ContextUpgradeable) returns (address sender) {
         return super._msgSender();
     }
 
-    function _msgData() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, ContextUpgradeable) returns (bytes calldata) {
         return super._msgData();
     }
 
-    uint256[50] private __gap;
+    uint256[44] private __gap; // 50 - 1 (_stakeThresholds) - 5 (StakeSubjectUpgradeable)
 }
