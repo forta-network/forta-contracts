@@ -31,7 +31,7 @@ abstract contract AgentRegistryCore is
 
     modifier onlySorted(uint256[] memory array) {
         if (array.length == 0 ) revert EmptyArray("chainIds");
-        for (uint256 i = 1; i < array.length; ++i ) {
+        for (uint256 i = 1; i < array.length; i++ ) {
             if (array[i] <= array[i-1]) revert UnorderedArray("chainIds");
         }
         _;
