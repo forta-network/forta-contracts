@@ -27,5 +27,15 @@ contract Forta is FortaCommon {
         _mint(to, amount);
     }
 
+    /**
+     * @notice Contract version
+     * @dev Since FortaCommon is IVersioned, Forta is deployed in L1 and FortaBridgedPolygon in L2,
+     * we need to implement the interface with a method instead of immutable variable.
+     * @return version of FORT deployed in L1
+     */
+    function version() external pure virtual override returns(string memory) {
+        return "0.1.0";
+    }
+
     uint256[50] private __gap; 
 }
