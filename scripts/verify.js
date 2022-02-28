@@ -8,7 +8,7 @@ async function verify(config = {}) {
     
     const { name, chainId } = await provider.getNetwork();
     const CACHE    = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
-    const contractKeys = ['agents'];//await CACHE.get('contracts');
+    const contractKeys = await CACHE.get('contracts');
     for (key of contractKeys) {
         if ((await CACHE.get(`${key}.verified`)) === 'true') {
             continue;
@@ -39,7 +39,8 @@ async function verify(config = {}) {
             });
             await CACHE.set(`${key}.verified`, 'true')
         } catch(e) {
-            console.log(e.description);
+            console.log(e)
+            console.log(key)
         } 
     }   
 }

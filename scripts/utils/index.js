@@ -104,6 +104,7 @@ async function performUpgrade(proxy, factory, opts = {}, cache, key) {
 
 async function tryFetchContract(cache, key, contract, args = [], opts = {}) {
     const deployed = await resumeOrDeploy(cache, key, () => contract.deploy(...args)).then(address => contract.attach(address));
+    DEBUG(`${key}.args`, args);
     await cache.set(`${key}.args`, args);
     await saveVersion(key, cache, deployed, false);
     return deployed;
@@ -155,12 +156,16 @@ async function getContractVersion(contract, deployParams = {}) {
 
 async function saveVersion(key, cache, contract, isProxy) {
     const impl = isProxy ? '.impl' : '';
-    await cache.set(`${key}${impl}.version`, await getContractVersion(contract))
+    const version = await getContractVersion(contract);
+    DEBUG(`${key}${impl}.version`, version);
+    await cache.set(`${key}${impl}.version`, version)
 }
 
 async function resumeOrDeploy(cache, key, deploy) {
     let txHash  = await cache.get(`${key}-pending`);
     let address = await migrateAddress(cache, key);
+    DEBUG('resumeOrDeploy', key, txHash, address);
+
     if (!txHash && !address) {
         const contract = await deploy();
         txHash = contract.deployTransaction.hash;
@@ -182,9 +187,12 @@ async function getEventsFromContractCreation(cache, key, eventName, contract, fi
         throw new Error(`${key} deployment transaction not saved`);
     }
     let provider = contract.provider ?? contract.signer;
-    const { blockNumber } = await provider.getTransactionReceipt(txHash);
+    const receipt = await provider.getTransactionReceipt(txHash);
+    if(receipt === null) {
+        return [];
+    }
     const filters = contract.filters[eventName](...filterParams);
-    return contract.queryFilter(filters, blockNumber, "latest");
+    return contract.queryFilter(filters, receipt.blockNumber, "latest");
 }
 
 /*********************************************************************************************************************
