@@ -48,10 +48,10 @@ contract VestingWalletV2 is VestingWalletV1 {
     }
 
     /**
-     * Bridge token to L2
-     *
-     * In case the beneficiary is a smart contract, bridging that way might be dangerous. In such cases,
-     * {bridge(uint256,address)} should be preferred.
+     * @notice Bridge token to L2
+     * @dev In case the beneficiary is a smart contract, bridging that way might be dangerous. In such cases,
+     * bridge(uint256,address) should be preferred.
+     * @param amount of tokens to be bridged
      */
     function bridge(uint256 amount)
         public
@@ -62,11 +62,12 @@ contract VestingWalletV2 is VestingWalletV1 {
     }
 
     /**
-     * Bridge token to L2, with custom escrow manager on L2.
-     *
-     * Using a custom escrow manager is needed if the beneficiary isn't valid on the child chain, for example if it
-     * is a smart wallet that doesn't exist at the same address on the child chain. If the beneficiary of the contract
-     * is a smart wallet valid on both chain, it must be explicitly mentioned as the manager.
+     * @notice Bridge token to L2, with custom escrow manager on L2.
+     * @dev Using a custom escrow manager is needed if the beneficiary isn't valid on the child chain, for example if it
+     * is a smart wallet that doesn't exist at the same address on the child chain. 
+     * If the beneficiary of the contract is a smart wallet valid on both chains, it must be explicitly mentioned as the manager.
+     * @dev amount of tokens to be bridged.
+     * @dev l2Manager the address that will be controller generated StakinEscrow in L2.
      */
     function bridge(uint256 amount, address l2Manager)
         public
@@ -98,9 +99,7 @@ contract VestingWalletV2 is VestingWalletV1 {
         emit TokensBridged(l2Escrow, l2Manager, amount);
     }
 
-    /**
-     * Historical balance override to keep vesting speed when tokens are bridged.
-     */
+    /// Historical balance override to keep vesting speed when tokens are bridged.
     function _historicalBalance(address token)
         internal
         virtual
@@ -115,9 +114,11 @@ contract VestingWalletV2 is VestingWalletV1 {
         }
     }
 
+    // Admin operations
+
     /**
-     * Admin operations
-     */
+     * @dev Sets historical balance minimum. Only use if there is an imbalance between L1 VestingWallet and L2 StakingEscrow
+     */ 
     function setHistoricalBalanceMin(uint256 value)
         public
         onlyOwner()
@@ -126,6 +127,9 @@ contract VestingWalletV2 is VestingWalletV1 {
         historicalBalanceMin = value;
     }
 
+    /**
+     * @dev Sets  historical balance. Only use if there is an imbalance between L1 VestingWallet and L2 StakingEscrow
+     */ 
     function updateHistoricalBalanceMin(int256 update)
         public
         onlyOwner()

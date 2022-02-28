@@ -20,6 +20,12 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
+    /**
+     * @notice Initializer method, access point to initialize inheritance tree.
+     * @param __manager address of AccessManager.
+     * @param __router address of Router.
+     * @param __fortaStaking address of FortaStaking.
+     */
     function initialize(
         address __manager,
         address __router,
@@ -31,6 +37,7 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
         _setFortaStaking(__fortaStaking);
     }
 
+    /// Setter for FortaStaking implementation address.
     function setFortaStaking(address newFortaStaking) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setFortaStaking(newFortaStaking);
     }
@@ -54,18 +61,22 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
         _stakeSubjectHandlers[subjectType] = subjectHandler;
     }
 
+    /// Get max stake for that `subjectType` and `subject`. If not set, will return 0.
     function maxStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256) {
         return _stakeSubjectHandlers[subjectType].getStakeThreshold(subject).max;
     }
 
+    /// Get min stake for that `subjectType` and `subject`. If not set, will return 0.
     function minStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256) {
         return _stakeSubjectHandlers[subjectType].getStakeThreshold(subject).min;
     }
 
+    /// Get if staking is activated for that `subjectType` and `subject`. If not set, will return false.
     function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns(bool) {
         return _stakeSubjectHandlers[subjectType].getStakeThreshold(subject).activated;
     }
 
+    /// Gets active stake (amount of staked tokens) on `subject` id for `subjectType` 
     function activeStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
         return _fortaStaking.activeStakeFor(subjectType, subject);
     }

@@ -31,11 +31,20 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
+    /**
+     * @notice Initializer method, access point to initialize inheritance tree.
+     * @param __manager address of AccessManager.
+     */
     function initialize(address __manager) public initializer {
         __AccessManaged_init(__manager);
         __UUPSUpgradeable_init();
     }
 
+    /**
+     * @notice Method that executes all the listeners in the routing table for a payload.
+     * @dev hooks can fail without the error bubling up.
+     * @param payload with the method signature and parameters for the hook to be executed
+     */
     function hookHandler(bytes calldata payload) external override {
         bytes4 sig = bytes4(payload[:SIGNATURE_SIZE]);
         uint256 length = _routingTable[sig].length();
@@ -49,6 +58,13 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
         }
     }
 
+    /**
+     * @notice Adds or removes a listener that will react to a certain hook.
+     * @param sig the hook signature to listen to.
+     * @param target address of the listening contract.
+     * @param enable true if adding to the list, false to remove.
+     * @param revertsOnFail true if hook execution failure should bubble up, false to ignore.
+     */
     function setRoutingTable(bytes4 sig, address target, bool enable, bool revertsOnFail) external onlyRole(ROUTER_ADMIN_ROLE) {
         if (enable) {
             if (!_routingTable[sig].add(target)) revert AlreadyRouted();
@@ -60,19 +76,28 @@ contract Router is IRouter, ForwardedContext, AccessManagedUpgradeable, UUPSUpgr
         emit RoutingUpdated(sig, target, enable, revertsOnFail);
     }
 
-    // Access control for the upgrade process
+
+    /// Access control for the upgrade process
     function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(UPGRADER_ROLE) {
     }
 
-    // Allow the upgrader to set ENS reverse registration
+    /// Allow the upgrader to set ENS reverse registration
     function setName(address ensRegistry, string calldata ensName) public onlyRole(ENS_MANAGER_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 
+    /**
+     * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.
+     * @inheritdoc ForwardedContext
+     */
     function _msgSender() internal view virtual override(ContextUpgradeable, ForwardedContext) returns (address sender) {
         return super._msgSender();
     }
 
+    /**
+     * @notice Helper to get msg.data if not a meta transaction, forwarder data in metatx if it is.
+     * @inheritdoc ForwardedContext
+     */
     function _msgData() internal view virtual override(ContextUpgradeable, ForwardedContext) returns (bytes calldata) {
         return super._msgData();
     }

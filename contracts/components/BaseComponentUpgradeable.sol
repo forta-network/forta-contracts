@@ -37,10 +37,18 @@ abstract contract BaseComponentUpgradeable is
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 
+    /**
+     * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.
+     * @inheritdoc ForwardedContext
+     */
     function _msgSender() internal view virtual override(ContextUpgradeable, ForwardedContext) returns (address sender) {
         return super._msgSender();
     }
 
+    /**
+     * @notice Helper to get msg.data if not a meta transaction, forwarder data in metatx if it is.
+     * @inheritdoc ForwardedContext
+     */
     function _msgData() internal view virtual override(ContextUpgradeable, ForwardedContext) returns (bytes calldata) {
         return super._msgData();
     }

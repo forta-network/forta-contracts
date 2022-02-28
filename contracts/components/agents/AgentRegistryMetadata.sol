@@ -15,6 +15,13 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
 
     error MetadataNotUnique(bytes32 hash);
 
+    /**
+     * @notice Gets agent metadata, version and chain Ids.
+     * @param agentId ERC1155 token id of the agent.
+     * @return version of the agent.
+     * @return metadata IPFS pointer.
+     * @return chainIds the agent wants to run in.
+     */
     function getAgent(uint256 agentId) public view returns (uint256 version, string memory metadata, uint256[] memory chainIds) {
         return (
             _agentMetadata[agentId].version,
@@ -23,6 +30,13 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
         );
     }
 
+    /**
+     * @notice logic for agent update.
+     * @dev checks metadata uniqueness and updates agent metadata and version.
+     * @param agentId ERC1155 token id of the agent to be created or updated.
+     * @param newMetadata IPFS pointer to agent's metadata JSON.
+     * @param newChainIds ordered list of chainIds where the agent wants to run.
+     */
     function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
         super._agentUpdate(agentId, newMetadata, newChainIds);
 

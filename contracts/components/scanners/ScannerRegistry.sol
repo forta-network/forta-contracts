@@ -18,6 +18,13 @@ contract ScannerRegistry is
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
+    /**
+     * @notice Initializer method, access point to initialize inheritance tree.
+     * @param __manager address of AccessManager.
+     * @param __router address of Router.
+     * @param __name ERC1155 token name.
+     * @param __symbol ERC1155 token symbol.
+     */
     function initialize(
         address __manager,
         address __router,
@@ -30,6 +37,10 @@ contract ScannerRegistry is
         __ERC721_init(__name, __symbol);
     }
 
+    /**
+     * @notice Inheritance disambiguation for _scannerUpdate internal logic.
+     * @inheritdoc ScannerRegistryCore
+     */
     function _scannerUpdate(
         uint256 scannerId,
         uint256 chainId,
@@ -41,14 +52,26 @@ contract ScannerRegistry is
         super._scannerUpdate(scannerId, chainId, metadata);
     }
 
+    /**
+     * @dev inheritance disambiguation for _getStakeThreshold
+     * see ScannerRegistryMetadata
+     */
     function _getStakeThreshold(uint256 subject) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) view returns(StakeThreshold memory) {
         return super._getStakeThreshold(subject);
     }
 
+    /**
+     * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.
+     * @inheritdoc ForwardedContext
+     */
     function _msgSender() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (address sender) {
         return super._msgSender();
     }
 
+    /**
+     * @notice Helper to get msg.data if not a meta transaction, forwarder data in metatx if it is.
+     * @inheritdoc ForwardedContext
+     */
     function _msgData() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (bytes calldata) {
         return super._msgData();
     }

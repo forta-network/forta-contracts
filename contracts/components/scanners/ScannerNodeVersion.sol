@@ -25,6 +25,11 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
+    /**
+     * @notice Initializer method, access point to initialize inheritance tree.
+     * @param __manager address of AccessManager.
+     * @param __router address of Router.
+     */
     function initialize(
         address __manager,
         address __router
@@ -34,6 +39,12 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
         __UUPSUpgradeable_init();
     }
 
+    /**
+     * @notice Signal to the Scanner Nodes that they have to update their binaries downloading the new
+     * version from IPFS, by emitting ScannerNodeVersionUpdated(newVersion, oldVersion).
+     * @dev restricted to SCANNER_VERSION_ROLE (governance).
+     * @param version IPFS pointer to the new image.
+     */
     function setScannerNodeVersion(string calldata version) public onlyRole(SCANNER_VERSION_ROLE) {
         if(
             keccak256(abi.encodePacked(scannerNodeVersion)) == keccak256(abi.encodePacked(version))

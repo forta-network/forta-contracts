@@ -19,6 +19,11 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
+    /**
+     * @notice Initializer method, access point to initialize inheritance tree.
+     * @dev sets token name and symbol, permit init and RBAC structure.
+     * @param admin address for the ADMIN_ROLE of the token.
+     */
     function __FortaCommon_init(address admin) internal initializer {
         if (admin == address(0)) revert ZeroAddress("admin");
         __AccessControl_init();
@@ -31,12 +36,12 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
         _grantRole(ADMIN_ROLE, admin);
     }
 
-    // Allow whitelister to assign other whitelisters
+    /// Allow whitelister to assign other whitelisters
     function grantWhitelister(address to) public onlyRole(WHITELISTER_ROLE) {
         _grantRole(WHITELISTER_ROLE, to);
     }
 
-    // Only allow transfer to whitelisted accounts
+    /// Only allow transfer to whitelisted accounts
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         if (!whitelistDisabled) {
             if (!(from == address(0) || hasRole(WHITELIST_ROLE, from))) revert NotWhitelisted("sender", from);
@@ -45,7 +50,7 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
         super._beforeTokenTransfer(from, to, amount);
     }
 
-    // Access control for the upgrade process
+    /// Access control for the upgrade process
     function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(ADMIN_ROLE) {
     }
 

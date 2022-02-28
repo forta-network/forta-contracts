@@ -9,6 +9,7 @@ library Distributions {
         uint256 _totalSupply;
     }
 
+
     function balanceOf(Balances storage self, uint256 subjectId) internal view returns (uint256) {
         return self._balances[subjectId];
     }

@@ -28,6 +28,13 @@ contract Dispatch is BaseComponentUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
+    /**
+     * @notice Initializer method, access point to initialize inheritance tree.
+     * @param __manager address of AccessManager.
+     * @param __router address of Router.
+     * @param __agents address of AgentRegistry.
+     * @param __scanners address of ScannerRegistry.
+     */
     function initialize(
         address __manager,
         address __router,
@@ -40,41 +47,102 @@ contract Dispatch is BaseComponentUpgradeable {
         _scanners = ScannerRegistry(__scanners);
     }
 
+    /**
+    * @notice Getter for AgentRegistry.
+    * @return AgentRegistry.
+    */
     function agentRegistry() public view returns (AgentRegistry) {
         return _agents;
     }
 
+    /**
+    * @notice Getter for ScannerRegistry.
+    * @return ScannerRegistry.
+    */
     function scannerRegistry() public view returns (ScannerRegistry) {
         return _scanners;
     }
 
+    /**
+    * @notice Get total agents linked to a scanner.
+    * @dev helper for external iteration.
+    * @param scannerId ERC1155 token id of the scanner.
+    * @return total agents linked to a scanner
+    */
     function numAgentsFor(uint256 scannerId) public view returns (uint256) {
         return scannerToAgents[scannerId].length();
     }
 
+    /**
+    * @notice Get total scanners where an agent is running in.
+    * @dev helper for external iteration.
+    * @param agentId ERC1155 token id of the agent.
+    * @return total scanners running an scanner
+    */
     function numScannersFor(uint256 agentId) public view returns (uint256) {
         return agentToScanners[agentId].length();
     }
 
+    /**
+    * @notice Get agentId linked to a scanner in certain position.  
+    * @dev helper for external iteration.
+    * @param scannerId ERC1155 token id of the scanner.
+    * @param pos index for iteration.
+    * @return ERC1155 token id of the agent. 
+    */
     function agentAt(uint256 scannerId, uint256 pos) public view returns (uint256) {
         return scannerToAgents[scannerId].at(pos);
     }
 
+    /**
+    * @notice Get data of an agent linked to a scanner at a certain position.  
+    * @dev helper for external iteration.
+    * @param scannerId ERC1155 token id of the scanner.
+    * @param pos index for iteration.
+    * @return agentId ERC1155 token id of the agent. 
+    * @return enabled bool if agent is enabled, false otherwise.
+    * @return agentVersion agent version number.
+    * @return metadata IPFS pointer for agent metadata
+    * @return chainIds ordered
+    */
     function agentRefAt(uint256 scannerId, uint256 pos) external view returns (uint256 agentId, bool enabled, uint256 agentVersion, string memory metadata, uint256[] memory chainIds) {
         agentId = agentAt(scannerId, pos);
         enabled = _agents.isEnabled(agentId);
         (agentVersion, metadata, chainIds) = _agents.getAgent(agentId);
+        return (agentVersion, enabled, agentVersion, metadata, chainIds);
     }
 
+    /**
+    * @notice Get scannerId running an agent at a certain position.  
+    * @dev helper for external iteration.
+    * @param agentId ERC1155 token id of the scanner.
+    * @param pos index for iteration.
+    * @return ERC1155 token id of the scanner. 
+    */
     function scannerAt(uint256 agentId, uint256 pos) public view returns (uint256) {
         return agentToScanners[agentId].at(pos);
     }
 
+    /**
+    * @notice Get data of ascanner running an agent at a certain position.  
+    * @dev helper for external iteration.
+    * @param agentId ERC1155 token id of the agent.
+    * @param pos index for iteration.
+    * @return scannerId ERC1155 token id of the scanner. 
+    * @return enabled bool if scanner is enabled, false otherwise.
+    */
     function scannerRefAt(uint256 agentId, uint256 pos) external view returns (uint256 scannerId, bool enabled) {
         scannerId = scannerAt(agentId, pos);
         enabled   = _scanners.isEnabled(agentId);
     }
 
+    /**
+     * @notice Assigns the job of running an agent to a scanner.
+     * @dev currently only allowed for DISPATCHER_ROLE (Assigner software).
+     * @dev emits Link(agentId, scannerId, true) event.
+     * @param agentId ERC1155 token id of the agent.
+     * @param scannerId ERC1155 token id of the scanner.
+     */
     function link(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
         if (!_agents.isEnabled(agentId)) revert Disabled("Agent");
         if (!_scanners.isEnabled(scannerId)) revert Disabled("Scanner");
@@ -85,6 +153,13 @@ contract Dispatch is BaseComponentUpgradeable {
         emit Link(agentId, scannerId, true);
     }
 
+    /**
+     * @notice Unassigns the job of running an agent to a scanner.
+     * @dev currently only allowed for DISPATCHER_ROLE (Assigner software).
+     * @dev emits Link(agentId, scannerId, false) event.
+     * @param agentId ERC1155 token id of the agent.
+     * @param scannerId ERC1155 token id of the scanner.
+     */
     function unlink(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
         if (!_agents.isCreated(agentId)) revert InvalidId("Agent", agentId);
         if (!_scanners.isRegistered(scannerId)) revert InvalidId("Scanner", scannerId);
@@ -95,14 +170,28 @@ contract Dispatch is BaseComponentUpgradeable {
         emit Link(agentId, scannerId, false);
     }
 
+    /**
+     * @notice Sets agent registry address.
+     * @dev only DEFAULT_ADMIN_ROLE (governance).
+     * @param newAgentRegistry agent of the new AgentRegistry.
+     */
     function setAgentRegistry(address newAgentRegistry) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _agents = AgentRegistry(newAgentRegistry);
     }
 
+    /**
+     * @notice Sets scanner registry address.
+     * @dev only DEFAULT_ADMIN_ROLE (governance).
+     * @param newScannerRegistry agent of the new ScannerRegistry.
+     */
     function setScannerRegistry(address newScannerRegistry) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _scanners = ScannerRegistry(newScannerRegistry);
     }
 
+    /**
+     * Method to hash the amount of scanners an agent is running in, and their status
+     * @dev method marked for deprecation in next version.
+     */
     function agentHash(uint256 agentId) external view returns (uint256 length, bytes32 manifest) {
         uint256[] memory scanners = agentToScanners[agentId].values();
         bool[]    memory enabled = new bool[](scanners.length);
@@ -117,6 +206,14 @@ contract Dispatch is BaseComponentUpgradeable {
         );
     }
 
+    /**
+     * @dev method used by Scanner Node software to know if their list of assigned agents has changed,
+     * their enabled state or version has changed so they can start managing changes
+     * (loading new agent images, removing not assigned agents, updating agents...).
+     * @param scannerId ERC1155 token id of the scanner.
+     * @return length amount of agents.
+     * @return manifest keccak256 of list of agents, list of agentVersion and list of enabled states.
+     */
     function scannerHash(uint256 scannerId) external view returns (uint256 length, bytes32 manifest) {
         uint256[] memory agents  = scannerToAgents[scannerId].values();
         uint256[] memory agentVersion = new uint256[](agents.length);
