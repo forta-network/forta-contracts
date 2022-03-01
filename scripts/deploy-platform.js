@@ -99,10 +99,9 @@ async function migrate(config = {}) {
 
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
     if (config?.force) { CACHE.clear(); }
-
+    config.childChain = config.childChain ? config.childChain : !!CHILD_CHAIN_MANAGER_PROXY[chainId];
     config.childChainManagerProxy = config.childChainManagerProxy ?? CHILD_CHAIN_MANAGER_PROXY[chainId];
     config.chainsToDeploy = config.chainsToDeploy ?? ['L1', 'L2'];
-    DEBUG('config.childChain ', config.childChain);
     const contracts = {}
 
     contracts.forwarder = await ethers.getContractFactory('Forwarder', deployer).then(factory => utils.tryFetchContract(
@@ -116,12 +115,13 @@ async function migrate(config = {}) {
     const fortaConstructorArgs = [];
     DEBUG('config.childChain', config.childChain);
     DEBUG('config.childChainManagerProxy', config.childChainManagerProxy);
+    
 
     // For test compatibility: since we need to mint and FortaBridgedPolygon does not mint(), we base our decision to deploy
     // FortaBridgedPolygon is based on the existance of childChainManagerProxy, not childChain
     config.childChainManagerProxy ? fortaConstructorArgs.push(config.childChainManagerProxy) : null;
     DEBUG(`Deploying token: ${config.childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta'}`);
-
+     
     contracts.token = await ethers.getContractFactory(
         config.childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta',
         deployer
@@ -135,6 +135,7 @@ async function migrate(config = {}) {
     ));
 
     DEBUG(`[2] forta: ${contracts.token.address}`);
+    
     if (config.childChain) {
         contracts.access = await ethers.getContractFactory('AccessManager', deployer).then(factory => utils.tryFetchProxy(
             CACHE,

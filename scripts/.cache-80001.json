@@ -6,7 +6,7 @@
 			"args": [
 				"0xb5505a6d998549090530911180f38aC5130101c6"
 			],
-			"address": "0xd3BF0042aEDcB9d41cdaaC647249Bf1c7102f764",
+			"address": "0x1Eca2C733AecaeB2c2E89F7fA526E00fB4A74eDe",
 			"version": "0.1.1"
 		},
 		"verified": "true"
@@ -75,7 +75,7 @@
 			"args": [
 				"0x5BE4071aC4Af98F632b968C58d9CceF704965459"
 			],
-			"address": "0x2D317315A2788fE4B64333CE93297413c669CF92",
+			"address": "0x81d566B667B0BdFa8f08bb7224E1f28E5F24715C",
 			"version": "0.1.1"
 		},
 		"verified": "true"
@@ -136,17 +136,8 @@
 	},
 	"contracts": [
 		"forwarder",
-		"access",
-		"router",
-		"staking",
-		"staking-parameters",
-		"escrow-factory",
-		"agents",
-		"scanners",
-		"dispatch",
-		"scanner-node-version",
-		"ens",
-		"forta"
+		"token",
+		"ens"
 	],
 	"staking-pending": "0x71f2c96e12fc22392c08db7022ac78e2cacb2ee1cdb3605d44290204ec3f6825",
 	"staking": {

@@ -14,7 +14,6 @@ async function main() {
     const { name, chainId } = await provider.getNetwork();
 
     const childChainManagerProxy = CHILD_CHAIN_MANAGER_PROXY[chainId] ?? false;
-
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
 
     if (!provider.network.ensAddress) {
@@ -30,20 +29,22 @@ async function main() {
     if (name !== 'hardhat' && deployer.address === '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266') {
         throw new Error('using hardhat key for other network')
     }
+    const l2Contracts = childChainManagerProxy ? {
+        forwarder: utils.attach('Forwarder',  await CACHE.get('forwarder.address') ).then(contract => contract.connect(deployer)),
+        access: utils.attach('AccessManager',  await CACHE.get('access.address') ).then(contract => contract.connect(deployer)),
+        staking: utils.attach('FortaStaking', await CACHE.get('staking.address')           ).then(contract => contract.connect(deployer)),
+        agents: utils.attach('AgentRegistry',  await CACHE.get('agents.address')  ).then(contract => contract.connect(deployer)),
+        scanners: utils.attach('ScannerRegistry',await CACHE.get('scanners.address')  ).then(contract => contract.connect(deployer)),
+        dispatch: utils.attach('Dispatch', await CACHE.get('dispatch.address') ).then(contract => contract.connect(deployer)),
+        router: utils.attach('Router',  await CACHE.get('router.address') ).then(contract => contract.connect(deployer)),
+        scannerNodeVersion: utils.attach('ScannerNodeVersion', await CACHE.get('scanner-node-version.address') ).then(contract => contract.connect(deployer)),
 
+    } : {}
+    
     const contracts = await Promise.all(Object.entries({
         forta: utils.attach(childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta',  await CACHE.get('forta.address') ).then(contract => contract.connect(deployer)),
-        //forwarder: utils.attach('Forwarder',  await CACHE.get('forwarder.address') ).then(contract => contract.connect(deployer)),
-        //access: utils.attach('AccessManager',  await CACHE.get('access.address') ).then(contract => contract.connect(deployer)),
-        //staking: utils.attach('FortaStaking', await CACHE.get('staking.address')           ).then(contract => contract.connect(deployer)),
-        //agents: utils.attach('AgentRegistry',  await CACHE.get('agents.address')  ).then(contract => contract.connect(deployer)),
-        //scanners: utils.attach('ScannerRegistry',await CACHE.get('scanners.address')  ).then(contract => contract.connect(deployer)),
-        //dispatch: utils.attach('Dispatch', await CACHE.get('dispatch.address') ).then(contract => contract.connect(deployer)),
-        //router: utils.attach('Router',  await CACHE.get('router.address') ).then(contract => contract.connect(deployer)),
-        //scannerNodeVersion: utils.attach('ScannerNodeVersion', await CACHE.get('scanner-node-version.address') ).then(contract => contract.connect(deployer)),
-
+        ...l2Contracts
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
-
 
     const UPGRADER_ROLE = ethers.utils.id('UPGRADER_ROLE')
     const isUpgrader = await contracts.access?.hasRole(UPGRADER_ROLE, deployer.address)
@@ -68,7 +69,7 @@ async function main() {
     DEBUG('newForta: ', await upgrades.erc1967.getImplementationAddress(newForta.address))
 
     if (!childChainManagerProxy) {
-        DEBUG('Deployed for L1, exiting...');
+        DEBUG('Upgraded for L1, exiting...');
         return
     }
     // L2 Components --------------------------------------------------------------------------------------------
