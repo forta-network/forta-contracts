@@ -102,14 +102,14 @@ contract Dispatch is BaseComponentUpgradeable {
     * @return agentId ERC1155 token id of the agent. 
     * @return enabled bool if agent is enabled, false otherwise.
     * @return agentVersion agent version number.
-    * @return metadata IPFS pointer for agent metadata
+    * @return metadata IPFS pointer for agent metadata.
     * @return chainIds ordered
     */
     function agentRefAt(uint256 scannerId, uint256 pos) external view returns (uint256 agentId, bool enabled, uint256 agentVersion, string memory metadata, uint256[] memory chainIds) {
         agentId = agentAt(scannerId, pos);
         enabled = _agents.isEnabled(agentId);
         (agentVersion, metadata, chainIds) = _agents.getAgent(agentId);
-        return (agentVersion, enabled, agentVersion, metadata, chainIds);
+        return (agentId, enabled, agentVersion, metadata, chainIds);
     }
 
     /**
@@ -130,10 +130,14 @@ contract Dispatch is BaseComponentUpgradeable {
     * @param pos index for iteration.
     * @return scannerId ERC1155 token id of the scanner. 
     * @return enabled bool if scanner is enabled, false otherwise.
+    * @return chainId that the scanner monitors.
+    * @return metadata IPFS pointer for agent metadata.
     */
-    function scannerRefAt(uint256 agentId, uint256 pos) external view returns (uint256 scannerId, bool enabled) {
+    function scannerRefAt(uint256 agentId, uint256 pos) external view returns (uint256 scannerId, bool enabled, uint256 chainId, string memory metadata) {
         scannerId = scannerAt(agentId, pos);
-        enabled   = _scanners.isEnabled(agentId);
+        (chainId, metadata) = _scanners.getScanner(scannerId);
+        enabled   = _scanners.isEnabled(scannerId);
+        return (scannerId, enabled, chainId, metadata);
     }
 
     /**

@@ -33,40 +33,45 @@ async function main() {
 
     const contracts = await Promise.all(Object.entries({
         forta: utils.attach(childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta',  await CACHE.get('forta.address') ).then(contract => contract.connect(deployer)),
-        forwarder: utils.attach('Forwarder',  await CACHE.get('forwarder.address') ).then(contract => contract.connect(deployer)),
-        access: utils.attach('AccessManager',  await CACHE.get('access.address') ).then(contract => contract.connect(deployer)),
-        staking: utils.attach('FortaStaking', await CACHE.get('staking.address')           ).then(contract => contract.connect(deployer)),
-        agents: utils.attach('AgentRegistry',  await CACHE.get('agents.address')  ).then(contract => contract.connect(deployer)),
-        scanners: utils.attach('ScannerRegistry',await CACHE.get('scanners.address')  ).then(contract => contract.connect(deployer)),
-        dispatch: utils.attach('Dispatch', await CACHE.get('dispatch.address') ).then(contract => contract.connect(deployer)),
-        router: utils.attach('Router',  await CACHE.get('router.address') ).then(contract => contract.connect(deployer)),
-        scannerNodeVersion: utils.attach('ScannerNodeVersion', await CACHE.get('scanner-node-version.address') ).then(contract => contract.connect(deployer)),
+        //forwarder: utils.attach('Forwarder',  await CACHE.get('forwarder.address') ).then(contract => contract.connect(deployer)),
+        //access: utils.attach('AccessManager',  await CACHE.get('access.address') ).then(contract => contract.connect(deployer)),
+        //staking: utils.attach('FortaStaking', await CACHE.get('staking.address')           ).then(contract => contract.connect(deployer)),
+        //agents: utils.attach('AgentRegistry',  await CACHE.get('agents.address')  ).then(contract => contract.connect(deployer)),
+        //scanners: utils.attach('ScannerRegistry',await CACHE.get('scanners.address')  ).then(contract => contract.connect(deployer)),
+        //dispatch: utils.attach('Dispatch', await CACHE.get('dispatch.address') ).then(contract => contract.connect(deployer)),
+        //router: utils.attach('Router',  await CACHE.get('router.address') ).then(contract => contract.connect(deployer)),
+        //scannerNodeVersion: utils.attach('ScannerNodeVersion', await CACHE.get('scanner-node-version.address') ).then(contract => contract.connect(deployer)),
 
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
 
     const UPGRADER_ROLE = ethers.utils.id('UPGRADER_ROLE')
-    const isUpgrader = await contracts.access.hasRole(UPGRADER_ROLE, deployer.address)
-    if (!isUpgrader) {
+    const isUpgrader = await contracts.access?.hasRole(UPGRADER_ROLE, deployer.address)
+    if (!isUpgrader && contracts.access) {
         await contracts.access.grantRole(UPGRADER_ROLE,      deployer.address        ).then(tx => tx.wait());
-        console.log('Granted upgrader role to: ', deployer.address)
+        DEBUG('Granted upgrader role to: ', deployer.address)
     }
 
     const Forta = await ethers.getContractFactory(childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta');
-    console.log('Upgrading ',childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta')
+    DEBUG('Upgrading ',childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta')
     const newForta = await utils.performUpgrade(
         contracts.forta,
         Forta.connect(deployer),
         {
             constructorArgs: [ childChainManagerProxy ].filter(Boolean),
             unsafeAllow: ['delegatecall'],
-            unsafeSkipStorageCheck: true
+            //unsafeSkipStorageCheck: true
         },
         CACHE,
         'forta'
     );
-    console.log('newForta: ', await upgrades.erc1967.getImplementationAddress(newForta.address))
-    
+    DEBUG('newForta: ', await upgrades.erc1967.getImplementationAddress(newForta.address))
+
+    if (!childChainManagerProxy) {
+        DEBUG('Deployed for L1, exiting...');
+        return
+    }
+    // L2 Components --------------------------------------------------------------------------------------------
     const AccessManager = await ethers.getContractFactory('AccessManager');
     const newAccessManager = await utils.performUpgrade(
         contracts.access,
@@ -78,7 +83,7 @@ async function main() {
         CACHE,
         'access'
     );
-    console.log('newAccessManager: ', await upgrades.erc1967.getImplementationAddress(newAccessManager.address))
+    DEBUG('newAccessManager: ', await upgrades.erc1967.getImplementationAddress(newAccessManager.address))
 
     const Router = await ethers.getContractFactory('Router');
     const newRouter = await utils.performUpgrade(
@@ -93,7 +98,7 @@ async function main() {
         'router'
     );
 
-    console.log('newRouter: ', await upgrades.erc1967.getImplementationAddress(newRouter.address))
+    DEBUG('newRouter: ', await upgrades.erc1967.getImplementationAddress(newRouter.address))
 
     const AgentRegistry = await ethers.getContractFactory('AgentRegistry');
     const newAgentRegistry = await utils.performUpgrade(
@@ -111,7 +116,7 @@ async function main() {
         CACHE,
         'agents'
     );
-    console.log('new Agent Registry: ', await upgrades.erc1967.getImplementationAddress(newAgentRegistry.address))
+    DEBUG('new Agent Registry: ', await upgrades.erc1967.getImplementationAddress(newAgentRegistry.address))
     
     
     const ScannerRegistry = await ethers.getContractFactory('ScannerRegistry');
@@ -131,7 +136,7 @@ async function main() {
         'scanners'
     );
     
-    console.log('newScannerRegistry: ', await upgrades.erc1967.getImplementationAddress(newScannerRegistry.address))
+    DEBUG('newScannerRegistry: ', await upgrades.erc1967.getImplementationAddress(newScannerRegistry.address))
     
     const Dispatch = await ethers.getContractFactory('Dispatch');
     const newDispatch = await utils.performUpgrade(
@@ -146,7 +151,7 @@ async function main() {
         'dispatch'
     );
 
-    console.log('newDispatch: ', await upgrades.erc1967.getImplementationAddress(newDispatch.address))
+    DEBUG('newDispatch: ', await upgrades.erc1967.getImplementationAddress(newDispatch.address))
 
     const ScannerNodeVersion = await ethers.getContractFactory('ScannerNodeVersion');
     const newScannerNodeVersion = await utils.performUpgrade(
@@ -160,7 +165,7 @@ async function main() {
         CACHE,
         'scanner-node-version'
     );
-    console.log('newScannerNodeVersion: ', await upgrades.erc1967.getImplementationAddress(newScannerNodeVersion.address))
+    DEBUG('newScannerNodeVersion: ', await upgrades.erc1967.getImplementationAddress(newScannerNodeVersion.address))
     
 }
 

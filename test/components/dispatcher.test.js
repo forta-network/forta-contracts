@@ -101,6 +101,47 @@ describe('Dispatcher', function () {
     expect(await this.dispatch.scannerHash(this.SCANNER_ID)).to.not.be.deep.equal(hashBefore);
   });
 
+  it('agentAt', async function () {
+    expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
+    .to.emit(this.dispatch, 'Link').withArgs(this.AGENT_ID, this.SCANNER_ID, true);
+
+    expect(await this.dispatch.agentAt(this.SCANNER_ID, 0)).to.be.equal(this.AGENT_ID);
+  });
+
+  it('agentRefAt', async function () {
+    await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.be.not.reverted;
+
+    const expected = [
+        BigNumber.from(this.AGENT_ID),
+        true,
+        BigNumber.from(1),
+        'Metadata1',
+        [ BigNumber.from(1) , BigNumber.from(3), BigNumber.from(4), BigNumber.from(5) ]
+    ]
+    expect(await this.dispatch.agentRefAt(this.SCANNER_ID, 0))
+    .to.be.deep.equal(expected);
+  });
+
+  it('scannerAt', async function () {
+    expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
+    .to.emit(this.dispatch, 'Link').withArgs(this.AGENT_ID, this.SCANNER_ID, true);
+
+    expect(await this.dispatch.scannerAt(this.AGENT_ID, 0)).to.be.equal(this.SCANNER_ID);
+  });
+
+  it('scannerRefAt', async function () {
+    await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.be.not.reverted;
+
+    const expected = [
+        BigNumber.from(this.SCANNER_ID.toLowerCase()),
+        true,
+        BigNumber.from(1),
+        'metadata'
+    ]
+    expect(await this.dispatch.scannerRefAt(this.AGENT_ID, 0))
+    .to.be.deep.equal(expected);
+  });
+
   it.skip('gas estimation', async function () {
     for (const i in Array(10).fill()) {
       for (const j in Array(10).fill()) {

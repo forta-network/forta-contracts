@@ -98,7 +98,7 @@ function deployUpgradeable(factory, kind, params = [], opts = {}) {
 async function performUpgrade(proxy, factory, opts = {}, cache, key) {
     const contract = typeof factory === 'string' ? await getFactory(factory) : factory
     const afterUpgradeContract = await upgrades.upgradeProxy(proxy.address, contract, opts)
-    await saveImplementationParams(cache, key, opts, afterUpgradeContract);
+    if (cache) await saveImplementationParams(cache, key, opts, afterUpgradeContract);
     return afterUpgradeContract;
 }
 
@@ -122,7 +122,7 @@ async function migrateAddress(cache, key) {
 
 async function tryFetchProxy(cache, key, contract, kind = 'uups', args = [], opts = {}) {
     const deployed = await resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind, ...opts })).then(address => contract.attach(address));
-    await saveImplementationParams(cache, key, opts, deployed);
+    if (cache) await saveImplementationParams(cache, key, opts, deployed);
     return deployed;
 }
 
