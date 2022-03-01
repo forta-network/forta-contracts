@@ -194,7 +194,13 @@ async function getEventsFromContractCreation(cache, key, eventName, contract, fi
     const filters = contract.filters[eventName](...filterParams);
     return contract.queryFilter(filters, receipt.blockNumber, "latest");
 }
+const assertNotUsingHardhatKeys = (chainId, deployer) => {
+    if (chainId !== 31337 && deployer.address === '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266') {
+        DEBUG(deployer.address, chainId)
 
+        throw new Error('using hardhat key for other network')
+    }
+}
 /*********************************************************************************************************************
  *                                                        Strings                                                       *
  *********************************************************************************************************************/
@@ -256,6 +262,7 @@ module.exports = {
     durationToSeconds,
     getContractVersion,
     getEventsFromContractCreation,
+    assertNotUsingHardhatKeys,
     kebabize,
     camelize,
     upperCaseFirst

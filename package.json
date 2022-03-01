@@ -24,7 +24,8 @@
   },
   "devDependencies": {
     "@ethersproject/experimental": "^5.4.0",
-    "@maticnetwork/maticjs": "^2.0.50",
+    "@maticnetwork/maticjs": "^3.2.0",
+    "@maticnetwork/maticjs-ethers": "^1.0.0",
     "@nomiclabs/hardhat-ethers": "^2.0.1",
     "@nomiclabs/hardhat-etherscan": "^2.1.6",
     "@nomiclabs/hardhat-waffle": "^2.0.1",

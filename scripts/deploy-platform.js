@@ -13,7 +13,7 @@ const registerNode = async (name, owner, opts = {}) => {
     const resolver      = opts.resolver //?? contracts.ens.resolver;
     const signer        = opts.signer   ?? registry.signer ?? resolver.signer;
     const signerAddress = await signer.getAddress();
-    assertNotUsingHardhatKeys(opts.chainId, signerAddress);
+    utils.assertNotUsingHardhatKeys(opts.chainId, signerAddress);
 
     const [ label, ...self ]  = name.split('.');
     const parent = self.join('.');
@@ -75,14 +75,6 @@ const CHILD_CHAIN_MANAGER_PROXY = {
     80001: '0xb5505a6d998549090530911180f38aC5130101c6',
 };
 
-const assertNotUsingHardhatKeys = (chainId, deployer) => {
-    if (chainId !== 31337 && deployer.address === '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266') {
-        DEBUG(deployer.address, chainId)
-
-        throw new Error('using hardhat key for other network')
-    }
-}
-
 /*********************************************************************************************************************
  *                                                Migration workflow                                                 *
  *********************************************************************************************************************/
@@ -95,7 +87,7 @@ async function migrate(config = {}) {
     DEBUG(`Deployer: ${deployer.address}`);
     DEBUG(`Balance:  ${await provider.getBalance(deployer.address).then(ethers.utils.formatEther)}${ethers.constants.EtherSymbol}`);
     DEBUG('----------------------------------------------------');
-    assertNotUsingHardhatKeys(chainId, deployer);
+    utils.assertNotUsingHardhatKeys(chainId, deployer);
 
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
     if (config?.force) { CACHE.clear(); }

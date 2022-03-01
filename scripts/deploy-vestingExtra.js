@@ -125,21 +125,14 @@ async function main() {
   console.log(`Deployer: ${deployer.address}`);
   console.log('----------------------------------------------------');
 
-
   // Preparing cache and transaction limiter
   const CACHE = new AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
-
-
-
 
   const kind          = 'uups';
   const impl          = { 1: "0xF5E4f8e6F4eD07c2854a315332B883Dac49b2575" }[chainId] || revert(`VestingWallet implementation not yet deployed to ${name}-${chainId}`);
   const { interface } = await ethers.getContractFactory('VestingWallet', deployer);
   const proxyFactory  = await getProxyFactory(hre, deployer);
   const manifest      = new Manifest(chainId);
-
-
-
 
 
   console.log(chalk.bold('[1/2] Deploy vesting wallets...'));
