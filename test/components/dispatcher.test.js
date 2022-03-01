@@ -112,11 +112,13 @@ describe('Dispatcher', function () {
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.be.not.reverted;
 
     const expected = [
-        BigNumber.from(this.AGENT_ID),
         true,
+        this.accounts.user1.address,
+        BigNumber.from(this.AGENT_ID),
         BigNumber.from(1),
         'Metadata1',
-        [ BigNumber.from(1) , BigNumber.from(3), BigNumber.from(4), BigNumber.from(5) ]
+        [ BigNumber.from(1) , BigNumber.from(3), BigNumber.from(4), BigNumber.from(5) ],
+        true
     ]
     expect(await this.dispatch.agentRefAt(this.SCANNER_ID, 0))
     .to.be.deep.equal(expected);
@@ -131,12 +133,13 @@ describe('Dispatcher', function () {
 
   it('scannerRefAt', async function () {
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.be.not.reverted;
-
     const expected = [
-        BigNumber.from(this.SCANNER_ID.toLowerCase()),
         true,
+        BigNumber.from(this.SCANNER_ID.toLowerCase()),
+        this.accounts.user1.address,
         BigNumber.from(1),
-        'metadata'
+        'metadata',
+        true
     ]
     expect(await this.dispatch.scannerRefAt(this.AGENT_ID, 0))
     .to.be.deep.equal(expected);

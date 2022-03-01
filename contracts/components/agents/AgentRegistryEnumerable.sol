@@ -60,7 +60,7 @@ abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
     function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
         super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
 
-        (uint256 version,, uint256[] memory oldChainIds) = getAgent(agentId);
+        (,,uint256 version,, uint256[] memory oldChainIds) = getAgent(agentId);
 
         if (version == 0) { _allAgents.add(agentId); } //NOTE: ignoring EnumerableSet.add() bool output; We don't care if already added.
 

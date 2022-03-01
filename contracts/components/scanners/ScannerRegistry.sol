@@ -38,6 +38,28 @@ contract ScannerRegistry is
     }
 
     /**
+     * @notice Gets all scanner properties and state
+     * @param scannerId ERC1155 token id of the scanner.
+     * @return registered true if scanner exists.
+     * @return owner address.
+     * @return chainId the scanner is monitoring.
+     * @return metadata IPFS pointer for the scanner's JSON metadata.
+     */
+    function getScannerState(uint256 scannerId)
+        external
+        view
+        returns (bool registered, address owner, uint256 chainId, string memory metadata, bool enabled) {
+        (registered, owner, chainId, metadata) = super.getScanner(scannerId);
+        return (
+            registered,
+            owner,
+            chainId,
+            metadata,
+            isEnabled(scannerId)
+        );
+    }
+
+    /**
      * @notice Inheritance disambiguation for _scannerUpdate internal logic.
      * @inheritdoc ScannerRegistryCore
      */

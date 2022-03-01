@@ -18,7 +18,7 @@ describe('Scanner Registry', function () {
     .to.emit(this.scanners, 'Transfer').withArgs(ethers.constants.AddressZero, this.accounts.user1.address, SCANNER_ID)
     .to.emit(this.scanners, 'ScannerUpdated').withArgs(SCANNER_ID, 1, 'metadata');
 
-    expect(await this.scanners.getScanner(SCANNER_ID)).to.be.deep.equal([BigNumber.from(1), 'metadata']);
+    expect(await this.scanners.getScanner(SCANNER_ID)).to.be.deep.equal([true, this.accounts.user1.address, BigNumber.from(1), 'metadata']);
     expect(await this.scanners.isRegistered(SCANNER_ID)).to.be.equal(true);
     expect(await this.scanners.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
   });
@@ -37,7 +37,7 @@ describe('Scanner Registry', function () {
     .to.emit(this.scanners, 'Transfer').withArgs(ethers.constants.AddressZero, this.accounts.user1.address, SCANNER_ID)
     .to.emit(this.scanners, 'ScannerUpdated').withArgs(SCANNER_ID, 1, 'metadata');
 
-    expect(await this.scanners.getScanner(SCANNER_ID)).to.be.deep.equal([BigNumber.from(1), 'metadata']);
+    expect(await this.scanners.getScanner(SCANNER_ID)).to.be.deep.equal([true, this.accounts.user1.address, BigNumber.from(1), 'metadata']);
 
     expect(await this.scanners.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
   });
@@ -56,7 +56,7 @@ describe('Scanner Registry', function () {
     await expect(this.scanners.connect(this.accounts.manager).adminUpdate(SCANNER_ID, 55, 'metadata2'))
     .to.emit(this.scanners, 'ScannerUpdated').withArgs(SCANNER_ID, 55, 'metadata2');
 
-    expect(await this.scanners.getScanner(SCANNER_ID)).to.be.deep.equal([BigNumber.from(55), 'metadata2']);
+    expect(await this.scanners.getScanner(SCANNER_ID)).to.be.deep.equal([true, this.accounts.user1.address, BigNumber.from(55), 'metadata2']);
 
     expect(await this.scanners.ownerOf(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
   });

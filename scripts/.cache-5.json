@@ -7,9 +7,9 @@
 	"ens-resolver": {
 		"address": "0x4B1488B7a6B320d2D721406204aBc3eeAa9AD329"
 	},
-	"forta-pending": "0x41e14e0e52fd44da773b3e55cdfc74979c2380009ab77478ce10cff8f1c4fe39",
+	"forta-pending": "0x1edf4692955ca96d72e3d20e70744ceb06490e59f617a89f2c9e52e150773443",
 	"forta": {
-		"address": "0x95d9a757ad9C25999ffE93f3067221F04ce1Cc79",
+		"address": "0x848F1fF1fa76Dc882Ca2F3521265ba3F27e42158",
 		"impl": {
 			"args": [],
 			"address": "0xc6db6560413308DbC857CFC332efA94D5752D094",
