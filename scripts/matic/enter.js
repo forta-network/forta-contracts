@@ -5,7 +5,7 @@ const utils              = require('../utils');
 const DEBUG                = require('debug')('forta:enter');
 const { POSClient, use, setProofApi } = require('@maticnetwork/maticjs');
 const { Web3ClientPlugin            } = require('@maticnetwork/maticjs-ethers');
-const { pos } = require('./config.js');
+
 
 use(Web3ClientPlugin)
 
@@ -42,7 +42,10 @@ async function main(network = 'testnet') {
     DEBUG('----------------------------------------------------');
     utils.assertNotUsingHardhatKeys(chainId, deployer);
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `../.cache-${chainId}` });
-    const rpcs = RPC[network] || revert('invalid network');
+
+
+    const CONFIG = require(`./config-${network == 'testnet' ? network : 'mainnet'}.json`);
+    /*const rpcs = RPC[network] || revert('invalid network');
 
     const signers = {
         parent: ethers.Wallet.fromMnemonic(rpcs.parent.mnemonic).connect(ethers.getDefaultProvider(rpcs.parent.node)),
@@ -54,7 +57,7 @@ async function main(network = 'testnet') {
         version: 'mumbai',
         parent:  { provider: signers.parent, defaultConfig: { from: signers.parent.address }},
         child:   { provider: signers.child,  defaultConfig: { from: signers.child.address  }},
-    });
+    });*/
 
 
     const FortaL1 = await ethers.getContractFactory('Forta', deployer);
@@ -63,6 +66,9 @@ async function main(network = 'testnet') {
     const fortaL1 = await FortaL1.attach(l1FortaAddress);
     const fortL1Balance = await fortaL1.balanceOf(deployer.address)
     const amount = ethers.utils.parseEther('1');
+
+    const rootChainManager = new ethers.Contract(CONFIG.Main.POSContracts.RootChainManagerProxy, require('./root-chain-manager.json'), deployer);
+
 
     DEBUG('execute...');
     const WHITELIST_ROLE = ethers.utils.id('WHITELIST_ROLE')
@@ -74,14 +80,14 @@ async function main(network = 'testnet') {
         }
     }
     
-    const rootTokenErc20 = client.erc20(pos.parent.erc20, true);
     DEBUG('approving...')
-    await rootTokenErc20.approve(amount.toString())
-    DEBUG('depositing...')
-    const result = await rootTokenErc20.deposit(amount.toString(), deployer.address);
+    DEBUG(await fortaL1.approve(CONFIG.Main.POSContracts.ERC20PredicateProxy, amount));
 
-    DEBUG(await result.getTransactionHash());
-    DEBUG(await result.getReceipt());
+    DEBUG('depositing...')
+    const encodedAmount = ethers.utils.defaultAbiCoder.encode(['uint256'], [amount])
+    console.log(encodedAmount)
+    DEBUG(await rootChainManager.depositFor(deployer.address, fortaL1.address, encodedAmount))
+
 
 }
 
