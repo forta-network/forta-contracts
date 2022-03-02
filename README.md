@@ -53,3 +53,9 @@ Some other parts of the system do not support this feature in ABIs yet. To gener
 2. `npx hardhat run scripts/abis-without-custom-errors.js`
 3. Check `.abis-no-errors` folder.
 
+## Setting stake threshold.
+
+1. Open `scripts/set-staking-threshold.js` 
+2. Edit `config` object
+3. Make sure the wallet in `.env` has `XXX_ADMIN_ROLE` (see `env.example` for reference`
+4. `hardhat run --network <mumbai or polygon> scripts/set-staking-threshold.js` 
