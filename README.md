@@ -50,6 +50,6 @@ Forta contracts use [Solidity's Custom Errors](https://blog.soliditylang.org/202
 Some other parts of the system do not support this feature in ABIs yet. To generate compatible ABIs:
 
 1. Compile contracts
-2. `npx hardhat run scripts/abisWithoutCustomErrors.js`
+2. `npx hardhat run scripts/abis-without-custom-errors.js`
 3. Check `.abis-no-errors` folder.
 
