@@ -80,7 +80,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * @notice Staking operation: Relay `deposit` calls to the staking contract (with corresponding approval).
      * @dev Tokens gained as staking rewards cannot be staked here. They should be released to another account and staked there.
      * This contract will handle staking shares. Method restricted to wallet manager.
-     * @param subjectType agents, scanner or future types of stake subject. See FortaStakingSubjectTypes.sol
+     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @param stakeValue amount of staked token.
      * @return amount of ERC1155 active shares minted.
@@ -96,7 +96,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
 
     /**
      * Overload: deposit everything
-     * @param subjectType agents, scanner or future types of stake subject. See FortaStakingSubjectTypes.sol
+     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @return amount of shares minted.
      */
@@ -107,7 +107,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
     /**
      * @notice Staking operation: Relay `initiateWithdrawal` calls to the staking contract.
      * @dev method restricted to l2Manager
-     * @param subjectType agents, scanner or future types of stake subject. See FortaStakingSubjectTypes.sol
+     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @param sharesValue amount of shares token.
      */
@@ -117,7 +117,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
 
     /**
      * @notice Overload: initiate withdrawal of the full stake amount
-     * @param subjectType agents, scanner or future types of stake subject. See FortaStakingSubjectTypes.sol
+     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
      */
     function initiateWithdrawal(uint8 subjectType, uint256 subject) public returns (uint64) {
@@ -130,7 +130,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
 
     /**
      * @notice Staking operation: Relay `withdrawal` calls to the staking contract.
-     * @param subjectType agents, scanner or future types of stake subject. See FortaStakingSubjectTypes.sol
+     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
      */
     function withdraw(uint8 subjectType, uint256 subject) public onlyManager() returns (uint256) {
@@ -142,7 +142,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * go to StakingEscrow.
      * @dev anyone can call that directly on the staking contract. One should not assume rewards claims are done
      * through this relay function.
-     * @param subjectType agents, scanner or future types of stake subject. See FortaStakingSubjectTypes.sol
+     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @return released amount
      */
