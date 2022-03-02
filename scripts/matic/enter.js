@@ -9,6 +9,9 @@ const { Web3ClientPlugin            } = require('@maticnetwork/maticjs-ethers');
 
 use(Web3ClientPlugin)
 
+const AMOUNT = ethers.utils.parseEther('1');
+
+
 const RPC = {
     v1: {
         parent: { 
@@ -32,7 +35,7 @@ const RPC = {
     }
 }
 
-async function main(network = 'testnet') {
+async function main() {
     const provider = await utils.getDefaultProvider();
     const deployer = await utils.getDefaultDeployer(provider);
     const { name, chainId } = await provider.getNetwork();
@@ -42,6 +45,12 @@ async function main(network = 'testnet') {
     DEBUG('----------------------------------------------------');
     utils.assertNotUsingHardhatKeys(chainId, deployer);
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `../.cache-${chainId}` });
+    let network
+    if (chainId !== 5) {
+        throw new Error('Only Göerli supported for now...');
+    } else {
+        network = 'testnet'
+    }
 
 
     const CONFIG = require(`./config-${network == 'testnet' ? network : 'mainnet'}.json`);
@@ -65,7 +74,6 @@ async function main(network = 'testnet') {
     console.log(l1FortaAddress)
     const fortaL1 = await FortaL1.attach(l1FortaAddress);
     const fortL1Balance = await fortaL1.balanceOf(deployer.address)
-    const amount = ethers.utils.parseEther('1');
 
     const rootChainManager = new ethers.Contract(CONFIG.Main.POSContracts.RootChainManagerProxy, require('./root-chain-manager.json'), deployer);
 
@@ -74,18 +82,17 @@ async function main(network = 'testnet') {
     const WHITELIST_ROLE = ethers.utils.id('WHITELIST_ROLE')
     if (name !== 'mainnet') {
         
-        if (fortL1Balance.lt(amount)) {
+        if (fortL1Balance.lt(AMOUNT)) {
             DEBUG('minting...')
-            DEBUG(await fortaL1.mint(deployer.address, amount))
+            DEBUG(await fortaL1.mint(deployer.address, AMOUNT))
         }
     }
     
     DEBUG('approving...')
-    DEBUG(await fortaL1.approve(CONFIG.Main.POSContracts.ERC20PredicateProxy, amount));
+    DEBUG(await fortaL1.approve(CONFIG.Main.POSContracts.ERC20PredicateProxy, AMOUNT));
 
     DEBUG('depositing...')
-    const encodedAmount = ethers.utils.defaultAbiCoder.encode(['uint256'], [amount])
-    console.log(encodedAmount)
+    const encodedAmount = ethers.utils.defaultAbiCoder.encode(['uint256'], [AMOUNT])
     DEBUG(await rootChainManager.depositFor(deployer.address, fortaL1.address, encodedAmount))
 
 
