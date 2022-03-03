@@ -5,6 +5,7 @@ require('@nomiclabs/hardhat-etherscan');
 require('solidity-coverage');
 require('hardhat-gas-reporter');
 require('@openzeppelin/hardhat-upgrades');
+require("@openzeppelin/hardhat-defender");
 
 const argv = require('yargs/yargs')().env('').argv;
 
@@ -31,6 +32,10 @@ module.exports = {
   },
   etherscan: {
     apiKey: argv.etherscan ?? argv.polyscan,
+  },
+  defender: {
+    apiKey: process.env.DEFENDER_API_KEY,
+    apiSecret: process.env.DEFENDER_API_SECRET,
   },
   gasReporter: {
     currency: 'USD',
