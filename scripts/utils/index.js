@@ -258,6 +258,7 @@ module.exports = {
     performUpgrade,
     tryFetchContract,
     tryFetchProxy,
+    migrateAddress,
     dateToTimestamp,
     durationToSeconds,
     getContractVersion,
