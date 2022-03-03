@@ -6,11 +6,11 @@ const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
 
 const config = {
-    subjectType: AGENT_SUBJECT,
+    subjectType: SCANNER_SUBJECT,
     min: '0',
     max: ethers.utils.parseEther('10000'),
     activated: true,
-    chainId: 0 // only relevant to SCANNER_SUBJECT
+    chainId: 1 // only relevant to SCANNER_SUBJECT
 }
 
 async function main() {

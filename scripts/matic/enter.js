@@ -9,7 +9,7 @@ const { Web3ClientPlugin            } = require('@maticnetwork/maticjs-ethers');
 
 use(Web3ClientPlugin)
 
-const AMOUNT = ethers.utils.parseEther('1');
+const AMOUNT = ethers.utils.parseEther('100');
 
 
 const RPC = {
@@ -89,7 +89,8 @@ async function main() {
     }
     
     DEBUG('approving...')
-    DEBUG(await fortaL1.approve(CONFIG.Main.POSContracts.ERC20PredicateProxy, AMOUNT));
+    const tx = await fortaL1.approve(CONFIG.Main.POSContracts.ERC20PredicateProxy, AMOUNT)
+    DEBUG(await tx.wait());
 
     DEBUG('depositing...')
     const encodedAmount = ethers.utils.defaultAbiCoder.encode(['uint256'], [AMOUNT])
