@@ -9455,7 +9455,7 @@
             "label": "_roles",
             "offset": 0,
             "slot": "101",
-            "type": "t_mapping(t_bytes32,t_struct(RoleData)5123_storage)",
+            "type": "t_mapping(t_bytes32,t_struct(RoleData)180_storage)",
             "contract": "AccessControlUpgradeable",
             "src": "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol:64"
           },
@@ -9543,7 +9543,7 @@
             "label": "_nonces",
             "offset": 0,
             "slot": "253",
-            "type": "t_mapping(t_address,t_struct(Counter)10527_storage)",
+            "type": "t_mapping(t_address,t_struct(Counter)2974_storage)",
             "contract": "ERC20PermitUpgradeable",
             "src": "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol:26"
           },
@@ -9575,7 +9575,7 @@
             "label": "_checkpoints",
             "offset": 0,
             "slot": "305",
-            "type": "t_mapping(t_address,t_array(t_struct(Checkpoint)8316_storage)dyn_storage)",
+            "type": "t_mapping(t_address,t_array(t_struct(Checkpoint)1785_storage)dyn_storage)",
             "contract": "ERC20VotesUpgradeable",
             "src": "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol:41"
           },
@@ -9583,7 +9583,7 @@
             "label": "_totalSupplyCheckpoints",
             "offset": 0,
             "slot": "306",
-            "type": "t_array(t_struct(Checkpoint)8316_storage)dyn_storage",
+            "type": "t_array(t_struct(Checkpoint)1785_storage)dyn_storage",
             "contract": "ERC20VotesUpgradeable",
             "src": "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol:42"
           },
@@ -9640,7 +9640,7 @@
           "t_address": {
             "label": "address"
           },
-          "t_array(t_struct(Checkpoint)8316_storage)dyn_storage": {
+          "t_array(t_struct(Checkpoint)1785_storage)dyn_storage": {
             "label": "struct ERC20VotesUpgradeable.Checkpoint[]"
           },
           "t_array(t_uint256)45_storage": {
@@ -9664,7 +9664,7 @@
           "t_mapping(t_address,t_address)": {
             "label": "mapping(address => address)"
           },
-          "t_mapping(t_address,t_array(t_struct(Checkpoint)8316_storage)dyn_storage)": {
+          "t_mapping(t_address,t_array(t_struct(Checkpoint)1785_storage)dyn_storage)": {
             "label": "mapping(address => struct ERC20VotesUpgradeable.Checkpoint[])"
           },
           "t_mapping(t_address,t_bool)": {
@@ -9673,19 +9673,19 @@
           "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
             "label": "mapping(address => mapping(address => uint256))"
           },
-          "t_mapping(t_address,t_struct(Counter)10527_storage)": {
+          "t_mapping(t_address,t_struct(Counter)2974_storage)": {
             "label": "mapping(address => struct CountersUpgradeable.Counter)"
           },
           "t_mapping(t_address,t_uint256)": {
             "label": "mapping(address => uint256)"
           },
-          "t_mapping(t_bytes32,t_struct(RoleData)5123_storage)": {
+          "t_mapping(t_bytes32,t_struct(RoleData)180_storage)": {
             "label": "mapping(bytes32 => struct AccessControlUpgradeable.RoleData)"
           },
           "t_string_storage": {
             "label": "string"
           },
-          "t_struct(Checkpoint)8316_storage": {
+          "t_struct(Checkpoint)1785_storage": {
             "label": "struct ERC20VotesUpgradeable.Checkpoint",
             "members": [
               {
@@ -9698,7 +9698,7 @@
               }
             ]
           },
-          "t_struct(Counter)10527_storage": {
+          "t_struct(Counter)2974_storage": {
             "label": "struct CountersUpgradeable.Counter",
             "members": [
               {
@@ -9707,7 +9707,7 @@
               }
             ]
           },
-          "t_struct(RoleData)5123_storage": {
+          "t_struct(RoleData)180_storage": {
             "label": "struct AccessControlUpgradeable.RoleData",
             "members": [
               {
