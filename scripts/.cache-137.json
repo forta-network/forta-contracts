@@ -20,5 +20,22 @@
 	"ens-reverse-pending": "0x62dc824afff2fc51540d304201f9d2dd2ba8102a7c40c9a3aacfe5696a0202e2",
 	"ens-reverse": "0x634C83F3213CcfC895A4e6A2c137b2B572fa64ad",
 	"scannerNodeVersion-pending": "0x25e95ae21b91ed837b587e4f4ba418fd2151293162e41ac738cc7e3fa4e3138d",
-	"scannerNodeVersion": "0x4720c872425876B6f4b4E9130CDef667aDE553b2"
+	"scannerNodeVersion": "0x4720c872425876B6f4b4E9130CDef667aDE553b2",
+	"forwarder-pending": "0x151442fa8f54e0ef3163afadfb19fb720f72d52cc81664d5be17a5cf7ed170cb",
+	"forwarder": {
+		"address": "0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F",
+		"args": [],
+		"version": "0.0.0"
+	},
+	"forta-pending": "0xd183cf62ab34079450ca0547be4e1cdc2e8f2963232921baadef87a0b0e5490d",
+	"forta": {
+		"address": "0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1",
+		"impl": {
+			"args": [
+				"0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa"
+			],
+			"address": "0xdEc964c65B265F038b07a6524598498b3Deb0e51",
+			"version": "0.1.1"
+		}
+	}
 }
