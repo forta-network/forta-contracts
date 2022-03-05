@@ -56,8 +56,8 @@ async function main() {
         multisigAddress = process.env[`${chainId === 1 ? 'MAINNET' : 'GOERLI'}_MULTISIG`]
     }
     const Forta = await ethers.getContractFactory(fortaContractName);
-    DEBUG('Upgrading ',childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta')
-
+    console.log('Upgrading ',childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta')
+    
     const newFortaProposal =  await defender.proposeUpgrade(await CACHE.get('forta.address'), Forta, {
         unsafeAllow: ['delegatecall'],
         multisig: multisigAddress,
