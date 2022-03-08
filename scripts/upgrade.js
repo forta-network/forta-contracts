@@ -52,7 +52,7 @@ async function main() {
         await contracts.access.grantRole(UPGRADER_ROLE,      deployer.address        ).then(tx => tx.wait());
         DEBUG('Granted upgrader role to: ', deployer.address)
     }
-
+    
     const Forta = await ethers.getContractFactory(childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta');
     DEBUG('Upgrading ',childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta')
     const newForta = await utils.performUpgrade(
@@ -67,12 +67,13 @@ async function main() {
         'forta'
     );
     DEBUG('newForta: ', await upgrades.erc1967.getImplementationAddress(newForta.address))
-
+    
     if (!childChainManagerProxy) {
         DEBUG('Upgraded for L1, exiting...');
         return
     }
     // L2 Components --------------------------------------------------------------------------------------------
+    
     const AccessManager = await ethers.getContractFactory('AccessManager');
     const newAccessManager = await utils.performUpgrade(
         contracts.access,
@@ -154,6 +155,7 @@ async function main() {
 
     DEBUG('newDispatch: ', await upgrades.erc1967.getImplementationAddress(newDispatch.address))
 
+
     const ScannerNodeVersion = await ethers.getContractFactory('ScannerNodeVersion');
     const newScannerNodeVersion = await utils.performUpgrade(
         contracts.scannerNodeVersion,
@@ -167,7 +169,7 @@ async function main() {
         'scanner-node-version'
     );
     DEBUG('newScannerNodeVersion: ', await upgrades.erc1967.getImplementationAddress(newScannerNodeVersion.address))
-    
+
 }
 
 main()

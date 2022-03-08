@@ -129,6 +129,7 @@ async function migrate(config = {}) {
     DEBUG(`[2] forta: ${contracts.token.address}`);
     
     if (config.childChain) {
+      
         contracts.access = await ethers.getContractFactory('AccessManager', deployer).then(factory => utils.tryFetchProxy(
             CACHE,
             'access',
@@ -219,6 +220,7 @@ async function migrate(config = {}) {
         
         const agentVersion = await utils.getContractVersion(contracts.agents);
         DEBUG('agentVersion', agentVersion);
+        
         if (semver.gte(agentVersion, '0.1.2')) {
             DEBUG('Configuring stake controller...');
     
@@ -309,7 +311,7 @@ async function migrate(config = {}) {
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
     DEBUG('[10] roles fetched')
-    if (config.childChain && contracts.access) {
+    if (config.childChain && contracts.access && chainId !== 1 && chainId !== 137) {
         await contracts.access.hasRole(roles.ENS_MANAGER, deployer.address)
         .then(result => result || contracts.access.grantRole(roles.ENS_MANAGER, deployer.address).then(tx => tx.wait()));
     }

@@ -8,8 +8,8 @@ const DEBUG                = require('debug')('forta:utils');
 Object.assign(process.env, require('dotenv').config().parsed);
 
 const DEFAULT_FEE_DATA = {
-    maxFeePerGas:         ethers.utils.parseUnits('100', 'gwei'),
-    maxPriorityFeePerGas: ethers.utils.parseUnits('5',   'gwei'),
+    maxFeePerGas:         ethers.utils.parseUnits('300', 'gwei'),
+    maxPriorityFeePerGas: ethers.utils.parseUnits('30',   'gwei'),
 };
 
 const getDefaultProvider = async (
@@ -17,7 +17,7 @@ const getDefaultProvider = async (
     feeData      = {},
 ) => {
     const provider  = new ethers.providers.FallbackProvider([ baseProvider ], 1);
-    // provider.getFeeData = () => Promise.resolve(Object.assign(DEFAULT_FEE_DATA, feeData));
+    provider.getFeeData = () => Promise.resolve(Object.assign(DEFAULT_FEE_DATA, feeData));
     return provider;
 }
 
