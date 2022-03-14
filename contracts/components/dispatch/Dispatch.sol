@@ -13,16 +13,15 @@ contract Dispatch is BaseComponentUpgradeable {
     AgentRegistry   private _agents;
     ScannerRegistry private _scanners;
 
-    string public constant version = "0.1.1";
+    string public constant version = "0.1.3";
 
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
 
     error Disabled(string name);
     error InvalidId(string name, uint256 id);
-    error AlreadyLinked(string name, uint256 id);
-    error AlreadyUnlinked(string name, uint256 id);
-
+    
+    event AlreadyLinked(uint256 agentId, uint256 scannerId, bool enable);
     event Link(uint256 agentId, uint256 scannerId, bool enable);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -146,6 +145,11 @@ contract Dispatch is BaseComponentUpgradeable {
         return (registered, scannerId, owner, chainId, metadata, enabled);
     }
 
+    /// Returns true if scanner and agents are linked, false otherwise.
+    function areTheyLinked(uint256 agentId, uint256 scannerId) external view returns(bool) {
+        return scannerToAgents[scannerId].contains(agentId) && agentToScanners[agentId].contains(scannerId);
+    }
+
     /**
      * @notice Assigns the job of running an agent to a scanner.
      * @dev currently only allowed for DISPATCHER_ROLE (Assigner software).
@@ -157,10 +161,11 @@ contract Dispatch is BaseComponentUpgradeable {
         if (!_agents.isEnabled(agentId)) revert Disabled("Agent");
         if (!_scanners.isEnabled(scannerId)) revert Disabled("Scanner");
 
-        if (!scannerToAgents[scannerId].add(agentId)) revert AlreadyLinked("Agent", agentId);
-        if (!agentToScanners[agentId].add(scannerId)) revert AlreadyLinked("Scanner", scannerId);
-
-        emit Link(agentId, scannerId, true);
+        if (!scannerToAgents[scannerId].add(agentId) || !agentToScanners[agentId].add(scannerId)) {
+          emit AlreadyLinked(agentId, scannerId, true);
+        } else {
+          emit Link(agentId, scannerId, true);
+        }
     }
 
     /**
@@ -174,10 +179,11 @@ contract Dispatch is BaseComponentUpgradeable {
         if (!_agents.isCreated(agentId)) revert InvalidId("Agent", agentId);
         if (!_scanners.isRegistered(scannerId)) revert InvalidId("Scanner", scannerId);
 
-        if (!(scannerToAgents[scannerId].remove(agentId))) revert AlreadyUnlinked("Agent", agentId);
-        if (!(agentToScanners[agentId].remove(scannerId))) revert AlreadyUnlinked("Scanner", scannerId);
-
-        emit Link(agentId, scannerId, false);
+        if (!scannerToAgents[scannerId].remove(agentId) || !agentToScanners[agentId].remove(scannerId)) {
+          emit AlreadyLinked(agentId, scannerId, false);
+        } else {
+          emit Link(agentId, scannerId, false);
+        }
     }
 
     /**

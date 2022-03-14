@@ -28,9 +28,11 @@ describe('Dispatcher', function () {
 
   it('link', async function () {
     const hashBefore = await this.dispatch.scannerHash(this.SCANNER_ID);
-    expect(await this.scanners.isStakedOverMin(this.SCANNER_ID)).to.be.equal(true)
+    expect(await this.scanners.isStakedOverMin(this.SCANNER_ID)).to.be.equal(true);
+    expect(await this.dispatch.areTheyLinked(this.AGENT_ID,this.SCANNER_ID)).to.be.equal(false);
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
     .to.emit(this.dispatch, 'Link').withArgs(this.AGENT_ID, this.SCANNER_ID, true);
+    expect(await this.dispatch.areTheyLinked(this.AGENT_ID,this.SCANNER_ID)).to.be.equal(true);
 
     expect(await this.dispatch.scannerHash(this.SCANNER_ID)).to.not.be.deep.equal(hashBefore);
   });
@@ -64,8 +66,11 @@ describe('Dispatcher', function () {
 
     await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
     .to.emit(this.dispatch, 'Link').withArgs(this.AGENT_ID, this.SCANNER_ID, true);
+    expect(await this.dispatch.areTheyLinked(this.AGENT_ID,this.SCANNER_ID)).to.be.equal(true);
+
     await expect(this.dispatch.connect(this.accounts.manager).unlink(this.AGENT_ID, this.SCANNER_ID))
     .to.emit(this.dispatch, 'Link').withArgs(this.AGENT_ID, this.SCANNER_ID, false);
+    expect(await this.dispatch.areTheyLinked(this.AGENT_ID,this.SCANNER_ID)).to.be.equal(false);
 
     expect(await this.dispatch.scannerHash(this.SCANNER_ID)).to.be.deep.equal(hashBefore);
   });
