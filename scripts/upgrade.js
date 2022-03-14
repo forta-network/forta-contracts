@@ -7,6 +7,8 @@ const CHILD_CHAIN_MANAGER_PROXY = {
     80001: '0xb5505a6d998549090530911180f38aC5130101c6',
 };
 
+const CONTRACTS_TO_UPGRADE = ['dispatch']
+
 async function main() {
     const provider = await utils.getDefaultProvider();
     const deployer = await utils.getDefaultDeployer(provider);
@@ -52,7 +54,7 @@ async function main() {
         await contracts.access.grantRole(UPGRADER_ROLE,      deployer.address        ).then(tx => tx.wait());
         DEBUG('Granted upgrader role to: ', deployer.address)
     }
-    
+    /*
     const Forta = await ethers.getContractFactory(childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta');
     DEBUG('Upgrading ',childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta')
     const newForta = await utils.performUpgrade(
@@ -71,105 +73,112 @@ async function main() {
     if (!childChainManagerProxy) {
         DEBUG('Upgraded for L1, exiting...');
         return
-    }
+    }*/
     // L2 Components --------------------------------------------------------------------------------------------
+    if (CONTRACTS_TO_UPGRADE.includes('access')) {
+      const AccessManager = await ethers.getContractFactory('AccessManager');
+      const newAccessManager = await utils.performUpgrade(
+          contracts.access,
+          AccessManager.connect(deployer),
+          {
+              constructorArgs: [ contracts.forwarder.address ],
+              unsafeAllow: ['delegatecall'],
+          },
+          CACHE,
+          'access'
+      );
+      DEBUG('newAccessManager: ', await upgrades.erc1967.getImplementationAddress(newAccessManager.address))
+    } 
     
-    const AccessManager = await ethers.getContractFactory('AccessManager');
-    const newAccessManager = await utils.performUpgrade(
-        contracts.access,
-        AccessManager.connect(deployer),
-        {
-            constructorArgs: [ contracts.forwarder.address ],
-            unsafeAllow: ['delegatecall'],
-        },
-        CACHE,
-        'access'
-    );
-    DEBUG('newAccessManager: ', await upgrades.erc1967.getImplementationAddress(newAccessManager.address))
+    if (CONTRACTS_TO_UPGRADE.includes('router')) {
+      const Router = await ethers.getContractFactory('Router');
+      const newRouter = await utils.performUpgrade(
+          contracts.router,
+          Router.connect(deployer),
+          {
+              constructorArgs: [ contracts.forwarder.address ],
+              unsafeAllow: ['delegatecall'],
+              unsafeSkipStorageCheck: true
+          },
+          CACHE,
+          'router'
+      );
+      DEBUG('newRouter: ', await upgrades.erc1967.getImplementationAddress(newRouter.address))
+    }
 
-    const Router = await ethers.getContractFactory('Router');
-    const newRouter = await utils.performUpgrade(
-        contracts.router,
-        Router.connect(deployer),
-        {
-            constructorArgs: [ contracts.forwarder.address ],
-            unsafeAllow: ['delegatecall'],
-            unsafeSkipStorageCheck: true
-        },
-        CACHE,
-        'router'
-    );
-
-    DEBUG('newRouter: ', await upgrades.erc1967.getImplementationAddress(newRouter.address))
-
-    const AgentRegistry = await ethers.getContractFactory('AgentRegistry');
-    const newAgentRegistry = await utils.performUpgrade(
-        contracts.agents,
-        AgentRegistry.connect(deployer),
-        {
-            call: {
-                fn:'setStakeController(address)',
-                args: [contracts.staking.address]
+    if (CONTRACTS_TO_UPGRADE.includes('agents')) {
+        const AgentRegistry = await ethers.getContractFactory('AgentRegistry');
+        const newAgentRegistry = await utils.performUpgrade(
+            contracts.agents,
+            AgentRegistry.connect(deployer),
+            {
+                call: {
+                    fn:'setStakeController(address)',
+                    args: [contracts.staking.address]
+                },
+                constructorArgs: [ contracts.forwarder.address ],
+                unsafeAllow: ['delegatecall'],
+                unsafeSkipStorageCheck: true
             },
-            constructorArgs: [ contracts.forwarder.address ],
-            unsafeAllow: ['delegatecall'],
-            unsafeSkipStorageCheck: true
-        },
-        CACHE,
-        'agents'
-    );
-    DEBUG('new Agent Registry: ', await upgrades.erc1967.getImplementationAddress(newAgentRegistry.address))
-    
-    
-    const ScannerRegistry = await ethers.getContractFactory('ScannerRegistry');
-    const newScannerRegistry = await utils.performUpgrade(
-        contracts.scanners,
-        ScannerRegistry.connect(deployer),
-        {
-            call: {
-                fn:'setStakeController(address)',
-                args: [contracts.staking.address]
+            CACHE,
+            'agents'
+        );
+        DEBUG('new Agent Registry: ', await upgrades.erc1967.getImplementationAddress(newAgentRegistry.address))
+    }
+
+    if (CONTRACTS_TO_UPGRADE.includes('scanners')) {
+        const ScannerRegistry = await ethers.getContractFactory('ScannerRegistry');
+        const newScannerRegistry = await utils.performUpgrade(
+            contracts.scanners,
+            ScannerRegistry.connect(deployer),
+            {
+                call: {
+                    fn:'setStakeController(address)',
+                    args: [contracts.staking.address]
+                },
+                constructorArgs: [ contracts.forwarder.address ],
+                unsafeAllow: ['delegatecall'],
+                unsafeSkipStorageCheck: true
             },
-            constructorArgs: [ contracts.forwarder.address ],
-            unsafeAllow: ['delegatecall'],
-            unsafeSkipStorageCheck: true
-        },
-        CACHE,
-        'scanners'
-    );
-    
-    DEBUG('newScannerRegistry: ', await upgrades.erc1967.getImplementationAddress(newScannerRegistry.address))
-    
-    const Dispatch = await ethers.getContractFactory('Dispatch');
-    const newDispatch = await utils.performUpgrade(
-        contracts.dispatch,
-        Dispatch.connect(deployer),
-        {
+            CACHE,
+            'scanners'
+        );
+        DEBUG('newScannerRegistry: ', await upgrades.erc1967.getImplementationAddress(newScannerRegistry.address))
+    }
 
-            constructorArgs: [ contracts.forwarder.address ],
-            unsafeAllow: ['delegatecall'],
-        },
-        CACHE,
-        'dispatch'
-    );
+    if (CONTRACTS_TO_UPGRADE.includes('dispatch')) {
+        const Dispatch = await ethers.getContractFactory('Dispatch');
+        const newDispatch = await utils.performUpgrade(
+            contracts.dispatch,
+            Dispatch.connect(deployer),
+            {
 
-    DEBUG('newDispatch: ', await upgrades.erc1967.getImplementationAddress(newDispatch.address))
+                constructorArgs: [ contracts.forwarder.address ],
+                unsafeAllow: ['delegatecall'],
+            },
+            CACHE,
+            'dispatch'
+        );
 
+        DEBUG('newDispatch: ', await upgrades.erc1967.getImplementationAddress(newDispatch.address))
+    }
 
-    const ScannerNodeVersion = await ethers.getContractFactory('ScannerNodeVersion');
-    const newScannerNodeVersion = await utils.performUpgrade(
-        contracts.scannerNodeVersion,
-        ScannerNodeVersion.connect(deployer),
-        {
+    if (CONTRACTS_TO_UPGRADE.includes('scanner-node-version')) {
+        const ScannerNodeVersion = await ethers.getContractFactory('ScannerNodeVersion');
+        const newScannerNodeVersion = await utils.performUpgrade(
+            contracts.scannerNodeVersion,
+            ScannerNodeVersion.connect(deployer),
+            {
 
-            constructorArgs: [ contracts.forwarder.address ],
-            unsafeAllow: ['delegatecall'],
-        },
-        CACHE,
-        'scanner-node-version'
-    );
-    DEBUG('newScannerNodeVersion: ', await upgrades.erc1967.getImplementationAddress(newScannerNodeVersion.address))
-
+                constructorArgs: [ contracts.forwarder.address ],
+                unsafeAllow: ['delegatecall'],
+            },
+            CACHE,
+            'scanner-node-version'
+        );
+        
+        DEBUG('newScannerNodeVersion: ', await upgrades.erc1967.getImplementationAddress(newScannerNodeVersion.address))
+    }
 }
 
 main()

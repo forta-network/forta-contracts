@@ -19,7 +19,7 @@
 			"args": [
 				"0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F"
 			],
-			"address": "0x7210AE70e1d9B3160c67247Bea3EEa6950a2d51E",
+			"address": "0x200Daf0a67B91bda59B57d436a3538E60C87c381",
 			"version": "0.1.0"
 		}
 	},
@@ -30,7 +30,7 @@
 			"args": [
 				"0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F"
 			],
-			"address": "0x8eCfDcdBd7ed77bFBe6603466CFD47bA5dA03dA8",
+			"address": "0x2194564d6ea21bf03c057977A85b64D757596332",
 			"version": "0.1.2"
 		}
 	},
@@ -52,8 +52,8 @@
 			"args": [
 				"0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F"
 			],
-			"address": "0xE8cccC9903d465a6C0F922AD26cD2C2e7C33cBD1",
-			"version": "0.1.1"
+			"address": "0xCF68cEEfa02Da937a5Ac65B26Bcc9255e0D6fA88",
+			"version": "0.1.3"
 		}
 	},
 	"alerts-pending": "0xf7b767c938863b02c2c7b83e93f204201ede938ff4addf518ba21b4dc61aca32",
