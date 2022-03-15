@@ -42,7 +42,7 @@
 			"args": [
 				"0xd0D5882128bCc9Ea213Cc7dd26136F0eC06a8D2F"
 			],
-			"address": "0x7691a7505666fCe7d3512Fd2ec5d731c6CB6C399",
+			"address": "0x250f240185237170b2D0c0C8Ab1ac45d93085d2f",
 			"version": "0.1.1"
 		}
 	},
@@ -75,8 +75,8 @@
 		"address": "0x95d9a757ad9C25999ffE93f3067221F04ce1Cc79",
 		"impl": {
 			"args": [],
-			"address": "0x6A434647A4a3De2F915Bb49B6227444EBbE67Aed",
-			"version": "0.0.0"
+			"address": "0xc6db6560413308DbC857CFC332efA94D5752D094",
+			"version": "0.1.0"
 		}
 	},
 	"scanner-node-version-pending": "0xda0894eb045edbb3e5f8f85f79e583e17a739a261f152ef5ea7aec3db93ee2e2",
@@ -86,8 +86,8 @@
 			"args": [
 				"0xd0D5882128bCc9Ea213Cc7dd26136F0eC06a8D2F"
 			],
-			"address": "0x2441Ce5eB269505f30F6F434D21E039438aaC342",
-			"version": "0.0.0"
+			"address": "0xd966E90265b0345D9112cB836183C992E5E3B52C",
+			"version": "0.1.0"
 		}
 	},
 	"staking-pending": "0x98b61d8e4d6007835b9169fb8ff8d58600f5b849ba609e3c052848522f5e3b96",
@@ -125,5 +125,14 @@
 		"dispatch",
 		"scanner-node-version",
 		"ens"
-	]
+	],
+	"escrow-factory-pending": "0xe1dbd6593b991fd1b79e9ea27c2c1a180ef71bfc6b792e54567524b89354c8bc",
+	"escrow-factory": {
+		"address": "0x8ac9CC8cf1Dea5542cE94bCcf226138E0CF3EcFa",
+		"args": [
+			"0xd0D5882128bCc9Ea213Cc7dd26136F0eC06a8D2F",
+			"0xc054a3DABfFEb0279E62669FB699a33D4cC5fC62"
+		],
+		"version": "0.0.0"
+	}
 }
