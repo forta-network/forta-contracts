@@ -186,7 +186,11 @@ async function getEventsFromContractCreation(cache, key, eventName, contract, fi
     if (!txHash) {
         throw new Error(`${key} deployment transaction not saved`);
     }
-    let provider = contract.provider ?? contract.signer;
+    return getEventsFromTx(txHash, eventName, contract, filterParams);
+}
+
+async function getEventsFromTx(txHash, eventName, contract, filterParams = [], aProvider) {
+    let provider = aProvider ?? contract.provider ?? contract.signer.provider;
     const receipt = await provider.getTransactionReceipt(txHash);
     if(receipt === null) {
         return [];
@@ -194,6 +198,7 @@ async function getEventsFromContractCreation(cache, key, eventName, contract, fi
     const filters = contract.filters[eventName](...filterParams);
     return contract.queryFilter(filters, receipt.blockNumber, "latest");
 }
+
 const assertNotUsingHardhatKeys = (chainId, deployer) => {
     if (chainId !== 31337 && deployer.address === '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266') {
         DEBUG(deployer.address, chainId)
@@ -262,6 +267,7 @@ module.exports = {
     dateToTimestamp,
     durationToSeconds,
     getContractVersion,
+    getEventsFromTx,
     getEventsFromContractCreation,
     assertNotUsingHardhatKeys,
     kebabize,

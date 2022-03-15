@@ -7,7 +7,7 @@ const CHILD_CHAIN_MANAGER_PROXY = {
     80001: '0xb5505a6d998549090530911180f38aC5130101c6',
 };
 
-const CONTRACTS_TO_UPGRADE = ['dispatch']
+const CONTRACTS_TO_UPGRADE = ['scanners']
 
 async function main() {
     const provider = await utils.getDefaultProvider();
@@ -31,7 +31,7 @@ async function main() {
     if (name !== 'hardhat' && deployer.address === '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266') {
         throw new Error('using hardhat key for other network')
     }
-    const l2Contracts = childChainManagerProxy ? {
+    const l2Contracts = childChainManagerProxy || true ? {
         forwarder: utils.attach('Forwarder',  await CACHE.get('forwarder.address') ).then(contract => contract.connect(deployer)),
         access: utils.attach('AccessManager',  await CACHE.get('access.address') ).then(contract => contract.connect(deployer)),
         staking: utils.attach('FortaStaking', await CACHE.get('staking.address')           ).then(contract => contract.connect(deployer)),
