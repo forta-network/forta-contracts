@@ -21,9 +21,9 @@ async function main() {
 
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
 
-    DEBUG(`Network:  ${name} (${chainId})`);
-    DEBUG(`Deployer: ${deployer.address}`);
-    DEBUG('----------------------------------------------------');
+    console.log(`Network:  ${name} (${chainId})`);
+    console.log(`Deployer: ${deployer.address}`);
+    console.log('----------------------------------------------------');
     if (chainId !== 80001 && chainId !== 137) {
         throw new Error('Only supported for Polygon or Mumbai');
     }
@@ -32,9 +32,9 @@ async function main() {
         agents: await (utils.attach('AgentRegistry',  await CACHE.get('agents.address')  ).then(contract => contract.connect(deployer))),
         scanners: await (utils.attach('ScannerRegistry',await CACHE.get('scanners.address')  ).then(contract => contract.connect(deployer))),
     }
-    DEBUG('Stake Threshold Config:');
-    DEBUG(config);
-    DEBUG('Setting...');
+    console.log('Stake Threshold Config:');
+    console.log(config);
+    console.log('Setting...');
 
     let tx;
     switch (config.subjectType) {
@@ -50,7 +50,7 @@ async function main() {
             throw new Error('unsupported subject type: ' + config.subjectType);
     }
     DEBUG(tx);
-
+    console.log('Set!');
 }
 
 if (require.main === module) {

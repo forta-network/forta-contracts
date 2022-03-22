@@ -32,5 +32,11 @@
 			"address": "0x133CF241668649AF87f8902154933239c3220711",
 			"version": "0.0.0"
 		}
+	},
+	"batch-relayer-pending": "0x7e65c6c4ca6df0da128533af9db832c90db8ebea519034d89b69574cc91ad40b",
+	"batch-relayer": {
+		"address": "0x8fdc4B92904627aC8B67cF89995F3eEE24B90504",
+		"args": [],
+		"version": "0.0.0"
 	}
 }

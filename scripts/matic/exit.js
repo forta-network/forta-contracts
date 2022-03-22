@@ -13,7 +13,7 @@ const argv = require('yargs/yargs')(process.argv.slice(2))
         parentRPC: { type: 'string', default: process.env.GOERLI_NODE                                              },
         childRPC:  { type: 'string', default: process.env.MUMBAI_NODE                                      },
         mnemonic:  { type: 'string', default: process.env.GOERLI_MNEMONIC                                          },
-        txHash:    { type: 'string', default: '0x32a44d499403b8229ae1444e4cbd8cffe0b0d83fd7de57d585ef15a86b9db27b' },
+        txHash:    { type: 'string', default: '0xaadc26146318ff77b4544625b4f69cb7532f9bb93ed40efa4ced4fead60821a0' },
     })
     .argv;
 
