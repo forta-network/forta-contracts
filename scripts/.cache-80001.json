@@ -35,15 +35,6 @@
 		},
 		"verified": "true"
 	},
-	"escrow-factory-pending": "0x424d5dbff6cb1b4ac3c6424679e316531f86524ae7777c38b493a7cd84e4102b",
-	"escrow-factory": {
-		"address": "0xd46832F3f8EA8bDEFe5316696c0364F01b31a573",
-		"args": [
-			"0x5BE4071aC4Af98F632b968C58d9CceF704965459",
-			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
-		],
-		"version": "0.0.0"
-	},
 	"agents-pending": "0x74e5c36c5d4c1d7ae47f08d803c9695c9ec9849753138d1f6634f61974f6c2eb",
 	"agents": {
 		"address": "0x5Cf7008aC441Ec1797fAfA4EE132eA4277E9239B",
@@ -51,7 +42,7 @@
 			"args": [
 				"0x5BE4071aC4Af98F632b968C58d9CceF704965459"
 			],
-			"address": "0x988B794f73b78eae329DDFC1E07945C7FaE385f1",
+			"address": "0x3741fd8FcB2b3DeCe57EEDdA907C73832Ae5D3E7",
 			"version": "0.1.2"
 		},
 		"verified": "true"
@@ -63,7 +54,7 @@
 			"args": [
 				"0x5BE4071aC4Af98F632b968C58d9CceF704965459"
 			],
-			"address": "0x5a8e8d955f6Ea8fB2C9Cb0E5Ec960D761dD4281e",
+			"address": "0x9031BDDf5C2A0BEC663DFF6777aA83b27F811664",
 			"version": "0.1.1"
 		},
 		"verified": "true"
@@ -75,7 +66,7 @@
 			"args": [
 				"0x5BE4071aC4Af98F632b968C58d9CceF704965459"
 			],
-			"address": "0x81d566B667B0BdFa8f08bb7224E1f28E5F24715C",
+			"address": "0xa58d8465b23520a380b54BA546BEf264322800b2",
 			"version": "0.1.1"
 		},
 		"verified": "true"
@@ -149,5 +140,24 @@
 			"address": "0xE1205BEf00dc86043A54FB1b44e99A46f6060Fd4",
 			"version": "0.1.0"
 		}
+	},
+	"escrow-factory-pending": "0xc465aa2e0964833a3ff8a8cf55a39c56c0d4dc6929aca73d5c5bc0730a24215c",
+	"escrow-factory": {
+		"address": "0xa94d6128CCbfd373Af11a1838A58af26C44F0465",
+		"args": [
+			"0x5BE4071aC4Af98F632b968C58d9CceF704965459",
+			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
+		],
+		"version": "0.0.0"
+	},
+    "escrow-template-pending": "0xc465aa2e0964833a3ff8a8cf55a39c56c0d4dc6929aca73d5c5bc0730a24215c",
+    "escrow-template": {
+		"address": "0x4b1c11941b7acddc468c7bd6ac68170b92e1c0bb",
+		"args": [
+			"0x5BE4071aC4Af98F632b968C58d9CceF704965459",
+            "0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
+		],
+		"version": "0.0.0"
 	}
 }

@@ -75,6 +75,21 @@
       "address": "0x20b89b26a92Fb40536a27770BA03fd65ad7124eC",
       "txHash": "0x82a961d357a2d3e01c0b1da4ce472df1ff8511b8aafeac4e791d4e77357ae0e0",
       "kind": "uups"
+    },
+    {
+      "address": "0x5DD1faE6F6d2097E7ba65fc5626ca5CB0f767574",
+      "txHash": "0x6d2a7b3770700772e5cce3a17e9207bf4cf239d618b3ae93426c81b305d5840a",
+      "kind": "uups"
+    },
+    {
+      "address": "0xecad6ADD805230552a81Bb271E5d1908FC1AbAB9",
+      "txHash": "0x251a77e2dbc0e101d085be54f001ec581c936ff530bcca27dfded8edf9d0216a",
+      "kind": "uups"
+    },
+    {
+      "address": "0x60a5FDe7D9C4b519CDDb4be1C34BCDaEC1633028",
+      "txHash": "0x72667a8b7ad2e0adbb65b2801cc5bf2faad12ce27baf7bd5109ab42bc606d0d9",
+      "kind": "uups"
     }
   ],
   "impls": {
@@ -10148,6 +10163,490 @@
           },
           "t_contract(IAccessControl)2608": {
             "label": "contract IAccessControl"
+          }
+        }
+      }
+    },
+    "27e4127e87d240df48c0b0fbbee79ff5ff6561ab5626682181fac9846db744c0": {
+      "address": "0xFB8Baf07368B4C171156afEf9E4Ff6d055fB8C69",
+      "txHash": "0x1e7f2259603cb8625db8deb47fc577215d3e0621e9e18954cfe81bf2e7093355",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:37"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:42"
+          },
+          {
+            "contract": "ContextUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:31"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:82"
+          },
+          {
+            "contract": "ERC1967UpgradeUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:215"
+          },
+          {
+            "contract": "UUPSUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:81"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_released",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "contracts/vesting/VestingWalletV1.sol:16"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_beneficiary",
+            "type": "t_address",
+            "src": "contracts/vesting/VestingWalletV1.sol:17"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_start",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV1.sol:18"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_cliff",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV1.sol:19"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_duration",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV1.sol:20"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "__gap",
+            "type": "t_array(t_uint256)45_storage",
+            "src": "contracts/vesting/VestingWalletV1.sol:135"
+          },
+          {
+            "contract": "VestingWalletV2",
+            "label": "historicalBalanceMin",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV2.sol:30"
+          },
+          {
+            "contract": "VestingWalletV2",
+            "label": "__gap",
+            "type": "t_array(t_uint256)45_storage",
+            "src": "contracts/vesting/VestingWalletV2.sol:140"
+          }
+        ],
+        "types": {
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_array(t_uint256)45_storage": {
+            "label": "uint256[45]"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        }
+      }
+    },
+    "0bf323b457910ba5ae661aa7314c06fda418fadc1e4803b300faa1b2926cceb8": {
+      "address": "0x63D235a8CfAe1897b1B37cf98EaE44e47E06C443",
+      "txHash": "0x8c50ccf9660eb6b26df88d6b36b8f8191791740aceb8dd3fe8a1aba4ecc2ca90",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:37"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:42"
+          },
+          {
+            "contract": "ContextUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:31"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:82"
+          },
+          {
+            "contract": "ERC1967UpgradeUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:215"
+          },
+          {
+            "contract": "UUPSUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:81"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_released",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "contracts/vesting/VestingWalletV1.sol:16"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_beneficiary",
+            "type": "t_address",
+            "src": "contracts/vesting/VestingWalletV1.sol:17"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_start",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV1.sol:18"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_cliff",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV1.sol:19"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_duration",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV1.sol:20"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "__gap",
+            "type": "t_array(t_uint256)45_storage",
+            "src": "contracts/vesting/VestingWalletV1.sol:135"
+          },
+          {
+            "contract": "VestingWalletV2",
+            "label": "historicalBalanceMin",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV2.sol:30"
+          },
+          {
+            "contract": "VestingWalletV2",
+            "label": "__gap",
+            "type": "t_array(t_uint256)45_storage",
+            "src": "contracts/vesting/VestingWalletV2.sol:140"
+          }
+        ],
+        "types": {
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_array(t_uint256)45_storage": {
+            "label": "uint256[45]"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        }
+      }
+    },
+    "68c823afe3b726fb049e9886f50076e2203fd2fba8087449b753a760b8aa0193": {
+      "address": "0x51Db59AE184BCb6B2DF9909e865E489361f88f2e",
+      "txHash": "0x26abfc2638916f4aab111cc14eed7f2664f05fb81e7ba1f9d0244eb51778adc3",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:37"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:42"
+          },
+          {
+            "contract": "ContextUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:31"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:82"
+          },
+          {
+            "contract": "ERC1967UpgradeUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:215"
+          },
+          {
+            "contract": "UUPSUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:81"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_released",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "contracts/vesting/VestingWalletV1.sol:16"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_beneficiary",
+            "type": "t_address",
+            "src": "contracts/vesting/VestingWalletV1.sol:17"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_start",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV1.sol:18"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_cliff",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV1.sol:19"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_duration",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV1.sol:20"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "__gap",
+            "type": "t_array(t_uint256)45_storage",
+            "src": "contracts/vesting/VestingWalletV1.sol:135"
+          },
+          {
+            "contract": "VestingWalletV2",
+            "label": "historicalBalanceMin",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV2.sol:30"
+          },
+          {
+            "contract": "VestingWalletV2",
+            "label": "__gap",
+            "type": "t_array(t_uint256)45_storage",
+            "src": "contracts/vesting/VestingWalletV2.sol:140"
+          }
+        ],
+        "types": {
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_array(t_uint256)45_storage": {
+            "label": "uint256[45]"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        }
+      }
+    },
+    "be4f2d039cc12860cf6b64f3ac9f38b08c0bd067a198204375e7ac9664aa493e": {
+      "address": "0x133CF241668649AF87f8902154933239c3220711",
+      "txHash": "0x3953ab623d1f632464d399b8ae6d5c01994eb74723710b02ca8cd0acbb38fd98",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:37"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:42"
+          },
+          {
+            "contract": "ContextUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:31"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:82"
+          },
+          {
+            "contract": "ERC1967UpgradeUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:215"
+          },
+          {
+            "contract": "UUPSUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:81"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_released",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "contracts/vesting/VestingWalletV1.sol:16"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_beneficiary",
+            "type": "t_address",
+            "src": "contracts/vesting/VestingWalletV1.sol:17"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_start",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV1.sol:18"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_cliff",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV1.sol:19"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "_duration",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV1.sol:20"
+          },
+          {
+            "contract": "VestingWalletV1",
+            "label": "__gap",
+            "type": "t_array(t_uint256)45_storage",
+            "src": "contracts/vesting/VestingWalletV1.sol:135"
+          },
+          {
+            "contract": "VestingWalletV2",
+            "label": "historicalBalanceMin",
+            "type": "t_uint256",
+            "src": "contracts/vesting/VestingWalletV2.sol:30"
+          },
+          {
+            "contract": "VestingWalletV2",
+            "label": "__gap",
+            "type": "t_array(t_uint256)45_storage",
+            "src": "contracts/vesting/VestingWalletV2.sol:140"
+          }
+        ],
+        "types": {
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_array(t_uint256)45_storage": {
+            "label": "uint256[45]"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
+          },
+          "t_bool": {
+            "label": "bool"
           }
         }
       }
