@@ -86,11 +86,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * @return amount of ERC1155 active shares minted.
      */
     function deposit(uint8 subjectType, uint256 subject, uint256 stakeValue) public onlyManager() vestingBalance(stakeValue) returns (uint256) {
-        SafeERC20.safeApprove(
-            IERC20(address(l2token)),
-            address(l2staking),
-            stakeValue
-        );
+        IERC20(address(l2token)).approve(address(l2staking), stakeValue);
         return l2staking.deposit(subjectType, subject, stakeValue);
     }
 

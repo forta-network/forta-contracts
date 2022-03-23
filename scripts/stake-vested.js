@@ -10,7 +10,7 @@ const CHILD_CHAIN_MANAGER_PROXY = {
 };
 
 const STAKING_ESCROW = '0x4A9293f17418F9412a3A3AA9343fc0A56Fc4a053';
-const AMOUNT = parseEther('0.01');
+const AMOUNT = parseEther('1');
 const SUBJECT_ID = '0x4A9293f17418F9412a3A3AA9343fc0A56Fc4a053';
 
 async function stakeAll(config = {}) {

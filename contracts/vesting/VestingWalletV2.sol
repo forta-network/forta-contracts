@@ -87,8 +87,7 @@ contract VestingWalletV2 is VestingWalletV1 {
         );
 
         // approval
-        SafeERC20.safeApprove(
-            IERC20(l1Token),
+        IERC20(l1Token).approve(
             rootChainManager.typeToPredicate(rootChainManager.tokenToType(l1Token)),
             amount
         );
