@@ -6,8 +6,9 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpg
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../tools/ENSReverseRegistration.sol";
 import "../errors/GeneralErrors.sol";
+import "../components/utils/IVersioned.sol";
 
-abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable {
+abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable, IVersioned {
     bytes32 public constant ADMIN_ROLE       = keccak256("ADMIN_ROLE");
     bytes32 public constant WHITELISTER_ROLE = keccak256("WHITELISTER_ROLE");
     bytes32 public constant WHITELIST_ROLE   = keccak256("WHITELIST_ROLE");
@@ -67,6 +68,10 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
     // this methods ensure our comprise to publish the token and keep decentralizing Forta.
     function disableWhitelist() public onlyRole(WHITELISTER_ROLE) {
         whitelistDisabled = true;
+    }
+
+    function enableWhitelist() public onlyRole(WHITELISTER_ROLE) {
+        whitelistDisabled = false;
     }
 
     uint256[49] private __gap; 

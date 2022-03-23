@@ -26,7 +26,8 @@ function prepare(config = {}) {
     await migrate(Object.assign({
         force:                  true,
         deployer:               this.accounts.admin,
-        childChainManagerProxy: config.childChain && this.accounts.admin.address
+        childChainManagerProxy: config.adminAsChildChainManagerProxy && this.accounts.admin.address,
+        childChain: config.childChain ?? true
     })).then(env => Object.assign(this, env));
     DEBUG("Fixture: migrated");
 
@@ -71,7 +72,7 @@ function prepare(config = {}) {
     if (config.stake) {
 
       await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
-      if (!config.childChain) {
+      if (!config.adminAsChildChainManagerProxy) {
         //Bridged FORT does not have mint()
         await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));
       }

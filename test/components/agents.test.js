@@ -2,13 +2,9 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 
-
 const AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
 
-
-const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
 const prepareCommit = (...args)  => ethers.utils.solidityKeccak256([ 'bytes32', 'address', 'string', 'uint256[]' ], args);
-
 
 describe('Agent Registry', function () {
   prepare({ stake: { min: '100', max: '500', activated: true }});
@@ -37,6 +33,22 @@ describe('Agent Registry', function () {
 
         await expect(this.agents.createAgent(...args))
         .to.be.revertedWith('CommitNotReady()');
+      });
+
+      it('non existing agent', async function () {
+        expect(await this.agents.getAgent(AGENT_ID).then(agent => [
+            agent.created,
+            agent.owner,
+            agent.agentVersion.toNumber(),
+            agent.metadata,
+            agent.chainIds.map(chainId => chainId.toNumber()),
+          ])).to.be.deep.equal([
+            false,
+            ethers.constants.AddressZero,
+            0,
+            '',
+            [],
+          ]);
       });
 
       it('no delay', async function () {
@@ -71,10 +83,14 @@ describe('Agent Registry', function () {
         expect(await this.agents.isCreated(AGENT_ID)).to.be.equal(true);
         expect(await this.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.agents.getAgent(AGENT_ID).then(agent => [
-          agent.version.toNumber(),
+          agent.created,
+          agent.owner,
+          agent.agentVersion.toNumber(),
           agent.metadata,
           agent.chainIds.map(chainId => chainId.toNumber()),
         ])).to.be.deep.equal([
+          true,
+          this.accounts.user1.address,
           1,
           args[2],
           args[3],
@@ -127,10 +143,14 @@ describe('Agent Registry', function () {
 
         expect(await this.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.agents.getAgent(AGENT_ID).then(agent => [
-          agent.version.toNumber(),
-          agent.metadata,
-          agent.chainIds.map(chainId => chainId.toNumber()),
+            agent.created,
+            agent.owner,
+            agent.agentVersion.toNumber(),
+            agent.metadata,
+            agent.chainIds.map(chainId => chainId.toNumber()),
         ])).to.be.deep.equal([
+          true,
+          this.accounts.user1.address,
           1,
           'Metadata1',
           [ 1, 3, 4 ],
@@ -151,10 +171,14 @@ describe('Agent Registry', function () {
 
         expect(await this.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.agents.getAgent(AGENT_ID).then(agent => [
-          agent.version.toNumber(),
+          agent.created,
+          agent.owner,
+          agent.agentVersion.toNumber(),
           agent.metadata,
           agent.chainIds.map(chainId => chainId.toNumber()),
         ])).to.be.deep.equal([
+          true,
+          this.accounts.user1.address,
           2,
           'Metadata2',
           [ 1, 4, 5 ],

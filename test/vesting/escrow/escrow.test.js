@@ -14,7 +14,10 @@ const [
 const txTimestamp = (tx) => tx.wait().then(({ blockNumber }) => ethers.provider.getBlock(blockNumber)).then(({ timestamp }) => timestamp);
 
 describe('Staking Escrow', function () {
-  prepare({ childChain: true, stake: { min: '1', max: ethers.utils.parseEther('10000000'), activated: true } });
+  prepare({
+    adminAsChildChainManagerProxy: true,
+    stake: { min: '1', max: ethers.utils.parseEther('10000000'), activated: true }
+  });
 
   beforeEach(async function () {
     this.accounts.getAccount('manager');

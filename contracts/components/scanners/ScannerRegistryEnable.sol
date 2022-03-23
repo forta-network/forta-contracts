@@ -2,7 +2,6 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
-
 import "./ScannerRegistryManaged.sol";
 
 /**

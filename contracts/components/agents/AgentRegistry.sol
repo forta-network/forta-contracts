@@ -39,6 +39,22 @@ contract AgentRegistry is
     }
 
     /**
+     * @notice Gets all Agent state.
+     * @param agentId ERC1155 token id of the agent.
+     * @return created if agent exists.
+     * @return owner address.
+     * @return agentVersion of the agent.
+     * @return metadata IPFS pointer.
+     * @return chainIds the agent wants to run in.
+     */
+    function getAgentState(uint256 agentId)
+        public view
+        returns (bool created, address owner,uint256 agentVersion, string memory metadata, uint256[] memory chainIds, bool enabled) {
+        (created, owner, agentVersion, metadata, chainIds) = getAgent(agentId);
+        return (created, owner, agentVersion, metadata, chainIds, isEnabled(agentId));
+    }
+
+    /**
      * @notice Inheritance disambiguation for hook fired befire agent update (and creation).
      * @param agentId id of the agent.
      * @param newMetadata IPFS pointer to agent's metadata

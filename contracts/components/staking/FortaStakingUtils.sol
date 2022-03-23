@@ -5,7 +5,7 @@ library FortaStakingUtils {
     /**
      * @dev Encode "active" and subjectType in subject by hashing them together, shifting left 9 bits,
      * setting bit 9 (to mark as active) and masking subjectType in
-     * @param subjectType agents, scanner or future types of stake subject. See FortaStakingSubjectTypes.sol
+     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @return ERC1155 token id representing active shares.
      */
@@ -16,7 +16,7 @@ library FortaStakingUtils {
     /**
      * @dev Encode "inactive" and subjectType in subjectby hashing them together, shifting left 9 bits,
      * letting bit 9 unset (to mark as inactive) and masking subjectType in.
-     * @param subjectType agents, scanner or future types of stake subject. See FortaStakingSubjectTypes.sol
+     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @return ERC1155 token id representing inactive shares.
      */
@@ -54,7 +54,7 @@ library FortaStakingUtils {
     /**
      * @dev Extracts subject type encoded in shares id
      * @param sharesId ERC1155 token id representing shares.
-     * @return subject type (see FortaStakingSubjectTypes.sol)
+     * @return subject type (see SubjectTypes.sol)
      */
     function subjectTypeOfShares(uint256 sharesId) internal pure returns(uint8) {
         return uint8(sharesId);

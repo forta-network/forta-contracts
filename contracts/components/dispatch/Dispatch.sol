@@ -13,16 +13,15 @@ contract Dispatch is BaseComponentUpgradeable {
     AgentRegistry   private _agents;
     ScannerRegistry private _scanners;
 
-    string public constant version = "0.1.1";
+    string public constant version = "0.1.3";
 
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
 
     error Disabled(string name);
     error InvalidId(string name, uint256 id);
-    error AlreadyLinked(string name, uint256 id);
-    error AlreadyUnlinked(string name, uint256 id);
-
+    
+    event AlreadyLinked(uint256 agentId, uint256 scannerId, bool enable);
     event Link(uint256 agentId, uint256 scannerId, bool enable);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -99,17 +98,20 @@ contract Dispatch is BaseComponentUpgradeable {
     * @dev helper for external iteration.
     * @param scannerId ERC1155 token id of the scanner.
     * @param pos index for iteration.
+    * @return registered bool if agent exists, false otherwise.
+    * @return owner address. 
     * @return agentId ERC1155 token id of the agent. 
-    * @return enabled bool if agent is enabled, false otherwise.
     * @return agentVersion agent version number.
-    * @return metadata IPFS pointer for agent metadata
-    * @return chainIds ordered
+    * @return metadata IPFS pointer for agent metadata.
+    * @return chainIds ordered array of chainId were the agent wants to run.
+    * @return enabled bool if agent is enabled, false otherwise.
     */
-    function agentRefAt(uint256 scannerId, uint256 pos) external view returns (uint256 agentId, bool enabled, uint256 agentVersion, string memory metadata, uint256[] memory chainIds) {
+    function agentRefAt(uint256 scannerId, uint256 pos)
+        external view
+        returns (bool registered, address owner, uint256 agentId, uint256 agentVersion, string memory metadata, uint256[] memory chainIds, bool enabled) {
         agentId = agentAt(scannerId, pos);
-        enabled = _agents.isEnabled(agentId);
-        (agentVersion, metadata, chainIds) = _agents.getAgent(agentId);
-        return (agentVersion, enabled, agentVersion, metadata, chainIds);
+        (registered, owner, agentVersion, metadata, chainIds, enabled) = _agents.getAgentState(agentId);
+        return (registered, owner,agentId, agentVersion, metadata, chainIds, enabled);
     }
 
     /**
@@ -128,12 +130,24 @@ contract Dispatch is BaseComponentUpgradeable {
     * @dev helper for external iteration.
     * @param agentId ERC1155 token id of the agent.
     * @param pos index for iteration.
+    * @return registered true if scanner is registered.
     * @return scannerId ERC1155 token id of the scanner. 
-    * @return enabled bool if scanner is enabled, false otherwise.
+    * @return owner address.
+    * @return chainId that the scanner monitors.
+    * @return metadata IPFS pointer for agent metadata.
+    * @return enabled true if scanner is enabled, false otherwise.
     */
-    function scannerRefAt(uint256 agentId, uint256 pos) external view returns (uint256 scannerId, bool enabled) {
+    function scannerRefAt(uint256 agentId, uint256 pos)
+        external view
+        returns (bool registered,uint256 scannerId, address owner, uint256 chainId, string memory metadata, bool enabled) {
         scannerId = scannerAt(agentId, pos);
-        enabled   = _scanners.isEnabled(agentId);
+        (registered,owner, chainId, metadata, enabled) = _scanners.getScannerState(scannerId);
+        return (registered, scannerId, owner, chainId, metadata, enabled);
+    }
+
+    /// Returns true if scanner and agents are linked, false otherwise.
+    function areTheyLinked(uint256 agentId, uint256 scannerId) external view returns(bool) {
+        return scannerToAgents[scannerId].contains(agentId) && agentToScanners[agentId].contains(scannerId);
     }
 
     /**
@@ -147,10 +161,11 @@ contract Dispatch is BaseComponentUpgradeable {
         if (!_agents.isEnabled(agentId)) revert Disabled("Agent");
         if (!_scanners.isEnabled(scannerId)) revert Disabled("Scanner");
 
-        if (!scannerToAgents[scannerId].add(agentId)) revert AlreadyLinked("Agent", agentId);
-        if (!agentToScanners[agentId].add(scannerId)) revert AlreadyLinked("Scanner", scannerId);
-
-        emit Link(agentId, scannerId, true);
+        if (!scannerToAgents[scannerId].add(agentId) || !agentToScanners[agentId].add(scannerId)) {
+          emit AlreadyLinked(agentId, scannerId, true);
+        } else {
+          emit Link(agentId, scannerId, true);
+        }
     }
 
     /**
@@ -164,10 +179,11 @@ contract Dispatch is BaseComponentUpgradeable {
         if (!_agents.isCreated(agentId)) revert InvalidId("Agent", agentId);
         if (!_scanners.isRegistered(scannerId)) revert InvalidId("Scanner", scannerId);
 
-        if (!(scannerToAgents[scannerId].remove(agentId))) revert AlreadyUnlinked("Agent", agentId);
-        if (!(agentToScanners[agentId].remove(scannerId))) revert AlreadyUnlinked("Scanner", scannerId);
-
-        emit Link(agentId, scannerId, false);
+        if (!scannerToAgents[scannerId].remove(agentId) || !agentToScanners[agentId].remove(scannerId)) {
+          emit AlreadyLinked(agentId, scannerId, false);
+        } else {
+          emit Link(agentId, scannerId, false);
+        }
     }
 
     /**
@@ -220,7 +236,7 @@ contract Dispatch is BaseComponentUpgradeable {
         bool[]    memory enabled = new bool[](agents.length);
 
         for (uint256 i = 0; i < agents.length; i++) {
-            (agentVersion[i],,) = _agents.getAgent(agents[i]);
+            (,,agentVersion[i],,) = _agents.getAgent(agents[i]);
             enabled[i]     = _agents.isEnabled(agents[i]);
         }
 

@@ -12,17 +12,32 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
     mapping(uint256 => ScannerMetadata) private _scannerMetadata;
 
     /**
-     * @notice Gets scanner metadata, and chain Ids.
+     * @notice Gets all scanner properties.
      * @param scannerId ERC1155 token id of the scanner.
-     * @return chainId the scanner scans.
+     * @return registered true if scanner exists.
+     * @return owner address.
+     * @return chainId the scanner is monitoring.
      * @return metadata IPFS pointer for the scanner's JSON metadata.
      */
-    function getScanner(uint256 scannerId) public view returns (uint256 chainId, string memory metadata) {
+    function getScanner(uint256 scannerId) public view returns (bool registered, address owner, uint256 chainId, string memory metadata) {
+        bool exists = _exists(scannerId);
         return (
+            exists,
+            exists ? ownerOf(scannerId) : address(0),
             _scannerMetadata[scannerId].chainId,
             _scannerMetadata[scannerId].metadata
         );
     }
+
+    /**
+     * @notice Gets scanner chain Ids.
+     * @param scannerId ERC1155 token id of the scanner.
+     * @return chainId the scanner is monitoring.
+     */
+    function getScannerChainId(uint256 scannerId) public view returns (uint256) {
+        return _scannerMetadata[scannerId].chainId;
+    }
+    
     
     /**
      * @dev checks the StakeThreshold for the chainId the scanner with id `subject` was registered to monitor.
@@ -30,8 +45,7 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
      * @return StakeThreshold registered for `chainId`, or StakeThreshold(0,0,false) if `chainId` not found.
      */
     function _getStakeThreshold(uint256 subject) override virtual internal view returns(StakeThreshold memory) {
-        (uint256 chainId, ) = getScanner(subject);
-        return _stakeThresholds[chainId];
+        return _stakeThresholds[getScannerChainId(subject)];
     }
 
     /**
