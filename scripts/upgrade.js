@@ -52,7 +52,7 @@ async function main() {
         scannerNodeVersion: utils.attach('ScannerNodeVersion', await CACHE.get('scanner-node-version.address') ).then(contract => contract.connect(deployer)),
 
     } : {}
-
+    
     const contracts = await Promise.all(Object.entries({
         forta: utils.attach(childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta',  await CACHE.get('forta.address') ).then(contract => contract.connect(deployer)),
         ...l2Contracts
@@ -121,7 +121,6 @@ async function main() {
     }
 
     if (CONTRACTS_TO_UPGRADE.includes('agents')) {
-        console.log('what')
         const AgentRegistry = await ethers.getContractFactory('AgentRegistry');
         const newAgentRegistry = await utils.performUpgrade(
             contracts.agents,
@@ -167,7 +166,6 @@ async function main() {
             contracts.dispatch,
             Dispatch.connect(deployer),
             {
-
                 constructorArgs: [ contracts.forwarder.address ],
                 unsafeAllow: ['delegatecall'],
             },

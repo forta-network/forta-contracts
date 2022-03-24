@@ -17,7 +17,6 @@ async function migrate(config = {}) {
     DEBUG(`Network:  ${name} (${chainId})`);
     DEBUG(`Deployer: ${deployer.address}`);
     DEBUG(`Balance:  ${await provider.getBalance(deployer.address).then(ethers.utils.formatEther)}${ethers.constants.EtherSymbol}`);
-
     DEBUG('----------------------------------------------------');
     utils.assertNotUsingHardhatKeys(chainId, deployer);
 
