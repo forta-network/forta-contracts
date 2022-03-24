@@ -7,8 +7,6 @@ const semver = require('semver')
 
 upgrades.silenceWarnings();
 
-
-
 /*********************************************************************************************************************
  *                                                Migration workflow                                                 *
  *********************************************************************************************************************/
@@ -19,6 +17,7 @@ async function migrate(config = {}) {
     DEBUG(`Network:  ${name} (${chainId})`);
     DEBUG(`Deployer: ${deployer.address}`);
     DEBUG(`Balance:  ${await provider.getBalance(deployer.address).then(ethers.utils.formatEther)}${ethers.constants.EtherSymbol}`);
+
     DEBUG('----------------------------------------------------');
     utils.assertNotUsingHardhatKeys(chainId, deployer);
 
@@ -31,10 +30,8 @@ async function migrate(config = {}) {
         factory,
         [],
     ));
-
-    console.log('Batch Relayer: ', contracts.batchRelayer.address)
-
     
+    console.log('Batch Relayer: ', contracts.batchRelayer.address)
 }
 
 if (require.main === module) {
