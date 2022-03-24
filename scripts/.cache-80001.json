@@ -141,21 +141,21 @@
 			"version": "0.1.0"
 		}
 	},
-	"escrow-factory-pending": "0xc465aa2e0964833a3ff8a8cf55a39c56c0d4dc6929aca73d5c5bc0730a24215c",
-	"escrow-factory": {
-		"address": "0xa94d6128CCbfd373Af11a1838A58af26C44F0465",
+	"escrow-template-pending": "0xc465aa2e0964833a3ff8a8cf55a39c56c0d4dc6929aca73d5c5bc0730a24215c",
+	"escrow-template": {
+		"address": "0xc4343701A1EEb76f41dbdB861391B23e0B329e96",
 		"args": [
 			"0x5BE4071aC4Af98F632b968C58d9CceF704965459",
+			"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
 			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
 		],
 		"version": "0.0.0"
 	},
-    "escrow-template-pending": "0xc465aa2e0964833a3ff8a8cf55a39c56c0d4dc6929aca73d5c5bc0730a24215c",
-    "escrow-template": {
-		"address": "0x4b1c11941b7acddc468c7bd6ac68170b92e1c0bb",
+	"escrow-factory-pending": "0xc465aa2e0964833a3ff8a8cf55a39c56c0d4dc6929aca73d5c5bc0730a24215c",
+	"escrow-factory": {
+		"address": "0x77E24371F3336e6aaaFBAcFe155E188480B08c8b",
 		"args": [
 			"0x5BE4071aC4Af98F632b968C58d9CceF704965459",
-            "0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
 			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
 		],
 		"version": "0.0.0"
