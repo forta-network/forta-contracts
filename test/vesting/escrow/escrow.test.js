@@ -64,6 +64,8 @@ describe('Staking Escrow', function () {
         .to.emit(this.token,   'Approval'      ).withArgs(this.escrow.address, this.staking.address, 0)
         .to.emit(this.staking, 'TransferSingle').withArgs(this.escrow.address, ethers.constants.AddressZero, this.escrow.address, active, this.value)
         .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType, subject, this.escrow.address, this.value);
+        expect(await this.token.allowance(this.escrow.address, this.staking.address)).to.equal(ethers.BigNumber.from('0'));
+
       });
 
       it('multiple deposits reaching max stake do not break StakingEscrow', async function () {
@@ -74,6 +76,7 @@ describe('Staking Escrow', function () {
         .to.emit(this.token,   'Approval'      ).withArgs(this.escrow.address, this.staking.address, ethers.BigNumber.from('0'))
         .to.emit(this.staking, 'TransferSingle').withArgs(this.escrow.address, ethers.constants.AddressZero, this.escrow.address, active, ethers.BigNumber.from('0'))
         .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType, subject, this.escrow.address, ethers.BigNumber.from('0'));
+        expect(await this.token.allowance(this.escrow.address, this.staking.address)).to.equal(ethers.BigNumber.from('0'));
         await expect(this.escrow.connect(this.accounts.manager).functions['deposit(uint8,uint256,uint256)'](subjectType, subject, this.value))
         .to.emit(this.token,   'Approval'      ).withArgs(this.escrow.address, this.staking.address, this.value)
         .to.emit(this.token,   'Transfer'      ).withArgs(this.escrow.address, this.staking.address, ethers.BigNumber.from('0'))
@@ -87,12 +90,15 @@ describe('Staking Escrow', function () {
         .to.emit(this.token,   'Approval'      ).withArgs(this.escrow.address, this.staking.address, 0)
         .to.emit(this.staking, 'TransferSingle').withArgs(this.escrow.address, ethers.constants.AddressZero, this.escrow.address, active, this.value)
         .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType, subject, this.escrow.address, this.value);
+        expect(await this.token.allowance(this.escrow.address, this.staking.address)).to.equal(ethers.BigNumber.from('0'));
         await expect(this.escrow.connect(this.accounts.manager).functions['deposit(uint8,uint256,uint256)'](subjectType, subject, this.value))
         .to.emit(this.token,   'Approval'      ).withArgs(this.escrow.address, this.staking.address, this.value)
         .to.emit(this.token,   'Transfer'      ).withArgs(this.escrow.address, this.staking.address, ethers.BigNumber.from('0'))
         .to.emit(this.token,   'Approval'      ).withArgs(this.escrow.address, this.staking.address, ethers.BigNumber.from('0'))
         .to.emit(this.staking, 'TransferSingle').withArgs(this.escrow.address, ethers.constants.AddressZero, this.escrow.address, active, ethers.BigNumber.from('0'))
         .to.emit(this.staking, 'StakeDeposited').withArgs(subjectType, subject, this.escrow.address, ethers.BigNumber.from('0'));
+        expect(await this.token.allowance(this.escrow.address, this.staking.address)).to.equal(ethers.BigNumber.from('0'));
+
       })
 
       describe('with rewards', async function () {
