@@ -82,8 +82,6 @@
 		],
 		"version": "0.0.0"
 	},
-	"scannerNodeVersion-pending": "0x25e95ae21b91ed837b587e4f4ba418fd2151293162e41ac738cc7e3fa4e3138d",
-	"scannerNodeVersion": "0x4720c872425876B6f4b4E9130CDef667aDE553b2",
 	"forwarder-pending": "0x151442fa8f54e0ef3163afadfb19fb720f72d52cc81664d5be17a5cf7ed170cb",
 	"forwarder": {
 		"address": "0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F",
