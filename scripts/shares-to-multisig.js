@@ -10,7 +10,7 @@ const CHILD_CHAIN_MANAGER_PROXY = {
     80001: '0xb5505a6d998549090530911180f38aC5130101c6',
 };
 
-const MULTISIG = process.env.GOERLI_MULTISIG;
+const MULTISIG = process.env.POLYGON_MULTISIG_FUNDS;
 
 const AMOUNT = parseEther('1')
 
@@ -41,8 +41,6 @@ async function transferShares(config = {}) {
         //agents: utils.attach('AgentRegistry',  await CACHE.get('agents.address')  ).then(contract => contract.connect(deployer)),
         scanners: utils.attach('ScannerRegistry',await CACHE.get('scanners.address')  ).then(contract => contract.connect(deployer)),
         staking: utils.attach('FortaStaking',await CACHE.get('staking.address')  ).then(contract => contract.connect(deployer)),
-
-        //dispatch: utils.attach('Dispatch', await CACHE.get('dispatch.address') ).then(contract => contract.connect(deployer))
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
     const [signer] = await ethers.getSigners();
 
@@ -53,20 +51,22 @@ async function transferShares(config = {}) {
     const ids = [];
     const amounts = [];
     for (const scannerId of tokenIds) {
-        console.log('Getting shares...', scannerId.toHexString());
-        const subjectId = stakingUtils.subjectToActive(0, scannerId);
-        console.log('Subject ID:', subjectId);
-        const activeShares = await contracts.staking.balanceOf(signer.address, subjectId);
-        console.log('Share Balance:', activeShares.toString());
-        if (activeShares.eq(ethers.BigNumber.from(0))) {
-            continue
-        }
-        console.log('Adding to batch...');
-        ids.push(subjectId);
-        amounts.push(activeShares.toString());
+        console.log('Getting Active shares...', scannerId);
+        const activeSubjectId = stakingUtils.subjectToActive(0, scannerId);
+        console.log('Active Subject ID:', activeSubjectId.toString());
+        const activeShares = await contracts.staking.balanceOf(signer.address, activeSubjectId);
+        console.log('Active Share Balance:', activeShares.toString());
+        if (!activeShares.eq(ethers.BigNumber.from(0))) {
+            console.log('Adding Active to batch...');
+            ids.push(activeSubjectId.toString());
+            amounts.push(activeShares.toString());
+        } else {
+            console.log('No active shares')
+        }        
     }
-    console.log('ids:', ids);
-    console.log('amounts:', amounts);
+    console.log('ids:', ids.length);
+    console.log('ids', ids)
+    console.log('amounts:', amounts.length);
     console.log('Transfering...');
     console.log(await contracts.staking.safeBatchTransferFrom(signer.address, MULTISIG, ids, amounts, '0x'))
 }

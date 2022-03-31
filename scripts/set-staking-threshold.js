@@ -7,12 +7,20 @@ const AGENT_SUBJECT = 1;
 
 const config = {
     subjectType: SCANNER_SUBJECT,
-    min: '0',
-    max: ethers.utils.parseEther('10000'),
+    min: ethers.utils.parseEther('500'),
+    max: ethers.utils.parseEther('750'),
     activated: true,
-    chainId: 1 // only relevant to SCANNER_SUBJECT
+    chainId: 250 // only relevant to SCANNER_SUBJECT
 }
-
+/*
+- Ethereum Mainnet (chainID: 1) -
+- Polygon (chainID: 137) -
+- Avalance (chainID: 43114) -
+- BSC (chainID: 56) -
+- Arbitrum One (chainID: 42161) -
+- Fantom Opera (chainID: 250) -
+- Optimism (chainID: 10) -
+*/
 async function main() {
     const provider = await utils.getDefaultProvider();
     const deployer = await utils.getDefaultDeployer(provider);
@@ -30,7 +38,7 @@ async function main() {
 
     const contracts =  {
         agents: await (utils.attach('AgentRegistry',  await CACHE.get('agents.address')  ).then(contract => contract.connect(deployer))),
-        scanners: await (utils.attach('ScannerRegistry',await CACHE.get('scanners.address')  ).then(contract => contract.connect(deployer))),
+        scanners: await (utils.attach('ScannerRegistry', await CACHE.get('scanners.address')  ).then(contract => contract.connect(deployer))),
     }
     console.log('Stake Threshold Config:');
     console.log(config);
