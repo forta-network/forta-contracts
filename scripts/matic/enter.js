@@ -9,7 +9,7 @@ const { Web3ClientPlugin            } = require('@maticnetwork/maticjs-ethers');
 
 use(Web3ClientPlugin)
 
-const AMOUNT = ethers.utils.parseEther('100');
+const AMOUNT = ethers.utils.parseEther('29999');
 
 
 const RPC = {
@@ -46,14 +46,14 @@ async function main() {
     utils.assertNotUsingHardhatKeys(chainId, deployer);
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `../.cache-${chainId}` });
     let network
-    if (chainId !== 5) {
-        throw new Error('Only Göerli supported for now...');
+    if (chainId === 1) {
+        network = 'mainnet';
     } else {
-        network = 'testnet'
+        network = 'testnet';
     }
 
 
-    const CONFIG = require(`./config-${network == 'testnet' ? network : 'mainnet'}.json`);
+    const CONFIG = require(`./config-${network}.json`);
     /*const rpcs = RPC[network] || revert('invalid network');
 
     const signers = {
@@ -77,9 +77,6 @@ async function main() {
 
     const rootChainManager = new ethers.Contract(CONFIG.Main.POSContracts.RootChainManagerProxy, require('./root-chain-manager.json'), deployer);
 
-
-    DEBUG('execute...');
-    const WHITELIST_ROLE = ethers.utils.id('WHITELIST_ROLE')
     if (name !== 'mainnet') {
         
         if (fortL1Balance.lt(AMOUNT)) {
@@ -88,13 +85,13 @@ async function main() {
         }
     }
     
-    DEBUG('approving...')
+    console.log('approving...')
     const tx = await fortaL1.approve(CONFIG.Main.POSContracts.ERC20PredicateProxy, AMOUNT)
-    DEBUG(await tx.wait());
+    console.log(await tx.wait());
 
-    DEBUG('depositing...')
+    console.log('depositing...')
     const encodedAmount = ethers.utils.defaultAbiCoder.encode(['uint256'], [AMOUNT])
-    DEBUG(await rootChainManager.depositFor(deployer.address, fortaL1.address, encodedAmount))
+    console.log(await rootChainManager.depositFor(deployer.address, fortaL1.address, encodedAmount))
 
 
 }

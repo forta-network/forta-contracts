@@ -1,7 +1,7 @@
 {
 	"deployer": "0xB37Dd8269d2d81d8954983A9D3c67FEc5E1f9837",
 	"relayer": "0x86D7b531e4087CdfF181430f5e4a8E242A3a405E",
-    "forta-pending": "0xdc732ae53ba51f0d66711d253337281976615bf39f081998692a09f708ac1e28",
+	"forta-pending": "0xdc732ae53ba51f0d66711d253337281976615bf39f081998692a09f708ac1e28",
 	"forta": {
 		"address": "0x41545f8b9472D758bB669ed8EaEEEcD7a9C4Ec29"
 	},
@@ -129,5 +129,11 @@
 	"vesting-0xF5Fb27b912D987B5b6e02A1B1BE0C1F0740E2c6f": "0x20E591C0910c58242CBdc57a525C3C2C554d675b",
 	"vesting-0x446AeE9479901B30838fF442187C9C6a139d9260-pending": "0x9a0ec9df044ae3c7b25d5a14016c55aed5145883c95caa11c7ef2cb1e9faf867",
 	"vesting-0x446AeE9479901B30838fF442187C9C6a139d9260": "0x732E7De12Aa95bfcff11e1238F704c3898D4735D",
-	"step": 8
+	"step": 8,
+	"batch-relayer-pending": "0xbe378320b10cd01d150a1fc0adfb4ecad47000bd534eaf596475027c619f390d",
+	"batch-relayer": {
+		"address": "0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1",
+		"args": [],
+		"version": "0.0.0"
+	}
 }

@@ -7,8 +7,6 @@ const semver = require('semver')
 
 upgrades.silenceWarnings();
 
-
-
 /*********************************************************************************************************************
  *                                                Migration workflow                                                 *
  *********************************************************************************************************************/
@@ -31,10 +29,8 @@ async function migrate(config = {}) {
         factory,
         [],
     ));
-
-    console.log('Batch Relayer: ', contracts.batchRelayer.address)
-
     
+    console.log('Batch Relayer: ', contracts.batchRelayer.address)
 }
 
 if (require.main === module) {

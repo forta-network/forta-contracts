@@ -75,6 +75,11 @@ const CHILD_CHAIN_MANAGER_PROXY = {
     80001: '0xb5505a6d998549090530911180f38aC5130101c6',
 };
 
+const DELAY = {
+    137: utils.durationToSeconds('10 days'),
+    8001: utils.durationToSeconds('10 minutes')
+}
+
 /*********************************************************************************************************************
  *                                                Migration workflow                                                 *
  *********************************************************************************************************************/
@@ -82,6 +87,8 @@ async function migrate(config = {}) {
     const provider = config?.provider ?? config?.deployer?.provider ?? await utils.getDefaultProvider();
     const deployer = config?.deployer ??                               await utils.getDefaultDeployer(provider);
     const { name, chainId } = await provider.getNetwork();
+    const delay = DELAY[chainId] ?? 0;
+
     DEBUG(`Network:  ${name} (${chainId})`);
     DEBUG(`ENS:      ${provider.network.ensAddress ?? 'undetected'}`);
     DEBUG(`Deployer: ${deployer.address}`);
@@ -151,18 +158,18 @@ async function migrate(config = {}) {
         ));
     
         DEBUG(`[4] router: ${contracts.router.address}`);
-    
         contracts.staking = await ethers.getContractFactory('FortaStaking', deployer).then(factory => utils.tryFetchProxy(
           CACHE,
           'staking',
           factory,
           'uups',
-          [ contracts.access.address, contracts.router.address, contracts.token.address, 0, deployer.address ],
+          [ contracts.access.address, contracts.router.address, contracts.token.address, delay, deployer.address ],
           { constructorArgs: [ contracts.forwarder.address ], unsafeAllow: ['delegatecall']},
         ));
     
         DEBUG(`[5.0] staking: ${contracts.staking.address}`);
     
+        
         contracts.stakingParameters = await ethers.getContractFactory('FortaStakingParameters', deployer).then(factory => utils.tryFetchProxy(
             CACHE,
             'staking-parameters',

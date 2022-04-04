@@ -1,13 +1,23 @@
 const { ethers } = require('hardhat');
-const DEBUG                = require('debug')('forta');
+const DEBUG                = require('debug')('forta:upgrade');
 const utils                = require('./utils');
+
+const CHILD_FOR_PARENT_CHAIN_ID = {
+    1: 137,
+    5: 80001
+}
 
 const CHILD_CHAIN_MANAGER_PROXY = {
     137:   '0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa',
     80001: '0xb5505a6d998549090530911180f38aC5130101c6',
 };
 
-const CONTRACTS_TO_UPGRADE = ['scanners']
+const ROOT_CHAIN_MANAGER = {
+    1:     '0x0D29aDA4c818A9f089107201eaCc6300e56E0d5c',
+    5:     '0xBbD7cBFA79faee899Eaf900F13C9065bF03B1A74',
+};
+
+const CONTRACTS_TO_UPGRADE = ['vesting-0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24']
 
 async function main() {
     const provider = await utils.getDefaultProvider();
@@ -31,7 +41,7 @@ async function main() {
     if (name !== 'hardhat' && deployer.address === '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266') {
         throw new Error('using hardhat key for other network')
     }
-    const l2Contracts = childChainManagerProxy || true ? {
+    const l2Contracts = childChainManagerProxy ? {
         forwarder: utils.attach('Forwarder',  await CACHE.get('forwarder.address') ).then(contract => contract.connect(deployer)),
         access: utils.attach('AccessManager',  await CACHE.get('access.address') ).then(contract => contract.connect(deployer)),
         staking: utils.attach('FortaStaking', await CACHE.get('staking.address')           ).then(contract => contract.connect(deployer)),
@@ -54,28 +64,32 @@ async function main() {
         await contracts.access.grantRole(UPGRADER_ROLE,      deployer.address        ).then(tx => tx.wait());
         DEBUG('Granted upgrader role to: ', deployer.address)
     }
-    /*
-    const Forta = await ethers.getContractFactory(childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta');
-    DEBUG('Upgrading ',childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta')
-    const newForta = await utils.performUpgrade(
-        contracts.forta,
-        Forta.connect(deployer),
-        {
-            constructorArgs: [ childChainManagerProxy ].filter(Boolean),
-            unsafeAllow: ['delegatecall'],
-            //unsafeSkipStorageCheck: true
-        },
-        CACHE,
-        'forta'
-    );
-    DEBUG('newForta: ', await upgrades.erc1967.getImplementationAddress(newForta.address))
+    if (CONTRACTS_TO_UPGRADE.includes('forta')) {
+      const Forta = await ethers.getContractFactory(childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta');
+      DEBUG('Upgrading ',childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta')
+      const newForta = await utils.performUpgrade(
+          contracts.forta,
+          Forta.connect(deployer),
+          {
+              constructorArgs: [ childChainManagerProxy ].filter(Boolean),
+              unsafeAllow: ['delegatecall'],
+              //unsafeSkipStorageCheck: true
+          },
+          CACHE,
+          'forta'
+      );
+      DEBUG('newForta: ', await upgrades.erc1967.getImplementationAddress(newForta.address))
+      
+      if (!childChainManagerProxy) {
+          DEBUG('Upgraded for L1, exiting...');
+          return
+      }
+    }
     
-    if (!childChainManagerProxy) {
-        DEBUG('Upgraded for L1, exiting...');
-        return
-    }*/
     // L2 Components --------------------------------------------------------------------------------------------
+    DEBUG(CONTRACTS_TO_UPGRADE.includes('access'))
     if (CONTRACTS_TO_UPGRADE.includes('access')) {
+        DEBUG('what')
       const AccessManager = await ethers.getContractFactory('AccessManager');
       const newAccessManager = await utils.performUpgrade(
           contracts.access,
@@ -152,7 +166,6 @@ async function main() {
             contracts.dispatch,
             Dispatch.connect(deployer),
             {
-
                 constructorArgs: [ contracts.forwarder.address ],
                 unsafeAllow: ['delegatecall'],
             },
@@ -178,6 +191,33 @@ async function main() {
         );
         
         DEBUG('newScannerNodeVersion: ', await upgrades.erc1967.getImplementationAddress(newScannerNodeVersion.address))
+    }
+    const vestingWallets = CONTRACTS_TO_UPGRADE.filter(x => x.match(/vesting-.+/));
+    if (vestingWallets.length > 0) {
+        if (chainId !== 5 && chainId !== 1) throw new Error('Vesting wallets only in layer 1');
+        const CACHE_L2 = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${CHILD_FOR_PARENT_CHAIN_ID[chainId]}` });
+
+        for (const vestingWallet of vestingWallets) {
+            const vestingContract = await utils.attach('VestingWalletV2', await CACHE.get(`${vestingWallet}.address`)).then(contract => contract.connect(deployer))
+            const VestingWalletV2 = await ethers.getContractFactory('VestingWalletV2');
+            const newWallet = await utils.performUpgrade(
+                vestingContract,
+                VestingWalletV2.connect(deployer),
+                {
+                    constructorArgs: [
+                        ROOT_CHAIN_MANAGER[chainId],
+                        await CACHE.get('forta.address'),
+                        await CACHE_L2.get('escrow-factory.address'),
+                        await CACHE_L2.get('escrow-template.address'),
+                    ],
+                    unsafeAllow: ['delegatecall'],
+                },
+                CACHE,
+                vestingWallet
+            );
+            DEBUG(`new: ${vestingWallet} impl`, await upgrades.erc1967.getImplementationAddress(newWallet.address))
+                
+        }
     }
 }
 

@@ -85,16 +85,14 @@ contract VestingWalletV2 is VestingWalletV1 {
             StakingEscrowUtils.computeSalt(address(this), l2Manager),
             l2EscrowFactory
         );
-
+        address predicate = rootChainManager.typeToPredicate(rootChainManager.tokenToType(l1Token));
         // approval
-        SafeERC20.safeApprove(
-            IERC20(l1Token),
-            rootChainManager.typeToPredicate(rootChainManager.tokenToType(l1Token)),
-            amount
-        );
+        IERC20(l1Token).approve(predicate, amount);
 
         // deposit
         rootChainManager.depositFor(l2Escrow, l1Token, abi.encode(amount));
+        // reset approval
+        IERC20(address(l1Token)).approve(predicate, 0);
 
         emit TokensBridged(l2Escrow, l2Manager, amount);
     }
