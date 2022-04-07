@@ -1,3 +1,5 @@
+![image](https://user-images.githubusercontent.com/2632384/162202240-f42f201a-7871-442d-af51-9e5e8b5ddbe4.png)
+
 # Forta Protocol
 
 Smart Contracts of the [Forta Protocol](https://forta.org/)
@@ -48,7 +50,15 @@ Contract handling staking of FORT tokens on subjects (participant of the network
 Deposited stake is represented by ERC-1155 shares, for active and inactive (withdrawal initiated, non-transferrable) stake.
 Share ID is derived from the subject type, subject ID and it being active or inactive.
 
+## ScannerNodeVersion
+
+Holds the accepted Scanner Node software image IPFS hash. A change in the version will trigger Scanner Node autoupdate. New versions will be proposed by governance.
+
 ## Utils
+
+### AccessManager
+
+[Access Control](https://docs.openzeppelin.com/contracts/4.x/api/access#AccessControl) Singleton for all contracts except Token and VestingWallets
 
 ### Router
 
