@@ -1,6 +1,76 @@
 # Forta Protocol
 
-Contracts of the [Forta Protocol](https://forta.org/)
+Smart Contracts of the [Forta Protocol](https://forta.org/)
+This repo uses Hardhat as a development environment.
+
+## What is Forta?
+
+Forta is a decentralized, community-based monitoring network to detect threats and anomalies on DeFi, NFT, governance, bridges and other Web3 systems in real-time.
+
+Given timely and relevant alerts about the security and health of owned or dependent systems, protocols and investors can react quickly to neutralize threats and prevent or minimize loss of funds.
+
+Forta comprises a decentralized network of independent node operators that scan all transactions and block-by-block state changes for outlier transactions and threats. When an issue is detected, node operators send alerts to subscribers of potential risks, which enables them to take action
+
+Leveraging Forta, developers can build detection bots and machine learning models, and run them on the decentralized Forta network to uncover anomalous activity on every blockchain transaction.
+
+The contracts coordinate and govern Forta Network's Detection Bots (formerly Agents) and Scanner Nodes.
+
+# Contracts
+
+## FORT token
+
+FORT is the ERC-20 Token of the Forta Network. It acts as:
+- Governance token (see our [path to decentralization]())
+- Network security mechanism via staking and slashing on participating subjects (Bots and Scanner Nodes).
+- Network rewards.
+
+FORT is deployed on Ethereum Mainnet and bridged to Polygon using [Polygon's PoS Bridge](https://docs.polygon.technology/docs/develop/ethereum-polygon/pos/getting-started/).
+
+## Agent Registry (Bot registry).
+
+Contract responsible of Agent registration, updates, enabling, disabling and defining the Staking Threshold for agents.
+Agents are identified by `uint256(keccak256(UUIDv4))`
+Compliant with ERC-721 standard.
+
+## Scanner Node Registry.
+
+Contract responsible of Scanner Node registration, updates, enabling, disabling and defining the Staking Threshold for Scanner Nodes.
+Scanners are identified by their EOA Address casted to `uint256`
+Compliant with ERC-721 standard.
+
+## Dispatch
+
+Register of the assignments of Agents and Scanners, governed by the Assigner Software.
+
+## Staking
+
+Contract handling staking of FORT tokens on subjects (participant of the network), slashing and reward distribution.
+Deposited stake is represented by ERC-1155 shares, for active and inactive (withdrawal initiated, non-transferrable) stake.
+Share ID is derived from the subject type, subject ID and it being active or inactive.
+
+## Utils
+
+### Router
+
+Observer pattern allowing actions in contracts to have side effects. Currently unused.
+
+### Forwarder
+
+Meta tx contract, based on the [Permit Singleton](https://github.com/amxx/permit).
+
+## Vesting
+
+### VestingWallet
+
+Vesting contracts. Can bridge tokens to Polygon to a `StakingEscrow` contract destination so they can participate on staking.
+
+### StakingEscrow
+
+Contracts that allow vested token holders to stake on `FortaStaking`
+
+# Development
+
+
 
 ## Contract Versioning.
 
@@ -53,14 +123,8 @@ Some other parts of the system do not support this feature in ABIs yet. To gener
 2. `npx hardhat run scripts/abis-without-custom-errors.js`
 3. Check `.abis-no-errors` folder.
 
-## Setting stake threshold.
 
-1. Open `scripts/set-staking-threshold.js` 
-2. Edit `config` object
-3. Make sure the wallet in `.env` has `XXX_ADMIN_ROLE` (see `env.example` for reference`)
-4. `hardhat run --network <mumbai or polygon> scripts/set-staking-threshold.js` 
-
-# Mint and bridge TEST FORT L1 -> L2
+## Mint and bridge TEST FORT L1 -> L2
 1. Make sure the wallets in `.env` has `WHITELIST_ROLE` in Goerli and Mumbai and `MINTER_ROLE` in Goerli (see `env.example` for reference`). FORT will be sent in Mumbai to the same wallet you provided in `.env -> GOERLI_MNEMONIC`
 2. Open `scripts/matic/enter.js` and edit `AMOUNT` to set the FORT to mint and bridge
 3. `npx hardhat run --network goerli scripts/matic/enter.js`
