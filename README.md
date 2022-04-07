@@ -88,7 +88,12 @@ Contracts that allow vested token holders to stake on `FortaStaking`
 - Contracts no longer in use are under `_deprecated` folder.
 
 
-## Deploy platform
+## Deployments
+
+Deployment addresses are listed in `scripts/.cache-<chainID>.json`
+
+To deploy the platform's contracts:
+
 `npx hardhat run --network <network> scripts/deploy-platform.js`
 
 To see debug logs, we are using [debug package](https://www.npmjs.com/package/debug)
