@@ -1,8 +1,8 @@
 ![image](https://user-images.githubusercontent.com/2632384/162202240-f42f201a-7871-442d-af51-9e5e8b5ddbe4.png)
 
-# Forta Protocol
+# Forta Network
 
-Smart Contracts of the [Forta Protocol](https://forta.org/)
+Smart Contracts of the [Forta Network](https://forta.org/)
 This repo uses Hardhat as a development environment.
 
 ## What is Forta?
@@ -22,7 +22,7 @@ The contracts coordinate and govern Forta Network's Detection Bots (formerly Age
 ## FORT token
 
 FORT is the ERC-20 Token of the Forta Network. It acts as:
-- Governance token (see our [path to decentralization]())
+- Governance token (see our [path to decentralization](https://forta.org/blog/decentralizing-governance/))
 - Network security mechanism via staking and slashing on participating subjects (Bots and Scanner Nodes).
 - Network rewards.
 
@@ -78,6 +78,10 @@ Vesting contracts. Can bridge tokens to Polygon to a `StakingEscrow` contract de
 
 Contracts that allow vested token holders to stake on `FortaStaking`
 
+# Audits
+
+[Openzeppelin]()
+
 # Development
 
 
@@ -102,7 +106,7 @@ To see debug logs, we are using [debug package](https://www.npmjs.com/package/de
 
 ## Development of upgrades.
 
-This protocol is under active development, [so most of the components are `UUPSUpgradeable`](https://forum.openzeppelin.com/t/uups-proxies-tutorial-solidity-javascript/7786) and new implementations are deployed from time to time.
+This network is under active development, [so most of the components are `UUPSUpgradeable`](https://forum.openzeppelin.com/t/uups-proxies-tutorial-solidity-javascript/7786) and new implementations are deployed from time to time.
 
 Upgrading a contract is a process with risk, storage layout collision might happen.
 We follow good practices for [writing upgradeable contracts](https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable), using storage __gaps to "reserve" 50 storage slots per contract initially.
