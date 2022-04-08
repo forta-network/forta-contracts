@@ -1,6 +1,112 @@
-# Forta Protocol
+![image](https://user-images.githubusercontent.com/2632384/162202240-f42f201a-7871-442d-af51-9e5e8b5ddbe4.png)
 
-Contracts of the [Forta Protocol](https://forta.org/)
+# Forta Network
+
+Smart Contracts of the [Forta Network](https://forta.org/)
+This repo uses Hardhat as a development environment.
+
+## What is Forta?
+
+Forta is a decentralized, community-based monitoring network to detect threats and anomalies on DeFi, NFT, governance, bridges and other Web3 systems in real-time.
+
+Given timely and relevant alerts about the security and health of owned or dependent systems, protocols and investors can react quickly to neutralize threats and prevent or minimize loss of funds.
+
+Forta comprises a decentralized network of independent node operators that scan all transactions and block-by-block state changes for outlier transactions and threats. When an issue is detected, node operators send alerts to subscribers of potential risks, which enables them to take action
+
+Leveraging Forta, developers can build detection bots and machine learning models, and run them on the decentralized Forta network to uncover anomalous activity on every blockchain transaction.
+
+The contracts coordinate and govern Forta Network's Detection Bots (formerly Agents) and Scanner Nodes.
+
+# Contracts
+
+## FORT token
+
+- [Folder](https://github.com/forta-protocol/forta-contracts/tree/master/contracts/token)
+
+FORT is the ERC-20 Token of the Forta Network. It acts as:
+- Governance token (see our [path to decentralization](https://forta.org/blog/decentralizing-governance/))
+- Network security mechanism via staking and slashing on participating subjects (Bots and Scanner Nodes).
+- Network rewards.
+
+FORT is deployed on Ethereum Mainnet and bridged to Polygon using [Polygon's PoS Bridge](https://docs.polygon.technology/docs/develop/ethereum-polygon/pos/getting-started/).
+
+## Agent Registry (Bot registry)
+
+- [Folder](https://github.com/forta-protocol/forta-contracts/tree/master/contracts/components/agents)
+
+Contract responsible of Agent registration, updates, enabling, disabling and defining the Staking Threshold for agents.
+Agents are identified by `uint256(keccak256(UUIDv4))`
+Compliant with ERC-721 standard.
+
+## Scanner Node Registry
+
+- [Folder](https://github.com/forta-protocol/forta-contracts/tree/master/contracts/components/scanners)
+
+Contract responsible of Scanner Node registration, updates, enabling, disabling and defining the Staking Threshold for Scanner Nodes.
+Scanners are identified by their EOA Address casted to `uint256`
+Compliant with ERC-721 standard.
+
+## Dispatch
+
+- [Folder](https://github.com/forta-protocol/forta-contracts/blob/master/contracts/components/dispatch/Dispatch.sol)
+
+Register of the assignments of Agents and Scanners, governed by the Assigner Software.
+
+## Staking
+
+- [Folder](https://github.com/forta-protocol/forta-contracts/tree/master/contracts/components/staking)
+
+Contract handling staking of FORT tokens on subjects (participant of the network), slashing and reward distribution.
+Deposited stake is represented by ERC-1155 shares, for active and inactive (withdrawal initiated, non-transferrable) stake.
+Share ID is derived from the subject type, subject ID and it being active or inactive.
+
+## ScannerNodeVersion
+
+- [Folder](https://github.com/forta-protocol/forta-contracts/blob/master/contracts/components/scanners/ScannerNodeVersion.sol)
+
+Holds the accepted Scanner Node software image IPFS hash. A change in the version will trigger Scanner Node autoupdate. New versions will be proposed by governance.
+
+## Utils
+
+### AccessManager
+
+- [File](https://github.com/forta-protocol/forta-contracts/blob/master/contracts/components/access/AccessManager.sol)
+
+[Access Control](https://docs.openzeppelin.com/contracts/4.x/api/access#AccessControl) Singleton for all contracts except Token and VestingWallets
+
+### Router
+
+- [File](https://github.com/forta-protocol/forta-contracts/blob/master/contracts/components/router/Router.sol)
+
+Observer pattern allowing actions in contracts to have side effects. Currently unused.
+
+### Forwarder
+
+- [File](https://github.com/forta-protocol/forta-contracts/blob/master/contracts/components/metatx/Forwarder.sol)
+
+Meta tx contract, based on the [Permit Singleton](https://github.com/amxx/permit).
+
+## Vesting
+
+### VestingWallet
+
+- [Folder](https://github.com/forta-protocol/forta-contracts/tree/master/contracts/vesting)
+
+Vesting contracts. Can bridge tokens to Polygon to a `StakingEscrow` contract destination so they can participate on staking.
+
+### StakingEscrow
+
+- [Folder](https://github.com/forta-protocol/forta-contracts/tree/master/contracts/vesting/escrow)
+
+Contracts that allow vested token holders to stake on `FortaStaking`
+
+# Audits
+
+[Openzeppelin](https://github.com/forta-protocol/forta-contracts/blob/readme/audits/Forta%20Audit%20-%20Shared%20Report.pdf)
+
+# Development
+
+
 
 ## Contract Versioning.
 
@@ -8,7 +114,12 @@ Contracts of the [Forta Protocol](https://forta.org/)
 - Contracts no longer in use are under `_deprecated` folder.
 
 
-## Deploy platform
+## Deployments
+
+Deployment addresses are listed in `scripts/.cache-<chainID>.json`
+
+To deploy the platform's contracts:
+
 `npx hardhat run --network <network> scripts/deploy-platform.js`
 
 To see debug logs, we are using [debug package](https://www.npmjs.com/package/debug)
@@ -17,7 +128,7 @@ To see debug logs, we are using [debug package](https://www.npmjs.com/package/de
 
 ## Development of upgrades.
 
-This protocol is under active development, [so most of the components are `UUPSUpgradeable`](https://forum.openzeppelin.com/t/uups-proxies-tutorial-solidity-javascript/7786) and new implementations are deployed from time to time.
+This network is under active development, [so most of the components are `UUPSUpgradeable`](https://forum.openzeppelin.com/t/uups-proxies-tutorial-solidity-javascript/7786) and new implementations are deployed from time to time.
 
 Upgrading a contract is a process with risk, storage layout collision might happen.
 We follow good practices for [writing upgradeable contracts](https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable), using storage __gaps to "reserve" 50 storage slots per contract initially.
@@ -53,14 +164,8 @@ Some other parts of the system do not support this feature in ABIs yet. To gener
 2. `npx hardhat run scripts/abis-without-custom-errors.js`
 3. Check `.abis-no-errors` folder.
 
-## Setting stake threshold.
 
-1. Open `scripts/set-staking-threshold.js` 
-2. Edit `config` object
-3. Make sure the wallet in `.env` has `XXX_ADMIN_ROLE` (see `env.example` for reference`)
-4. `hardhat run --network <mumbai or polygon> scripts/set-staking-threshold.js` 
-
-# Mint and bridge TEST FORT L1 -> L2
+## Mint and bridge TEST FORT L1 -> L2
 1. Make sure the wallets in `.env` has `WHITELIST_ROLE` in Goerli and Mumbai and `MINTER_ROLE` in Goerli (see `env.example` for reference`). FORT will be sent in Mumbai to the same wallet you provided in `.env -> GOERLI_MNEMONIC`
 2. Open `scripts/matic/enter.js` and edit `AMOUNT` to set the FORT to mint and bridge
 3. `npx hardhat run --network goerli scripts/matic/enter.js`
