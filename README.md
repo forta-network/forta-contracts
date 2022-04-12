@@ -1,6 +1,6 @@
 ![image](https://user-images.githubusercontent.com/2632384/162202240-f42f201a-7871-442d-af51-9e5e8b5ddbe4.png)
 
-# Forta Network
+# Forta Network Contracts
 
 Smart Contracts of the [Forta Network](https://forta.org/)
 This repo uses Hardhat as a development environment.
