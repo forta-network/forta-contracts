@@ -1,5 +1,5 @@
 
-# Forta Business Source License
+# Forta Network License
 ## Definitions
 
 **Additional Use Grant:** Any uses agreed upon under written contract with the Forta Foundation.  
@@ -8,7 +8,7 @@
 
 **Change License:** GNU General Public License 3.0 or later
 
-**Licensed Work:** `forta-contracts` located at https://github.com/forta-protocol/forta-contracts 
+**Licensed Work:** `forta-contracts` located at https://github.com/forta-protocol/forta-contracts. The Licensed Work is Copyright (c) 2022 Forta Foundation
 
 **Licensor:**  Forta Foundation     
 
@@ -16,7 +16,7 @@
 For information regarding licensing the Licensed Work under alternative licensing arrangements including Additional Use Grants, please see https://https://forta.org/.     
 
 
-This Business Source License (the “License”) does not meet the Open Source Definition as maintained by the Open Source Initiative, however the source code of the Licensed Work is made available under this License.  
+This Forta Network License (the “License”) does not meet the Open Source Definition as maintained by the Open Source Initiative, however the source code of the Licensed Work is made available under this License.  
 
 ## Terms
 
