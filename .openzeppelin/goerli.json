@@ -9319,7 +9319,7 @@
             "slot": "454",
             "type": "t_bool",
             "contract": "FortaCommon",
-            "src": "contracts/token/FortaCommon.sol:16"
+            "src": "contracts/token/FortaCommon.sol:18"
           },
           {
             "label": "__gap",
@@ -9327,7 +9327,7 @@
             "slot": "455",
             "type": "t_array(t_uint256)49_storage",
             "contract": "FortaCommon",
-            "src": "contracts/token/FortaCommon.sol:77"
+            "src": "contracts/token/FortaCommon.sol:79"
           },
           {
             "label": "__gap",
@@ -9335,101 +9335,133 @@
             "slot": "504",
             "type": "t_array(t_uint256)50_storage",
             "contract": "Forta",
-            "src": "contracts/token/Forta.sol:40"
+            "src": "contracts/token/Forta.sol:42"
           }
         ],
         "types": {
           "t_address": {
-            "label": "address"
+            "label": "address",
+            "numberOfBytes": "20"
           },
           "t_array(t_struct(Checkpoint)8316_storage)dyn_storage": {
-            "label": "struct ERC20VotesUpgradeable.Checkpoint[]"
+            "label": "struct ERC20VotesUpgradeable.Checkpoint[]",
+            "numberOfBytes": "32"
           },
           "t_array(t_uint256)45_storage": {
-            "label": "uint256[45]"
+            "label": "uint256[45]",
+            "numberOfBytes": "1440"
           },
           "t_array(t_uint256)47_storage": {
-            "label": "uint256[47]"
+            "label": "uint256[47]",
+            "numberOfBytes": "1504"
           },
           "t_array(t_uint256)49_storage": {
-            "label": "uint256[49]"
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
           },
           "t_array(t_uint256)50_storage": {
-            "label": "uint256[50]"
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
           },
           "t_bool": {
-            "label": "bool"
+            "label": "bool",
+            "numberOfBytes": "1"
           },
           "t_bytes32": {
-            "label": "bytes32"
+            "label": "bytes32",
+            "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_address)": {
-            "label": "mapping(address => address)"
+            "label": "mapping(address => address)",
+            "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_array(t_struct(Checkpoint)8316_storage)dyn_storage)": {
-            "label": "mapping(address => struct ERC20VotesUpgradeable.Checkpoint[])"
+            "label": "mapping(address => struct ERC20VotesUpgradeable.Checkpoint[])",
+            "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_bool)": {
-            "label": "mapping(address => bool)"
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
-            "label": "mapping(address => mapping(address => uint256))"
+            "label": "mapping(address => mapping(address => uint256))",
+            "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_struct(Counter)10527_storage)": {
-            "label": "mapping(address => struct CountersUpgradeable.Counter)"
+            "label": "mapping(address => struct CountersUpgradeable.Counter)",
+            "numberOfBytes": "32"
           },
           "t_mapping(t_address,t_uint256)": {
-            "label": "mapping(address => uint256)"
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
           },
           "t_mapping(t_bytes32,t_struct(RoleData)5123_storage)": {
-            "label": "mapping(bytes32 => struct AccessControlUpgradeable.RoleData)"
+            "label": "mapping(bytes32 => struct AccessControlUpgradeable.RoleData)",
+            "numberOfBytes": "32"
           },
           "t_string_storage": {
-            "label": "string"
+            "label": "string",
+            "numberOfBytes": "32"
           },
           "t_struct(Checkpoint)8316_storage": {
             "label": "struct ERC20VotesUpgradeable.Checkpoint",
             "members": [
               {
                 "label": "fromBlock",
-                "type": "t_uint32"
+                "type": "t_uint32",
+                "offset": 0,
+                "slot": "0"
               },
               {
                 "label": "votes",
-                "type": "t_uint224"
+                "type": "t_uint224",
+                "offset": 4,
+                "slot": "0"
               }
-            ]
+            ],
+            "numberOfBytes": "32"
           },
           "t_struct(Counter)10527_storage": {
             "label": "struct CountersUpgradeable.Counter",
             "members": [
               {
                 "label": "_value",
-                "type": "t_uint256"
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
               }
-            ]
+            ],
+            "numberOfBytes": "32"
           },
           "t_struct(RoleData)5123_storage": {
             "label": "struct AccessControlUpgradeable.RoleData",
             "members": [
               {
                 "label": "members",
-                "type": "t_mapping(t_address,t_bool)"
+                "type": "t_mapping(t_address,t_bool)",
+                "offset": 0,
+                "slot": "0"
               },
               {
                 "label": "adminRole",
-                "type": "t_bytes32"
+                "type": "t_bytes32",
+                "offset": 0,
+                "slot": "1"
               }
-            ]
+            ],
+            "numberOfBytes": "64"
           },
           "t_uint224": {
-            "label": "uint224"
+            "label": "uint224",
+            "numberOfBytes": "28"
           },
           "t_uint256": {
-            "label": "uint256"
+            "label": "uint256",
+            "numberOfBytes": "32"
           },
           "t_uint32": {
-            "label": "uint32"
+            "label": "uint32",
+            "numberOfBytes": "4"
           }
         }
       }

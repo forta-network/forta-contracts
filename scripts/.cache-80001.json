@@ -6,10 +6,10 @@
 			"args": [
 				"0xb5505a6d998549090530911180f38aC5130101c6"
 			],
-			"address": "0x1Eca2C733AecaeB2c2E89F7fA526E00fB4A74eDe",
+			"address": "0x21b1b0f8e9182c92c2a81f43f305ce25994d9d57",
 			"version": "0.1.1"
 		},
-		"verified": "false"
+		"verified": "true"
 	},
 	"access-pending": "0xeb761b35d307c30baca49115043dfcc856511affb22fabd7ce4bf031eb4cd93c",
 	"access": {
