@@ -7,122 +7,35 @@
 	"ens-resolver": {
 		"address": "0x4B1488B7a6B320d2D721406204aBc3eeAa9AD329"
 	},
-	"router": {
-		"address": "0x44F5288D1B5a61cE13595835Aced1191889bB741",
-		"impl": {
-			"args": [
-				"0xd0D5882128bCc9Ea213Cc7dd26136F0eC06a8D2F"
-			],
-			"address": "0x11532e679178C8E81425e97FA1E972b91dcFc746",
-			"version": "0.0.0"
-		},
-		"verified": "true"
-	},
-	"dispatch": {
-		"address": "0x77Db997b9Ad5e14386aB367fa47de073b3743248",
-		"impl": {
-			"version": "0.1.1",
-			"args": [
-				"0xd0D5882128bCc9Ea213Cc7dd26136F0eC06a8D2F"
-			],
-			"address": "0xfED0d6639653C1533BD55F7E196C6B0AA38647EF"
-		},
-		"verified": "true"
-	},
-	"scanners-pending": "0x7ff47d9ba4b9dc94a8a415bf9264875e3660e570a0d7b856955d7f9fdd4ffca5",
-	"scanners": {
-		"address": "0x65F22a702F88B53883A89F772449c7667DB9ab9C",
-		"impl": {
-			"args": [
-				"0xd0D5882128bCc9Ea213Cc7dd26136F0eC06a8D2F"
-			],
-			"address": "0x250f240185237170b2D0c0C8Ab1ac45d93085d2f",
-			"version": "0.1.1"
-		}
-	},
-	"alerts": "0xC0556fC048B0F189F412DBba536aBD1a4ebD1349",
-	"access-pending": "0x7bfc198dbfa60c425748bed836daf92feb1393491be034ab1a211a897cd7a8a5",
-	"access": {
-		"address": "0xB4457590d9f1E03BEF165CC94Ed82C63a1e5bB4d",
-		"impl": {
-			"version": "0.1.0",
-			"args": [
-				"0x366277FDf03594d421BaCddc942aa4189D8c2C6d"
-			],
-			"address": "0x7b7c1fe536c3b86a3b9ee64481d706a21e882963"
-		},
-		"verified": "true"
-	},
-	"agents-pending": "0x0acd82f71bc11bc33680f35d4f1a5ff6f04f50e4862af617f8b56649db9c8f30",
-	"agents": {
-		"address": "0xA3A0EA252D3cf18B30c3ADa0E013671beEDb4262",
-		"impl": {
-			"args": [
-				"0xd0D5882128bCc9Ea213Cc7dd26136F0eC06a8D2F"
-			],
-			"address": "0xD03720Ab043f8feeC2ED35C36695bBe63ed863f1",
-			"version": "0.1.2"
-		}
-	},
-	"forta-pending": "0x41e14e0e52fd44da773b3e55cdfc74979c2380009ab77478ce10cff8f1c4fe39",
+	"forta-pending": "0x1edf4692955ca96d72e3d20e70744ceb06490e59f617a89f2c9e52e150773443",
 	"forta": {
-		"address": "0x95d9a757ad9C25999ffE93f3067221F04ce1Cc79",
+		"address": "0x848F1fF1fa76Dc882Ca2F3521265ba3F27e42158",
 		"impl": {
 			"args": [],
-			"address": "0xc6db6560413308DbC857CFC332efA94D5752D094",
+			"address": "0x86f09B8B8d0315Cca71a89953Aa3f7982a122eAd",
 			"version": "0.1.0"
 		}
-	},
-	"scanner-node-version-pending": "0xda0894eb045edbb3e5f8f85f79e583e17a739a261f152ef5ea7aec3db93ee2e2",
-	"scanner-node-version": {
-		"address": "0xBeDC289BdE5BA0395CF84927CB3f82b1d2423283",
-		"impl": {
-			"args": [
-				"0xd0D5882128bCc9Ea213Cc7dd26136F0eC06a8D2F"
-			],
-			"address": "0xd966E90265b0345D9112cB836183C992E5E3B52C",
-			"version": "0.1.0"
-		}
-	},
-	"staking-pending": "0x98b61d8e4d6007835b9169fb8ff8d58600f5b849ba609e3c052848522f5e3b96",
-	"staking": {
-		"address": "0xc054a3DABfFEb0279E62669FB699a33D4cC5fC62",
-		"impl": {
-			"args": [
-				"0xd0D5882128bCc9Ea213Cc7dd26136F0eC06a8D2F"
-			],
-			"address": "0xBe9209E216Bc22b375b87267f009d75286d56B4A",
-			"version": "0.1.0"
-		},
-		"verified": "true"
-	},
-	"staking-parameters-pending": "0x1c29787b8ab4e40465d7df8c70e27563ba464791224d752847ea36a6e1ca53d6",
-	"staking-parameters": {
-		"address": "0xe6dc38CDb33459823B4f9D1c2d8FE569cA7A1ea5",
-		"impl": {
-			"args": [
-				"0xd0D5882128bCc9Ea213Cc7dd26136F0eC06a8D2F"
-			],
-			"address": "0xAf25E71E0464dF9A8a204f4ec517A685E216F4c8",
-			"version": "0.1.0"
-		},
-		"verified": "true"
 	},
 	"contracts": [
-		"forwarder",
-		"access",
-		"router",
-		"staking",
-		"staking-parameters",
-		"agents",
-		"scanners",
-		"dispatch",
-		"scanner-node-version",
-		"ens"
+		"forta"
 	],
-	"forwarder-pending": "0x03272d96cb89ff4ce96599c1ec216a746aaa8c917473d6d01d7dad60bddb5fcc",
-	"forwarder": {
-		"address": "0x366277FDf03594d421BaCddc942aa4189D8c2C6d",
+	"vesting-0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24-pending": "0x72667a8b7ad2e0adbb65b2801cc5bf2faad12ce27baf7bd5109ab42bc606d0d9",
+	"vesting-0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24": {
+		"address": "0x60a5FDe7D9C4b519CDDb4be1C34BCDaEC1633028",
+		"impl": {
+			"args": [
+				"0xBbD7cBFA79faee899Eaf900F13C9065bF03B1A74",
+				"0x848F1fF1fa76Dc882Ca2F3521265ba3F27e42158",
+				"0xB547D9Af68b05701Db065f5bF29DefbA0D504521",
+				"0x9A8B215DB93922D759233D275a7F93C40b51F0E1"
+			],
+			"address": "0xD11A9Cf4Fc9D150d0Bf982D37Bc41F5c1F9C6073",
+			"version": "0.0.0"
+		}
+	},
+	"batch-relayer-pending": "0x7e65c6c4ca6df0da128533af9db832c90db8ebea519034d89b69574cc91ad40b",
+	"batch-relayer": {
+		"address": "0x8fdc4B92904627aC8B67cF89995F3eEE24B90504",
 		"args": [],
 		"version": "0.0.0"
 	}
