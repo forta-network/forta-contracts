@@ -13,7 +13,7 @@
 **Licensor:**  Forta Foundation     
 
 ## Notice
-For information regarding licensing the Licensed Work under alternative licensing arrangements including Additional Use Grants, please see https://https://forta.org/.     
+For information regarding licensing the Licensed Work under alternative licensing arrangements including Additional Use Grants, please see https://forta.org/.     
 
 
 This Forta Network License (the “License”) does not meet the Open Source Definition as maintained by the Open Source Initiative, however the source code of the Licensed Work is made available under this License.  
