@@ -18,7 +18,7 @@ const ROOT_CHAIN_MANAGER = {
 };
 
 const CONTRACTS_TO_UPGRADE = [
-    'vesting-0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24',
+    'access',
 ]
 
 async function main() {
@@ -43,7 +43,7 @@ async function main() {
     if (name !== 'hardhat' && deployer.address === '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266') {
         throw new Error('using hardhat key for other network')
     }
-    const l2Contracts = childChainManagerProxy ? {
+    const l2Contracts = childChainManagerProxy || true ? {
         forwarder: utils.attach('Forwarder',  await CACHE.get('forwarder.address') ).then(contract => contract.connect(deployer)),
         access: utils.attach('AccessManager',  await CACHE.get('access.address') ).then(contract => contract.connect(deployer)),
         staking: utils.attach('FortaStaking', await CACHE.get('staking.address')           ).then(contract => contract.connect(deployer)),

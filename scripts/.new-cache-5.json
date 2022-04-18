@@ -1,0 +1,42 @@
+{
+	"ens-registry-pending": "0x408a700dd95c50c3b76f373047a9901185824dce4e99e3831f41a4cbbf0b4f1b",
+	"ens-registry": {
+		"address": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
+	},
+	"ens-resolver-pending": "0x9e8c45585cfad40ed09f789401aa59a27e25a5fa306b554507446094d5549025",
+	"ens-resolver": {
+		"address": "0x4B1488B7a6B320d2D721406204aBc3eeAa9AD329"
+	},
+	"forta-pending": "0x1edf4692955ca96d72e3d20e70744ceb06490e59f617a89f2c9e52e150773443",
+	"forta": {
+		"address": "0x848F1fF1fa76Dc882Ca2F3521265ba3F27e42158",
+		"impl": {
+			"args": [],
+			"address": "0x86f09B8B8d0315Cca71a89953Aa3f7982a122eAd",
+			"version": "0.1.0"
+		}
+	},
+	"contracts": [
+		"forta"
+	],
+	"vesting-0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24-pending": "0x72667a8b7ad2e0adbb65b2801cc5bf2faad12ce27baf7bd5109ab42bc606d0d9",
+	"vesting-0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24": {
+		"address": "0x60a5FDe7D9C4b519CDDb4be1C34BCDaEC1633028",
+		"impl": {
+			"args": [
+				"0xBbD7cBFA79faee899Eaf900F13C9065bF03B1A74",
+				"0x848F1fF1fa76Dc882Ca2F3521265ba3F27e42158",
+				"0xB547D9Af68b05701Db065f5bF29DefbA0D504521",
+				"0x9A8B215DB93922D759233D275a7F93C40b51F0E1"
+			],
+			"address": "0xD11A9Cf4Fc9D150d0Bf982D37Bc41F5c1F9C6073",
+			"version": "0.0.0"
+		}
+	},
+	"batch-relayer-pending": "0x7e65c6c4ca6df0da128533af9db832c90db8ebea519034d89b69574cc91ad40b",
+	"batch-relayer": {
+		"address": "0x8fdc4B92904627aC8B67cF89995F3eEE24B90504",
+		"args": [],
+		"version": "0.0.0"
+	}
+}
