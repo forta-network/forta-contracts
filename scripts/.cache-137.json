@@ -6,58 +6,61 @@
 		"address": "0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
 		"impl": {
 			"args": [
-				"0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F"
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
-			"address": "0xd60D162c3335eB3EC4BEcA9F97218FAa4839f007",
+			"address": "0xc855d842ff0aF97B0D18Cc81eEcbb702EA1a0706",
 			"version": "0.1.0"
-		}
+		},
+		"verified": "true"
 	},
 	"router-pending": "0xfe1ea97a099b5ed01a0648951f6aea7fc6cc352f79ebf425b882d287c8e93d11",
 	"router": {
 		"address": "0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
 		"impl": {
 			"args": [
-				"0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F"
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
 			"address": "0x200Daf0a67B91bda59B57d436a3538E60C87c381",
 			"version": "0.1.0"
-		}
+		},
+		"verified": "true"
 	},
 	"agents-pending": "0x39dd322c91e6e4953370d0e2a2932d309dc091bc584d38c5fa4ce424835ce527",
 	"agents": {
 		"address": "0x61447385B019187daa48e91c55c02AF1F1f3F863",
 		"impl": {
 			"args": [
-				"0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F"
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
-			"address": "0x2194564d6ea21bf03c057977A85b64D757596332",
+			"address": "0xA8A26969f7Be888D020B595340c490c02ec445dD",
 			"version": "0.1.2"
-		}
+		},
+		"verified": "true"
 	},
 	"scanners-pending": "0xd4c140e97976ced53ee692f5728bf33dcafff3d19d73e582a6cefb2963117fd8",
 	"scanners": {
 		"address": "0xbF2920129f83d75DeC95D97A879942cCe3DcD387",
 		"impl": {
 			"args": [
-				"0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F"
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
-			"address": "0x6083aeF817EDC5835d47290534e06dc5c51411b1",
+			"address": "0x7D7A8077346204Aa1B28602ecfC977043bec2404",
 			"version": "0.1.1"
-		}
+		},
+		"verified": "true"
 	},
 	"dispatch-pending": "0x3027e3ec8742f39566dc38698dcfd01153a6d1a50ecde10f7b24071bf471b917",
 	"dispatch": {
 		"address": "0xd46832F3f8EA8bDEFe5316696c0364F01b31a573",
 		"impl": {
 			"args": [
-				"0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F"
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
-			"address": "0xCF68cEEfa02Da937a5Ac65B26Bcc9255e0D6fA88",
+			"address": "0xC413BDBF64C3f3A64C5fBc7B547BC3AfB371d45d",
 			"version": "0.1.3"
-		}
+		},
+		"verified": "true"
 	},
-	"alerts-pending": "0xf7b767c938863b02c2c7b83e93f204201ede938ff4addf518ba21b4dc61aca32",
-	"alerts": "0x5Cf7008aC441Ec1797fAfA4EE132eA4277E9239B",
 	"ens-registry-pending": "0xd90f8c866e998e234e7495ad64d4ca6972641a7a438101b46f62dee6c46702a9",
 	"ens-registry": {
 		"address": "0xa30c3951f85941bfe474620dA25DEb90283C99D7",
@@ -82,12 +85,6 @@
 		],
 		"version": "0.0.0"
 	},
-	"forwarder-pending": "0x151442fa8f54e0ef3163afadfb19fb720f72d52cc81664d5be17a5cf7ed170cb",
-	"forwarder": {
-		"address": "0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F",
-		"args": [],
-		"version": "0.0.0"
-	},
 	"forta-pending": "0xd183cf62ab34079450ca0547be4e1cdc2e8f2963232921baadef87a0b0e5490d",
 	"forta": {
 		"address": "0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1",
@@ -95,7 +92,7 @@
 			"args": [
 				"0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa"
 			],
-			"address": "0xdEc964c65B265F038b07a6524598498b3Deb0e51",
+			"address": "0xd6b3139108E271c812Acc6fFEBAD28E935D61E24",
 			"version": "0.1.1"
 		}
 	},
@@ -104,42 +101,36 @@
 		"address": "0xd2863157539b1D11F39ce23fC4834B62082F6874",
 		"impl": {
 			"args": [
-				"0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F"
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
-			"address": "0x355e16B4874A1559529229F2A2c40f026c7b816a",
+			"address": "0x62FCaA1eDA3bcf18133510e52D28C8B79C912734",
 			"version": "0.1.0"
-		}
+		},
+		"verified": "true"
 	},
 	"staking-parameters-pending": "0x057da57163e941b7e143c3746fda0d285a065aa03a40083935ff0a37a0fc4df7",
 	"staking-parameters": {
 		"address": "0x587969Add789c13F64Bcc34Ff253BD9BFB78f38a",
 		"impl": {
 			"args": [
-				"0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F"
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
-			"address": "0xa2c0D02AE91ACb1517958de05513379d0C601358",
+			"address": "0xf2339D7424a615FD3324dAC880D8D81cae1264E2",
 			"version": "0.1.0"
-		}
-	},
-	"escrow-factory-pending": "0x69d14f0e2fda085dea91ee58aeb5e931475d5113395990d69c9942dbe99e2df8",
-	"escrow-factory": {
-		"address": "0x762D4E54a107187185b7D81f3E00068c8ED13977",
-		"args": [
-			"0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F",
-			"0xd2863157539b1D11F39ce23fC4834B62082F6874"
-		],
-		"version": "0.0.0"
+		},
+		"verified": "true"
 	},
 	"scanner-node-version-pending": "0x25e95ae21b91ed837b587e4f4ba418fd2151293162e41ac738cc7e3fa4e3138d",
 	"scanner-node-version": {
 		"address": "0x4720c872425876B6f4b4E9130CDef667aDE553b2",
 		"impl": {
 			"args": [
-				"0x356A8ee5D3bCc183c2c7853F11D19f4C7622396F"
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
-			"address": "0x58BB8Cb8C21032A23EB6ECC99430F0CEEE29B10b",
+			"address": "0x68608f260BA3bE8808B83Fd686eCCFE6A9f468F7",
 			"version": "0.0.0"
-		}
+		},
+		"verified": "true"
 	},
 	"contracts": [
 		"forwarder",
@@ -149,10 +140,36 @@
 		"staking",
 		"staking-parameters",
 		"escrow-factory",
+        "escrow-template",
 		"agents",
 		"scanners",
 		"dispatch",
 		"scanner-node-version",
 		"ens"
-	]
+	],
+	"forwarder-pending": "0x4ee1d1e2dca409cb16114c79496ca3dfd7f78cfb284d4b181f90cbb2e31556ef",
+	"forwarder": {
+		"address": "0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+		"args": [],
+		"version": "0.0.0"
+	},
+	"escrow-factory-pending": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
+	"escrow-factory": {
+		"address": "0x867a3A4c431474E749fEA3106C61Cf58d4d2B046",
+		"args": [
+			"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+			"0xd2863157539b1D11F39ce23fC4834B62082F6874"
+		],
+		"version": "0.0.0"
+	},
+    "escrow-template-pending": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
+	"escrow-template": {
+		"address": "0x0d3DAC6368Da5bce50aFE3E61fFc450C80B2F23D",
+		"args": [
+			"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+            "0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1",
+			"0xd2863157539b1D11F39ce23fC4834B62082F6874"
+		],
+		"version": "0.0.0"
+	}
 }

@@ -17,7 +17,9 @@ const ROOT_CHAIN_MANAGER = {
     5:     '0xBbD7cBFA79faee899Eaf900F13C9065bF03B1A74',
 };
 
-const CONTRACTS_TO_UPGRADE = ['vesting-0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24']
+const CONTRACTS_TO_UPGRADE = [
+    'vesting-0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24',
+]
 
 async function main() {
     const provider = await utils.getDefaultProvider();
@@ -50,6 +52,7 @@ async function main() {
         dispatch: utils.attach('Dispatch', await CACHE.get('dispatch.address') ).then(contract => contract.connect(deployer)),
         router: utils.attach('Router',  await CACHE.get('router.address') ).then(contract => contract.connect(deployer)),
         scannerNodeVersion: utils.attach('ScannerNodeVersion', await CACHE.get('scanner-node-version.address') ).then(contract => contract.connect(deployer)),
+        stakingParameters: utils.attach('FortaStakingParameters', await CACHE.get('staking-parameters.address') ).then(contract => contract.connect(deployer)),
 
     } : {}
     
@@ -73,7 +76,7 @@ async function main() {
           {
               constructorArgs: [ childChainManagerProxy ].filter(Boolean),
               unsafeAllow: ['delegatecall'],
-              //unsafeSkipStorageCheck: true
+              unsafeSkipStorageCheck: true
           },
           CACHE,
           'forta'
@@ -89,7 +92,6 @@ async function main() {
     // L2 Components --------------------------------------------------------------------------------------------
     DEBUG(CONTRACTS_TO_UPGRADE.includes('access'))
     if (CONTRACTS_TO_UPGRADE.includes('access')) {
-        DEBUG('what')
       const AccessManager = await ethers.getContractFactory('AccessManager');
       const newAccessManager = await utils.performUpgrade(
           contracts.access,
@@ -192,6 +194,43 @@ async function main() {
         
         DEBUG('newScannerNodeVersion: ', await upgrades.erc1967.getImplementationAddress(newScannerNodeVersion.address))
     }
+
+    if (CONTRACTS_TO_UPGRADE.includes('staking-parameters')) {
+        const StakingParameters = await ethers.getContractFactory('FortaStakingParameters');
+        const newStakingParameters = await utils.performUpgrade(
+            contracts.stakingParameters,
+            StakingParameters.connect(deployer),
+            {
+
+                constructorArgs: [ contracts.forwarder.address ],
+                unsafeAllow: ['delegatecall'],
+            },
+            CACHE,
+            'staking-parameters'
+        );
+        
+        DEBUG('newStakingParameters: ', await upgrades.erc1967.getImplementationAddress(newStakingParameters.address))
+    }
+
+    if (CONTRACTS_TO_UPGRADE.includes('staking')) {
+        const Staking = await ethers.getContractFactory('FortaStaking');
+        const newStaking = await utils.performUpgrade(
+            contracts.staking,
+            Staking.connect(deployer),
+            {
+
+                constructorArgs: [ contracts.forwarder.address ],
+                unsafeAllow: ['delegatecall'],
+            },
+            CACHE,
+            'staking'
+        );
+        
+        DEBUG('newStaking: ', await upgrades.erc1967.getImplementationAddress(newStaking.address))
+    }
+
+    
+    
     const vestingWallets = CONTRACTS_TO_UPGRADE.filter(x => x.match(/vesting-.+/));
     if (vestingWallets.length > 0) {
         if (chainId !== 5 && chainId !== 1) throw new Error('Vesting wallets only in layer 1');

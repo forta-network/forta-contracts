@@ -11156,6 +11156,164 @@
           }
         }
       }
+    },
+    "69f4ac4b2febfe0423e53e112f679c037e2fd518c3032ef8daee20133eccdab9": {
+      "address": "0xD11A9Cf4Fc9D150d0Bf982D37Bc41F5c1F9C6073",
+      "txHash": "0x99be4195f44dcd40667e018d21221f2716aaf6eb8212cbf473ce06232963f5cc",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:37"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:42"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:31"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:82"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC1967UpgradeUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:215"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "UUPSUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:81"
+          },
+          {
+            "label": "_released",
+            "offset": 0,
+            "slot": "201",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "VestingWalletV1",
+            "src": "contracts/vesting/VestingWalletV1.sol:18"
+          },
+          {
+            "label": "_beneficiary",
+            "offset": 0,
+            "slot": "202",
+            "type": "t_address",
+            "contract": "VestingWalletV1",
+            "src": "contracts/vesting/VestingWalletV1.sol:19"
+          },
+          {
+            "label": "_start",
+            "offset": 0,
+            "slot": "203",
+            "type": "t_uint256",
+            "contract": "VestingWalletV1",
+            "src": "contracts/vesting/VestingWalletV1.sol:20"
+          },
+          {
+            "label": "_cliff",
+            "offset": 0,
+            "slot": "204",
+            "type": "t_uint256",
+            "contract": "VestingWalletV1",
+            "src": "contracts/vesting/VestingWalletV1.sol:21"
+          },
+          {
+            "label": "_duration",
+            "offset": 0,
+            "slot": "205",
+            "type": "t_uint256",
+            "contract": "VestingWalletV1",
+            "src": "contracts/vesting/VestingWalletV1.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "206",
+            "type": "t_array(t_uint256)45_storage",
+            "contract": "VestingWalletV1",
+            "src": "contracts/vesting/VestingWalletV1.sol:137"
+          },
+          {
+            "label": "historicalBalanceMin",
+            "offset": 0,
+            "slot": "251",
+            "type": "t_uint256",
+            "contract": "VestingWalletV2",
+            "src": "contracts/vesting/VestingWalletV2.sol:32"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "252",
+            "type": "t_array(t_uint256)45_storage",
+            "contract": "VestingWalletV2",
+            "src": "contracts/vesting/VestingWalletV2.sol:140"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)45_storage": {
+            "label": "uint256[45]",
+            "numberOfBytes": "1440"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
     }
   }
 }

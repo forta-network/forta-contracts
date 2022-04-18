@@ -1,5 +1,5 @@
 
-# Forta Business Source License
+# Forta Network License
 ## Definitions
 
 **Additional Use Grant:** Any uses agreed upon under written contract with the Forta Foundation.  

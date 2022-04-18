@@ -5,7 +5,7 @@ require('@nomiclabs/hardhat-etherscan');
 require('solidity-coverage');
 require('hardhat-gas-reporter');
 require('@openzeppelin/hardhat-upgrades');
-//require("@openzeppelin/hardhat-defender");
+require("@openzeppelin/hardhat-defender");
 
 const argv = require('yargs/yargs')().env('').argv;
 

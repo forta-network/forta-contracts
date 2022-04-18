@@ -136,29 +136,29 @@
 		},
 		"verified": "true"
 	},
-	"escrow-template-pending": "0xc465aa2e0964833a3ff8a8cf55a39c56c0d4dc6929aca73d5c5bc0730a24215c",
-	"escrow-template": {
-		"address": "0xc4343701A1EEb76f41dbdB861391B23e0B329e96",
-		"args": [
-			"0x5BE4071aC4Af98F632b968C58d9CceF704965459",
-			"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
-			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
-		],
-		"version": "0.0.0"
-	},
-	"escrow-factory-pending": "0xc465aa2e0964833a3ff8a8cf55a39c56c0d4dc6929aca73d5c5bc0730a24215c",
-	"escrow-factory": {
-		"address": "0x77E24371F3336e6aaaFBAcFe155E188480B08c8b",
-		"args": [
-			"0x5BE4071aC4Af98F632b968C58d9CceF704965459",
-			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
-		],
-		"version": "0.0.0"
-	},
 	"forwarder-pending": "0x9bea5544f223d1fcbc2b2aa03fbcf2916edde6bdffd770d63a7f82fb9b21813b",
 	"forwarder": {
 		"address": "0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
 		"args": [],
+		"version": "0.0.0"
+	},
+	"escrow-factory-pending": "0x0b70f983ab2a09d961d241ecde1697e8e4c92b83f61a7b0a0bf31cf24b3fbbfd",
+	"escrow-factory": {
+		"address": "0xB547D9Af68b05701Db065f5bF29DefbA0D504521",
+		"args": [
+			"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
+		],
+		"version": "0.0.0"
+	},
+    "escrow-template-pending": "0x0b70f983ab2a09d961d241ecde1697e8e4c92b83f61a7b0a0bf31cf24b3fbbfd",
+	"escrow-template": {
+		"address": "0x9A8B215DB93922D759233D275a7F93C40b51F0E1",
+		"args": [
+			"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+            "0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
+		],
 		"version": "0.0.0"
 	}
 }
