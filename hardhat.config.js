@@ -3,9 +3,11 @@ require('@nomiclabs/hardhat-ethers');
 require('@nomiclabs/hardhat-waffle');
 require('@nomiclabs/hardhat-etherscan');
 require('solidity-coverage');
+require('solidity-docgen');
 require('hardhat-gas-reporter');
 require('@openzeppelin/hardhat-upgrades');
 require("@openzeppelin/hardhat-defender");
+const { relative } = require('path');
 
 const argv = require('yargs/yargs')().env('').argv;
 
@@ -40,6 +42,11 @@ module.exports = {
   gasReporter: {
     currency: 'USD',
     coinmarketcap: argv.coinmarketcap,
+  },
+  docgen: {
+    pages: (item, file) => file.absolutePath.startsWith('contracts')
+      ? relative('contracts', file.absolutePath).replace('.sol', '.md')
+      : undefined,
   },
 };
 

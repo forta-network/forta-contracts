@@ -6,7 +6,7 @@ cache
 coverage
 coverage.*
 deploy.*.json
-
+docs
 scripts/.cache-31337.json
 .openzeppelin/unknown-31337.json
 .env
