@@ -237,6 +237,8 @@ describe('Agent Registry', function () {
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 0, true);
 
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
+        expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
+
       });
 
       it('restricted', async function () {
@@ -256,12 +258,16 @@ describe('Agent Registry', function () {
       });
 
       it('re-enable', async function () {
+        expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
+
         await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1))
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
+        expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([2]);
+
 
         await expect(this.agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1))
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 1, true);
-
+        expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
       });
 
