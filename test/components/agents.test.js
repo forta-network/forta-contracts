@@ -18,6 +18,10 @@ describe('Agent Registry', function () {
         .to.be.revertedWith('CommitNotReady()');
     });
 
+    it('isStakedOverMin false if non existant', async function () {
+        expect(await this.agents.isStakedOverMin(AGENT_ID)).to.equal(false);
+    });
+
     it('setting delay is protected', async function () {
       await expect(this.agents.connect(this.accounts.other).setFrontRunningDelay('1800'))
         .to.be.revertedWith(`MissingRole("${this.roles.AGENT_ADMIN}", "${this.accounts.other.address}")`)
@@ -215,10 +219,14 @@ describe('Agent Registry', function () {
 
     describe('manager', async function () {
       it('disable', async function () {
+        expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
+
         await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0))
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
 
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+        expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([1]);
+
       });
 
       it('re-enable', async function () {
@@ -238,8 +246,11 @@ describe('Agent Registry', function () {
 
     describe('owner', async function () {
       it('disable', async function () {
+        expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
+
         await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1))
         .to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
+        expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([2]);
 
         expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
       });
