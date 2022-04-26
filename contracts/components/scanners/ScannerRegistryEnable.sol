@@ -35,7 +35,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
     */
     function isEnabled(uint256 scannerId) public view virtual returns (bool) {
         return isRegistered(scannerId) &&
-            _getDisableFlags(scannerId) == 0 &&
+            getDisableFlags(scannerId) == 0 &&
             _isStakedOverMin(scannerId); 
     }
 
@@ -59,6 +59,17 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
     function disableScanner(uint256 scannerId, Permission permission) public virtual {
         if (!_hasPermission(scannerId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), scannerId);
         _enable(scannerId, permission, false);
+    }
+
+    /**
+     * Get the disabled flags for an agentId. Permission (uint8) is used for indexing, so we don't
+     * need to loop. 
+     * If not disabled, all flags will be 0
+     * @param scannerId ERC1155 token id of the scanner.
+     * @return uint256 containing the byte flags.
+     */
+    function getDisableFlags(uint256 scannerId) public view returns (uint256) {
+        return _disabled[scannerId]._data[0];
     }
 
     /**
@@ -90,16 +101,6 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
         _afterScannerEnable(scannerId, permission, enable);
     }
 
-    /**
-     * Get the disabled flags for an agentId. Permission (uint8) is used for indexing, so we don't
-     * need to loop. 
-     * If not disabled, all flags will be 0
-     * @param scannerId ERC1155 token id of the scanner.
-     * @return uint256 containing the byte flags.
-     */
-    function _getDisableFlags(uint256 scannerId) internal view returns (uint256) {
-        return _disabled[scannerId]._data[0];
-    }
 
     /**
      * @notice Hook _before scanner enable
