@@ -11,3 +11,8 @@ scripts/.cache-31337.json
 .openzeppelin/unknown-31337.json
 .env
 .abis-no-errors
+scripts/data/active_shares*
+scripts/data/connected-kyc.json
+scripts/data/nodes-to-stake*
+scripts/data/funnel*
+yarn-error.log
