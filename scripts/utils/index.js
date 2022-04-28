@@ -189,6 +189,7 @@ async function getEventsFromContractCreation(cache, key, eventName, contract, fi
     return getEventsFromTx(txHash, eventName, contract, filterParams);
 }
 
+
 async function getEventsFromTx(txHash, eventName, contract, filterParams = [], aProvider) {
     let provider = aProvider ?? contract.provider ?? contract.signer.provider;
     const receipt = await provider.getTransactionReceipt(txHash);
@@ -205,6 +206,18 @@ const assertNotUsingHardhatKeys = (chainId, deployer) => {
 
         throw new Error('using hardhat key for other network')
     }
+}
+
+/*********************************************************************************************************************
+ *                                                        Arrays                                                     *
+ *********************************************************************************************************************/
+Array.range = function(start, stop = undefined, step = 1) {
+    if (!stop) { stop = start; start = 0; }
+    return start < stop ? Array(Math.ceil((stop - start) / step)).fill().map((_, i) => start + i * step) : [];
+}
+
+Array.prototype.chunk = function(size) {
+    return Array.range(Math.ceil(this.length / size)).map(i => this.slice(i * size, i * size + size))
 }
 /*********************************************************************************************************************
  *                                                        Strings                                                       *
