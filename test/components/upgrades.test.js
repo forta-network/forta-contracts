@@ -14,7 +14,7 @@ describe('Upgrades testing', function () {
   })
   
   describe('Agent Registry', async function() {
-    it(' 0.1.1 -> 0.1.2', async function () {
+    it(' 0.1.1 -> 0.1.3', async function () {
         
         const AgentRegistry_0_1_1 = await ethers.getContractFactory("AgentRegistry_0_1_1");
         originalAgents = await upgrades.deployProxy(
@@ -54,10 +54,10 @@ describe('Upgrades testing', function () {
         await originalAgents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1)
         expect(await originalAgents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false)
         expect(await originalAgents.connect(this.accounts.user1).getAgentCount()).to.be.equal(1)
-        const NewImplementation = await ethers.getContractFactory('AgentRegistry');
-        const agentRegistry = await upgrades.upgradeProxy(
+        const AgentRegistry_0_1_2 = await ethers.getContractFactory('AgentRegistry_0_1_2');
+        const agentRegistry_0_1_2 = await upgrades.upgradeProxy(
             originalAgents.address,
-            NewImplementation,
+            AgentRegistry_0_1_2,
             {
                 call: {
                     fn:'setStakeController(address)',
@@ -68,13 +68,39 @@ describe('Upgrades testing', function () {
                 unsafeSkipStorageCheck: true
             }
         );
-        await this.contracts.stakingParameters.setStakeSubjectHandler(1, agentRegistry.address)
-        await agentRegistry.connect(this.accounts.manager).setStakeThreshold({ max: '10000', min: '0', activated: true });
+        await this.contracts.stakingParameters.setStakeSubjectHandler(1, agentRegistry_0_1_2.address)
+        await agentRegistry_0_1_2.connect(this.accounts.manager).setStakeThreshold({ max: '10000', min: '0', activated: true });
+        expect(await agentRegistry_0_1_2.getStakeController()).to.be.equal(this.contracts.stakingParameters.address)
+        expect(await agentRegistry_0_1_2.version()).to.be.equal('0.1.2')
+        expect(await agentRegistry_0_1_2.isCreated(AGENT_ID)).to.be.equal(true);
+        expect(await agentRegistry_0_1_2.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false)
+        await agentRegistry_0_1_2.connect(this.accounts.user1).enableAgent(AGENT_ID, 1)
+        expect(await agentRegistry_0_1_2.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true)
+        expect(await agentRegistry_0_1_2.name()).to.be.equal('Forta Agents');
+        expect(await agentRegistry_0_1_2.symbol()).to.be.equal('FAgents'); 
+
+        const AgentRegistry = await ethers.getContractFactory('AgentRegistry');
+        const agentRegistry = await upgrades.upgradeProxy(
+            originalAgents.address,
+            AgentRegistry,
+            {
+                call: {
+                    fn:'setStakeController(address)',
+                    args: [this.contracts.stakingParameters.address]
+                },
+                constructorArgs: [ this.contracts.forwarder.address ],
+                unsafeAllow: ['delegatecall'],
+                unsafeSkipStorageCheck: true
+            }
+        );
+        await agentRegistry.connect(this.accounts.user1).disableAgent(AGENT_ID, 1)
         expect(await agentRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address)
-        expect(await agentRegistry.version()).to.be.equal('0.1.2')
+        expect(await agentRegistry.version()).to.be.equal('0.1.3')
         expect(await agentRegistry.isCreated(AGENT_ID)).to.be.equal(true);
+        expect(await agentRegistry.getDisableFlags(AGENT_ID)).to.be.equal([2]);
         expect(await agentRegistry.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false)
         await agentRegistry.connect(this.accounts.user1).enableAgent(AGENT_ID, 1)
+        expect(await agentRegistry.getDisableFlags(AGENT_ID)).to.be.equal([0]);
         expect(await agentRegistry.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true)
         expect(await agentRegistry.name()).to.be.equal('Forta Agents');
         expect(await agentRegistry.symbol()).to.be.equal('FAgents'); 
@@ -84,7 +110,7 @@ describe('Upgrades testing', function () {
 
   
   describe('Scanner Registry', async function() {
-    it(' 0.1.0 -> 0.1.1', async function () {
+    it(' 0.1.0 -> 0.1.2', async function () {
         this.accounts.getAccount('scanner');
         const ScannerRegistry_0_1_0 = await ethers.getContractFactory("ScannerRegistry_0_1_0");
         originalScanners = await upgrades.deployProxy(
@@ -123,10 +149,10 @@ describe('Upgrades testing', function () {
         }
         chainId = 1;
 
-        const NewImplementation = await ethers.getContractFactory('ScannerRegistry');
-        const scannerRegistry = await upgrades.upgradeProxy(
+        const ScannerRegistry_0_1_1 = await ethers.getContractFactory('ScannerRegistry_0_1_1');
+        const scannerRegistry_0_1_1 = await upgrades.upgradeProxy(
             originalScanners.address,
-            NewImplementation,
+            ScannerRegistry_0_1_1,
             {
                 call: {
                     fn:'setStakeController(address)',
@@ -137,14 +163,63 @@ describe('Upgrades testing', function () {
                 unsafeSkipStorageCheck: true
             }
         );
-        await this.contracts.stakingParameters.setStakeSubjectHandler(0, scannerRegistry.address)
-        await scannerRegistry.connect(this.accounts.manager).setStakeThreshold({ max: '100', min: '0', activated: true }, 1);
+        await this.contracts.stakingParameters.setStakeSubjectHandler(0, scannerRegistry_0_1_1.address)
+        await scannerRegistry_0_1_1.connect(this.accounts.manager).setStakeThreshold({ max: '100', min: '0', activated: true }, 1);
 
         await this.contracts.access.grantRole(this.roles.SCANNER_ADMIN, this.accounts.admin.address)
         for (const scanner of SCANNERS) {
             const scannerId = scanner.address;
+            expect(await scannerRegistry_0_1_1.getStakeController()).to.be.equal(this.contracts.stakingParameters.address)
+            expect(await scannerRegistry_0_1_1.version()).to.be.equal('0.1.1')
+            expect(await scannerRegistry_0_1_1.isEnabled(scannerId)).to.be.equal(false);
+            expect(await scannerRegistry_0_1_1.isManager(scannerId, this.accounts.user2.address)).to.be.equal(true);
+            expect(await scannerRegistry_0_1_1.getManagerCount(scannerId)).to.be.equal(1);
+            expect(await scannerRegistry_0_1_1.getManagerAt(scannerId, 0)).to.be.equal(this.accounts.user2.address);
+
+            expect(await scannerRegistry_0_1_1.getScanner(scannerId).then(scanner => [
+                scanner.chainId.toNumber(),
+                scanner.metadata,
+              ])).to.be.deep.equal([
+                chainId,
+                '',
+              ]);
+            expect(await scannerRegistry_0_1_1.isRegistered(scannerId)).to.be.equal(true);
+            expect(await scannerRegistry_0_1_1.ownerOf(scannerId)).to.be.equal(this.accounts.user1.address);
+            expect(await scannerRegistry_0_1_1.isEnabled(scannerId)).to.be.equal(false);
+            
+            await scannerRegistry_0_1_1.connect(this.accounts.admin).adminUpdate(scannerId, 55, 'metadata');
+            expect(await scannerRegistry_0_1_1.getScanner(scannerId).then(scanner => [
+                scanner.chainId.toNumber(),
+                scanner.metadata,
+              ])).to.be.deep.equal([
+                55,
+                'metadata',
+              ]);
+            chainId ++;
+        }
+
+
+        const ScannerRegistry = await ethers.getContractFactory('ScannerRegistry');
+        const scannerRegistry = await upgrades.upgradeProxy(
+            originalScanners.address,
+            ScannerRegistry,
+            {
+                call: {
+                    fn:'setStakeController(address)',
+                    args: [this.contracts.stakingParameters.address]
+                },
+                constructorArgs: [ this.contracts.forwarder.address ],
+                unsafeAllow: ['delegatecall'],
+                unsafeSkipStorageCheck: true
+            }
+        );
+
+        for (const scanner of SCANNERS) {
+            const scannerId = scanner.address;
             expect(await scannerRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address)
-            expect(await scannerRegistry.version()).to.be.equal('0.1.1')
+            expect(await scannerRegistry.version()).to.be.equal('0.1.2');
+            expect(await scannerRegistry.getDisableFlags(scannerId)).to.be.equal([1]);
+
             expect(await scannerRegistry.isEnabled(scannerId)).to.be.equal(false);
             expect(await scannerRegistry.isManager(scannerId, this.accounts.user2.address)).to.be.equal(true);
             expect(await scannerRegistry.getManagerCount(scannerId)).to.be.equal(1);
@@ -154,22 +229,11 @@ describe('Upgrades testing', function () {
                 scanner.chainId.toNumber(),
                 scanner.metadata,
               ])).to.be.deep.equal([
-                chainId,
-                '',
-              ]);
-            expect(await scannerRegistry.isRegistered(scannerId)).to.be.equal(true);
-            expect(await scannerRegistry.ownerOf(scannerId)).to.be.equal(this.accounts.user1.address);
-            expect(await scannerRegistry.isEnabled(scannerId)).to.be.equal(false);
-            
-            await scannerRegistry.connect(this.accounts.admin).adminUpdate(scannerId, 55, 'metadata');
-            expect(await scannerRegistry.getScanner(scannerId).then(scanner => [
-                scanner.chainId.toNumber(),
-                scanner.metadata,
-              ])).to.be.deep.equal([
                 55,
                 'metadata',
               ]);
-            chainId ++;
+            expect(await scannerRegistry.isRegistered(scannerId)).to.be.equal(true);
+            expect(await scannerRegistry.ownerOf(scannerId)).to.be.equal(this.accounts.user1.address);
         }
         
 
