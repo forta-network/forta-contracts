@@ -29,7 +29,6 @@ const MULTISIG='0x8ba1f109551bD432803012645Ac136ddd64DBA72'
 
 
 
-
 async function stakeAll(config = {}) {
     const provider = config.provider ?? await utils.getDefaultProvider();
     const signer = await utils.getDefaultDeployer(provider);
