@@ -63,6 +63,7 @@ async function transferShares(config = {}) {
     const results = {
         ownedByAddress: ownedByAddress,
         idsAndAmounts: ownedByAddress.map(x => [x[0][0], x[1]]),
+        ids: ownedByAddress.map(x => x[0][0])
     }
     fs.writeFileSync(`./scripts/data/active_shares_${ADDRESS}.json`, JSON.stringify(results, null, 2))
 }
