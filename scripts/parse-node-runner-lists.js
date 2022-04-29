@@ -1,10 +1,13 @@
 const fs = require('fs');
+const _ = require('lodash');
+
 //const yesterdayNodes = require('./data/nodes-to-stake_1650914637350.json');
 //const funnel = require('./data/funnel3.json');
 let csvToJson = require('convert-csv-to-json');
 const { ethers } = require('hardhat');
 const DEBUG                = require('debug')('forta:set-staking-threshold');
 const utils                = require('./utils');
+const stakingUtils                = require('./utils/staking');
 
 const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
@@ -14,34 +17,13 @@ const { CloudWatchLogsClient, StartQueryCommand, GetQueryResultsCommand } = requ
 
 function getKYCNodes() {
     let funnel = csvToJson.getJsonFromCsv("./scripts/data/funnel.csv");
-    console.log(funnel)
     const nodes = funnel.map(x => x['NODEaddress']).filter(x => x.startsWith('0x'));
-    console.log(nodes)
+
     const enables = nodes.reduce((prev, current) => { prev[current] = { kyc: true}; return prev }, {})
     return enables
 }
 
 
-// Set the AWS Region.
-
-/*
-
-
-const b = new Set(yesterdayNodes);
-const difference = nodes.filter(x => !b.has(x))
-
-
-const result = {
-    'all-nodes-to-date': nodes,
-    'last-batch': yesterdayNodes,
-    'new-nodes': difference
-}
-
-console.log('# of nodes:', nodes.length);
-console.log('# of yesterda:', yesterdayNodes.length);
-console.log('# new owns:', difference.length);
-*/
-//fs.writeFileSync(`./scripts/data/nodes-to-stake_difference_${Date.now()}.json`, JSON.stringify(result))
 
 async function queryConnectedNodesNotStaked() {
     const REGION = "us-east-1" //e.g. "us-east-1"
@@ -63,12 +45,11 @@ async function queryConnectedNodesNotStaked() {
     }
     const startQueryCommand = new StartQueryCommand(queryParams);
     const queryId = await client.send(startQueryCommand);
-    console.log(queryId)
 
     return new Promise(function(resolve, reject){
 
         setTimeout(async () => {
-            const getQueryResultsCommand = new GetQueryResultsCommand({ queryId: '84d6c1dc-6be2-40c3-8637-36c1581680d9'});
+            const getQueryResultsCommand = new GetQueryResultsCommand(queryId);
             const results = await client.send(getQueryResultsCommand);
 
             resolve(results.results.flat().filter(x => x.value.startsWith('0x')).map(x => ethers.utils.getAddress(x.value)));
@@ -83,7 +64,7 @@ async function queryConnectedNodesNotStaked() {
 
 
 async function main() {
-    /*const provider = await utils.getDefaultProvider();
+    const provider = await utils.getDefaultProvider();
     const deployer = await utils.getDefaultDeployer(provider);
 
     const { name, chainId } = await provider.getNetwork();
@@ -100,16 +81,49 @@ async function main() {
     const contracts =  {
         agents: await (utils.attach('AgentRegistry',  await CACHE.get('agents.address')  ).then(contract => contract.connect(deployer))),
         scanners: await (utils.attach('ScannerRegistry', await CACHE.get('scanners.address')  ).then(contract => contract.connect(deployer))),
-    }*/
-    const connectedNodes = await queryConnectedNodesNotStaked()
+        staking: await (utils.attach('FortaStaking', await CACHE.get('staking.address')  ).then(contract => contract.connect(deployer))),
+    }
     const kycNodes = getKYCNodes()
-    console.log(kycNodes)
+    
+    console.log('# kycNodes: ', Object.keys(kycNodes).length)
+
+    const connectedNodes = await queryConnectedNodesNotStaked()
+    console.log('# connectedNodes: ', connectedNodes.length)
     const connectedKYCd = connectedNodes.filter(id => {
-        console.log(id)
-        console.log(kycNodes[id]?.kyc)
         return kycNodes[id]?.kyc
     })
-    fs.writeFileSync(`./scripts/data/connected-kyc.json`, JSON.stringify(connectedKYCd))
+    console.log('# connectedKYCd: ', connectedKYCd.length)
+    
+    const data = connectedKYCd
+        .map(registryId => { return { registryId: registryId, activeShareId: stakingUtils.subjectToActive(0, registryId)}})
+        .map(item => { 
+            return {
+                registryId: item.registryId,
+                activeShareId: item.activeShareId.toString(),
+                call: contracts.staking.interface.encodeFunctionData('activeStakeFor', [0, item.registryId])
+            }
+        })
+    const idChunks = []
+    const stake = await Promise.all(
+        data.map(x => [x.registryId, x.activeShareId,  x.call])
+        .chunk(20)
+        .map(chunk => {
+            idChunks.push(chunk.map(x => x[0]))
+            const calls = chunk.map(x => x[2])
+            return contracts.staking.callStatic.multicall(calls)
+        }))
+    const idsAndStakes = _.zip(idChunks.flat(), stake.flat())
+    console.log('# ids and stakes', idsAndStakes.length)
+    
+    const connectedKYCdNotStaked = idsAndStakes.filter(x => {
+        return ethers.BigNumber.from(x[1]).eq(ethers.BigNumber.from(0))
+    }).map(x => x[0])
+
+    console.log('# connectedKYCdNotStaked: ', connectedKYCdNotStaked.length)
+    
+    const result = JSON.stringify({  amount: connectedKYCdNotStaked.length, result: connectedKYCdNotStaked, connectedAndFailing: connectedNodes })
+
+    fs.writeFileSync(`./scripts/data/connected-kyc.json`, result)
     console.log('Set!');
 }
 
