@@ -2,9 +2,7 @@ const { ethers, upgrades, network } = require('hardhat');
 const DEBUG                = require('debug')('forta:migration');
 const utils                = require('./utils');
 const assert = require('assert');
-const SCANNER_SUBJECT = 0;
-const AGENT_SUBJECT = 1;
-const semver = require('semver')
+
 
 upgrades.silenceWarnings();
 
