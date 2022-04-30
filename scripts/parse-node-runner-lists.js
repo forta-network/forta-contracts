@@ -15,6 +15,8 @@ const AGENT_SUBJECT = 1;
 const { CloudWatchLogsClient, StartQueryCommand, GetQueryResultsCommand } = require( "@aws-sdk/client-cloudwatch-logs");
 
 
+const exceptions = ['0xb7dfe9749085B4847B6405ADB348BE43cca3EAE5']
+
 function getKYCNodes() {
     let funnel = csvToJson.getJsonFromCsv("./scripts/data/funnel.csv");
     const nodes = funnel.map(x => x['NODEaddress']).filter(x => x.startsWith('0x'));
@@ -114,9 +116,14 @@ async function main() {
         }))
     const idsAndStakes = _.zip(idChunks.flat(), stake.flat())
     console.log('# ids and stakes', idsAndStakes.length)
+
     
-    const connectedKYCdNotStaked = idsAndStakes.filter(x => {
+    const connectedKYCdNotStaked = idsAndStakes
+    .filter(x => {
         return ethers.BigNumber.from(x[1]).eq(ethers.BigNumber.from(0))
+    }).filter(x => {
+        console.log(!exceptions.includes(x[0]))
+        return !exceptions.includes(x[0])
     }).map(x => x[0])
 
     console.log('# connectedKYCdNotStaked: ', connectedKYCdNotStaked.length)
