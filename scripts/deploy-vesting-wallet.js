@@ -7,7 +7,7 @@ const assert = require('assert');
 upgrades.silenceWarnings();
 
 const ROOT_CHAIN_MANAGER = {
-    1:     '0x0D29aDA4c818A9f089107201eaCc6300e56E0d5c',
+    1:     '0xA0c68C638235ee32657e8f720a23ceC1bFc77C77',
     5:     '0xBbD7cBFA79faee899Eaf900F13C9065bF03B1A74',
 };
 
