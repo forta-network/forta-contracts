@@ -31,6 +31,9 @@
 			],
 			"address": "0xD11A9Cf4Fc9D150d0Bf982D37Bc41F5c1F9C6073",
 			"version": "0.0.0"
+		},
+		"newImpl": {
+			"address": "0x830bF7E7Db45651f7913264D9d9487C9a92B4CeE"
 		}
 	},
 	"batch-relayer-pending": "0x7e65c6c4ca6df0da128533af9db832c90db8ebea519034d89b69574cc91ad40b",
@@ -51,6 +54,9 @@
 			],
 			"address": "0xD11A9Cf4Fc9D150d0Bf982D37Bc41F5c1F9C6073",
 			"version": "0.0.0"
+		},
+		"newImpl": {
+			"address": "0x995826B5B49965D47807A7C1e345a2B4a442D83F"
 		}
 	},
 	"vesting-0x7A8b8bFC9Cf860b4EC8Ef725567048185ef6ED93-pending": "0xc56bbb68ca544cec8ae8d3eea46ec24696f96d5423b017b51f673bc04eeac02b",
@@ -65,6 +71,9 @@
 			],
 			"address": "0xD11A9Cf4Fc9D150d0Bf982D37Bc41F5c1F9C6073",
 			"version": "0.0.0"
+		},
+		"newImpl": {
+			"address": "0x179228A96ee923545cd9D775CdC8E64cc2B5341f"
 		}
 	},
 	"vesting-0x218AE10DA9695b7E38381f22685603Be605Ad371-pending": "0x05f636f367e6546ee7c9901cea105a635e25ce794b21ebd39f73a37f1b7f2fbe",
@@ -79,6 +88,9 @@
 			],
 			"address": "0xD11A9Cf4Fc9D150d0Bf982D37Bc41F5c1F9C6073",
 			"version": "0.0.0"
+		},
+		"newImpl": {
+			"address": "0xa3ff68846a494a31B58D5d0C923EE94311D162fe"
 		}
 	},
 	"vesting-0xf0F5D6F95e97A207434510799E346180B81356D1-pending": "0x75e3cca55638a5f08dc2a5b8db0b9c0a655cf8445a98057ba0be10941036575d",
@@ -93,6 +105,9 @@
 			],
 			"address": "0xD11A9Cf4Fc9D150d0Bf982D37Bc41F5c1F9C6073",
 			"version": "0.0.0"
+		},
+		"newImpl": {
+			"address": "0x6485f58793263b0B296745bF3fF792AB739C7E13"
 		}
 	}
 }
