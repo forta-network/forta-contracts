@@ -87,6 +87,6 @@ module.exports = {
     vestedAllocation('0x7A8b8bFC9Cf860b4EC8Ef725567048185ef6ED93',      '4000000'),
     vestedAllocation('0x218AE10DA9695b7E38381f22685603Be605Ad371',      '205127', '2021-11-01T00:00:00Z'),
     vestedAllocation('0xf0F5D6F95e97A207434510799E346180B81356D1',      '76000'),
-    //vestedAllocation('0x9b0A8A8e6B2c23d572D7145F3dA14438FEd35374',      '1', '2021-11-01T00:00:00Z'), --> DUMMY
-  ]
+  ],
+  dummy_wallet: [vestedAllocation('0x9b0A8A8e6B2c23d572D7145F3dA14438FEd35374',      '1', '2021-11-01T00:00:00Z')]
 };
