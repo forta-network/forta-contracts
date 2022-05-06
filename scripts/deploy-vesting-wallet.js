@@ -64,8 +64,9 @@ async function main() {
     DEBUG('l2EscrowTemplate', l2EscrowTemplate)
     
     var index = 0;
-    console.log('Deploying:')
     for(const params of parameters) {
+        console.log('Deploying for:', params.beneficiary)
+
         const vesting = await ethers.getContractFactory('VestingWalletV2', deployer).then(factory => utils.tryFetchProxy(
             CACHE_L1,
             `vesting-${params.beneficiary}`,
