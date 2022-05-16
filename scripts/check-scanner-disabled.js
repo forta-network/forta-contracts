@@ -1,9 +1,7 @@
-const { util } = require('chai')
 const { ethers } = require('hardhat');
 const DEBUG                = require('debug')('forta:set-staking-threshold');
 const utils                = require('./utils');
 
-const NONCE = 146;
 
 const scannerIds = [
     '0x7Ffac77669A639E1c2073D4A9cBC38BDF323cd8E',

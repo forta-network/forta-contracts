@@ -124,5 +124,11 @@
 		"address": "0x366277FDf03594d421BaCddc942aa4189D8c2C6d",
 		"args": [],
 		"version": "0.0.0"
+	},
+	"batch-relayer-pending": "0x38369fff323a218b8c3976b70fb70a3a6c0ec366c3284c718a6c03b36a64797e",
+	"batch-relayer": {
+		"address": "0xAddB7894937085067c7F380c5a4FC9D37b7b3521",
+		"args": [],
+		"version": "0.0.0"
 	}
 }
