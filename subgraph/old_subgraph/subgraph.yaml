@@ -1,0 +1,83 @@
+specVersion: 0.0.2
+schema:
+  file: ./schema.graphql
+dataSources:
+
+  - kind: ethereum/contract
+    name: AgentRegistry
+    network: goerli
+    source:
+      address: "0xA3A0EA252D3cf18B30c3ADa0E013671beEDb4262"
+      abi: AgentRegistry
+      startBlock: 5572495
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - Agent
+      abis:
+        - name: AgentRegistry
+          # file: ../artifacts/contracts/components/agents/AgentRegistry.sol/AgentRegistry.json
+          file: ./abi/AgentRegistry.json
+      eventHandlers:
+        - event: AgentEnabled(indexed uint256,indexed bool,uint8,bool)
+          handler: handleAgentEnabled
+        - event: AgentUpdated(indexed uint256,indexed address,string,uint256[])
+          handler: handleAgentUpdated
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: ./src/datasources/agentregistry.ts
+
+  - kind: ethereum/contract
+    name: ScannerRegistry
+    network: goerli
+    source:
+      address: "0x65F22a702F88B53883A89F772449c7667DB9ab9C"
+      abi: ScannerRegistry
+      startBlock: 5572495
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - Scanner
+        - ScannerManager
+      abis:
+        - name: ScannerRegistry
+          # file: ../artifacts/contracts/components/scanners/ScannerRegistry.sol/ScannerRegistry.json
+          file: ./abi/ScannerRegistry.json
+      eventHandlers:
+        - event: ManagerEnabled(indexed uint256,indexed address,bool)
+          handler: handleManagerEnabled
+        - event: ScannerEnabled(indexed uint256,indexed bool,uint8,bool)
+          handler: handleScannerEnabled
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: ./src/datasources/scannerregistry.ts
+
+  - kind: ethereum/contract
+    name: Dispatch
+    network: goerli
+    source:
+      address: "0x77Db997b9Ad5e14386aB367fa47de073b3743248"
+      abi: Dispatch
+      startBlock: 5577988
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - Scanner
+        - ScannerManager
+      abis:
+        - name: Dispatch
+          # file: ../artifacts/contracts/components/dispatch/Dispatch.sol/Dispatch.json
+          file: ./abi/Dispatch.json
+      eventHandlers:
+        - event: Link(uint256,uint256,bool)
+          handler: handleLink
+      file: ./src/datasources/dispatch.ts

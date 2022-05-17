@@ -1,0 +1,28 @@
+{
+  "name": "@openzeppelin/forta-subgraph",
+  "version": "1.0.0",
+  "description": "Subgraph for forta token & utils",
+  "author": "OpenZeppelin Community <maintainers@openzeppelin.org>",
+  "license": "MIT",
+  "scripts": {
+    "prepare:schema": "concat -o schema.graphql src/schema.gql node_modules/@amxx/graphprotocol-utils/generated/schema.graphql",
+    "prepare:codegen": "graph codegen subgraph.yaml",
+    "prepare:compile": "graph build subgraph.yaml",
+    "prepare": "yarn prepare:schema && yarn prepare:codegen && yarn prepare:compile",
+    "deploy": "graph deploy --debug --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ amxx/forta-goerli subgraph.yaml"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenZeppelin/forta-token.git"
+  },
+  "homepage": "https://github.com/OpenZeppelin/forta-token#readme",
+  "bugs": {
+    "url": "https://github.com/OpenZeppelin/forta-token/issues"
+  },
+  "devDependencies": {
+    "@amxx/graphprotocol-utils": "1.1.0-alpha.0",
+    "@graphprotocol/graph-cli": "^0.22.1",
+    "@graphprotocol/graph-ts": "^0.22.1",
+    "concat": "^1.0.3"
+  }
+}
