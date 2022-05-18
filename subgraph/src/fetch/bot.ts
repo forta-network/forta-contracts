@@ -8,12 +8,11 @@ export function fetchBot(id: BigInt): Bot {
 
   if (bot == null) {
     bot = new Bot(id.toHex());
-    bot.owner = fetchAccount(Address.zero().toHex()).id;
+    bot.owner = fetchAccount(Address.zero()).id;
     bot.enabled = true;
     bot.disableFlags = 0;
     bot.metadata = "";
     bot.chainIds = [];
-    bot.scanners = [];
   }
   return bot as Bot;
 }

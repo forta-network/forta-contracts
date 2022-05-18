@@ -18,7 +18,7 @@ import { fetchBot } from "../fetch/bot";
 
 export function handleAgentUpdated(event: AgentUpdatedEvent): void {
   let bot = fetchBot(event.params.agentId);
-  let account = fetchAccount(event.params.by.toHex());
+  let account = fetchAccount(event.params.by);
   bot.chainIds = event.params.chainIds;
   bot.metadata = event.params.metadata;
   bot.save();
@@ -35,8 +35,8 @@ export function handleAgentUpdated(event: AgentUpdatedEvent): void {
 
 export function handleTransfer(event: TransferEvent): void {
   let bot = fetchBot(event.params.tokenId);
-  let from = fetchAccount(event.params.from.toHex());
-  let to = fetchAccount(event.params.to.toHex());
+  let from = fetchAccount(event.params.from);
+  let to = fetchAccount(event.params.to);
   bot.owner = to.id;
   bot.save();
 

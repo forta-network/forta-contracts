@@ -77,7 +77,7 @@ export function handleSlashed(event: SlashedEvent): void {
   let slash = new Slash(eventId(event));
   slash.subjectType = event.params.subjectType;
   slash.subjectId = event.params.subject.toHex();
-  slash.by = event.params.by.toHex();
+  slash.by = event.params.by;
   slash.save();
   let subject = Subject.load(event.params.subject.toHex());
   if (subject) {

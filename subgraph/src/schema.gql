@@ -1,5 +1,5 @@
 type Account @entity {
-  id: ID!
+  id: Bytes!
   asScanner: Scanner
   bots: [Bot!]! @derivedFrom(field: "owner")
   scanners: [Scanner!]! @derivedFrom(field: "owner")
@@ -20,7 +20,7 @@ type Bot @entity {
   disableFlags: Int!
   metadata: String!
   chainIds: [BigInt!]!
-  scanners: [Scanner!]
+  links: [Link!]! @derivedFrom(field: "bot")
 
   botTransferEvents: [BotTransfer!]! @derivedFrom(field: "bot")
   botUpdatedEvents: [BotUpdated!]! @derivedFrom(field: "bot")
@@ -39,8 +39,7 @@ type Scanner @entity {
   stakeThreshold: StakeThreshold! @derivedFrom(field: "scanner")
   subject: Subject
   metadata: String!
-  chainId: BigInt!
-  bots: [Bot!]
+  chainId: BigInt
 
   scannerTransferEvents: [ScannerTransfer!]! @derivedFrom(field: "scanner")
   scannerUpdatedEvents: [ScannerUpdated!]! @derivedFrom(field: "scanner")

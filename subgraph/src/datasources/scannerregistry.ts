@@ -19,9 +19,12 @@ import {
 import { fetchAccount } from "../fetch/account";
 import { fetchScanner } from "../fetch/scanner";
 import { fetchStakeThreshold } from "../fetch/stakethreshold";
+import { Bytes } from "@graphprotocol/graph-ts";
 
 export function handleScannerUpdated(event: ScannerUpdatedEvent): void {
-  let scanner = fetchScanner(event.params.scannerId);
+  let scanner = fetchScanner(
+    Bytes.fromHexString(event.params.scannerId.toHex())
+  );
   scanner.metadata = event.params.metadata;
   scanner.chainId = event.params.chainId;
   scanner.save();
@@ -36,9 +39,9 @@ export function handleScannerUpdated(event: ScannerUpdatedEvent): void {
 }
 
 export function handleTransfer(event: TransferEvent): void {
-  let scanner = fetchScanner(event.params.tokenId);
-  let from = fetchAccount(event.params.from.toHex());
-  let to = fetchAccount(event.params.to.toHex());
+  let scanner = fetchScanner(Bytes.fromHexString(event.params.tokenId.toHex()));
+  let from = fetchAccount(event.params.from);
+  let to = fetchAccount(event.params.to);
   scanner.owner = to.id;
   scanner.save();
 
@@ -52,11 +55,13 @@ export function handleTransfer(event: TransferEvent): void {
 }
 
 export function handleManagerEnabled(event: ManagerEnabledEvent): void {
-  let scanner = fetchScanner(event.params.scannerId);
-  let account = fetchAccount(event.params.manager.toHex());
+  let scanner = fetchScanner(
+    Bytes.fromHexString(event.params.scannerId.toHex())
+  );
+  let account = fetchAccount(event.params.manager);
 
   let scannerManager = new ScannerManager(
-    scanner.id.concat("/").concat(account.id)
+    scanner.id.concat("/").concat(account.id.toHex())
   );
 
   scannerManager.scanner = scanner.id;
@@ -75,7 +80,9 @@ export function handleManagerEnabled(event: ManagerEnabledEvent): void {
 }
 
 export function handleScannerEnabled(event: ScannerEnabledEvent): void {
-  let scanner = fetchScanner(event.params.scannerId);
+  let scanner = fetchScanner(
+    Bytes.fromHexString(event.params.scannerId.toHex())
+  );
   let mask = 1 << event.params.permission;
 
   scanner.disableFlags = event.params.value
