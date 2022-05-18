@@ -39,11 +39,7 @@ export function handleTransfer(event: TransferEvent): void {
   let scanner = fetchScanner(event.params.tokenId);
   let from = fetchAccount(event.params.from.toHex());
   let to = fetchAccount(event.params.to.toHex());
-  const scannerId = event.params.tokenId;
-  const scannerRegistryContract = ScannerRegistryContract.bind(event.address);
   scanner.owner = to.id;
-  scanner.chainId = scannerRegistryContract.getScannerChainId(scannerId);
-  scanner.metadata = scannerRegistryContract.tokenURI(scannerId);
   scanner.save();
 
   const ev = new ScannerTransfer(eventId(event));
