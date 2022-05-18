@@ -1,4 +1,3 @@
-import { BigInt } from "@graphprotocol/graph-ts";
 import {
   StakeDeposited as StakeDepositedEvent,
   Rewarded as RewardedEvent,
@@ -7,6 +6,7 @@ import {
   FortaStaking as FortaStakingContract,
 } from "../../generated/FortaStaking/FortaStaking";
 import { Reward, Slash, Stake, Staker, Subject } from "../../generated/schema";
+import { fetchAccount } from "../fetch/account";
 
 import eventId from "../utils/event";
 
@@ -77,7 +77,7 @@ export function handleSlashed(event: SlashedEvent): void {
   let slash = new Slash(eventId(event));
   slash.subjectType = event.params.subjectType;
   slash.subjectId = event.params.subject.toHex();
-  slash.by = event.params.by;
+  slash.by = fetchAccount(event.params.by).id;
   slash.save();
   let subject = Subject.load(event.params.subject.toHex());
   if (subject) {

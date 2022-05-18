@@ -1,13 +1,13 @@
-import { Address, BigInt, Bytes } from "@graphprotocol/graph-ts";
+import { Address, BigInt } from "@graphprotocol/graph-ts";
 
 import { Scanner } from "../../generated/schema";
 
 import { fetchAccount } from "./account";
 
-export function fetchScanner(id: Bytes): Scanner {
+export function fetchScanner(id: BigInt): Scanner {
   let scanner = Scanner.load(id.toHex());
   if (scanner == null) {
-    let account = fetchAccount(id);
+    let account = fetchAccount(Address.fromString(id.toHex()));
     account.asScanner = id.toHex();
     account.save();
 

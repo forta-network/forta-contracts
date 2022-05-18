@@ -4,21 +4,15 @@ import {
   AgentUpdated as AgentUpdatedEvent,
   AgentEnabled as AgentEnabledEvent,
   Transfer as TransferEvent,
-  AgentRegistry as AgentRegistryContract,
 } from "../../generated/AgentRegistry/AgentRegistry";
-import {
-  Bot,
-  BotEnabled,
-  BotTransfer,
-  BotUpdated,
-} from "../../generated/schema";
+import { BotEnabled, BotTransfer, BotUpdated } from "../../generated/schema";
 import { fetchAccount } from "../fetch/account";
-
 import { fetchBot } from "../fetch/bot";
 
 export function handleAgentUpdated(event: AgentUpdatedEvent): void {
   let bot = fetchBot(event.params.agentId);
   let account = fetchAccount(event.params.by);
+
   bot.chainIds = event.params.chainIds;
   bot.metadata = event.params.metadata;
   bot.save();

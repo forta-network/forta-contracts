@@ -1,5 +1,5 @@
 type Account @entity {
-  id: Bytes!
+  id: ID!
   asScanner: Scanner
   bots: [Bot!]! @derivedFrom(field: "owner")
   scanners: [Scanner!]! @derivedFrom(field: "owner")
@@ -19,7 +19,7 @@ type Bot @entity {
   enabled: Boolean!
   disableFlags: Int!
   metadata: String!
-  chainIds: [BigInt!]!
+  chainIds: [BigInt!]
   links: [Link!]! @derivedFrom(field: "bot")
 
   botTransferEvents: [BotTransfer!]! @derivedFrom(field: "bot")

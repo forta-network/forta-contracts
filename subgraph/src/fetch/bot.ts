@@ -12,7 +12,6 @@ export function fetchBot(id: BigInt): Bot {
     bot.enabled = true;
     bot.disableFlags = 0;
     bot.metadata = "";
-    bot.chainIds = [];
   }
   return bot as Bot;
 }

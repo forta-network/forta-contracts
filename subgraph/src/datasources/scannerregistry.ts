@@ -4,9 +4,7 @@ import {
   ScannerUpdated as ScannerUpdatedEvent,
   Transfer as TransferEvent,
   ScannerEnabled as ScannerEnabledEvent,
-  ScannerRegistry as ScannerRegistryContract,
   ManagerEnabled as ManagerEnabledEvent,
-  StakeControllerUpdated as StakeControllerUpdatedEvent,
 } from "../../generated/ScannerRegistry/ScannerRegistry";
 
 import {
@@ -18,13 +16,9 @@ import {
 } from "../../generated/schema";
 import { fetchAccount } from "../fetch/account";
 import { fetchScanner } from "../fetch/scanner";
-import { fetchStakeThreshold } from "../fetch/stakethreshold";
-import { Bytes } from "@graphprotocol/graph-ts";
 
 export function handleScannerUpdated(event: ScannerUpdatedEvent): void {
-  let scanner = fetchScanner(
-    Bytes.fromHexString(event.params.scannerId.toHex())
-  );
+  let scanner = fetchScanner(event.params.scannerId);
   scanner.metadata = event.params.metadata;
   scanner.chainId = event.params.chainId;
   scanner.save();
@@ -39,7 +33,7 @@ export function handleScannerUpdated(event: ScannerUpdatedEvent): void {
 }
 
 export function handleTransfer(event: TransferEvent): void {
-  let scanner = fetchScanner(Bytes.fromHexString(event.params.tokenId.toHex()));
+  let scanner = fetchScanner(event.params.tokenId);
   let from = fetchAccount(event.params.from);
   let to = fetchAccount(event.params.to);
   scanner.owner = to.id;
@@ -55,13 +49,11 @@ export function handleTransfer(event: TransferEvent): void {
 }
 
 export function handleManagerEnabled(event: ManagerEnabledEvent): void {
-  let scanner = fetchScanner(
-    Bytes.fromHexString(event.params.scannerId.toHex())
-  );
+  let scanner = fetchScanner(event.params.scannerId);
   let account = fetchAccount(event.params.manager);
 
   let scannerManager = new ScannerManager(
-    scanner.id.concat("/").concat(account.id.toHex())
+    scanner.id.concat("/").concat(account.id)
   );
 
   scannerManager.scanner = scanner.id;
@@ -80,9 +72,7 @@ export function handleManagerEnabled(event: ManagerEnabledEvent): void {
 }
 
 export function handleScannerEnabled(event: ScannerEnabledEvent): void {
-  let scanner = fetchScanner(
-    Bytes.fromHexString(event.params.scannerId.toHex())
-  );
+  let scanner = fetchScanner(event.params.scannerId);
   let mask = 1 << event.params.permission;
 
   scanner.disableFlags = event.params.value

@@ -5,13 +5,10 @@ import { Link, LinkEnabled } from "../../generated/schema";
 
 import { fetchBot } from "../fetch/bot";
 import { fetchScanner } from "../fetch/scanner";
-import { Bytes } from "@graphprotocol/graph-ts";
 
 export function handleLink(event: LinkEvent): void {
   let bot = fetchBot(event.params.agentId);
-  let scanner = fetchScanner(
-    Bytes.fromHexString(event.params.scannerId.toHex())
-  );
+  let scanner = fetchScanner(event.params.scannerId);
   let link = new Link(bot.id.concat("/").concat(scanner.id));
   link.bot = bot.id;
   link.scanner = scanner.id;
