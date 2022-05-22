@@ -8,9 +8,11 @@ module.exports = {
     "mocha-no-only/mocha-no-only": ["error"],
   },
   parserOptions: {
-    ecmaVersion: 2017
+    ecmaVersion: 2020
   },
   env: {
-    es6: true
+    es6: true,
+    node: true,
+    mocha: true
   }
 };

@@ -1,9 +1,8 @@
 const fs = require('fs');
-const _ = require('lodash');
 
 const { ethers } = require('hardhat');
 const { BigNumber } = ethers;
-const { parseEther, formatEther } = ethers.utils;
+const { formatEther } = ethers.utils;
 //const DEBUG = require('debug')('forta');
 //const utils = require('./utils');
 const expected = require('./data/rewards_week3_result.json');
@@ -16,11 +15,7 @@ function findDuplicates(input) {
     console.log(duplicates.length);
 }
 
-function idToBigNumber(id) {
-    return BigNumber.from(id.replace(/0x.+_/, ''));
-}
-
-async function main(config = {}) {
+async function main() {
     console.log('sent');
     console.log(sent.length);
     const amountSent = sent.reduce((prev, next) => prev.add(ethers.BigNumber.from(next.amount)), ethers.BigNumber.from('0'));
@@ -50,7 +45,7 @@ async function main(config = {}) {
             amount: amount,
         };
     });
-    fs.writeFileSync('./scripts/data/not_sent_week3.json', JSON.stringify(notSentTransactions))
+    fs.writeFileSync('./scripts/data/not_sent_week3.json', JSON.stringify(notSentTransactions));
 }
 
 if (require.main === module) {
