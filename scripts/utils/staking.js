@@ -52,5 +52,5 @@ module.exports = {
   subjectToActive,
   subjectToInactive,
   isActive,
-  subjectTypeOfShares
+  subjectTypeOfShares,
 }

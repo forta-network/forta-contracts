@@ -4,7 +4,8 @@ const BigNumber = ethers.BigNumber
 const parseEther = ethers.utils.parseEther;
 const DEBUG                = require('debug')('forta');
 const utils                = require('./utils');
-const rewardables = require('./data/rewards_result.json');
+// const rewardables = require('./data/rewards_result.json');
+const rewardables = require('./data/rewards_week3_result.json');
 const { AdminClient } = require('defender-admin-client');
 const client = new AdminClient({apiKey: process.env.DEFENDER_API_KEY, apiSecret: process.env.DEFENDER_API_SECRET});
 const MULTISIG = process.env.POLYGON_MULTISIG_FUNDS;
@@ -68,7 +69,9 @@ async function transferShares(config = {}) {
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
 
     console.log('rewardables:', rewardables.length);
-    const deservingOfShares = rewardables.filter(x => BigNumber.from(x.rewardsMinusStake).gt(BigNumber.from('0')))
+    // const deservingOfShares = rewardables.filter(x => BigNumber.from(x.rewardsMinusStake).gt(BigNumber.from('0'))) week1
+    const deservingOfShares = rewardables.filter(x => BigNumber.from(x.rewardsInShares).gt(BigNumber.from('0'))); // week3
+
     const excludingOurOwn = deservingOfShares.filter(x => x.owner !== '0x8eedf056de8d0b0fd282cc0d7333488cc5b5d242')
     console.log('deservingOfShares:', deservingOfShares.length)
     console.log('excludingOurOwn:', excludingOurOwn.length)
@@ -77,7 +80,7 @@ async function transferShares(config = {}) {
     console.log('shareBalances:', shareBalances.length)
 
     const toSend = excludingOurOwn.filter((x,index) => shareBalances[index].eq(ethers.constants.Zero))
-
+    console.log(toSend);
     console.log('toSend:', toSend.length);
     
     console.log('Transfering...');

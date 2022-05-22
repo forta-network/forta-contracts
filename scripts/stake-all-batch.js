@@ -6,26 +6,9 @@ const utils                = require('./utils');
 const fs = require('fs');
 
 const STAKE_AMOUNT = parseEther('500')
-const SUBJECT_IDS = [
-    '0x9d11ad0ff6d8ceae38370def0c6e36541c8f8f1c',
-    '0x453ee833666e414dbc4c9b93ea1763a142fbcd6d',
-    '0xcee2d25e70ed308606a16f39e617ab2e485d5450',
-    '0x8903c3c82f99574f677c099a9bac852e228cf422',
-    '0x4d0d2477287c53ebd099ca5e5e5ffcae18aa31ef',
-    '0x7a60d417ea2460076f805729f83be9395813ba5f',
-    '0xbdc6ac6a80e579a91d580b855baf56d78da52d74',
-    '0xe56e69334a82011379e461d216b7733b9bd745bf',
-    '0x91de4c633b93c13cc7c5e23d306cd8cf79461e79',
-    '0x29b8a3fa2337cadf2987d40ea478bb7ff22de6ef',
-    '0x2dc5503eac6c469304066acacf0a74f8257bcf9e',
-    '0x3dc45b47b7559ca3b231e5384d825f9b461a0398',
-    '0x556f8be42f76c01f960f32cb1936d2e0e0eb3f4d',
-    '0xe870840564d7395cc0f267f23cd85fa498b07a58',
-    '0x0fefe9cce526db1b310c40dde1f87c8882c7b6f9',
-    '0xeb2030c200b8f9bad5dcb476f1e169612a02bef6'
-]
+const SUBJECT_IDS = []
 const SUBJECT_TYPE=0
-const MULTISIG='0x8ba1f109551bD432803012645Ac136ddd64DBA72'
+const MULTISIG=process.env.POLYGON_MULTISIG
 
 
 

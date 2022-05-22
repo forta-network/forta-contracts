@@ -16,8 +16,13 @@ async function migrate(config = {}) {
     DEBUG(`Balance:  ${await provider.getBalance(deployer.address).then(ethers.utils.formatEther)}${ethers.constants.EtherSymbol}`);
     DEBUG('----------------------------------------------------');
     utils.assertNotUsingHardhatKeys(chainId, deployer);
-
-    const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
+    let configName;
+    if (chainId === 5) {
+        configName = chainId === 5 ? './_old/.cache-5-with-components' : `.cache-${chainId}`;
+    } else {
+        configName = `.cache-${chainId}`;
+    }
+    const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: configName });
     const contracts = {}
 
     contracts.batchRelayer = await ethers.getContractFactory('BatchRelayer', deployer).then(factory => utils.tryFetchContract(

@@ -5,7 +5,7 @@ const stakingUtils = require('./utils/staking.js');
 const fs = require('fs');
 const _ = require('lodash');
 
-const ADDRESS = '0x15d3c7e811582be09bb8673cd603bb2f22d1e47b'
+const ADDRESS = '0x'
 
 async function transferShares(config = {}) {
     const provider = config.provider ?? await utils.getDefaultProvider();
@@ -54,18 +54,19 @@ async function transferShares(config = {}) {
             return contracts.staking.callStatic.multicall(calls)
         }))
     
-    console.log('idChunks',idChunks)
-    console.log('balances', balances)
+    console.log('idChunks',idChunks.length)
+    console.log('balances', balances.length)
     const allShares = _.zip(idChunks.flat(), balances.flat())
-    console.log('allShares',allShares)
+    console.log('allShares',allShares.length)
     const ownedByAddress = allShares.filter(x => ethers.BigNumber.from(x[1]).gt(ethers.BigNumber.from(0)))
+    console.log('allShares',ownedByAddress.length)
 
     const results = {
         ownedByAddress: ownedByAddress,
         idsAndAmounts: ownedByAddress.map(x => [x[0][0], x[1]]),
         ids: ownedByAddress.map(x => x[0][0])
     }
-    fs.writeFileSync(`./scripts/data/active_shares_${ADDRESS}.json`, JSON.stringify(results, null, 2))
+    fs.writeFileSync(`./scripts/data/active_shares_${ADDRESS}.json`, JSON.stringify(results))
 }
 
 if (require.main === module) {

@@ -3,7 +3,7 @@ const _ = require('lodash');
 const utils                = require('./utils');
 const DEBUG                = require('debug')('forta');
 
-const rewardables = require('./data/rewards_result.json')
+const rewardables = require('./data/rewards_week3_result.json')
 
 const FORTA_TOKEN_NAME = {
     1: 'Forta',
@@ -15,7 +15,7 @@ const FORTA_TOKEN_NAME = {
 }
 
 
-async function main() {
+async function whitelist(config = {}) {
     const provider = config.provider ?? await utils.getDefaultProvider();
     const deployer = await utils.getDefaultDeployer(provider);
 
@@ -49,7 +49,7 @@ async function main() {
 
     const owners = []
     const whitelisted = await Promise.all(
-        rewardables.chunk(50)
+        rewardables.chunk(59)
         .map(async chunk => {
             owners.push(chunk.map(x => x.owner))
             return await Promise.all(
@@ -60,20 +60,20 @@ async function main() {
 
 
     console.log('Not whitelisted:', notWhitelisted.length)
-    
+    return
 
     const calldatas = notWhitelisted.map(x => contracts.forta.interface.encodeFunctionData('grantRole', [WHITELIST_ROLE, x]))
     
     const receipts = await Promise.all(
         calldatas
-        .chunk(100)
+        .chunk(50)
         .map(chunk => {
             return contracts.relayer.relay(contracts.forta.address, chunk).then(tx => tx.wait())
         }))
     console.log(receipts);
 }
 
-main()
+whitelist()
     .then(() => process.exit(0))
     .catch((error) => {
         console.error(error)
