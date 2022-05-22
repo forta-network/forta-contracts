@@ -140,7 +140,7 @@
 		"staking",
 		"staking-parameters",
 		"escrow-factory",
-        "escrow-template",
+		"escrow-template",
 		"agents",
 		"scanners",
 		"dispatch",
@@ -162,14 +162,20 @@
 		],
 		"version": "0.0.0"
 	},
-    "escrow-template-pending": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
+	"escrow-template-pending": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
 	"escrow-template": {
 		"address": "0x0d3DAC6368Da5bce50aFE3E61fFc450C80B2F23D",
 		"args": [
 			"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
-            "0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1",
+			"0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1",
 			"0xd2863157539b1D11F39ce23fC4834B62082F6874"
 		],
+		"version": "0.0.0"
+	},
+	"batch-relayer-pending": "0xe03451eff846689b448a658f64396a6a8511a27bdbb6c66c29f614850cb1f512",
+	"batch-relayer": {
+		"address": "0x0A6f54C598e914aD25Be1d8B7ccD4355C776bCaF",
+		"args": [],
 		"version": "0.0.0"
 	}
 }

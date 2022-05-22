@@ -1,14 +1,13 @@
-const { constants } = require('ethers')
 const { ethers } = require('hardhat');
 const parseEther = ethers.utils.parseEther;
-const DEBUG                = require('debug')('forta');
-const utils                = require('./utils');
+const DEBUG = require('debug')('forta');
+const utils = require('./utils');
 const fs = require('fs');
 
-const AMOUNT = parseEther('500')
+const AMOUNT = parseEther('500');
 
 async function stakeAll(config = {}) {
-    const provider = config.provider ?? await utils.getDefaultProvider();
+    const provider = config.provider ?? (await utils.getDefaultProvider());
     const deployer = await utils.getDefaultDeployer(provider);
 
     const { name, chainId } = await provider.getNetwork();
@@ -23,7 +22,7 @@ async function stakeAll(config = {}) {
         configName = `.cache-${chainId}`;
     }
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: configName });
-    const fortaContract = chainId === 137 || chainId === 80001 ? 'FortaBridgedPolygon' : 'Forta'
+    const fortaContract = chainId === 137 || chainId === 80001 ? 'FortaBridgedPolygon' : 'Forta';
 
     const DEFAULT_STAKE = config.defaultStake ?? AMOUNT;
     const SUBJECT_TYPE = config.subjectType ?? 0;
@@ -31,17 +30,20 @@ async function stakeAll(config = {}) {
     DEBUG(`Network:  ${name} (${chainId})`);
     DEBUG(`Deployer: ${deployer.address}`);
     DEBUG('----------------------------------------------------');
-    
-    const contracts = config.contracts ?? await Promise.all(Object.entries({
-        forta: utils.attach(fortaContract,  await CACHE.get('forta.address') ).then(contract => contract.connect(deployer)),
-        //agents: utils.attach('AgentRegistry',  await CACHE.get('agents.address')  ).then(contract => contract.connect(deployer)),
-        scanners: utils.attach('ScannerRegistry',await CACHE.get('scanners.address')  ).then(contract => contract.connect(deployer)),
-        staking: utils.attach('FortaStaking',await CACHE.get('staking.address')  ).then(contract => contract.connect(deployer)),
-    }).map(entry => Promise.all(entry))).then(Object.fromEntries);
+
+    const contracts =
+        config.contracts ??
+        (await Promise.all(
+            Object.entries({
+                forta: utils.attach(fortaContract, await CACHE.get('forta.address')).then((contract) => contract.connect(deployer)),
+                //agents: utils.attach('AgentRegistry',  await CACHE.get('agents.address')  ).then(contract => contract.connect(deployer)),
+                scanners: utils.attach('ScannerRegistry', await CACHE.get('scanners.address')).then((contract) => contract.connect(deployer)),
+                staking: utils.attach('FortaStaking', await CACHE.get('staking.address')).then((contract) => contract.connect(deployer)),
+            }).map((entry) => Promise.all(entry))
+        ).then(Object.fromEntries));
     const [signer] = await ethers.getSigners();
 
-    let firstTx = config.firstTx ?? await CACHE.get('scanners-pending');
-    
+    //let firstTx = config.firstTx ?? (await CACHE.get('scanners-pending'));
     //const mintings = await utils.getEventsFromTx(firstTx, `Transfer`, contracts.scanners, [constants.AddressZero], provider);
     //console.log(mintings.map(x => x.args))
     //const tokenIds = mintings.map(x => x.args.tokenId);
@@ -61,22 +63,22 @@ async function stakeAll(config = {}) {
         '0x556f8be42f76c01f960f32cb1936d2e0e0eb3f4d',
         '0xe870840564d7395cc0f267f23cd85fa498b07a58',
         '0x0fefe9cce526db1b310c40dde1f87c8882c7b6f9',
-        '0xeb2030c200b8f9bad5dcb476f1e169612a02bef6'
-    ]
-    
+        '0xeb2030c200b8f9bad5dcb476f1e169612a02bef6',
+    ];
+
     console.log('Total Scanners: ', tokenIds.length);
     const scannerOutput = {};
     for (const scannerId of tokenIds) {
-        console.log('Checking...', scannerId/*.toHexString()*/);
-        const scannerState = await contracts.scanners.getScannerState(scannerId);      
-        scannerState.chainId = scannerState.chainId.toNumber()
-        console.log('Stake Threshold', await contracts.scanners.getStakeThreshold(scannerId/*.toHexString()*/));
+        console.log('Checking...', scannerId /*.toHexString()*/);
+        const scannerState = await contracts.scanners.getScannerState(scannerId);
+        scannerState.chainId = scannerState.chainId.toNumber();
+        console.log('Stake Threshold', await contracts.scanners.getStakeThreshold(scannerId /*.toHexString()*/));
         const activeStake = await contracts.staking.activeStakeFor(SUBJECT_TYPE, scannerId);
-        scannerOutput[scannerId/*.toHexString()*/] = {
+        scannerOutput[scannerId /*.toHexString()*/] = {
             state: scannerState,
-            activeStake: ethers.utils.formatEther(activeStake)
-        }
-        const isStakedOverMin = await contracts.scanners.isStakedOverMin(scannerId/*.toHexString()*/);
+            activeStake: ethers.utils.formatEther(activeStake),
+        };
+        const isStakedOverMin = await contracts.scanners.isStakedOverMin(scannerId /*.toHexString()*/);
         if (activeStake.gte(DEFAULT_STAKE)) {
             console.log('Already staked');
             continue;
@@ -102,22 +104,21 @@ async function stakeAll(config = {}) {
     }
     //console.log('Enabled scanners:', enabledScanners.length);
     console.log('--------------------- Output: ---------------------');
-    fs.writeFileSync('./stake-output.json', JSON.stringify(scannerOutput))
-    Object.entries(scannerOutput).forEach(x => console.dir(x));
+    fs.writeFileSync('./stake-output.json', JSON.stringify(scannerOutput));
+    Object.entries(scannerOutput).forEach((x) => console.dir(x));
     console.log('---------------------------------------------------');
 
-    const chainIds = new Set(Object.entries(scannerOutput).map( x => x[1].state.chainId.toNumber()));
+    const chainIds = new Set(Object.entries(scannerOutput).map((x) => x[1].state.chainId.toNumber()));
     console.log('Chain Ids: ', chainIds);
 }
 
 if (require.main === module) {
     stakeAll()
         .then(() => process.exit(0))
-        .catch(error => {
+        .catch((error) => {
             console.error(error);
             process.exit(1);
         });
 }
 
 module.exports = stakeAll;
-
