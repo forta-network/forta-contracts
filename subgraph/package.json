@@ -14,9 +14,10 @@
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 TDrachev/forta-subgraph"
   },
   "dependencies": {
-    "@amxx/graphprotocol-utils": "1.1.0-alpha.0",
-    "@graphprotocol/graph-cli": "0.29.2",
-    "@graphprotocol/graph-ts": "0.26.0",
-    "concat": "^1.0.3"
+    "@amxx/graphprotocol-utils": "1.1.0",
+    "@graphprotocol/graph-cli": "0.30.0",
+    "@graphprotocol/graph-ts": "0.27.0",
+    "concat": "^1.0.3",
+    "matchstick-as": "^0.4.4"
   }
 }

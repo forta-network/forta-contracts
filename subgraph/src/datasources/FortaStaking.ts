@@ -1,3 +1,5 @@
+import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { logStore, newMockEvent } from "matchstick-as";
 import {
   StakeDeposited as StakeDepositedEvent,
   Rewarded as RewardedEvent,
@@ -12,6 +14,7 @@ import eventId from "../utils/event";
 
 export function handleStakeDeposited(event: StakeDepositedEvent): void {
   let subject = Subject.load(event.params.subject.toHex());
+
   let staker = Staker.load(event.params.account.toHex());
   let stake = Stake.load(eventId(event));
   const fortaStaking = FortaStakingContract.bind(event.address);
@@ -40,7 +43,7 @@ export function handleStakeDeposited(event: StakeDepositedEvent): void {
     );
 
     subject.isFrozen = false;
-
+    subject.slashedTotal = 0;
     subject.subjectType = event.params.subjectType;
     subject.save();
   }
@@ -71,6 +74,7 @@ export function handleRewarded(event: RewardedEvent): void {
   reward.subjectType = event.params.subjectType;
   reward.subjectId = event.params.subject.toHex();
   reward.staker = event.params.from.toHex();
+  reward.save();
 }
 
 export function handleSlashed(event: SlashedEvent): void {
@@ -80,6 +84,14 @@ export function handleSlashed(event: SlashedEvent): void {
   slash.by = fetchAccount(event.params.by).id;
   slash.save();
   let subject = Subject.load(event.params.subject.toHex());
+  if (!subject) {
+    subject = new Subject(event.params.subject.toHex());
+    subject.slashedTotal = 0;
+    let slashedTotal = subject.slashedTotal;
+    slashedTotal++;
+    subject.slashedTotal = slashedTotal;
+    subject.save();
+  }
   if (subject) {
     let slashedTotal = subject.slashedTotal;
     slashedTotal++;
@@ -94,4 +106,143 @@ export function handleFroze(event: FrozeEvent): void {
     subject.isFrozen = event.params.isFrozen;
     subject.save();
   }
+}
+
+export function createStakeDepositedEvent(
+  subjectType: i32,
+  subject: BigInt,
+  account: Address,
+  amount: BigInt
+): StakeDepositedEvent {
+  const mockStakeDepostied = changetype<StakeDepositedEvent>(newMockEvent());
+  mockStakeDepostied.parameters = [];
+
+  const subjectTypeParam = new ethereum.EventParam(
+    "subjectType",
+    ethereum.Value.fromI32(subjectType)
+  );
+
+  const subjectParam = new ethereum.EventParam(
+    "subject",
+    ethereum.Value.fromUnsignedBigInt(subject)
+  );
+
+  const accountParam = new ethereum.EventParam(
+    "account",
+    ethereum.Value.fromAddress(account)
+  );
+
+  const amountParam = new ethereum.EventParam(
+    "amount",
+    ethereum.Value.fromSignedBigInt(amount)
+  );
+
+  mockStakeDepostied.parameters.push(subjectTypeParam);
+  mockStakeDepostied.parameters.push(subjectParam);
+  mockStakeDepostied.parameters.push(accountParam);
+  mockStakeDepostied.parameters.push(amountParam);
+  return mockStakeDepostied;
+}
+
+export function createRewardEvent(
+  subjectType: i32,
+  subject: BigInt,
+  from: Address,
+  value: BigInt
+): RewardedEvent {
+  const mockRewardedEvent = changetype<RewardedEvent>(newMockEvent());
+  mockRewardedEvent.parameters = [];
+
+  const subjectTypeParam = new ethereum.EventParam(
+    "subjectType",
+    ethereum.Value.fromI32(subjectType)
+  );
+
+  const subjectParam = new ethereum.EventParam(
+    "subject",
+    ethereum.Value.fromUnsignedBigInt(subject)
+  );
+
+  const fromParam = new ethereum.EventParam(
+    "from",
+    ethereum.Value.fromAddress(from)
+  );
+
+  const valueParam = new ethereum.EventParam(
+    "value",
+    ethereum.Value.fromSignedBigInt(value)
+  );
+
+  mockRewardedEvent.parameters.push(subjectTypeParam);
+  mockRewardedEvent.parameters.push(subjectParam);
+  mockRewardedEvent.parameters.push(fromParam);
+  mockRewardedEvent.parameters.push(valueParam);
+
+  return mockRewardedEvent;
+}
+
+export function createSlashedEvent(
+  subjectType: i32,
+  subject: BigInt,
+  by: Address,
+  value: BigInt
+): SlashedEvent {
+  const mockSlashedEvent = changetype<SlashedEvent>(newMockEvent());
+
+  const subjectTypeParam = new ethereum.EventParam(
+    "subjectType",
+    ethereum.Value.fromI32(subjectType)
+  );
+
+  const subjectParam = new ethereum.EventParam(
+    "subject",
+    ethereum.Value.fromUnsignedBigInt(subject)
+  );
+
+  const byParam = new ethereum.EventParam("by", ethereum.Value.fromAddress(by));
+
+  const valueParam = new ethereum.EventParam(
+    "value",
+    ethereum.Value.fromSignedBigInt(value)
+  );
+
+  mockSlashedEvent.parameters.push(subjectTypeParam);
+  mockSlashedEvent.parameters.push(subjectParam);
+  mockSlashedEvent.parameters.push(byParam);
+  mockSlashedEvent.parameters.push(valueParam);
+  return mockSlashedEvent;
+}
+
+export function createFrozeEvent(
+  subjectType: i32,
+  subject: BigInt,
+  by: Address,
+  isFrozen: boolean
+): FrozeEvent {
+  const mockFrozeEvent = changetype<FrozeEvent>(newMockEvent());
+
+  mockFrozeEvent.parameters = [];
+  const subjectTypeParam = new ethereum.EventParam(
+    "subjectType",
+    ethereum.Value.fromI32(subjectType)
+  );
+
+  const subjectParam = new ethereum.EventParam(
+    "subject",
+    ethereum.Value.fromUnsignedBigInt(subject)
+  );
+
+  const byParam = new ethereum.EventParam("by", ethereum.Value.fromAddress(by));
+
+  const isFrozenParam = new ethereum.EventParam(
+    "isFrozen",
+    ethereum.Value.fromBoolean(isFrozen)
+  );
+
+  mockFrozeEvent.parameters.push(subjectTypeParam);
+  mockFrozeEvent.parameters.push(subjectParam);
+  mockFrozeEvent.parameters.push(byParam);
+  mockFrozeEvent.parameters.push(isFrozenParam);
+
+  return mockFrozeEvent;
 }

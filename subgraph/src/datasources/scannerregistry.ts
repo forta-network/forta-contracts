@@ -16,6 +16,8 @@ import {
 } from "../../generated/schema";
 import { fetchAccount } from "../fetch/account";
 import { fetchScanner } from "../fetch/scanner";
+import { newMockEvent } from "matchstick-as";
+import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 
 export function handleScannerUpdated(event: ScannerUpdatedEvent): void {
   let scanner = fetchScanner(event.params.scannerId);
@@ -90,4 +92,132 @@ export function handleScannerEnabled(event: ScannerEnabledEvent): void {
   ev.permission = event.params.permission;
   ev.value = event.params.value;
   ev.save();
+}
+
+export function createTransferEvent(
+  from: Address,
+  to: Address,
+  tokenId: BigInt
+): TransferEvent {
+  const mockTransferEvent = changetype<TransferEvent>(newMockEvent());
+
+  mockTransferEvent.parameters = [];
+
+  const fromParam = new ethereum.EventParam(
+    "from",
+    ethereum.Value.fromAddress(from)
+  );
+
+  const toParam = new ethereum.EventParam("to", ethereum.Value.fromAddress(to));
+
+  const tokenIdParam = new ethereum.EventParam(
+    "tokenId",
+    ethereum.Value.fromSignedBigInt(tokenId)
+  );
+
+  mockTransferEvent.parameters.push(fromParam);
+  mockTransferEvent.parameters.push(toParam);
+  mockTransferEvent.parameters.push(tokenIdParam);
+
+  return mockTransferEvent;
+}
+
+export function createScannerUpdatedEvent(
+  scannerId: BigInt,
+  chainId: BigInt,
+  metadata: string
+): ScannerUpdatedEvent {
+  const mockUpdatedEvent = changetype<ScannerUpdatedEvent>(newMockEvent());
+  mockUpdatedEvent.parameters = [];
+
+  const scannerIdParam = new ethereum.EventParam(
+    "scannerId",
+    ethereum.Value.fromSignedBigInt(scannerId)
+  );
+
+  const chainIdParam = new ethereum.EventParam(
+    "chainId",
+    ethereum.Value.fromSignedBigInt(chainId)
+  );
+
+  const metadataParam = new ethereum.EventParam(
+    "metadata",
+    ethereum.Value.fromString(metadata)
+  );
+
+  mockUpdatedEvent.parameters.push(scannerIdParam);
+  mockUpdatedEvent.parameters.push(chainIdParam);
+  mockUpdatedEvent.parameters.push(metadataParam);
+
+  return mockUpdatedEvent;
+}
+
+export function createManagerEnabledEvent(
+  scannerId: BigInt,
+  manager: Address,
+  enabled: boolean
+): ManagerEnabledEvent {
+  const mockManagerEnabledEvent = changetype<ManagerEnabledEvent>(
+    newMockEvent()
+  );
+
+  mockManagerEnabledEvent.parameters = [];
+
+  const scannerIdParam = new ethereum.EventParam(
+    "scannerId",
+    ethereum.Value.fromSignedBigInt(scannerId)
+  );
+
+  const managerParam = new ethereum.EventParam(
+    "manager",
+    ethereum.Value.fromAddress(manager)
+  );
+
+  const enabledParam = new ethereum.EventParam(
+    "enabled",
+    ethereum.Value.fromBoolean(enabled)
+  );
+
+  mockManagerEnabledEvent.parameters.push(scannerIdParam);
+  mockManagerEnabledEvent.parameters.push(managerParam);
+  mockManagerEnabledEvent.parameters.push(enabledParam);
+
+  return mockManagerEnabledEvent;
+}
+
+export function createScannerEnabledEvent(
+  scannerId: BigInt,
+  enabled: boolean,
+  permission: i32,
+  value: boolean
+): ScannerEnabledEvent {
+  const mockScannerEnabled = changetype<ScannerEnabledEvent>(newMockEvent());
+
+  mockScannerEnabled.parameters = [];
+  const scannerIdParam = new ethereum.EventParam(
+    "scannerId",
+    ethereum.Value.fromSignedBigInt(scannerId)
+  );
+
+  const permissionParam = new ethereum.EventParam(
+    "permission",
+    ethereum.Value.fromI32(permission)
+  );
+
+  const valueParam = new ethereum.EventParam(
+    "value",
+    ethereum.Value.fromBoolean(value)
+  );
+
+  const enabledParam = new ethereum.EventParam(
+    "enabled",
+    ethereum.Value.fromBoolean(enabled)
+  );
+
+  mockScannerEnabled.parameters.push(scannerIdParam);
+  mockScannerEnabled.parameters.push(enabledParam);
+  mockScannerEnabled.parameters.push(permissionParam);
+  mockScannerEnabled.parameters.push(valueParam);
+
+  return mockScannerEnabled;
 }
