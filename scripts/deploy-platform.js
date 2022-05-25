@@ -121,7 +121,7 @@ async function migrate(config = {}) {
 
     DEBUG(`[2] forta: ${contracts.token.address}`);
 
-    if (config.childChain) {
+    if (config.childChain || chainId === 31337) {
         contracts.access = await ethers
             .getContractFactory('AccessManager', deployer)
             .then((factory) =>
@@ -363,6 +363,7 @@ async function migrate(config = {}) {
 
         DEBUG('[11.5] reverse registration');
     }
+    console.log('last number', await deployer.getTransactionCount());
 
     await CACHE.set('contracts', Object.keys(contracts).map(utils.kebabize));
 

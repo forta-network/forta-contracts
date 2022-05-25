@@ -57,6 +57,6 @@ Object.assign(
             .map((name) => [name, { url: argv[`${name}Node`], accounts: accountsForNetwork(name) }])
             .filter(([, { url }]) => url)
     ),
-    argv.slow && { hardhat: { mining: { auto: false, interval: [3000, 6000] } } }, // Simulate a slow chain locally
+    argv.slow && { hardhat: { mining: { auto: false, interval: [500, 1000] } } }, // Simulate a slow chain locally
     argv.fork && { hardhat: { forking: { url: argv.forkNode, block: argv.blockNumber } } } // Simulate a mainnet fork
 );
