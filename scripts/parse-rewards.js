@@ -11,25 +11,31 @@ let csvToJson = require('convert-csv-to-json');
 
 function getRewardableNodes() {
     let funnel = csvToJson.fieldDelimiter(',').getJsonFromCsv('./scripts/data/rewards_week3.csv');
+    console.log('funnel', funnel.length);
     const nodes = funnel
         .map((x) => {
             console.log(x['RewardsInFORT']);
             console.log(parseEther(x['RewardsInFORT']).toString());
             console.log('---------------');
             return {
-                address: ethers.utils.getAddress(x['scanner']),
-                rewardsFort: parseEther(x['RewardsInFORT']),
-                rewardsInShares: parseEther(x['RewardsInStakeShares']),
+                scanner: ethers.utils.getAddress(x['scanner']),
+                amount: parseEther(x['fortAmount']),
+                shares: parseEther(x['sharesAmount']),
             };
         })
-        .filter((x) => x.rewardsFort.gt(BigNumber.from('0')) || x.rewardsInShares.gt(BigNumber.from('0')))
+        .filter((x) => x.amount.gt(BigNumber.from('0')) || x.rewardsInShares.gt(BigNumber.from('0')))
         .map((x) => {
             return {
                 ...x,
-                rewardsFort: x.rewardsFort.toString(),
-                rewardsInShares: x.rewardsInShares.toString(),
+                amount: x.amount.toString(),
+                shares: x.shares.toString(),
+                status: 'NOT_SENT',
+                epoch: 'epoch_4',
+                mode: 'TRANSFER_OWNER',
             };
         });
+    console.log('nodes', funnel.length);
+
     return nodes;
 }
 
@@ -69,6 +75,7 @@ async function main(config = {}) {
         return {
             ...item,
             activeShareId: stakingUtils.subjectToActive(0, item.address).toString(),
+            tokenId: ethers.BigNumber.from(item.scanner).toString(),
             callOwner: contracts.scanners.interface.encodeFunctionData('ownerOf', [item.address]),
         };
     });
@@ -84,12 +91,20 @@ async function main(config = {}) {
     const result = _.zip(
         items.flat(),
         owners.flat().map((x) => ethers.utils.hexDataSlice(x, 12))
-    ).map((x) => {
-        return { ...x[0], owner: ethers.utils.getAddress(x[1]) };
-    });
+    )
+        .map((x) => {
+            return { ...x[0], owner: ethers.utils.getAddress(x[1]) };
+        })
+        .map((x) => {
+            return {
+                ...x,
+                owner: x.owner.toLowerCase(),
+                scanner: x.scanner.toLowerCase(),
+            };
+        });
 
     // console.log(result)
-    fs.writeFileSync(`./scripts/data/rewards_week3_result.json`, JSON.stringify(result));
+    fs.writeFileSync(`./scripts/data/rewards_week4_result.json`, JSON.stringify(result));
     const fortToSend = result.map((x) => BigNumber.from(x.rewardsFort)).reduce((prev, curr) => prev.add(curr), BigNumber.from('0'));
     console.log('rewardables', result.length);
     console.log('fortToSend', ethers.utils.formatEther(fortToSend));
