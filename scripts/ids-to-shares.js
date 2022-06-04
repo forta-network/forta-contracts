@@ -1,7 +1,9 @@
 const { ethers } = require('hardhat');
 const stakingUtils = require('./utils/staking.js');
 
-const IDS = ['0x...'];
+const IDS = [
+    "0x9Ca49B4A151cec4AEDB01aB9A09D092F814DA7f8",
+];
 const SUBJECT_TYPE = 0;
 
 async function main() {

@@ -2,8 +2,8 @@ const { ethers } = require('hardhat');
 const _ = require('lodash');
 const utils = require('./utils');
 const DEBUG = require('debug')('multi-whitelist');
-
-const REWARDABLES = []; // require('./data/rewards_week3_result.json');
+const fs = require('fs')
+const REWARDABLES = require('./data/rewards_week4_result.json');
 
 const FORTA_TOKEN_NAME = {
     1: 'Forta',
@@ -40,13 +40,13 @@ async function whitelist(config = {}) {
     DEBUG(`Deployer: ${deployer.address}`);
 
     DEBUG('----------------------------------------------------');
-    const toWhitelist = config.toWhitelist ?? REWARDABLES;
+    const toWhitelist = config.toWhitelist ?? Array.from(new Set(REWARDABLES));
     console.log('Whitelisting...:', toWhitelist.length);
     const WHITELIST_ROLE = ethers.utils.id('WHITELIST_ROLE');
 
     const owners = [];
     const whitelisted = await Promise.all(
-        toWhitelist.chunk(50).map(async (chunk) => {
+        toWhitelist.chunk(100).map(async (chunk) => {
             owners.push(chunk.map((x) => x.owner));
             return await Promise.all(chunk.map((x) => contracts.forta.hasRole(WHITELIST_ROLE, x.owner)));
         })
@@ -56,7 +56,8 @@ async function whitelist(config = {}) {
         .map((x) => x[1]);
 
     console.log('Not whitelisted:', notWhitelisted.length);
-
+    fs.writeFileSync('./scripts/data/notw4.json', JSON.stringify(notWhitelisted));
+    return
     const calldatas = notWhitelisted.map((x) => contracts.forta.interface.encodeFunctionData('grantRole', [WHITELIST_ROLE, x]));
 
     const receipts = await Promise.all(

@@ -3,33 +3,60 @@ const BigNumber = ethers.BigNumber;
 const parseEther = ethers.utils.parseEther;
 const DEBUG = require('debug')('forta');
 const utils = require('./utils');
-// const rewardables = require('./data/rewards_result.json');
-const rewardables = require('./data/rewards_week3_result.json');
+let csvToJson = require('convert-csv-to-json');
+
+const fs = require('fs');
 const { AdminClient } = require('defender-admin-client');
 const client = new AdminClient({ apiKey: process.env.DEFENDER_API_KEY, apiSecret: process.env.DEFENDER_API_SECRET });
 const MULTISIG = process.env.POLYGON_MULTISIG_FUNDS;
-
 const AMOUNT = parseEther('500');
+const stakingUtils = require('./utils/staking.js');
 
-const MULTICALL_ABI = {
+const ABI = {
     inputs: [
         {
-            internalType: 'bytes[]',
-            name: 'data',
-            type: 'bytes[]',
+            internalType: 'address',
+            name: 'from',
+            type: 'address',
         },
-    ],
-    name: 'multicall',
-    outputs: [
         {
-            internalType: 'bytes[]',
-            name: 'results',
-            type: 'bytes[]',
+            internalType: 'address',
+            name: 'to',
+            type: 'address',
+        },
+        {
+            internalType: 'uint256[]',
+            name: 'ids',
+            type: 'uint256[]',
+        },
+        {
+            internalType: 'uint256[]',
+            name: 'amounts',
+            type: 'uint256[]',
+        },
+        {
+            internalType: 'bytes',
+            name: 'data',
+            type: 'bytes',
         },
     ],
+    name: 'safeBatchTransferFrom',
+    outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
 };
+
+function getMultisigActiveShares() {
+    let data = csvToJson.fieldDelimiter(',').getJsonFromCsv('./scripts/data/shares-multisig.csv');
+    console.log('ids', data.length);
+    const activeShares = data
+        .map((x) => BigNumber.from(x['Token_id']))
+        .filter((share) => stakingUtils.isActive(share))
+        .map((x) => x.toString());
+    const uniqueActiveShares = Array.from(new Set(activeShares));
+    console.log('unique and active', uniqueActiveShares.length);
+    return uniqueActiveShares;
+}
 
 async function transferShares(config = {}) {
     const provider = config.provider ?? (await utils.getDefaultProvider());
@@ -60,56 +87,34 @@ async function transferShares(config = {}) {
             }).map((entry) => Promise.all(entry))
         ).then(Object.fromEntries));
 
-    console.log('rewardables:', rewardables.length);
-    // const deservingOfShares = rewardables.filter(x => BigNumber.from(x.rewardsMinusStake).gt(BigNumber.from('0'))) week1
-    const deservingOfShares = rewardables.filter((x) => BigNumber.from(x.rewardsInShares).gt(BigNumber.from('0'))); // week3
+    const shares = getMultisigActiveShares();
+    let chunkedShares = shares.chunk(20);
+    const totalChunks = chunkedShares.length;
+    console.log(totalChunks);
+    fs.writeFileSync('./scripts/data/chunked-share-transfer.json', JSON.stringify(chunkedShares));
+    chunkedShares = chunkedShares.slice(1, 22);
 
-    const excludingOurOwn = deservingOfShares.filter((x) => x.owner !== '0x8eedf056de8d0b0fd282cc0d7333488cc5b5d242');
-    console.log('deservingOfShares:', deservingOfShares.length);
-    console.log('excludingOurOwn:', excludingOurOwn.length);
-
-    const shareBalances = await contracts.staking.balanceOfBatch(
-        excludingOurOwn.map((x) => x.owner),
-        excludingOurOwn.map((x) => x.activeShareId)
+    const result = await Promise.all(
+        chunkedShares.map((chunk, index) => {
+            return getParams(contracts.staking.address, MULTISIG, index + 1, totalChunks, [
+                MULTISIG,
+                process.env.POLYGON_DEFENDER_RELAYER,
+                chunk,
+                chunk.map(() => AMOUNT.toString()),
+                ethers.constants.HashZero,
+            ]);
+        })
     );
-    console.log('shareBalances:', shareBalances.length);
-
-    const toSend = excludingOurOwn.filter((x, index) => shareBalances[index].eq(ethers.constants.Zero));
-    console.log(toSend);
-    console.log('toSend:', toSend.length);
-
-    console.log('Transfering...');
-    const chunkSize = 100;
-    var chunkNumber = 0;
-    console.log('chunkSize:', chunkSize);
-    const chunkTotal = Math.ceil(toSend.length / chunkSize);
-    console.log('Transfers:', chunkTotal);
-
-    const results = await Promise.all(
-        toSend
-            .map((x) => {
-                return {
-                    ...x,
-                    transferCalldata: contracts.staking.interface.encodeFunctionData('safeTransferFrom', [MULTISIG, x.owner, x.activeShareId, AMOUNT, ethers.constants.HashZero]),
-                };
-            })
-            .chunk(chunkSize)
-            .map((chunk) => {
-                chunkNumber++;
-                return getParams(contracts.staking.address, MULTISIG, chunkNumber, chunkTotal, [chunk.map((x) => x.transferCalldata)]);
-            })
-    );
-    console.log(results);
-    console.log(results.map((x) => x.url));
+    console.log(result.map((x) => x.url));
 }
 
 function getParams(stakingAddress, multisig, chunkNumber, chunkTotal, functionInput) {
     const params = {
         contract: { address: stakingAddress, network: 'matic' }, // Target contract
-        title: `Distribute Shares (${chunkNumber}/${chunkTotal})`, // Title of the proposal
+        title: `Mutisig shares to relayer (${chunkNumber}/${chunkTotal})`, // Title of the proposal
         description: 'To owners.', // Description of the proposal
         type: 'custom', // Use 'custom' for custom admin actions
-        functionInterface: MULTICALL_ABI,
+        functionInterface: ABI,
         functionInputs: functionInput, // Arguments to the function
         via: multisig, // Multisig address
         viaType: 'Gnosis Safe', // Either Gnosis Safe or Gnosis Multisig,

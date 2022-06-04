@@ -8,7 +8,7 @@ const { Web3ClientPlugin } = require('@maticnetwork/maticjs-ethers');
 
 use(Web3ClientPlugin);
 
-const AMOUNT = ethers.utils.parseEther('100000000000000000000000000000000000');
+const AMOUNT = ethers.utils.parseEther('424999');
 
 async function main() {
     const provider = await utils.getDefaultProvider();
