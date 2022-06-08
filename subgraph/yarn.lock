@@ -2,13 +2,13 @@
 # yarn lockfile v1
 
 
-"@amxx/graphprotocol-utils@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@amxx/graphprotocol-utils/-/graphprotocol-utils-1.1.0.tgz#2e947df618adfc44f620eac8121f6def32f250e7"
-  integrity sha512-oVHp/EMNyl2c54n+EmTzDweQ3yuHGAyIEesIMYOu+lMBUFRgLDKBhrp9c4XB4zJ6JKs0DsCxuKuN7CIjweIjdg==
+"@amxx/graphprotocol-utils@^1.1.0-alpha.0":
+  version "1.1.0-alpha.0"
+  resolved "https://registry.yarnpkg.com/@amxx/graphprotocol-utils/-/graphprotocol-utils-1.1.0-alpha.0.tgz#676fac32f30b9aa7c7d41f7f7f5bf8683723bcb8"
+  integrity sha512-kZt8NfaUxYi0ifcPHveXusKzdLHmydc7amCabmRw51rfzB08oHUfvIOFh85lTBQrftjv7WsxHw5QpNaCNlAU3A==
   dependencies:
-    "@graphprotocol/graph-ts" "^0.26.0"
-    yargs "^17.5.1"
+    "@graphprotocol/graph-ts" "^0.22.1"
+    yargs "^17.2.1"
 
 "@babel/code-frame@^7.0.0":
   version "7.16.7"
@@ -252,10 +252,10 @@
   dependencies:
     assemblyscript "0.19.10"
 
-"@graphprotocol/graph-ts@^0.26.0":
-  version "0.26.0"
-  resolved "https://registry.yarnpkg.com/@graphprotocol/graph-ts/-/graph-ts-0.26.0.tgz#576f995531eebaca4374901aeaff499219e382e8"
-  integrity sha512-GW/emOJl+35MXgmIxTnUK7dJtPCaB9u5aAwoLVqJ8swogC794O92UrXMVrAJsherUriu+yI9bLMGmNPOIi60jw==
+"@graphprotocol/graph-ts@^0.22.1":
+  version "0.22.1"
+  resolved "https://registry.yarnpkg.com/@graphprotocol/graph-ts/-/graph-ts-0.22.1.tgz#3189b2495b33497280f617316cce68074d48e236"
+  integrity sha512-T5xrHN0tHJwd7ZnSTLhk5hAL3rCIp6rJ40kBCrETnv1mfK9hVyoojJK6VtBQXTbLsYtKe4SYjjD0cdOsAR9QiA==
   dependencies:
     assemblyscript "0.19.10"
 
@@ -2211,10 +2211,10 @@ mafmt@^7.0.0:
   dependencies:
     multiaddr "^7.3.0"
 
-matchstick-as@^0.4.4:
-  version "0.4.4"
-  resolved "https://registry.yarnpkg.com/matchstick-as/-/matchstick-as-0.4.4.tgz#bf96d2388c95860a4f0f5b7c648a1b2bd8ee46b4"
-  integrity sha512-ZetjP1+DFuokSYUovPEZ8F5cyUaWVG/DZcT6OU9dm3ObHU5oL55NwguplpP+fHpIZizDTXH3lMGBS3ElBkSJ/w==
+matchstick-as@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/matchstick-as/-/matchstick-as-0.5.0.tgz#cdafc1ef49d670b9cbe98e933bc2a5cb7c450aeb"
+  integrity sha512-4K619YDH+so129qt4RB4JCNxaFwJJYLXPc7drpG+/mIj86Cfzg6FKs/bA91cnajmS1CLHdhHl9vt6Kd6Oqvfkg==
   dependencies:
     "@graphprotocol/graph-ts" "^0.27.0"
     assemblyscript "^0.19.20"
@@ -2877,7 +2877,7 @@ request@2.88.2:
 require-directory@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/require-directory/-/require-directory-2.1.1.tgz#8c64ad5fd30dab1c976e2344ffe7f792a6a6df42"
-  integrity sha1-jGStX9MNqxyXbiNE/+f3kqam30I=
+  integrity sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==
 
 resolve-from@^4.0.0:
   version "4.0.0"
@@ -3502,7 +3502,7 @@ yargs-parser@^21.0.0:
   resolved "https://registry.yarnpkg.com/yargs-parser/-/yargs-parser-21.0.1.tgz#0267f286c877a4f0f728fceb6f8a3e4cb95c6e35"
   integrity sha512-9BK1jFpLzJROCI5TzwZL/TU4gqjK5xiHV/RfWLOahrjAko/e4DJkRDZQXfvqAsiZzzYhgAzbgz6lg48jcm4GLg==
 
-yargs@^17.5.1:
+yargs@^17.2.1:
   version "17.5.1"
   resolved "https://registry.yarnpkg.com/yargs/-/yargs-17.5.1.tgz#e109900cab6fcb7fd44b1d8249166feb0b36e58e"
   integrity sha512-t6YAJcxDkNX7NFYiVtKvWUz8l+PaKTLiL63mJYWR2GnHq2gjEWISzsLp9wg3aY36dY1j+gfIEL3pIF+XlJJfbA==
