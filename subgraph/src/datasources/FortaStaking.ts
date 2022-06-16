@@ -53,6 +53,30 @@ export function handleStakeDeposited(event: StakeDepositedEvent): void {
     subject.slashedTotal = 0;
     subject.subjectType = event.params.subjectType;
     subject.save();
+  } else {
+    subject.activeStake = fortaStaking.activeStakeFor(
+      event.params.subjectType,
+      event.params.subject
+    );
+    subject.inactiveStake = fortaStaking.inactiveStakeFor(
+      event.params.subjectType,
+      event.params.subject
+    );
+
+    subject.inactiveShares = fortaStaking.inactiveSharesOf(
+      event.params.subjectType,
+      event.params.subject,
+      event.params.account
+    );
+
+    subject.activeShares = fortaStaking.sharesOf(
+      event.params.subjectType,
+      event.params.subject,
+      event.params.account
+    );
+
+    subject.subjectType = event.params.subjectType;
+    subject.save();
   }
 
   if (!staker) {
@@ -61,6 +85,18 @@ export function handleStakeDeposited(event: StakeDepositedEvent): void {
   }
   if (!stake) {
     stake = new Stake(events.id(event));
+    stake.subjectId = event.params.subject.toHex();
+    stake.subjectType = event.params.subjectType;
+    stake.isActive = true;
+    stake.staker = event.params.account.toHex();
+    stake.stake = event.params.amount;
+    stake.shares = fortaStaking.sharesOf(
+      event.params.subjectType,
+      event.params.subject,
+      event.params.account
+    );
+    stake.save();
+  } else {
     stake.subjectId = event.params.subject.toHex();
     stake.subjectType = event.params.subjectType;
     stake.isActive = true;
