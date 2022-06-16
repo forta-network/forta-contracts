@@ -162,6 +162,7 @@ type Subject @entity {
   inactiveStake: BigInt
   isFrozen: Boolean
   slashedTotal: Int
+  stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "subject")
 }
 
 type Slash @entity {
@@ -194,6 +195,15 @@ type Stake @entity {
   isActive: Boolean
   stake: BigInt
   shares: BigInt
+  stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
+}
+
+type StakeDepositEvent implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  subject: Subject!
+  stake: Stake!
 }
 
 type DecimalValue @entity {

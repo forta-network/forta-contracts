@@ -109,9 +109,17 @@ test("Should successfully create a reward ", () => {
 
   assert.fieldEquals(
     "Reward",
-    eventId(mockRewardedEvent),
+    Address.zero().toHex() +
+      "-" +
+      BigInt.fromI32(Address.zero().toI32()).toHex() +
+      "-" +
+      BigInt.fromI32(1234).toString(),
     "id",
-    eventId(mockRewardedEvent)
+    Address.zero().toHex() +
+      "-" +
+      BigInt.fromI32(Address.zero().toI32()).toHex() +
+      "-" +
+      BigInt.fromI32(1234).toString()
   );
 });
 
@@ -127,9 +135,17 @@ test("Should successfully create a slash", () => {
 
   assert.fieldEquals(
     "Slash",
-    eventId(mockSlashedEvent),
+    Address.zero().toHex() +
+      "-" +
+      BigInt.fromI32(Address.zero().toI32()).toHex() +
+      "-" +
+      BigInt.fromI32(1234).toString(),
     "id",
-    eventId(mockSlashedEvent)
+    Address.zero().toHex() +
+      "-" +
+      BigInt.fromI32(Address.zero().toI32()).toHex() +
+      "-" +
+      BigInt.fromI32(1234).toString()
   );
 });
 

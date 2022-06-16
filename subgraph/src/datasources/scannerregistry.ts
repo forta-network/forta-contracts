@@ -1,12 +1,10 @@
-import { events } from "@amxx/graphprotocol-utils/src/events";
-import { transactions } from "@amxx/graphprotocol-utils";
+import { events, transactions } from "@amxx/graphprotocol-utils/";
 import {
   ScannerUpdated as ScannerUpdatedEvent,
   Transfer as TransferEvent,
   ScannerEnabled as ScannerEnabledEvent,
   ManagerEnabled as ManagerEnabledEvent,
 } from "../../generated/ScannerRegistry/ScannerRegistry";
-
 import {
   ScannerEnabled,
   ScannerManager,
@@ -19,17 +17,14 @@ import { fetchScanner } from "../fetch/scanner";
 import { newMockEvent } from "matchstick-as";
 import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 
-const eventId = events.id;
-const transactionLog = transactions.log;
-
 export function handleScannerUpdated(event: ScannerUpdatedEvent): void {
   let scanner = fetchScanner(event.params.scannerId);
   scanner.metadata = event.params.metadata;
   scanner.chainId = event.params.chainId;
   scanner.save();
 
-  const ev = new ScannerUpdated(eventId(event));
-  ev.transaction = transactionLog(event).id;
+  const ev = new ScannerUpdated(events.id(event));
+  ev.transaction = transactions.log(event).id;
   ev.timestamp = event.block.timestamp;
   ev.scanner = scanner.id;
   ev.metadata = event.params.metadata;
@@ -44,8 +39,8 @@ export function handleTransfer(event: TransferEvent): void {
   scanner.owner = to.id;
   scanner.save();
 
-  const ev = new ScannerTransfer(eventId(event));
-  ev.transaction = transactionLog(event).id;
+  const ev = new ScannerTransfer(events.id(event));
+  ev.transaction = transactions.log(event).id;
   ev.timestamp = event.block.timestamp;
   ev.scanner = scanner.id;
   ev.from = from.id;
@@ -66,8 +61,8 @@ export function handleManagerEnabled(event: ManagerEnabledEvent): void {
   scannerManager.active = event.params.enabled;
   scannerManager.save();
 
-  let ev = new ScannerManagerEnabled(eventId(event));
-  ev.transaction = transactionLog(event).id;
+  let ev = new ScannerManagerEnabled(events.id(event));
+  ev.transaction = transactions.log(event).id;
   ev.timestamp = event.block.timestamp;
   ev.scanner = scanner.id;
   ev.manager = account.id;
@@ -87,8 +82,8 @@ export function handleScannerEnabled(event: ScannerEnabledEvent): void {
   scanner.enabled = event.params.enabled;
   scanner.save();
 
-  let ev = new ScannerEnabled(eventId(event));
-  ev.transaction = transactionLog(event).id;
+  let ev = new ScannerEnabled(events.id(event));
+  ev.transaction = transactions.log(event).id;
   ev.timestamp = event.block.timestamp;
   ev.scanner = scanner.id;
   ev.enabled = event.params.enabled;

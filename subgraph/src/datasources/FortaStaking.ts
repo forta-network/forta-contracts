@@ -7,17 +7,23 @@ import {
   Froze as FrozeEvent,
   FortaStaking as FortaStakingContract,
 } from "../../generated/FortaStaking/FortaStaking";
-import { Reward, Slash, Stake, Staker, Subject } from "../../generated/schema";
+import {
+  Reward,
+  Slash,
+  Stake,
+  StakeDepositEvent,
+  Staker,
+  Subject,
+} from "../../generated/schema";
 import { fetchAccount } from "../fetch/account";
 
-import { events } from "@amxx/graphprotocol-utils/src/events";
-const eventId = events.id;
+import { events, transactions } from "@amxx/graphprotocol-utils/";
 
 export function handleStakeDeposited(event: StakeDepositedEvent): void {
   let subject = Subject.load(event.params.subject.toHex());
 
   let staker = Staker.load(event.params.account.toHex());
-  let stake = Stake.load(eventId(event));
+  let stake = Stake.load(events.id(event));
   const fortaStaking = FortaStakingContract.bind(event.address);
 
   if (!subject) {
@@ -54,12 +60,11 @@ export function handleStakeDeposited(event: StakeDepositedEvent): void {
     staker.save();
   }
   if (!stake) {
-    stake = new Stake(eventId(event));
+    stake = new Stake(events.id(event));
     stake.subjectId = event.params.subject.toHex();
     stake.subjectType = event.params.subjectType;
     stake.isActive = true;
     stake.staker = event.params.account.toHex();
-
     stake.stake = event.params.amount;
     stake.shares = fortaStaking.sharesOf(
       event.params.subjectType,
@@ -68,10 +73,23 @@ export function handleStakeDeposited(event: StakeDepositedEvent): void {
     );
     stake.save();
   }
+
+  const stakeDepositedEvent = new StakeDepositEvent(events.id(event));
+  stakeDepositedEvent.transaction = transactions.log(event).id;
+  stakeDepositedEvent.timestamp = event.block.timestamp;
+  stakeDepositedEvent.stake = stake.id;
+  stakeDepositedEvent.subject = subject.id;
+  stakeDepositedEvent.save();
 }
 
 export function handleRewarded(event: RewardedEvent): void {
-  let reward = new Reward(eventId(event));
+  let reward = new Reward(
+    event.params.from.toHex() +
+      "-" +
+      event.params.subject.toHex() +
+      "-" +
+      event.params.subjectType.toString()
+  );
   reward.subjectType = event.params.subjectType;
   reward.subjectId = event.params.subject.toHex();
   reward.staker = event.params.from.toHex();
@@ -79,7 +97,13 @@ export function handleRewarded(event: RewardedEvent): void {
 }
 
 export function handleSlashed(event: SlashedEvent): void {
-  let slash = new Slash(eventId(event));
+  let slash = new Slash(
+    event.params.by.toHex() +
+      "-" +
+      event.params.subject.toHex() +
+      "-" +
+      event.params.subjectType.toString()
+  );
   slash.subjectType = event.params.subjectType;
   slash.subjectId = event.params.subject.toHex();
   slash.by = fetchAccount(event.params.by).id;

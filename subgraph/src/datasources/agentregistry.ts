@@ -1,7 +1,4 @@
-// import eventId from "../utils/event";
-// import transactionLog from "../utils/transaction";
-import { events } from "@amxx/graphprotocol-utils/src/events";
-import { transactions } from "@amxx/graphprotocol-utils";
+import { events, transactions } from "@amxx/graphprotocol-utils/";
 import {
   AgentUpdated as AgentUpdatedEvent,
   AgentEnabled as AgentEnabledEvent,
