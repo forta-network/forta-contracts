@@ -1,5 +1,5 @@
-import eventId from "../utils/event";
-import transactionLog from "../utils/transaction";
+import { events } from "@amxx/graphprotocol-utils/src/events";
+import { transactions } from "@amxx/graphprotocol-utils";
 import {
   ScannerUpdated as ScannerUpdatedEvent,
   Transfer as TransferEvent,
@@ -18,6 +18,9 @@ import { fetchAccount } from "../fetch/account";
 import { fetchScanner } from "../fetch/scanner";
 import { newMockEvent } from "matchstick-as";
 import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
+
+const eventId = events.id;
+const transactionLog = transactions.log;
 
 export function handleScannerUpdated(event: ScannerUpdatedEvent): void {
   let scanner = fetchScanner(event.params.scannerId);

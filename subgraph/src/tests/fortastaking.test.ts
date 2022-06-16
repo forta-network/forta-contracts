@@ -1,11 +1,5 @@
 import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
-import {
-  assert,
-  clearStore,
-  test,
-  createMockedFunction,
-  logStore,
-} from "matchstick-as";
+import { assert, test, createMockedFunction } from "matchstick-as";
 import {
   createFrozeEvent,
   createRewardEvent,
@@ -16,8 +10,8 @@ import {
   handleSlashed,
   handleStakeDeposited,
 } from "../datasources/FortaStaking";
-
-import eventId from "../utils/event";
+import { events } from "@amxx/graphprotocol-utils/src/events";
+const eventId = events.id;
 
 test("It should handle stake depostied", () => {
   const mockStakeDepostied = createStakeDepositedEvent(
@@ -97,15 +91,9 @@ test("It should handle stake depostied", () => {
 
   assert.fieldEquals(
     "Stake",
-    mockStakeDepostied.block.number
-      .toHex()
-      .concat("-")
-      .concat(mockStakeDepostied.logIndex.toHex()),
+    eventId(mockStakeDepostied),
     "id",
-    mockStakeDepostied.block.number
-      .toHex()
-      .concat("-")
-      .concat(mockStakeDepostied.logIndex.toHex())
+    eventId(mockStakeDepostied)
   );
 });
 

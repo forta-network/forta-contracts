@@ -1,5 +1,7 @@
-import eventId from "../utils/event";
-import transactionLog from "../utils/transaction";
+// import eventId from "../utils/event";
+// import transactionLog from "../utils/transaction";
+import { events } from "@amxx/graphprotocol-utils/src/events";
+import { transactions } from "@amxx/graphprotocol-utils";
 import {
   AgentUpdated as AgentUpdatedEvent,
   AgentEnabled as AgentEnabledEvent,
@@ -9,7 +11,10 @@ import { BotEnabled, BotTransfer, BotUpdated } from "../../generated/schema";
 import { fetchAccount } from "../fetch/account";
 import { fetchBot } from "../fetch/bot";
 import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
-import { log, newMockEvent } from "matchstick-as";
+import { newMockEvent } from "matchstick-as";
+
+const eventId = events.id;
+const transactionLog = transactions.log;
 
 export function handleAgentUpdated(event: AgentUpdatedEvent): void {
   let bot = fetchBot(event.params.agentId);

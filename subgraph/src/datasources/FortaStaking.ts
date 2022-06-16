@@ -1,5 +1,5 @@
 import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
-import { logStore, newMockEvent } from "matchstick-as";
+import { newMockEvent } from "matchstick-as";
 import {
   StakeDeposited as StakeDepositedEvent,
   Rewarded as RewardedEvent,
@@ -10,7 +10,8 @@ import {
 import { Reward, Slash, Stake, Staker, Subject } from "../../generated/schema";
 import { fetchAccount } from "../fetch/account";
 
-import eventId from "../utils/event";
+import { events } from "@amxx/graphprotocol-utils/src/events";
+const eventId = events.id;
 
 export function handleStakeDeposited(event: StakeDepositedEvent): void {
   let subject = Subject.load(event.params.subject.toHex());
@@ -86,16 +87,11 @@ export function handleSlashed(event: SlashedEvent): void {
   let subject = Subject.load(event.params.subject.toHex());
   if (!subject) {
     subject = new Subject(event.params.subject.toHex());
-    subject.slashedTotal = 0;
-    let slashedTotal = subject.slashedTotal;
-    slashedTotal++;
-    subject.slashedTotal = slashedTotal;
+    subject.slashedTotal = 1;
     subject.save();
   }
   if (subject) {
-    let slashedTotal = subject.slashedTotal;
-    slashedTotal++;
-    subject.slashedTotal = slashedTotal;
+    subject.slashedTotal++;
     subject.save();
   }
 }

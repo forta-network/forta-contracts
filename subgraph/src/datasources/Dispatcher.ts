@@ -1,5 +1,5 @@
-import eventId from "../utils/event";
-import transactionLog from "../utils/transaction";
+import { events } from "@amxx/graphprotocol-utils/src/events";
+import { transactions } from "@amxx/graphprotocol-utils";
 import { Link as LinkEvent } from "../../generated/Dispatcher/Dispatcher";
 import { Link, LinkEnabled } from "../../generated/schema";
 
@@ -8,6 +8,9 @@ import { fetchScanner } from "../fetch/scanner";
 import { BigInt } from "@graphprotocol/graph-ts";
 import { newMockEvent } from "matchstick-as";
 import { ethereum } from "@graphprotocol/graph-ts";
+
+const eventId = events.id;
+const transactionLog = transactions.log;
 
 export function handleLink(event: LinkEvent): void {
   let bot = fetchBot(event.params.agentId);
