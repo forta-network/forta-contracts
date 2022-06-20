@@ -61,7 +61,7 @@ export function handleManagerEnabled(event: ManagerEnabledEvent): void {
   scannerManager.active = event.params.enabled;
   scannerManager.save();
 
-  let ev = new ScannerManagerEnabled(events.id(event));
+  const ev = new ScannerManagerEnabled(events.id(event));
   ev.transaction = transactions.log(event).id;
   ev.timestamp = event.block.timestamp;
   ev.scanner = scanner.id;
@@ -82,7 +82,7 @@ export function handleScannerEnabled(event: ScannerEnabledEvent): void {
   scanner.enabled = event.params.enabled;
   scanner.save();
 
-  let ev = new ScannerEnabled(events.id(event));
+  const ev = new ScannerEnabled(events.id(event));
   ev.transaction = transactions.log(event).id;
   ev.timestamp = event.block.timestamp;
   ev.scanner = scanner.id;
