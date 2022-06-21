@@ -21,95 +21,47 @@ import { events, transactions } from "@amxx/graphprotocol-utils/";
 
 export function handleStakeDeposited(event: StakeDepositedEvent): void {
   let subject = Subject.load(event.params.subject.toHex());
-
-  let staker = Staker.load(event.params.account.toHex());
-  let stake = Stake.load(events.id(event));
+  let staker = new Staker(event.params.account.toHex());
+  let stake = new Stake(events.id(event));
   const fortaStaking = FortaStakingContract.bind(event.address);
 
-  if (!subject) {
+  if (subject == null) {
     subject = new Subject(event.params.subject.toHex());
-    subject.activeStake = fortaStaking.activeStakeFor(
-      event.params.subjectType,
-      event.params.subject
-    );
-    subject.inactiveStake = fortaStaking.inactiveStakeFor(
-      event.params.subjectType,
-      event.params.subject
-    );
-
-    subject.inactiveShares = fortaStaking.inactiveSharesOf(
-      event.params.subjectType,
-      event.params.subject,
-      event.params.account
-    );
-
-    subject.activeShares = fortaStaking.sharesOf(
-      event.params.subjectType,
-      event.params.subject,
-      event.params.account
-    );
-
     subject.isFrozen = false;
     subject.slashedTotal = 0;
-    subject.subjectType = event.params.subjectType;
-    subject.save();
-  } else {
-    subject.activeStake = fortaStaking.activeStakeFor(
-      event.params.subjectType,
-      event.params.subject
-    );
-    subject.inactiveStake = fortaStaking.inactiveStakeFor(
-      event.params.subjectType,
-      event.params.subject
-    );
-
-    subject.inactiveShares = fortaStaking.inactiveSharesOf(
-      event.params.subjectType,
-      event.params.subject,
-      event.params.account
-    );
-
-    subject.activeShares = fortaStaking.sharesOf(
-      event.params.subjectType,
-      event.params.subject,
-      event.params.account
-    );
-
-    subject.subjectType = event.params.subjectType;
-    subject.save();
   }
-
-  if (!staker) {
-    staker = new Staker(event.params.account.toHex());
-    staker.save();
-  }
-  if (!stake) {
-    stake = new Stake(events.id(event));
-    stake.subjectId = event.params.subject.toHex();
-    stake.subjectType = event.params.subjectType;
-    stake.isActive = true;
-    stake.staker = event.params.account.toHex();
-    stake.stake = event.params.amount;
-    stake.shares = fortaStaking.sharesOf(
-      event.params.subjectType,
-      event.params.subject,
-      event.params.account
-    );
-    stake.save();
-  } else {
-    stake.subjectId = event.params.subject.toHex();
-    stake.subjectType = event.params.subjectType;
-    stake.isActive = true;
-    stake.staker = event.params.account.toHex();
-    stake.stake = event.params.amount;
-    stake.shares = fortaStaking.sharesOf(
-      event.params.subjectType,
-      event.params.subject,
-      event.params.account
-    );
-    stake.save();
-  }
-
+  subject.activeStake = fortaStaking.activeStakeFor(
+    event.params.subjectType,
+    event.params.subject
+  );
+  subject.inactiveStake = fortaStaking.inactiveStakeFor(
+    event.params.subjectType,
+    event.params.subject
+  );
+  subject.inactiveShares = fortaStaking.inactiveSharesOf(
+    event.params.subjectType,
+    event.params.subject,
+    event.params.account
+  );
+  subject.activeShares = fortaStaking.sharesOf(
+    event.params.subjectType,
+    event.params.subject,
+    event.params.account
+  );
+  subject.subjectType = event.params.subjectType;
+  stake.subjectId = event.params.subject.toHex();
+  stake.subjectType = event.params.subjectType;
+  stake.isActive = true;
+  stake.staker = event.params.account.toHex();
+  stake.stake = event.params.amount;
+  stake.shares = fortaStaking.sharesOf(
+    event.params.subjectType,
+    event.params.subject,
+    event.params.account
+  );
+  subject.save();
+  staker.save();
+  stake.save();
   const stakeDepositedEvent = new StakeDepositEvent(events.id(event));
   stakeDepositedEvent.transaction = transactions.log(event).id;
   stakeDepositedEvent.timestamp = event.block.timestamp;
@@ -158,10 +110,13 @@ export function handleSlashed(event: SlashedEvent): void {
 
 export function handleFroze(event: FrozeEvent): void {
   let subject = Subject.load(event.params.subject.toHex());
-  if (subject) {
-    subject.isFrozen = event.params.isFrozen;
-    subject.save();
+  if (subject == null) {
+    subject = new Subject(event.params.subject.toHex());
+    subject.isFrozen = false;
+    subject.slashedTotal = 0;
   }
+  subject.isFrozen = event.params.isFrozen;
+  subject.save();
 }
 
 export function createStakeDepositedEvent(

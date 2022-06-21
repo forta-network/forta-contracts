@@ -1,5 +1,5 @@
 import { BigInt } from "@graphprotocol/graph-ts";
-import { assert, clearStore, test } from "matchstick-as";
+import { assert, test } from "matchstick-as";
 import { createLinkEvent, handleLink } from "../datasources/Dispatcher";
 
 test("Should create a link event", () => {

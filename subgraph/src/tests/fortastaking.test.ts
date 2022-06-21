@@ -11,7 +11,6 @@ import {
   handleStakeDeposited,
 } from "../datasources/FortaStaking";
 import { events } from "@amxx/graphprotocol-utils/src/events";
-const eventId = events.id;
 
 test("It should handle stake depostied", () => {
   const mockStakeDepostied = createStakeDepositedEvent(
@@ -91,9 +90,9 @@ test("It should handle stake depostied", () => {
 
   assert.fieldEquals(
     "Stake",
-    eventId(mockStakeDepostied),
+    events.id(mockStakeDepostied),
     "id",
-    eventId(mockStakeDepostied)
+    events.id(mockStakeDepostied)
   );
 });
 

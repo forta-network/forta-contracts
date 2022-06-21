@@ -10,9 +10,6 @@ import { fetchBot } from "../fetch/bot";
 import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import { newMockEvent } from "matchstick-as";
 
-const eventId = events.id;
-const transactionLog = transactions.log;
-
 export function handleAgentUpdated(event: AgentUpdatedEvent): void {
   let bot = fetchBot(event.params.agentId);
   let account = fetchAccount(event.params.by);
@@ -20,8 +17,8 @@ export function handleAgentUpdated(event: AgentUpdatedEvent): void {
   bot.metadata = event.params.metadata;
   bot.save();
 
-  const ev = new BotUpdated(eventId(event));
-  ev.transaction = transactionLog(event).id;
+  const ev = new BotUpdated(events.id(event));
+  ev.transaction = transactions.log(event).id;
   ev.timestamp = event.block.timestamp;
   ev.bot = bot.id;
   ev.by = account.id;
@@ -37,9 +34,9 @@ export function handleTransfer(event: TransferEvent): void {
   bot.owner = to.id;
   bot.save();
 
-  const ev = new BotTransfer(eventId(event));
+  const ev = new BotTransfer(events.id(event));
 
-  ev.transaction = transactionLog(event).id;
+  ev.transaction = transactions.log(event).id;
   ev.timestamp = event.block.timestamp;
   ev.bot = bot.id;
   ev.from = from.id;
@@ -56,8 +53,8 @@ export function handleAgentEnabled(event: AgentEnabledEvent): void {
   bot.enabled = event.params.enabled;
   bot.save();
 
-  const ev = new BotEnabled(eventId(event));
-  ev.transaction = transactionLog(event).id;
+  const ev = new BotEnabled(events.id(event));
+  ev.transaction = transactions.log(event).id;
   ev.timestamp = event.block.timestamp;
   ev.bot = bot.id;
   ev.enabled = event.params.enabled;
