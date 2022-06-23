@@ -41,7 +41,6 @@ test("Scanner is successfully updated on update event", () => {
   scanner.disableFlags = 0;
   scanner.owner = Address.zero().toHex();
   scanner.metadata = "";
-  scanner.asAccount = Address.zero().toHex();
   scanner.save();
 
   const mockScannerUpdateEvent = createScannerUpdatedEvent(
@@ -65,7 +64,6 @@ test("Scanner manager is successfully created", () => {
   scanner.disableFlags = 0;
   scanner.owner = Address.zero().toHex();
   scanner.metadata = "";
-  scanner.asAccount = Address.zero().toHex();
   scanner.save();
 
   const mockManagerEvent = createManagerEnabledEvent(
@@ -100,7 +98,6 @@ test("Scanner is successfully enabled on update event", () => {
   scanner.disableFlags = 0;
   scanner.owner = Address.zero().toHex();
   scanner.metadata = "";
-  scanner.asAccount = Address.zero().toHex();
   scanner.save();
 
   const mockScannerEnabledEvent = createScannerEnabledEvent(

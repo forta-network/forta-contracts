@@ -1,6 +1,5 @@
 type Account @entity {
   id: ID!
-  asScanner: Scanner
   bots: [Bot!]! @derivedFrom(field: "owner")
   scanners: [Scanner!]! @derivedFrom(field: "owner")
   managerOf: [ScannerManager!]! @derivedFrom(field: "account")
@@ -30,7 +29,6 @@ type Bot @entity {
 
 type Scanner @entity {
   id: ID!
-  asAccount: Account!
   owner: Account!
   enabled: Boolean!
   disableFlags: Int!
