@@ -10,41 +10,26 @@ const stakingUtils = require('./utils/staking.js');
 let csvToJson = require('convert-csv-to-json');
 
 function getRewardableNodes() {
-    let funnel = csvToJson.fieldDelimiter(',').getJsonFromCsv('./scripts/data/rewards_week4.csv');
+    let funnel = csvToJson.fieldDelimiter(',').getJsonFromCsv('./scripts/data/rewards_week3.csv');
     const nodes = funnel
         .map((x) => {
+            console.log(x['RewardsInFORT']);
+            console.log(parseEther(x['RewardsInFORT']).toString());
+            console.log('---------------');
             return {
-                scanner: ethers.utils.getAddress(x['scanner']),
-                amount: parseEther(x['fortAmount']),
-                shares: parseEther(x['sharesAmount']),
+                address: ethers.utils.getAddress(x['scanner']),
+                rewardsFort: parseEther(x['RewardsInFORT']),
+                rewardsInShares: parseEther(x['RewardsInStakeShares']),
             };
         })
-        .filter((x) => x.amount.gt(BigNumber.from('0')))
+        .filter((x) => x.rewardsFort.gt(BigNumber.from('0')) || x.rewardsInShares.gt(BigNumber.from('0')))
         .map((x) => {
             return {
                 ...x,
-                amount: x.amount.toString(),
-                shares: x.shares.toString(),
-                status: 'NOT_SENT',
-                epoch: 'epoch_4',
-                mode: 'TRANSFER_OWNER',
+                rewardsFort: x.rewardsFort.toString(),
+                rewardsInShares: x.rewardsInShares.toString(),
             };
         });
-
-    return nodes;
-}
-
-function getRepeated() {
-    let funnel = csvToJson.fieldDelimiter(',').getJsonFromCsv('./scripts/data/repeated_week3.csv');
-    const nodes = funnel.map((x) => {
-        console.log(x)
-        return {
-            owner: x.owner.toLowerCase(),
-            amount: parseEther(x['fort']).toString(),
-            tokenId: x.TokenID.startsWith('https://') ? 'multiple' : x.TokenID,
-        };
-    });
-
     return nodes;
 }
 
@@ -83,48 +68,31 @@ async function main(config = {}) {
     const data = nodes.map((item) => {
         return {
             ...item,
-            activeShareId: stakingUtils.subjectToActive(0, item.scanner).toString(),
-            tokenId: ethers.BigNumber.from(item.scanner).toString(),
-            callOwner: contracts.scanners.interface.encodeFunctionData('ownerOf', [ethers.utils.getAddress(item.scanner)]),
+            activeShareId: stakingUtils.subjectToActive(0, item.address).toString(),
+            callOwner: contracts.scanners.interface.encodeFunctionData('ownerOf', [item.address]),
         };
     });
-    const repeated = getRepeated();
-    console.log(repeated)
-    /*
+
     const items = [];
     const owners = await Promise.all(
-        data.chunk(10).map((chunk, index) => {
-            console.log(index);
-            console.log(chunk);
+        data.chunk(50).map((chunk) => {
             items.push(chunk);
-            if (index < 99) {
-                const calls = chunk.map((x) => x.callOwner);
-                return contracts.scanners.callStatic.multicall(calls);
-            } else {
-                return Promise.resolve(chunk.map(() => '0xlol'));
-            }
+            const calls = chunk.map((x) => x.callOwner);
+            return contracts.scanners.callStatic.multicall(calls);
         })
     );
     const result = _.zip(
         items.flat(),
         owners.flat().map((x) => ethers.utils.hexDataSlice(x, 12))
-    )
-        .map((x) => {
-            return { ...x[0], owner: ethers.utils.getAddress(x[1]) };
-        })
-        .map((x) => {
-            return {
-                ...x,
-                owner: x.owner.toLowerCase(),
-                scanner: x.scanner.toLowerCase(),
-            };
-        });
-        */
+    ).map((x) => {
+        return { ...x[0], owner: ethers.utils.getAddress(x[1]) };
+    });
+
     // console.log(result)
-    //fs.writeFileSync(`./scripts/data/rewards_week4_result.json`, JSON.stringify(result));
-    /*const fortToSend = result.map((x) => BigNumber.from(x.amount)).reduce((prev, curr) => prev.add(curr), BigNumber.from('0'));
+    fs.writeFileSync(`./scripts/data/rewards_week3_result.json`, JSON.stringify(result));
+    const fortToSend = result.map((x) => BigNumber.from(x.rewardsFort)).reduce((prev, curr) => prev.add(curr), BigNumber.from('0'));
     console.log('rewardables', result.length);
-    console.log('fortToSend', ethers.utils.formatEther(fortToSend));*/
+    console.log('fortToSend', ethers.utils.formatEther(fortToSend));
 }
 
 if (require.main === module) {

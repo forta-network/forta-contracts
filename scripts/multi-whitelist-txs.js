@@ -2,7 +2,6 @@ const { ethers } = require('hardhat');
 const _ = require('lodash');
 const utils = require('./utils');
 const DEBUG = require('debug')('multi-whitelist');
-const fs = require('fs')
 const REWARDABLES = require('./data/rewards_week4_result.json');
 
 const FORTA_TOKEN_NAME = {
@@ -55,9 +54,6 @@ async function whitelist(config = {}) {
         .filter((x) => !x[0])
         .map((x) => x[1]);
 
-    console.log('Not whitelisted:', notWhitelisted.length);
-    fs.writeFileSync('./scripts/data/notw4.json', JSON.stringify(notWhitelisted));
-    return
     const calldatas = notWhitelisted.map((x) => contracts.forta.interface.encodeFunctionData('grantRole', [WHITELIST_ROLE, x]));
 
     const receipts = await Promise.all(

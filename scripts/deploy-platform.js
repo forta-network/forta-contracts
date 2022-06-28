@@ -363,7 +363,6 @@ async function migrate(config = {}) {
 
         DEBUG('[11.5] reverse registration');
     }
-    console.log('last number', await deployer.getTransactionCount());
 
     await CACHE.set('contracts', Object.keys(contracts).map(utils.kebabize));
 
