@@ -11,6 +11,16 @@ const { relative } = require('path');
 
 const argv = require('yargs/yargs')().env('').argv;
 
+task('compare-storage', 'Prints storage layout of 2 implementations')
+    .addParam('old', 'Old contract name')
+    .addParam('new', 'New contract name')
+    .setAction(async (taskArgs) => {
+        const storageToTable = require('./scripts/storage-to-table');
+        storageToTable({ old: taskArgs.old, new: taskArgs.new });
+    });
+
+module.exports = {};
+
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
@@ -18,11 +28,11 @@ module.exports = {
     solidity: {
         compilers: [
             {
-                version: '0.8.9',
+                version: '0.8.15',
                 settings: {
                     optimizer: {
                         enabled: true,
-                        runs: 999,
+                        runs: 200,
                     },
                 },
             },
