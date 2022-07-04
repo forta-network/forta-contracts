@@ -40,6 +40,8 @@ function prepare(config = {}) {
                 this.access.connect(this.accounts.admin).grantRole(this.roles.DISPATCHER, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.REWARDS_ADMIN, this.accounts.admin.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_BETA_VERSION, this.accounts.admin.address),
                 this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
                 this.token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address),
                 this.otherToken.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
