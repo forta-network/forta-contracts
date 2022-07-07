@@ -46,18 +46,28 @@ contract ScannerRegistry is
      * @return owner address.
      * @return chainId the scanner is monitoring.
      * @return metadata IPFS pointer for the scanner's JSON metadata.
+     * @return enabled true if staked over minimum and not disabled.
+     * @return disabledFlags 0 if not disabled, Permission if disabled.
      */
     function getScannerState(uint256 scannerId)
         external
         view
-        returns (bool registered, address owner, uint256 chainId, string memory metadata, bool enabled) {
+        returns (
+            bool registered,
+            address owner,
+            uint256 chainId,
+            string memory metadata,
+            bool enabled,
+            uint256 disabledFlags
+         ) {
         (registered, owner, chainId, metadata) = super.getScanner(scannerId);
         return (
             registered,
             owner,
             chainId,
             metadata,
-            isEnabled(scannerId)
+            isEnabled(scannerId),
+            getDisableFlags(scannerId)
         );
     }
 

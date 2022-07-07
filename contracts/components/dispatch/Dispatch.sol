@@ -15,7 +15,7 @@ contract Dispatch is BaseComponentUpgradeable {
     AgentRegistry   private _agents;
     ScannerRegistry private _scanners;
 
-    string public constant version = "0.1.3";
+    string public constant version = "0.1.4";
 
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
@@ -107,13 +107,23 @@ contract Dispatch is BaseComponentUpgradeable {
     * @return metadata IPFS pointer for agent metadata.
     * @return chainIds ordered array of chainId were the agent wants to run.
     * @return enabled bool if agent is enabled, false otherwise.
+    * @return disabledFlags 0 if not disabled, Permission that disabled the scnner otherwise.
     */
     function agentRefAt(uint256 scannerId, uint256 pos)
         external view
-        returns (bool registered, address owner, uint256 agentId, uint256 agentVersion, string memory metadata, uint256[] memory chainIds, bool enabled) {
+        returns (
+            bool registered,
+            address owner,
+            uint256 agentId,
+            uint256 agentVersion,
+            string memory metadata,
+            uint256[] memory chainIds,
+            bool enabled,
+            uint256 disabledFlags
+        ) {
         agentId = agentAt(scannerId, pos);
-        (registered, owner, agentVersion, metadata, chainIds, enabled) = _agents.getAgentState(agentId);
-        return (registered, owner,agentId, agentVersion, metadata, chainIds, enabled);
+        (registered, owner, agentVersion, metadata, chainIds, enabled, disabledFlags) = _agents.getAgentState(agentId);
+        return (registered, owner,agentId, agentVersion, metadata, chainIds, enabled, disabledFlags);
     }
 
     /**
@@ -138,13 +148,22 @@ contract Dispatch is BaseComponentUpgradeable {
     * @return chainId that the scanner monitors.
     * @return metadata IPFS pointer for agent metadata.
     * @return enabled true if scanner is enabled, false otherwise.
+    * @return disabledFlags 0 if not disabled, Permission that disabled the scnner otherwise.
     */
     function scannerRefAt(uint256 agentId, uint256 pos)
         external view
-        returns (bool registered,uint256 scannerId, address owner, uint256 chainId, string memory metadata, bool enabled) {
+        returns (
+            bool registered,
+            uint256 scannerId,
+            address owner,
+            uint256 chainId,
+            string memory metadata,
+            bool enabled,
+            uint256 disabledFlags
+        ) {
         scannerId = scannerAt(agentId, pos);
-        (registered,owner, chainId, metadata, enabled) = _scanners.getScannerState(scannerId);
-        return (registered, scannerId, owner, chainId, metadata, enabled);
+        (registered,owner, chainId, metadata, enabled, disabledFlags) = _scanners.getScannerState(scannerId);
+        return (registered, scannerId, owner, chainId, metadata, enabled, disabledFlags);
     }
 
     /// Returns true if scanner and agents are linked, false otherwise.
