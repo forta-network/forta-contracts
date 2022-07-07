@@ -1,4 +1,4 @@
-const { ethers, network } = require('hardhat');
+const { ethers, upgrades, network } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');

@@ -5,7 +5,7 @@ const { prepare, deployUpgradeable, performUpgrade } = require('./fixture');
 describe('Forta upgrade', function () {
     prepare();
 
-    describe('Token update', function () {
+    describe.skip('Token update', function () {
         it('authorized', async function () {
             this.token = await performUpgrade(this.token, 'FortaExtendedMock');
             expect(await this.token.version()).to.be.equal('FortaExtendedMock');

@@ -1,9 +1,8 @@
 const { ethers } = require('hardhat');
 const _ = require('lodash');
 const utils = require('./utils');
-const DEBUG = require('debug')('forta');
-
-const rewardables = require('./data/rewards_week3_result.json');
+const DEBUG = require('debug')('multi-whitelist');
+const REWARDABLES = require('./data/rewards_week4_result.json');
 
 const FORTA_TOKEN_NAME = {
     1: 'Forta',
@@ -15,7 +14,7 @@ const FORTA_TOKEN_NAME = {
 
 async function whitelist(config = {}) {
     const provider = config.provider ?? (await utils.getDefaultProvider());
-    const deployer = await utils.getDefaultDeployer(provider);
+    const deployer = config.deployer ?? (await utils.getDefaultDeployer(provider));
 
     const { name, chainId } = await provider.getNetwork();
 
@@ -40,14 +39,13 @@ async function whitelist(config = {}) {
     DEBUG(`Deployer: ${deployer.address}`);
 
     DEBUG('----------------------------------------------------');
-
-    console.log('Rewardables:', rewardables.length);
-
+    const toWhitelist = config.toWhitelist ?? Array.from(new Set(REWARDABLES));
+    console.log('Whitelisting...:', toWhitelist.length);
     const WHITELIST_ROLE = ethers.utils.id('WHITELIST_ROLE');
 
     const owners = [];
     const whitelisted = await Promise.all(
-        rewardables.chunk(59).map(async (chunk) => {
+        toWhitelist.chunk(100).map(async (chunk) => {
             owners.push(chunk.map((x) => x.owner));
             return await Promise.all(chunk.map((x) => contracts.forta.hasRole(WHITELIST_ROLE, x.owner)));
         })
@@ -55,8 +53,6 @@ async function whitelist(config = {}) {
     const notWhitelisted = _.zip(whitelisted.flat(), owners.flat())
         .filter((x) => !x[0])
         .map((x) => x[1]);
-
-    console.log('Not whitelisted:', notWhitelisted.length);
 
     const calldatas = notWhitelisted.map((x) => contracts.forta.interface.encodeFunctionData('grantRole', [WHITELIST_ROLE, x]));
 
@@ -68,9 +64,13 @@ async function whitelist(config = {}) {
     console.log(receipts);
 }
 
-whitelist()
-    .then(() => process.exit(0))
-    .catch((error) => {
-        console.error(error);
-        process.exit(1);
-    });
+if (require.main === module) {
+    whitelist()
+        .then(() => process.exit(0))
+        .catch((error) => {
+            console.error(error);
+            process.exit(1);
+        });
+}
+
+module.exports = whitelist;
