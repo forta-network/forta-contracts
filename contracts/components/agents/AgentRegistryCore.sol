@@ -121,14 +121,14 @@ abstract contract AgentRegistryCore is
     /**
      * Checks if agent is staked over minimum stake
      * @param subject agentId
-     * @return true if agent is staked over the minimum threshold, or staking is not yet enabled (stakeController = 0).
+     * @return true if agent is staked over the minimum threshold and is, or staking is not yet enabled (stakeController = 0).
      * false otherwise
      */
     function _isStakedOverMin(uint256 subject) internal override view returns(bool) {
         if (address(getStakeController()) == address(0)) {
             return true;
         }
-        return getStakeController().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min;
+        return getStakeController().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min && _exists(subject);
     }
 
     /**

@@ -33,7 +33,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
      */
     function isEnabled(uint256 agentId) public view virtual returns (bool) {
         return isCreated(agentId) &&
-            _getDisableFlags(agentId) == 0 &&
+            getDisableFlags(agentId) == 0 &&
             _isStakedOverMin(agentId); 
     }
 
@@ -61,6 +61,17 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     }
 
     /**
+     * @notice Get the disabled flags for an agentId.
+     * @dev Permission (uint8) is used for indexing, so we don't need to loop. 
+     * If not disabled, all flags will be 0.
+     * @param agentId ERC1155 token id of the agent.
+     * @return uint256 containing the byte flags.
+     */
+    function getDisableFlags(uint256 agentId) public view returns (uint256) {
+        return _disabled[agentId]._data[0];
+    }
+
+    /**
      * @notice Permission check.
      * @dev it does not uses AccessManager since it is agent specific
      * @param agentId ERC1155 token id of the agent.
@@ -85,17 +96,6 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
         _beforeAgentEnable(agentId, permission, enable);
         _agentEnable(agentId, permission, enable);
         _afterAgentEnable(agentId, permission, enable);
-    }
-
-    /**
-     * @notice Get the disabled flags for an agentId.
-     * @dev Permission (uint8) is used for indexing, so we don't need to loop. 
-     * If not disabled, all flags will be 0.
-     * @param agentId ERC1155 token id of the agent.
-     * @return uint256 containing the byte flags.
-     */
-    function _getDisableFlags(uint256 agentId) internal view returns (uint256) {
-        return _disabled[agentId]._data[0];
     }
 
     /**

@@ -129,14 +129,15 @@ abstract contract ScannerRegistryCore is
     /**
      * Checks if scanner is staked over minimum stake
      * @param scannerId scanner
-     * @return true if scanner is staked over the minimum threshold for that chainId, or staking is not yet enabled (stakeController = 0).
+     * @return true if scanner is staked over the minimum threshold for that chainId and is registered,
+     * or staking is not yet enabled (stakeController = 0).
      * false otherwise
      */
     function _isStakedOverMin(uint256 scannerId) internal virtual override view returns(bool) {
         if (address(getStakeController()) == address(0)) {
             return true;
         }
-        return getStakeController().activeStakeFor(SCANNER_SUBJECT, scannerId) >= _getStakeThreshold(scannerId).min;
+        return getStakeController().activeStakeFor(SCANNER_SUBJECT, scannerId) >= _getStakeThreshold(scannerId).min && _exists(scannerId);
     }
 
     /**

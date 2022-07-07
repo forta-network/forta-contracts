@@ -6,12 +6,12 @@ describe('Forta upgrade', function () {
     prepare();
 
     describe('Token update', function () {
-        it('authorized', async function () {
+        it.skip('authorized', async function () {
             this.token = await performUpgrade(this.token, 'FortaExtendedMock');
             expect(await this.token.version()).to.be.equal('FortaExtendedMock');
         });
 
-        it('unauthorized', async function () {
+        it.skip('unauthorized', async function () {
             const ADMIN_ROLE = await this.token.ADMIN_ROLE();
 
             await this.token.renounceRole(ADMIN_ROLE, this.accounts.admin.address);
