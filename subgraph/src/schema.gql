@@ -1,127 +1,205 @@
 type Account @entity {
-	id:                           ID!
-	asScanner:                    Scanner
-	agents:                       [Agent!]! @derivedFrom(field: "owner")
-	scanners:                     [Scanner!]! @derivedFrom(field: "owner")
-	managerOf:                    [ScannerManager!]! @derivedFrom(field: "account")
-	agentTransferFromEvents:      [AgentTransfer!]! @derivedFrom(field: "from")
-	agentTransferToEvents:        [AgentTransfer!]! @derivedFrom(field: "to")
-	agentUpdatedEvents:           [AgentUpdated!]! @derivedFrom(field: "by")
-	scannerTransferFromEvents:    [ScannerTransfer!]! @derivedFrom(field: "from")
-	scannerTransferToEvents:      [ScannerTransfer!]! @derivedFrom(field: "to")
-	scannerManagerEnabledEvents:  [ScannerManagerEnabled!]! @derivedFrom(field: "manager")
+  id: ID!
+  bots: [Bot!]! @derivedFrom(field: "owner")
+  scanners: [Scanner!]! @derivedFrom(field: "owner")
+  managerOf: [ScannerManager!]! @derivedFrom(field: "account")
+  botTransferFromEvents: [BotTransfer!]! @derivedFrom(field: "from")
+  botTransferToEvents: [BotTransfer!]! @derivedFrom(field: "to")
+  botUpdatedEvents: [BotUpdated!]! @derivedFrom(field: "by")
+  scannerTransferFromEvents: [ScannerTransfer!]! @derivedFrom(field: "from")
+  scannerTransferToEvents: [ScannerTransfer!]! @derivedFrom(field: "to")
+  scannerManagerEnabledEvents: [ScannerManagerEnabled!]!
+    @derivedFrom(field: "manager")
 }
 
-type Agent @entity {
-	id:                           ID!
-	owner:                        Account!
-	enabled:                      Boolean!
-	disableFlags:                 Int!
-	metadata:                     String!
-	chains:                       [BigInt!]!
-	links:                        [Link!]! @derivedFrom(field: "agent")
+type Bot @entity {
+  id: ID!
+  owner: Account!
+  enabled: Boolean!
+  disableFlags: Int!
+  metadata: String!
+  chainIds: [BigInt!]
+  links: [Link!]! @derivedFrom(field: "bot")
 
-	agentTransferEvents:          [AgentTransfer!]! @derivedFrom(field: "agent")
-	agentUpdatedEvents:           [AgentUpdated!]! @derivedFrom(field: "agent")
-	agentEnabledEvents:           [AgentEnabled!]! @derivedFrom(field: "agent")
-	linkEnabledEvents:            [LinkEnabled!]! @derivedFrom(field: "agent")
+  botTransferEvents: [BotTransfer!]! @derivedFrom(field: "bot")
+  botUpdatedEvents: [BotUpdated!]! @derivedFrom(field: "bot")
+  botEnabledEvents: [BotEnabled!]! @derivedFrom(field: "bot")
+  linkEnabledEvents: [LinkEnabled!]! @derivedFrom(field: "bot")
 }
 
 type Scanner @entity {
-	id:                           ID!
-	asAccount:                    Account!
-	owner:                        Account!
-	enabled:                      Boolean!
-	disableFlags:                 Int!
-	managers:                     [ScannerManager!]! @derivedFrom(field: "scanner")
-	links:                        [Link!]! @derivedFrom(field: "scanner")
+  id: ID!
+  owner: Account!
+  enabled: Boolean!
+  disableFlags: Int!
+  managers: [ScannerManager!]! @derivedFrom(field: "scanner")
+  links: [Link!]! @derivedFrom(field: "scanner")
+  stakeThreshold: StakeThreshold! @derivedFrom(field: "scanner")
+  subject: Subject
+  metadata: String!
+  chainId: BigInt
 
-	scannerTransferEvents:        [ScannerTransfer!]! @derivedFrom(field: "scanner")
-	scannerEnabledEvents:         [ScannerEnabled!]! @derivedFrom(field: "scanner")
-	scannerManagerEnabledEvents:  [ScannerManagerEnabled!]! @derivedFrom(field: "scanner")
-	linkEnabledEvents:            [LinkEnabled!]! @derivedFrom(field: "scanner")
+  scannerTransferEvents: [ScannerTransfer!]! @derivedFrom(field: "scanner")
+  scannerUpdatedEvents: [ScannerUpdated!]! @derivedFrom(field: "scanner")
+  scannerEnabledEvents: [ScannerEnabled!]! @derivedFrom(field: "scanner")
+  scannerManagerEnabledEvents: [ScannerManagerEnabled!]!
+    @derivedFrom(field: "scanner")
+  linkEnabledEvents: [LinkEnabled!]! @derivedFrom(field: "scanner")
 }
 
 type ScannerManager @entity {
-	id:                           ID!
-	scanner:                      Scanner!
-	account:                      Account!
-	active:                       Boolean!
-	scannerManagerEnabledEvents:  [ScannerManagerEnabled!]! @derivedFrom(field: "scannermanager")
+  id: ID!
+  scanner: Scanner!
+  account: Account!
+  active: Boolean!
+  scannerManagerEnabledEvents: [ScannerManagerEnabled!]!
+    @derivedFrom(field: "scannermanager")
 }
 
 type Link @entity {
-	id:                           ID!
-	agent:                        Agent!
-	scanner:                      Scanner!
-	active:                       Boolean!
-	linkEnabledEvents:            [LinkEnabled!]! @derivedFrom(field: "link")
+  id: ID!
+  bot: Bot!
+  scanner: Scanner!
+  active: Boolean!
+  linkEnabledEvents: [LinkEnabled!]! @derivedFrom(field: "link")
 }
 
-type AgentTransfer implements Event @entity {
-	id:                           ID!
-	transaction:                  Transaction!
-	timestamp:                    BigInt!
-	agent:                        Agent!
-	from:                         Account!
-	to:                           Account!
+type BotTransfer implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  bot: Bot!
+  from: Account!
+  to: Account!
 }
 
-type AgentUpdated implements Event @entity {
-	id:                           ID!
-	transaction:                  Transaction!
-	timestamp:                    BigInt!
-	agent:                        Agent!
-	by:                           Account!
-	metadata:                     String!
-	chains:                       [BigInt!]!
+type BotUpdated implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  bot: Bot!
+  by: Account!
+  metadata: String!
+  chains: [BigInt!]!
 }
 
-type AgentEnabled implements Event @entity {
-	id:                           ID!
-	transaction:                  Transaction!
-	timestamp:                    BigInt!
-	agent:                        Agent!
-	enabled:                      Boolean!
-	permission:                   Int!
-	value:                        Boolean!
+type BotEnabled implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  bot: Bot!
+  enabled: Boolean!
+  permission: Int!
+  value: Boolean!
 }
 
 type ScannerTransfer implements Event @entity {
-	id:                           ID!
-	transaction:                  Transaction!
-	timestamp:                    BigInt!
-	scanner:                      Scanner!
-	from:                         Account!
-	to:                           Account!
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  scanner: Scanner!
+  from: Account!
+  to: Account!
 }
 
 type ScannerEnabled implements Event @entity {
-	id:                           ID!
-	transaction:                  Transaction!
-	timestamp:                    BigInt!
-	scanner:                      Scanner!
-	enabled:                      Boolean!
-	permission:                   Int!
-	value:                        Boolean!
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  scanner: Scanner!
+  enabled: Boolean!
+  permission: Int!
+  value: Boolean!
+}
+
+type ScannerUpdated implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  scanner: Scanner!
+  metadata: String!
+  chainId: BigInt!
 }
 
 type ScannerManagerEnabled implements Event @entity {
-	id:                           ID!
-	transaction:                  Transaction!
-	timestamp:                    BigInt!
-	scanner:                      Scanner!
-	manager:                      Account!
-	scannermanager:               ScannerManager!
-	enabled:                      Boolean!
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  scanner: Scanner!
+  manager: Account!
+  scannermanager: ScannerManager!
+  enabled: Boolean!
 }
 
 type LinkEnabled implements Event @entity {
-	id:                           ID!
-	transaction:                  Transaction!
-	timestamp:                    BigInt!
-	scanner:                      Scanner!
-	agent:                        Agent!
-	link:                         Link!
-	enabled:                      Boolean!
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  scanner: Scanner!
+  bot: Bot!
+  link: Link!
+  enabled: Boolean!
+}
+
+type StakeThreshold @entity {
+  id: ID!
+  scanner: Scanner!
+  activated: Boolean!
+  min: BigInt
+  max: BigInt
+}
+
+type Subject @entity {
+  id: ID!
+  subjectType: Int
+  activeSharesId: Int
+  activeShares: BigInt
+  activeStake: BigInt
+  inactiveSharesId: Int
+  inactiveShares: BigInt
+  inactiveStake: BigInt
+  isFrozen: Boolean
+  slashedTotal: Int
+  stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "subject")
+}
+
+type Slash @entity {
+  id: ID!
+  subjectType: Int
+  subjectId: String
+  stakeValue: Int
+  by: Account
+}
+
+type Reward @entity {
+  id: ID!
+  activeSharesId: Int
+  subjectType: Int
+  subjectId: String
+  staker: Staker!
+}
+
+type Staker @entity {
+  id: ID!
+  stakes: [Stake!]! @derivedFrom(field: "staker")
+  releasedRewards: [Reward!] @derivedFrom(field: "staker")
+}
+
+type Stake @entity {
+  id: ID!
+  subjectId: String
+  subjectType: Int
+  staker: Staker!
+  isActive: Boolean
+  stake: BigInt
+  shares: BigInt
+  stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
+}
+
+type StakeDepositEvent implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  subject: Subject!
+  stake: Stake!
 }

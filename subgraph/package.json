@@ -1,28 +1,21 @@
 {
-  "name": "@openzeppelin/forta-subgraph",
-  "version": "1.0.0",
-  "description": "Subgraph for forta token & utils",
-  "author": "OpenZeppelin Community <maintainers@openzeppelin.org>",
-  "license": "MIT",
+  "name": "forta-subgraph",
+  "license": "UNLICENSED",
   "scripts": {
     "prepare:schema": "concat -o schema.graphql src/schema.gql node_modules/@amxx/graphprotocol-utils/generated/schema.graphql",
     "prepare:codegen": "graph codegen subgraph.yaml",
     "prepare:compile": "graph build subgraph.yaml",
     "prepare": "yarn prepare:schema && yarn prepare:codegen && yarn prepare:compile",
-    "deploy": "graph deploy --debug --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ amxx/forta-goerli subgraph.yaml"
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ TDrachev/forta-subgraph",
+    "create-local": "graph create --node http://localhost:8020/ TDrachev/forta-subgraph",
+    "remove-local": "graph remove --node http://localhost:8020/ TDrachev/forta-subgraph",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 TDrachev/forta-subgraph"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/OpenZeppelin/forta-token.git"
-  },
-  "homepage": "https://github.com/OpenZeppelin/forta-token#readme",
-  "bugs": {
-    "url": "https://github.com/OpenZeppelin/forta-token/issues"
-  },
-  "devDependencies": {
-    "@amxx/graphprotocol-utils": "1.1.0-alpha.0",
-    "@graphprotocol/graph-cli": "^0.22.1",
-    "@graphprotocol/graph-ts": "^0.22.1",
-    "concat": "^1.0.3"
+  "dependencies": {
+    "@amxx/graphprotocol-utils": "^1.1.0-alpha.0",
+    "@graphprotocol/graph-cli": "0.30.0",
+    "@graphprotocol/graph-ts": "0.27.0",
+    "concat": "^1.0.3",
+    "matchstick-as": "^0.5.0"
   }
 }

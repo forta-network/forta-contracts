@@ -1,0 +1,4 @@
+node_modules
+.openzeppelin
+.eslintrc.js
+scripts/data/*
