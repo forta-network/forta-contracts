@@ -151,14 +151,20 @@
 		],
 		"version": "0.0.0"
 	},
-    "escrow-template-pending": "0x0b70f983ab2a09d961d241ecde1697e8e4c92b83f61a7b0a0bf31cf24b3fbbfd",
+	"escrow-template-pending": "0x0b70f983ab2a09d961d241ecde1697e8e4c92b83f61a7b0a0bf31cf24b3fbbfd",
 	"escrow-template": {
 		"address": "0x9A8B215DB93922D759233D275a7F93C40b51F0E1",
 		"args": [
 			"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
-            "0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+			"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
 			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
 		],
+		"version": "0.0.0"
+	},
+	"batch-relayer-pending": "0x0828e1d728ffe47b2cf84c6d212e8938c775baff43b5472b302dc8e02ef1f73a",
+	"batch-relayer": {
+		"address": "0x83D5687F076f6AA81a9b1C8C3e2DD966C8AC416f",
+		"args": [],
 		"version": "0.0.0"
 	}
 }
