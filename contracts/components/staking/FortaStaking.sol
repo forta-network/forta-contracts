@@ -16,7 +16,6 @@ import "./SubjectTypes.sol";
 import "./IStakeController.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
-import "../../tools/FullMath.sol";
 import "../../errors/GeneralErrors.sol";
 
 interface IRewardReceiver {
@@ -44,7 +43,7 @@ interface IRewardReceiver {
  * ERC1155 shares representing active stake are transferable, and can be used in an AMM. Their value is however subject
  * to quick devaluation in case of slashing event for the corresponding subject. Thus, trading of such shares should be
  * be done very carefully.
- * 
+ *
  * WARNING: To stake from another smart contract (smart contract wallets included), it must be fully ERC1155 compatible,
  * implementing ERC1155Receiver. If not, minting of active and inactive shares will fail.
  * Do not deposit on the constructor if you don't implement ERC1155Receiver. During the construction, the minting will
@@ -63,7 +62,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     Distributions.Balances private _activeStake;
     // subject => inactive stake
     Distributions.Balances private _inactiveStake;
-    
 
     // subject => staker => inactive stake timer
     mapping(uint256 => mapping(address => Timers.Timestamp)) private _lockingDelay;
@@ -305,7 +303,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     /** @notice Starts the withdrawal process for an amount of shares. Burns active shares and mints inactive
-     * shares (non transferrable). Stake will be available for withdraw() after _withdrawalDelay. If the 
+     * shares (non transferrable). Stake will be available for withdraw() after _withdrawalDelay. If the
      * subject has not been slashed, the shares will correspond 1:1 with stake.
      * @dev Emits a WithdrawalInitiated event.
      * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
@@ -347,8 +345,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @dev shars must have been marked for withdrawal before by initiateWithdrawal().
      * Emits events WithdrawalExecuted and ERC1155.TransferSingle.
      * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
-     * @param subject id identifying subject (external to FortaStaking).  
-     * @return amount of withdrawn staked tokens.   
+     * @param subject id identifying subject (external to FortaStaking).
+     * @return amount of withdrawn staked tokens.
      */
     function withdraw(uint8 subjectType, uint256 subject)
         public
@@ -397,14 +395,14 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 activeStake       = _activeStake.balanceOf(activeSharesId);
         uint256 inactiveStake     = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
 
-        // We set the slash limit at 90% of the stake, so new depositors on slashed pools (with now 0 stake) won't mint 
-        // an amounts of shares so big that they might cause overflows. 
+        // We set the slash limit at 90% of the stake, so new depositors on slashed pools (with now 0 stake) won't mint
+        // an amounts of shares so big that they might cause overflows.
         // New shares = pool shares * new staked amount / pool stake
         // See deposit and _stakeToActiveShares methods.
-        uint256 maxSlashableStake = FullMath.mulDiv(9, 10, activeStake + inactiveStake);
+        uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, 9, 10);
         if (stakeValue > maxSlashableStake) revert SlashingOver90Percent();
 
-        uint256 slashFromActive   = FullMath.mulDiv(activeStake, activeStake + inactiveStake, stakeValue);
+        uint256 slashFromActive   = Math.mulDiv(activeStake, stakeValue, activeStake + inactiveStake);
         uint256 slashFromInactive = stakeValue - slashFromActive;
         stakeValue                = slashFromActive + slashFromInactive;
 
@@ -421,7 +419,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     /**
-     * @notice Freeze/unfreeze withdrawal of a subject stake. This will be used when something suspicious happens 
+     * @notice Freeze/unfreeze withdrawal of a subject stake. This will be used when something suspicious happens
      * with a subject but there is not a strong case yet for slashing.
      * Restricted to the `SLASHER_ROLE`.
      * @dev Emits a Freeze event.
@@ -434,7 +432,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         onlyRole(SLASHER_ROLE)
         onlyValidSubjectType(subjectType)
     {
-        
         _frozen[FortaStakingUtils.subjectToActive(subjectType, subject)] = frozen;
         emit Froze(subjectType, subject, _msgSender(), frozen);
     }
@@ -448,10 +445,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @param subject id identifying subject (external to FortaStaking).
      * @param value amount of reward tokens.
      */
-    function reward(uint8 subjectType, uint256 subject, uint256 value) public onlyValidSubjectType(subjectType)  {   
+    function reward(uint8 subjectType, uint256 subject, uint256 value) public onlyValidSubjectType(subjectType)  {
         SafeERC20.safeTransferFrom(stakedToken, _msgSender(), address(this), value);
         _rewards.mint(FortaStakingUtils.subjectToActive(subjectType, subject), value);
-
         emit Rewarded(subjectType, subject, _msgSender(), value);
     }
 
@@ -463,7 +459,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @param token address of the token to be swept.
      * @param recipient destination address of the swept tokens
      * @return amount of tokens swept. For unrelated tokens is FortaStaking's balance, for stakedToken its
-     * the balance over the active stake + inactive stake + rewards 
+     * the balance over the active stake + inactive stake + rewards
      */
     function sweep(IERC20 token, address recipient) public onlyRole(SWEEPER_ROLE) returns (uint256) {
         uint256 amount = token.balanceOf(address(this));
@@ -517,7 +513,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      */
     function _availableReward(uint256 activeSharesId, address account) internal view returns (uint256) {
         return SafeCast.toUint256(
-            SafeCast.toInt256(_historicalRewardFraction(activeSharesId, balanceOf(account, activeSharesId)))
+            SafeCast.toInt256(_historicalRewardFraction(activeSharesId, balanceOf(account, activeSharesId), Math.Rounding.Down))
             -
             _released[activeSharesId].balanceOf(account)
         );
@@ -563,9 +559,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         );
     }
 
-    function _historicalRewardFraction(uint256 activeSharesId, uint256 amount) internal view returns (uint256) {
+    function _historicalRewardFraction(uint256 activeSharesId, uint256 amount, Math.Rounding rounding) internal view returns (uint256) {
         uint256 supply = totalSupply(activeSharesId);
-        return amount > 0 && supply > 0 ? FullMath.mulDiv(amount, supply, _totalHistoricalReward(activeSharesId)) : 0;
+        return amount > 0 && supply > 0 ? Math.mulDiv(_totalHistoricalReward(activeSharesId), amount, supply, rounding) : 0;
     }
 
     function _beforeTokenTransfer(
@@ -584,12 +580,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
                 // Mint, burn, or transfer of subject shares would by default affect the distribution of the
                 // currently available reward for the subject. We create a "virtual release" that should preserve
                 // reward distribution as it was prior to the transfer.
-                int256 virtualRelease = SafeCast.toInt256(
-                    _historicalRewardFraction(
-                        ids[i],
-                        amounts[i]
-                    )
-                );
+                int256 virtualRelease = SafeCast.toInt256(_historicalRewardFraction(ids[i], amounts[i], Math.Rounding.Up));
+
                 if (from == address(0)) {
                     _released[ids[i]].mint(to, virtualRelease);
                 } else if (to == address(0)) {
@@ -608,21 +600,21 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     // Conversions
     function _stakeToActiveShares(uint256 activeSharesId, uint256 amount) internal view returns (uint256) {
         uint256 activeStake = _activeStake.balanceOf(activeSharesId);
-        return activeStake == 0 ? amount : FullMath.mulDiv(amount, activeStake, totalSupply(activeSharesId));
+        return activeStake == 0 ? amount : Math.mulDiv(totalSupply(activeSharesId), amount, activeStake);
     }
 
     function _stakeToInactiveShares(uint256 inactiveSharesId, uint256 amount) internal view returns (uint256) {
         uint256 inactiveStake = _inactiveStake.balanceOf(inactiveSharesId);
-        return inactiveStake == 0 ? amount : FullMath.mulDiv(amount, inactiveStake, totalSupply(inactiveSharesId));
+        return inactiveStake == 0 ? amount : Math.mulDiv(totalSupply(inactiveSharesId), amount, inactiveStake);
     }
 
     function _activeSharesToStake(uint256 activeSharesId, uint256 amount) internal view returns (uint256) {
         uint256 activeSupply = totalSupply(activeSharesId);
-        return activeSupply == 0 ? 0 : FullMath.mulDiv(amount, activeSupply, _activeStake.balanceOf(activeSharesId));
+        return activeSupply == 0 ? 0 : Math.mulDiv(_activeStake.balanceOf(activeSharesId), amount, activeSupply);
     }
     function _inactiveSharesToStake(uint256 inactiveSharesId, uint256 amount) internal view returns (uint256) {
         uint256 inactiveSupply = totalSupply(inactiveSharesId);
-        return inactiveSupply == 0 ? 0 : FullMath.mulDiv(amount, inactiveSupply, _inactiveStake.balanceOf(inactiveSharesId));
+        return inactiveSupply == 0 ? 0 : Math.mulDiv(_inactiveStake.balanceOf(inactiveSharesId), amount, inactiveSupply);
     }
 
     // Admin: change withdrawal delay
