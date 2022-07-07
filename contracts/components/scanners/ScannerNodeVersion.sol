@@ -8,7 +8,8 @@ import "../BaseComponentUpgradeable.sol";
 /**
  * Contract that will trigger software autoupdate of the Scanner Node software.
  * Forta Governance, through SCANNER_VERSION_ROLE, will propose and approve updates and
- * the nodes will listen to the resulting event, downloading the new version from IPFS
+ * the nodes will listen to the resulting event, downloading the new version from IPFS.
+ * A similar system is provided for pre release version.
  */
 contract ScannerNodeVersion is BaseComponentUpgradeable {
 
@@ -17,10 +18,17 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
      * Starts empty
      */
     string public scannerNodeVersion;
+    /**
+     * Version of the scanner image software for pre release version (IPFS hash)
+     * Starts empty
+     */
+    string public scannerNodeBetaVersion;
 
-    string public constant version = "0.1.0";
+    /** Contract version */
+    string public constant version = "0.1.1";
 
     event ScannerNodeVersionUpdated(string newVersion, string oldVersion);
+    event ScannerNodeBetaVersionUpdated(string newVersion, string oldVersion);
 
     error SameScannerNodeVersion();
 
@@ -44,16 +52,30 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
     /**
      * @notice Signal to the Scanner Nodes that they have to update their binaries downloading the new
      * version from IPFS, by emitting ScannerNodeVersionUpdated(newVersion, oldVersion).
-     * @dev restricted to SCANNER_VERSION_ROLE (governance).
-     * @param version IPFS pointer to the new image.
+     * @dev restricted to SCANNER_VERSION_ROLE.
+     * @param _version IPFS pointer to the new image.
      */
-    function setScannerNodeVersion(string calldata version) public onlyRole(SCANNER_VERSION_ROLE) {
+    function setScannerNodeVersion(string calldata _version) public onlyRole(SCANNER_VERSION_ROLE) {
         if(
-            keccak256(abi.encodePacked(scannerNodeVersion)) == keccak256(abi.encodePacked(version))
+            keccak256(abi.encodePacked(scannerNodeVersion)) == keccak256(abi.encodePacked(_version))
         ) revert SameScannerNodeVersion();
-        emit ScannerNodeVersionUpdated(version, scannerNodeVersion);
-        scannerNodeVersion = version;
+        emit ScannerNodeVersionUpdated(_version, scannerNodeVersion);
+        scannerNodeVersion = _version;
     }
 
-    uint256[49] private __gap;
+    /**
+     * @notice Signal to the Scanner Nodes that there is a new beta release downloable from from IPFS,
+     * by emitting ScannerNodeVersionUpdated(newVersion, oldVersion).
+     * @dev restricted to SCANNER_BETA_VERSION_ROLE.
+     * @param _version IPFS pointer to the new image.
+     */
+    function setScannerNodeBetaVersion(string calldata _version) public onlyRole(SCANNER_BETA_VERSION_ROLE) {
+        if(
+            keccak256(abi.encodePacked(scannerNodeBetaVersion)) == keccak256(abi.encodePacked(_version))
+        ) revert SameScannerNodeVersion();
+        emit ScannerNodeBetaVersionUpdated(_version, scannerNodeBetaVersion);
+        scannerNodeBetaVersion = _version;
+    }
+
+    uint256[48] private __gap;
 }
