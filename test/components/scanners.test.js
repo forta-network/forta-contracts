@@ -10,6 +10,10 @@ describe('Scanner Registry', function () {
         this.accounts.getAccount('scanner');
     });
 
+    it('isStakedOverMin false if non existant', async function () {
+        expect(await this.scanners.isStakedOverMin(this.accounts.scanner.address)).to.equal(false);
+    });
+
     it('register', async function () {
         const SCANNER_ID = this.accounts.scanner.address;
 

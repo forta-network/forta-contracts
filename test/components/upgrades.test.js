@@ -9,10 +9,9 @@ describe('Upgrades testing', function () {
     prepare();
 
     describe('Agent Registry', async function () {
-        it(' 0.1.1 -> 0.1.2', async function () {
+        it(' 0.1.1 -> 0.1.3', async function () {
             const AgentRegistry_0_1_1 = await ethers.getContractFactory('AgentRegistry_0_1_1');
             originalAgents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, this.contracts.router.address, 'Forta Agents', 'FAgents'], {
-                kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             });
@@ -48,13 +47,14 @@ describe('Upgrades testing', function () {
                 unsafeAllow: ['delegatecall'],
                 unsafeSkipStorageCheck: true,
             });
-            await this.contracts.stakingParameters.setStakeSubjectHandler(1, agentRegistry.address);
-            await agentRegistry.connect(this.accounts.manager).setStakeThreshold({ max: '10000', min: '0', activated: true });
+            await agentRegistry.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
             expect(await agentRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
-            expect(await agentRegistry.version()).to.be.equal('0.1.2');
+            expect(await agentRegistry.version()).to.be.equal('0.1.3');
             expect(await agentRegistry.isCreated(AGENT_ID)).to.be.equal(true);
+            expect(await agentRegistry.getDisableFlags(AGENT_ID)).to.be.equal([2]);
             expect(await agentRegistry.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
             await agentRegistry.connect(this.accounts.user1).enableAgent(AGENT_ID, 1);
+            expect(await agentRegistry.getDisableFlags(AGENT_ID)).to.be.equal([0]);
             expect(await agentRegistry.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true);
             expect(await agentRegistry.name()).to.be.equal('Forta Agents');
             expect(await agentRegistry.symbol()).to.be.equal('FAgents');
@@ -62,7 +62,7 @@ describe('Upgrades testing', function () {
     });
 
     describe('Scanner Registry', async function () {
-        it(' 0.1.0 -> 0.1.1', async function () {
+        it(' 0.1.0 -> 0.1.2', async function () {
             this.accounts.getAccount('scanner');
             const ScannerRegistry_0_1_0 = await ethers.getContractFactory('ScannerRegistry_0_1_0');
             originalScanners = await upgrades.deployProxy(ScannerRegistry_0_1_0, [this.contracts.access.address, this.contracts.router.address, 'Forta Scanners', 'FScanners'], {
@@ -111,7 +111,7 @@ describe('Upgrades testing', function () {
             for (const scanner of SCANNERS) {
                 const scannerId = scanner.address;
                 expect(await scannerRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
-                expect(await scannerRegistry.version()).to.be.equal('0.1.1');
+                expect(await scannerRegistry.version()).to.be.equal('0.1.2');
                 expect(await scannerRegistry.isEnabled(scannerId)).to.be.equal(false);
                 expect(await scannerRegistry.isManager(scannerId, this.accounts.user2.address)).to.be.equal(true);
                 expect(await scannerRegistry.getManagerCount(scannerId)).to.be.equal(1);
