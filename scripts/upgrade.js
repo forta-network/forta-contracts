@@ -17,7 +17,7 @@ const ROOT_CHAIN_MANAGER = {
     5: '0xBbD7cBFA79faee899Eaf900F13C9065bF03B1A74',
 };
 
-const CONTRACTS_TO_UPGRADE = ['access'];
+const CONTRACTS_TO_UPGRADE = ['scanner-node-version'];
 
 async function main() {
     const provider = await utils.getDefaultProvider();
@@ -185,6 +185,7 @@ async function main() {
             {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
+                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'scanner-node-version'

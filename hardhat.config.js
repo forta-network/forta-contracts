@@ -11,6 +11,16 @@ const { relative } = require('path');
 
 const argv = require('yargs/yargs')().env('').argv;
 
+task('compare-storage', 'Prints storage layout of 2 implementations')
+    .addParam('old', 'Old contract name')
+    .addParam('new', 'New contract name')
+    .setAction(async (taskArgs) => {
+        const storageToTable = require('./scripts/storage-to-table');
+        storageToTable({ old: taskArgs.old, new: taskArgs.new });
+    });
+
+module.exports = {};
+
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */

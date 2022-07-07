@@ -1,4 +1,6 @@
 const impls = require('../.openzeppelin/unknown-31337.json').impls;
+const DEBUG = require('debug')('storage-2-table');
+const fs = require('fs');
 
 const isFileInHere = (item, name) => {
     const regex = new RegExp(`/${name}.sol`, 'g');
@@ -8,12 +10,6 @@ const isFileInHere = (item, name) => {
 const findHash = (name, impls) => {
     return Object.keys(impls).find((hash) => isFileInHere(impls[hash], name));
 };
-
-const storageAgentRegistry_0_1_1 = impls[findHash('AgentRegistry_0_1_1', impls)]?.layout;
-const storageAgentRegistry = impls[findHash('AgentRegistry', impls)]?.layout;
-
-// const storageScannerRegistry_0_1_0 = impls[findHash('ScannerRegistry_0_1_0', impls)]?.layout;
-// const storageScannerRegistry = impls[findHash('ScannerRegistry', impls)]?.layout;
 
 function typeSize(typeLabel, storageTypes) {
     //console.log(typeLabel)
@@ -80,39 +76,45 @@ const emptyRowIfUndefined = (row) => row ?? '|  |  |  |';
 const header = `| BEFORE |   |   |   | AFTER |   |  |
 | -- | -- | -- | -- | -- | -- | -- |`;
 
-async function main() {
-    console.log('AgentRegistry_0_1_1');
-    const originalRows = storageLayoutToRows(storageAgentRegistry_0_1_1).map((x) => x.row);
-    console.log('---------------------------------');
-    console.log('AgentRegistry');
-    const laterRows = storageLayoutToRows(storageAgentRegistry).map((x) => x.row);
-    console.log('---------------------------------');
+const OLD_LAYOUT_CONTRACT = '';
+const NEW_LAYOUT_CONTRACT = '';
+
+async function main(config = {}) {
+    const oldContractName = config.old ?? OLD_LAYOUT_CONTRACT;
+    DEBUG(oldContractName);
+    const oldLayout = impls[findHash(oldContractName, impls)]?.layout;
+    const originalRows = storageLayoutToRows(oldLayout).map((x) => x.row);
+    DEBUG(oldLayout);
+    DEBUG('--------------------------');
+    DEBUG(originalRows);
+    DEBUG('--------------------------');
+
+    const newContractName = config.new ?? NEW_LAYOUT_CONTRACT;
+    const newLayout = impls[findHash(newContractName, impls)]?.layout;
+    const laterRows = storageLayoutToRows(newLayout).map((x) => x.row);
+    DEBUG(newContractName);
+    DEBUG(newLayout);
+    DEBUG('--------------------------');
+    DEBUG(laterRows);
     const size = Math.max(originalRows.length, laterRows.length);
     console.log(size);
     console.log(header);
-    for (var i = 0; i < size; i++) {
+    let data = header;
+    for (let i = 0; i < size; i++) {
+        data += '\n';
+        data += `${emptyRowIfUndefined(originalRows[i])} ${emptyRowIfUndefined(laterRows[i])}`;
         console.log(`${emptyRowIfUndefined(originalRows[i])} ${emptyRowIfUndefined(laterRows[i])}`);
     }
-    /*
-    
-    console.log('ScannerRegistry_0_1_0 ')
-    const originalRows = storageLayoutToRows(storageScannerRegistry_0_1_0).map(x => x.row)
-    console.log('---------------------------------')
-    console.log('ScannerRegistry')
-    const laterRows = storageLayoutToRows(storageScannerRegistry).map(x => x.row)
-    console.log('---------------------------------')
-    const size = Math.max(originalRows.length, laterRows.length)
-    console.log(size)
-    console.log(header)
-    for (var i = 0; i < size; i++) {
-        console.log(`${emptyRowIfUndefined(originalRows[i])} ${emptyRowIfUndefined(laterRows[i])}`)
-    }
-    */
+    fs.writeFileSync(`./layout-compare/${oldContractName}-${newContractName}.md`, data);
 }
 
-main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-        console.error(error);
-        process.exit(1);
-    });
+module.exports = main;
+
+if (require.main === module) {
+    main()
+        .then(() => process.exit(0))
+        .catch((error) => {
+            console.error(error);
+            process.exit(1);
+        });
+}

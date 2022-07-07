@@ -14,3 +14,4 @@ scripts/parse-multi-sent-fort.js
 .abis-no-errors
 scripts/data/*
 yarn-error.log
+layout-compare/
