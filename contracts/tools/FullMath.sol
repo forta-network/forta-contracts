@@ -118,7 +118,7 @@ library FullMath {
             // If denominator is zero the inverse starts with 2
             //    3 * denominator^2 =  denominator^(-1)   mod 2^4
             //    3 * denominator^3 = 1    mod 2^4
-            let inv := mul(3, mul(denominator, denominator))
+            let inv := xor(mul(3, denominator), 2)
             // Now use Newton-Raphson iteration to improve the precision.
             // We want to find the root of the equation:
             //

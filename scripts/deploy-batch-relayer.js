@@ -7,7 +7,7 @@ upgrades.silenceWarnings();
 /*********************************************************************************************************************
  *                                                Migration workflow                                                 *
  *********************************************************************************************************************/
-async function migrate(config = {}) {
+async function deployBatchRelayer(config = {}) {
     const provider = config?.provider ?? config?.deployer?.provider ?? (await utils.getDefaultProvider());
     const deployer = config?.deployer ?? (await utils.getDefaultDeployer(provider));
     const { name, chainId } = await provider.getNetwork();
@@ -23,15 +23,15 @@ async function migrate(config = {}) {
         configName = `.cache-${chainId}`;
     }
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: configName });
-    const contracts = {};
 
-    contracts.batchRelayer = await ethers.getContractFactory('BatchRelayer', deployer).then((factory) => utils.tryFetchContract(CACHE, 'batch-relayer', factory, []));
+    const batchRelayer = await ethers.getContractFactory('BatchRelayer', deployer).then((factory) => utils.tryFetchContract(CACHE, 'batch-relayer', factory, []));
 
-    console.log('Batch Relayer: ', contracts.batchRelayer.address);
+    console.log('Batch Relayer: ', batchRelayer.address);
+    return batchRelayer;
 }
 
 if (require.main === module) {
-    migrate()
+    deployBatchRelayer()
         .then(() => process.exit(0))
         .catch((error) => {
             console.error(error);
@@ -39,4 +39,4 @@ if (require.main === module) {
         });
 }
 
-module.exports = migrate;
+module.exports = deployBatchRelayer;

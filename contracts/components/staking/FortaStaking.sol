@@ -105,7 +105,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     error NoInactiveShares();
     error StakeInactiveOrSubjectNotFound();
 
-    string public constant version = "0.1.0";
+    string public constant version = "0.1.1";
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}

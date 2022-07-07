@@ -121,7 +121,7 @@ async function migrate(config = {}) {
 
     DEBUG(`[2] forta: ${contracts.token.address}`);
 
-    if (config.childChain) {
+    if (config.childChain || chainId === 31337) {
         contracts.access = await ethers
             .getContractFactory('AccessManager', deployer)
             .then((factory) =>
