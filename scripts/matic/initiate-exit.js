@@ -1,8 +1,8 @@
 require('dotenv/config');
 
-const { ethers, network } = require('hardhat');
-const utils              = require('../utils');
-const DEBUG                = require('debug')('forta:initiate-exit');
+const { ethers } = require('hardhat');
+const utils = require('../utils');
+const DEBUG = require('debug')('forta:initiate-exit');
 
 const AMOUNT = ethers.utils.parseEther('0.001');
 let DESTINATION;
@@ -16,19 +16,14 @@ async function main() {
     DEBUG(`Balance:  ${await provider.getBalance(deployer.address).then(ethers.utils.formatEther)}${ethers.constants.EtherSymbol}`);
     DEBUG('----------------------------------------------------');
     utils.assertNotUsingHardhatKeys(chainId, deployer);
-    let network
     if (chainId !== 80001 && chainId !== 137) {
         throw new Error('Only Polygon or Mumbai supported');
-    } else {
-        network = chainId == 80001 ? 'testnet' : 'mainnet';
     }
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `../.cache-${chainId}` });
 
-    const CONFIG = require(`./config-${network == 'testnet' ? network : 'mainnet'}.json`);
-
     const FortaL2 = await ethers.getContractFactory('FortaBridgedPolygon', deployer);
-    const l2FortaAddress = await CACHE.get('forta.address')
-    DEBUG('l2FortaAddress: ',l2FortaAddress)
+    const l2FortaAddress = await CACHE.get('forta.address');
+    DEBUG('l2FortaAddress: ', l2FortaAddress);
     const fortaL2 = await FortaL2.attach(l2FortaAddress);
     DESTINATION = DESTINATION ?? deployer.address;
     DEBUG('Initiating withdrawal...');
@@ -36,13 +31,11 @@ async function main() {
     DEBUG(tx);
     console.log('Enter this tx hash in scripts/matic/exit.js :');
     console.log(tx.hash);
-
 }
-
 
 main()
     .then(() => process.exit(0))
-    .catch(error => {
+    .catch((error) => {
         console.error(error);
         process.exit(1);
     });

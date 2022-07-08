@@ -1,6 +1,6 @@
 const { ethers } = require('hardhat');
-const DEBUG                = require('debug')('forta:set-staking-threshold');
-const utils                = require('./utils');
+const DEBUG = require('debug')('forta:set-staking-threshold');
+const utils = require('./utils');
 
 const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
@@ -10,8 +10,8 @@ const config = {
     min: ethers.utils.parseEther('500'),
     max: ethers.utils.parseEther('750'),
     activated: true,
-    chainId: 250 // only relevant to SCANNER_SUBJECT
-}
+    chainId: 250, // only relevant to SCANNER_SUBJECT
+};
 /*
 - Ethereum Mainnet (chainID: 1) -
 - Polygon (chainID: 137) -
@@ -36,10 +36,10 @@ async function main() {
         throw new Error('Only supported for Polygon or Mumbai');
     }
 
-    const contracts =  {
-        agents: await (utils.attach('AgentRegistry',  await CACHE.get('agents.address')  ).then(contract => contract.connect(deployer))),
-        scanners: await (utils.attach('ScannerRegistry', await CACHE.get('scanners.address')  ).then(contract => contract.connect(deployer))),
-    }
+    const contracts = {
+        agents: await utils.attach('AgentRegistry', await CACHE.get('agents.address')).then((contract) => contract.connect(deployer)),
+        scanners: await utils.attach('ScannerRegistry', await CACHE.get('scanners.address')).then((contract) => contract.connect(deployer)),
+    };
     console.log('Stake Threshold Config:');
     console.log(config);
     console.log('Setting...');
@@ -63,11 +63,11 @@ async function main() {
 
 if (require.main === module) {
     main()
-    .then(() => process.exit(0))
-    .catch(error => {
-        console.error(error);
-        process.exit(1);
-    });
+        .then(() => process.exit(0))
+        .catch((error) => {
+            console.error(error);
+            process.exit(1);
+        });
 }
 
 module.exports = main;

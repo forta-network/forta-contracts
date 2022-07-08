@@ -1,2 +1,7 @@
 generated
+old_subgraph
+node_modules
+networks.json
 schema.graphql
+.bin
+tests/.bin

@@ -1,17 +1,16 @@
 const { ethers, defender } = require('hardhat');
-const DEBUG                = require('debug')('forta');
-const utils                = require('./utils');
+const DEBUG = require('debug')('forta');
+const utils = require('./utils');
 
 const CHILD_CHAIN_MANAGER_PROXY = {
-    137:   '0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa',
+    137: '0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa',
     80001: '0xb5505a6d998549090530911180f38aC5130101c6',
 };
 
 const ROOT_CHAIN_MANAGER = {
-    1:     '0xA0c68C638235ee32657e8f720a23ceC1bFc77C77',
-    5:     '0xBbD7cBFA79faee899Eaf900F13C9065bF03B1A74',
+    1: '0xA0c68C638235ee32657e8f720a23ceC1bFc77C77',
+    5: '0xBbD7cBFA79faee899Eaf900F13C9065bF03B1A74',
 };
-
 
 async function main() {
     const provider = await utils.getDefaultProvider();
@@ -33,7 +32,7 @@ async function main() {
     DEBUG('----------------------------------------------------');
 
     if (name !== 'hardhat' && deployer.address === '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266') {
-        throw new Error('using hardhat key for other network')
+        throw new Error('using hardhat key for other network');
     }
     /*
     const l2Contracts = childChainManagerProxy ? {
@@ -53,13 +52,13 @@ async function main() {
         ...l2Contracts
     }).map(entry => Promise.all(entry))).then(Object.fromEntries);
     */
-    let fortaContractName, multisigAddress
+    let fortaContractName, multisigAddress;
     if (childChainManagerProxy) {
-        fortaContractName = 'FortaBridgedPolygon'
-        multisigAddress = process.env[`${chainId === 137 ? 'POLYGON' : 'MUMBAI'}_MULTISIG`]
+        fortaContractName = 'FortaBridgedPolygon';
+        multisigAddress = process.env[`${chainId === 137 ? 'POLYGON' : 'MUMBAI'}_MULTISIG`];
     } else {
-        fortaContractName = 'Forta'
-        multisigAddress = process.env[`${chainId === 1 ? 'MAINNET' : 'GOERLI'}_MULTISIG`]
+        fortaContractName = 'Forta';
+        multisigAddress = process.env[`${chainId === 1 ? 'MAINNET' : 'GOERLI'}_MULTISIG`];
     }
     const Forta = await ethers.getContractFactory(fortaContractName);
     /*
@@ -68,16 +67,13 @@ async function main() {
     const newFortaProposal =  await defender.proposeUpgrade(await CACHE.get('forta.address'), Forta, {
         unsafeAllow: ['delegatecall'],
         multisig: multisigAddress,
-        constructorArgs: [ childChainManagerProxy ].filter(Boolean),
+        constructorArgs: [childChainManagerProxy].filter(Boolean),
         //proxyAdmin?: string,
     });
     console.log("Forta upgrade proposal created at:", newFortaProposal.url);
     */
 
-
-    const proposal = await defender.proposeUpgrade(
-        '0x243DaA239C68A2F3c29082c560d8d85ac7872149',
-        await ethers.getContractFactory('VestingWalletV2', deployer), {
+    const proposal = await defender.proposeUpgrade('0x243DaA239C68A2F3c29082c560d8d85ac7872149', await ethers.getContractFactory('VestingWalletV2', deployer), {
         unsafeAllow: ['delegatecall'],
         multisig: multisigAddress,
         constructorArgs: [
@@ -85,13 +81,13 @@ async function main() {
             await CACHE.get('forta.address'),
             '0x867a3A4c431474E749fEA3106C61Cf58d4d2B046', // L2 escrow factory
             '0x0d3DAC6368Da5bce50aFE3E61fFc450C80B2F23D', // L2 escrow template
-        ]
+        ],
         //proxyAdmin?: string,
     });
-    console.log(proposal)
+    console.log(proposal);
     if (!childChainManagerProxy) {
         DEBUG('Upgraded for L1, exiting...');
-        return
+        return;
     }
     // L2 Components --------------------------------------------------------------------------------------------
     /*
@@ -194,7 +190,7 @@ async function main() {
 
 main()
     .then(() => process.exit(0))
-    .catch(error => {
+    .catch((error) => {
         console.error(error);
         process.exit(1);
     });

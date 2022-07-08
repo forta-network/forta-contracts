@@ -17,7 +17,7 @@ contract AgentRegistry is
     AgentRegistryMetadata,
     AgentRegistryEnumerable
 {
-    string public constant version = "0.1.2";
+    string public constant version = "0.1.3";
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -48,12 +48,30 @@ contract AgentRegistry is
      * @return agentVersion of the agent.
      * @return metadata IPFS pointer.
      * @return chainIds the agent wants to run in.
+     * @return enabled true if staked over min and not disabled.
+     * @return disabledFlags 0 if not disabled, Permission that disabled the scnner otherwise.
      */
     function getAgentState(uint256 agentId)
         public view
-        returns (bool created, address owner,uint256 agentVersion, string memory metadata, uint256[] memory chainIds, bool enabled) {
+        returns (
+            bool created,
+            address owner,
+            uint256 agentVersion,
+            string memory metadata,
+            uint256[] memory chainIds,
+            bool enabled,
+            uint256 disabledFlags
+        ) {
         (created, owner, agentVersion, metadata, chainIds) = getAgent(agentId);
-        return (created, owner, agentVersion, metadata, chainIds, isEnabled(agentId));
+        return (
+            created,
+            owner,
+            agentVersion,
+            metadata,
+            chainIds,
+            isEnabled(agentId),
+            getDisableFlags(agentId)
+        );
     }
 
     /**
