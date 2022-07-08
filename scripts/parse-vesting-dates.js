@@ -14,12 +14,12 @@ async function main() {
     console.log(`Deployer: ${deployer.address}`);
     console.log('----------------------------------------------------');
 
-    const vestingWallets = Object.keys(deployment).filter((x) => x.startsWith('vesting') && !x.endsWith('pending'));
+    const vestingWallets = Object.keys(deployment).filter((x) => x.startsWith('vesting') && !x.endsWith('pending') && !x.includes('dummy'));
     const dates = [];
     console.log(`Checking ${vestingWallets.length} contracts...`);
     for (const vWallet of vestingWallets) {
         const beneficiary = vWallet.split('-')[1];
-        const walletAddress = deployment[vWallet];
+        const walletAddress = deployment[vWallet].address;
         const walletContract = await utils.attach('VestingWalletV1', walletAddress).then((contract) => contract.connect(deployer));
         const start = await walletContract.start();
         const cliff = await walletContract.cliff();
