@@ -7,6 +7,11 @@ const CHILD_CHAIN_MANAGER_PROXY = {
     80001: '0xb5505a6d998549090530911180f38aC5130101c6',
 };
 
+const ROOT_CHAIN_MANAGER = {
+    1: '0xA0c68C638235ee32657e8f720a23ceC1bFc77C77',
+    5: '0xBbD7cBFA79faee899Eaf900F13C9065bF03B1A74',
+};
+
 async function main() {
     const provider = await utils.getDefaultProvider();
     const deployer = await utils.getDefaultDeployer(provider);
@@ -56,16 +61,30 @@ async function main() {
         multisigAddress = process.env[`${chainId === 1 ? 'MAINNET' : 'GOERLI'}_MULTISIG`];
     }
     const Forta = await ethers.getContractFactory(fortaContractName);
-    console.log('Upgrading ', childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta');
-
-    const newFortaProposal = await defender.proposeUpgrade(await CACHE.get('forta.address'), Forta, {
+    /*
+    console.log('Upgrading ',childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta')
+    
+    const newFortaProposal =  await defender.proposeUpgrade(await CACHE.get('forta.address'), Forta, {
         unsafeAllow: ['delegatecall'],
         multisig: multisigAddress,
         constructorArgs: [childChainManagerProxy].filter(Boolean),
         //proxyAdmin?: string,
     });
-    console.log('Forta upgrade proposal created at:', newFortaProposal.url);
+    console.log("Forta upgrade proposal created at:", newFortaProposal.url);
+    */
 
+    const proposal = await defender.proposeUpgrade('0x243DaA239C68A2F3c29082c560d8d85ac7872149', await ethers.getContractFactory('VestingWalletV2', deployer), {
+        unsafeAllow: ['delegatecall'],
+        multisig: multisigAddress,
+        constructorArgs: [
+            ROOT_CHAIN_MANAGER[chainId],
+            await CACHE.get('forta.address'),
+            '0x867a3A4c431474E749fEA3106C61Cf58d4d2B046', // L2 escrow factory
+            '0x0d3DAC6368Da5bce50aFE3E61fFc450C80B2F23D', // L2 escrow template
+        ],
+        //proxyAdmin?: string,
+    });
+    console.log(proposal);
     if (!childChainManagerProxy) {
         DEBUG('Upgraded for L1, exiting...');
         return;
