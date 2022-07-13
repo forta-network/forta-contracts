@@ -78,7 +78,7 @@ async function main() {
 
     const { name, chainId } = await provider.getNetwork();
 
-    const deployment = require('./_old/.cache-5-with-components.json'); //require(`./.cache-${chainId}.json`);
+    const deployment = require(`./.cache-${chainId}.json`);
 
     console.log(`Network:  ${name} (${chainId})`);
     console.log(`Deployer: ${deployer.address}`);
@@ -100,6 +100,7 @@ async function main() {
 
         functionInputs = config.params[0];
     } else {
+        DEBUG('multicall')
         if (!contract.interface.fragments.find((fragment) => fragment.name === 'multicall')) {
             throw new Error('Asumed multicall due to number of arguments, contract does not support multicall');
         }
