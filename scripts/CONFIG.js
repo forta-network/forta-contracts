@@ -1,17 +1,11 @@
 const { ethers } = require('hardhat');
 const multisig = '0xC0eb11fBC755D31c6FECEaAc8760ddCb88C64fE1';
 
-const vesting = {
-    // start: '2021-09-01T00:00:00Z',
-    cliff: '1 year',
-    duration: '4 years',
-    upgrader: multisig,
-};
-
-function vestedAllocation(beneficiary, etherAmount, start) {
+function vestedAllocation(beneficiary, etherAmount, start, duration, deploymentForBeneficiary) {
     const vestingStart = start ?? '2021-09-01T00:00:00Z';
+    const vestingDuration = duration ?? '4 years';
     const amount = ethers.utils.parseEther(etherAmount);
-    return { beneficiary, amount, start: vestingStart, type: 'vesting', ...vesting };
+    return { beneficiary, amount, start: vestingStart, type: 'vesting', duration: vestingDuration, upgrader: multisig, cliff: '1 year', deploymentForBeneficiary };
 }
 
 module.exports = {
@@ -89,4 +83,11 @@ module.exports = {
         vestedAllocation('0xf0F5D6F95e97A207434510799E346180B81356D1', '76000'),
     ],
     dummy_wallet: [vestedAllocation('0x9b0A8A8e6B2c23d572D7145F3dA14438FEd35374', '1', '2021-11-01T00:00:00Z')],
+    allocations_13072022: [
+        vestedAllocation('0x237DeE529A47750bEcdFa8A59a1D766e3e7B5F91', '17471.61', '2022-03-17T00:00:00Z', '4 years'),
+        vestedAllocation('0x7E47eff1F4D663Ba0766c994DDcD6CFc5c97cA9A', '5833.50', '2022-05-01T00:00:00Z', '2 years'),
+        vestedAllocation('0x1d5d13379fa72C4Ab0b2f4F038bB57E03f4D40C6', '5833.50', '2022-05-01T00:00:00Z', '2 years'),
+        //vestedAllocation('0x218AE10DA9695b7E38381f22685603Be605Ad371', '56896.06', '2022-03-31T00:00:00Z', '4 years'),
+    ],
+    allocations_13072022_2: [vestedAllocation('0x218AE10DA9695b7E38381f22685603Be605Ad371', '56896.06', '2022-03-31T00:00:00Z', '4 years', 2)],
 };

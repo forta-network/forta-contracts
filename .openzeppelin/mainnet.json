@@ -355,6 +355,26 @@
       "address": "0xBBd6944e0cCA259EB7cFDE862d0532cCc3d20407",
       "txHash": "0x9f993abe5d885865b919576a707708a5874b400718022afd9974c5a9c1b2aa1f",
       "kind": "uups"
+    },
+    {
+      "address": "0xA94b4E47eFA69Dcd4764476722288011c4aEC0dA",
+      "txHash": "0x68d688e613d86a5ee05c35b1cbc1e6eaaf1024a8b1547ca07b5fe9d01f80df83",
+      "kind": "uups"
+    },
+    {
+      "address": "0x14dd6F984415dde2C5A778E086f5B36A0D174223",
+      "txHash": "0xb01725f4b4aeaa3d7daf2510b86ea07596de39209a6066d7f9423cdaf5e0cbd9",
+      "kind": "uups"
+    },
+    {
+      "address": "0xA1d9dd2b3f85705f2a3752a1A49EfC9fc980b6f3",
+      "txHash": "0xfa74888e12c59e71713b0d41806d068a2ecd25af81205247fcebe8eb3ba2f8d5",
+      "kind": "uups"
+    },
+    {
+      "address": "0xde0dC69ecAc8A70bC1586AEA0472cAF0e13D7348",
+      "txHash": "0xcc5afd561abf5048b6746417e0c4a38f5531401744d9014b1881d51113711982",
+      "kind": "uups"
     }
   ],
   "impls": {
@@ -1334,6 +1354,169 @@
           "t_uint256": {
             "label": "uint256",
             "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    "36295357c89dcf5f690b643a049257a13a614907fd094b6e164ac9a8d03409a5": {
+      "address": "0xbd23EE105644D4a2dcD43B436401C8c66A8D8771",
+      "txHash": "0x048d5b8a40de9a5240f7bc79f8e9af5b92c92a5ca773e6757df645efe553a69e",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC1967UpgradeUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:211"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "UUPSUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:107"
+          },
+          {
+            "label": "_released",
+            "offset": 0,
+            "slot": "201",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "VestingWalletV1",
+            "src": "contracts/vesting/VestingWalletV1.sol:18"
+          },
+          {
+            "label": "_beneficiary",
+            "offset": 0,
+            "slot": "202",
+            "type": "t_address",
+            "contract": "VestingWalletV1",
+            "src": "contracts/vesting/VestingWalletV1.sol:19"
+          },
+          {
+            "label": "_start",
+            "offset": 0,
+            "slot": "203",
+            "type": "t_uint256",
+            "contract": "VestingWalletV1",
+            "src": "contracts/vesting/VestingWalletV1.sol:20"
+          },
+          {
+            "label": "_cliff",
+            "offset": 0,
+            "slot": "204",
+            "type": "t_uint256",
+            "contract": "VestingWalletV1",
+            "src": "contracts/vesting/VestingWalletV1.sol:21"
+          },
+          {
+            "label": "_duration",
+            "offset": 0,
+            "slot": "205",
+            "type": "t_uint256",
+            "contract": "VestingWalletV1",
+            "src": "contracts/vesting/VestingWalletV1.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "206",
+            "type": "t_array(t_uint256)45_storage",
+            "contract": "VestingWalletV1",
+            "src": "contracts/vesting/VestingWalletV1.sol:137"
+          },
+          {
+            "label": "historicalBalanceMin",
+            "offset": 0,
+            "slot": "251",
+            "type": "t_uint256",
+            "contract": "VestingWalletV2",
+            "src": "contracts/vesting/VestingWalletV2.sol:32"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "252",
+            "type": "t_array(t_uint256)45_storage",
+            "contract": "VestingWalletV2",
+            "src": "contracts/vesting/VestingWalletV2.sol:140"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)45_storage": {
+            "label": "uint256[45]",
+            "numberOfBytes": "1440"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
           }
         }
       }
