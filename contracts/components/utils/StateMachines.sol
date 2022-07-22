@@ -6,45 +6,43 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 abstract contract StateMachines {
 
-    using EnumerableSet for EnumerableSet.Bytes32Set;
+    using EnumerableSet for EnumerableSet.UintSet;
     
-    mapping(bytes32 => bytes32) private _currentStates;
-    mapping(bytes32 => mapping(bytes32 => EnumerableSet.Bytes32Set)) private _states;
-    bytes32 public constant DEFAULT_MACHINE = 0x00;
+    mapping(uint256 => uint256) private _machines; // Machine id --> currentstate
+    mapping(uint256 => EnumerableSet.UintSet) private _states;
+    uint256 public constant UNDEFINED_STATE = 0;
 
-    event MachineInitialized(bytes32 indexed machine, bytes32 indexed initial);
+    event TransitionConfigured(uint256 indexed fromState, uint256 indexed toState);
+    event StateTransition(uint256 indexed machineId, uint256 indexed fromState, uint256 indexed toState);
 
-    modifier _onlyInState(bytes32 _machine, bytes32 _state) {
-        require(_state == _currentStates[_machine], "Wrong state");
+    modifier _onlyInState(uint256 _machineId, uint256 _state) {
+        require(_state == _machines[_machineId], "Wrong state");
         _;
     }
 
-    function _addState(bytes32 _machine, bytes32 _state, bytes32[] memory _nextStates) internal {
+    function _configureState(uint256 _state, uint256[] memory _nextStates) internal {
         for (uint256 i = 1; i < _nextStates.length; i++) {
-            _states[_machine][_state].add(_nextStates[i]);
+            _states[_state].add(_nextStates[i]);
+            emit TransitionConfigured(_state, _nextStates[i]);
         }
     }
 
-    function _initMachine(bytes32 _machine, bytes32 _initialState) internal {
-        require(_currentStates[_machine] == 0x00, "Machine already initialized");
-        _currentStates[_machine] = _initialState;
-        emit MachineInitialized(_machine, _initialState);
+    function _transitionTo(uint256 _machineId, uint256 _nextState) internal {
+        require(_states[_machines[_machineId]].contains(_nextState), "nextState unreachable from current state");
+        require(_canTransition(_machineId, _machines[_machineId], _nextState), "state transition forbidden");
+        emit StateTransition(_machineId, _machines[_machineId], _nextState);
+        _machines[_machineId] = _nextState;
+
     }
 
-    function _transitionTo(bytes32 _machine, bytes32 _nextState) internal {
-        require(_states[_machine][_currentStates[_machine]].contains(_nextState), "nextState unreachable from current state");
-        require(_canTransition(_machine, _currentStates[_machine], _nextState), "state transition forbidden");
-        _currentStates[_machine] = _nextState;
+    function _requireState(uint256 _machineId, uint256 _state) internal view {
+        require(_state == _machines[_machineId], "Wrong state");
     }
 
-    function _requireState(bytes32 _machine, bytes32 _state) internal view {
-        require(_state == _currentStates[_machine], "Wrong state");
-    }
+    function _canTransition(uint256 _machineId, uint256 _fromState, uint256 _toState) virtual internal returns(bool);
 
-    function _canTransition(bytes32 _machine, bytes32 _fromState, bytes32 _toState) virtual internal returns(bool);
-
-    function isInState(bytes32 _machine, bytes32 _state) public view returns (bool) {
-        return _currentStates[_machine] == _state;
+    function isInState(uint256 _machineId, uint256 _state) public view returns (bool) {
+        return _machines[_machineId] == _state;
     }
 
 }
