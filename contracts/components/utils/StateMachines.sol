@@ -15,7 +15,9 @@ abstract contract StateMachines {
     event TransitionConfigured(uint256 indexed fromState, uint256 indexed toState);
     event StateTransition(uint256 indexed machineId, uint256 indexed fromState, uint256 indexed toState);
 
-    modifier _onlyInState(uint256 _machineId, uint256 _state) {
+    error StateUnreachable(uint256 fromState, uint256 toState);
+
+    modifier onlyInState(uint256 _machineId, uint256 _state) {
         require(_state == _machines[_machineId], "Wrong state");
         _;
     }
@@ -28,18 +30,10 @@ abstract contract StateMachines {
     }
 
     function _transitionTo(uint256 _machineId, uint256 _nextState) internal {
-        require(_states[_machines[_machineId]].contains(_nextState), "nextState unreachable from current state");
-        require(_canTransition(_machineId, _machines[_machineId], _nextState), "state transition forbidden");
+        if (!_states[_machines[_machineId]].contains(_nextState)) revert StateUnreachable(_machines[_machineId], _nextState);
         emit StateTransition(_machineId, _machines[_machineId], _nextState);
         _machines[_machineId] = _nextState;
-
     }
-
-    function _requireState(uint256 _machineId, uint256 _state) internal view {
-        require(_state == _machines[_machineId], "Wrong state");
-    }
-
-    function _canTransition(uint256 _machineId, uint256 _fromState, uint256 _toState) virtual internal returns(bool);
 
     function isInState(uint256 _machineId, uint256 _state) public view returns (bool) {
         return _machines[_machineId] == _state;
