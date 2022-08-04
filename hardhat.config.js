@@ -7,6 +7,7 @@ require('solidity-docgen');
 require('hardhat-gas-reporter');
 require('@openzeppelin/hardhat-upgrades');
 require('@openzeppelin/hardhat-defender');
+const { task } = require('hardhat/config')
 const { relative } = require('path');
 
 const argv = require('yargs/yargs')().env('').argv;
@@ -17,6 +18,13 @@ task('compare-storage', 'Prints storage layout of 2 implementations')
     .setAction(async (taskArgs) => {
         const storageToTable = require('./scripts/storage-to-table');
         storageToTable({ old: taskArgs.old, new: taskArgs.new });
+    });
+
+task('forta:share-type', 'Checks if a list of shares is active or inactive')
+    .addParam('ids', 'Array of ids')
+    .setAction(async (taskArgs) => {
+        const getShareTypes = require('./scripts/get-share-types');
+        getShareTypes({ shareIds: taskArgs.ids.split(',') });
     });
 
 module.exports = {};

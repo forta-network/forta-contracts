@@ -6,15 +6,21 @@ const SHARE_IDS = [
     '99050038579047722081472362029662902001055019802069199823963888849172082939904',
 ];
 
-async function main() {
-    SHARE_IDS.forEach((share) => {
-        console.log(share);
-        console.log('isActive', stakingUtils.isActive(share));
-    });
+async function getShareTypes(config = {}) {
+    const ids = config.shareIds ?? SHARE_IDS;
+    const shares = ids
+        .map((share) => {
+            return {
+                shareId: share,
+                isActive: stakingUtils.isActive(share),
+            };
+        })
+        .sort((a, b) => (a.isActive ? -1 : 1));
+    console.table(shares);
 }
 
 if (require.main === module) {
-    main()
+    getShareTypes()
         .then(() => process.exit(0))
         .catch((error) => {
             console.error(error);
@@ -22,4 +28,4 @@ if (require.main === module) {
         });
 }
 
-module.exports = main;
+module.exports = getShareTypes;
