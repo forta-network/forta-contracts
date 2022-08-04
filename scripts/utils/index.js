@@ -4,6 +4,7 @@ const Conf = require('conf');
 const pLimit = require('p-limit');
 const DEBUG = require('debug')('forta:utils');
 const assert = require('assert');
+const EthDater = require('block-by-date-ethers');
 
 // override process.env with dotenv
 Object.assign(process.env, require('dotenv').config().parsed);
@@ -191,6 +192,32 @@ async function getEventsFromTx(txHash, eventName, contract, filterParams = [], a
     return contract.queryFilter(filters, receipt.blockNumber, 'latest');
 }
 
+async function getLogsForBlockInterval(initialBlock, endBlock, contract, filters) {
+    let logs = {};
+    const blockInterval = 8000;
+    for (let i = initialBlock.block; i <= endBlock.block; i += blockInterval) {
+        const fromBlock = i;
+        const toBlock = Math.min(endBlock.block, i + blockInterval);
+        DEBUG(fromBlock, '-', toBlock);
+        const filterNames = Object.keys(filters);
+        for (let filterName of filterNames) {
+            const result = await contract.queryFilter(filters[filterName], fromBlock, toBlock);
+            logs[filterName] = [...(logs[filterName] ?? []), ...result];
+        }
+    }
+    return logs;
+}
+
+async function getEventsForTimeInterval(provider, initialDate, endDate, contract, filters) {
+    const dater = new EthDater(provider);
+    const initialBlock = await dater.getDate(initialDate, true);
+    DEBUG(initialBlock);
+    const endBlock = await dater.getDate(endDate, true);
+    DEBUG(endBlock);
+
+    return getLogsForBlockInterval(initialBlock, endBlock, contract, filters);
+}
+
 const assertNotUsingHardhatKeys = (chainId, deployer) => {
     if (chainId !== 31337 && deployer.address === '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266') {
         DEBUG(deployer.address, chainId);
@@ -279,6 +306,8 @@ module.exports = {
     getContractVersion,
     getEventsFromTx,
     getEventsFromContractCreation,
+    getEventsForTimeInterval,
+    getLogsForBlockInterval,
     assertNotUsingHardhatKeys,
     kebabize,
     camelize,
