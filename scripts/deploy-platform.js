@@ -121,7 +121,7 @@ async function migrate(config = {}) {
     config.childChainManagerProxy = config.childChainManagerProxy ?? CHILD_CHAIN_MANAGER_PROXY[chainId];
     config.chainsToDeploy = config.chainsToDeploy ?? ['L1', 'L2'];
     const contracts = {};
-    const slashReasons = {};
+    const slashParams = {};
 
     const hardhatDeployment = chainId === 31337;
     contracts.forwarder = await ethers.getContractFactory('Forwarder', deployer).then((factory) => utils.tryFetchContract(CACHE, 'forwarder', factory, []));
@@ -296,11 +296,15 @@ async function migrate(config = {}) {
         penaltyModes.MIN_STAKE = 1;
         penaltyModes.MAX_STAKE = 2;
         penaltyModes.CURRENT_STAKE = 3;
+        const reasons = {};
+        reasons.OPERATIONAL_SLASH = ethers.utils.id('OPERATIONAL_SLASH');
+        reasons.MALICIOUS_SUBJECT_SLASH = ethers.utils.id('MALICIOUS_SUBJECT_SLASH');
 
-        slashReasons[ethers.utils.id('OPERATIONAL_SLASH')] = { mode: penaltyModes.MIN_STAKE, percentSlashed: '15' };
-        slashReasons[ethers.utils.id('MALICIOUS_SUBJECT_SLASH')] = { mode: penaltyModes.CURRENT_STAKE, percentSlashed: '90' };
+        const penalties = {};
+        penalties[reasons.OPERATIONAL_SLASH] = { mode: penaltyModes.MIN_STAKE, percentSlashed: '15' };
+        penalties[reasons.MALICIOUS_SUBJECT_SLASH] = { mode: penaltyModes.CURRENT_STAKE, percentSlashed: '90' };
+        const reasonIds = Object.keys(reasons).map((reason) => reasons[reason]);
 
-        const penalties = Object.keys(slashReasons).map((reason) => slashReasons[reason]);
         contracts.slashing = await ethers.getContractFactory('SlashingController', deployer).then((factory) =>
             utils.tryFetchProxy(
                 CACHE,
@@ -313,8 +317,8 @@ async function migrate(config = {}) {
                     contracts.token.address,
                     TREASURY(chainId, deployer),
                     SLASHING_DEPOSIT_AMOUNT(chainId),
-                    Object.keys(slashReasons),
-                    penalties,
+                    reasonIds,
+                    Object.keys(reasons).map((reason) => penalties[reasons[reason]]),
                 ],
                 {
                     constructorArgs: [contracts.forwarder.address],
@@ -322,8 +326,9 @@ async function migrate(config = {}) {
                 }
             )
         );
-        slashReasons.penaltyModes = penaltyModes;
-
+        slashParams.penaltyModes = penaltyModes;
+        slashParams.reasons = reasons;
+        slashParams.penalties = penalties;
         DEBUG(`[10] slashing proposal: ${contracts.slashing.address}`);
     }
 
@@ -437,7 +442,7 @@ async function migrate(config = {}) {
         deployer,
         contracts,
         roles,
-        slashReasons,
+        slashParams,
     };
 }
 

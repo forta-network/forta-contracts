@@ -144,7 +144,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         proposalId = _proposalIds.current();
         proposals[proposalId] = slashProposal;
         deposits[proposalId] = depositAmount;
-        _transitionTo(proposalId, uint256(SlashStates.CREATED));
+        _createMachine(proposalId, uint256(SlashStates.CREATED));
         emit SlashProposalCreated(proposalId, slashProposal.proposer, slashProposal.subjectId, slashProposal.subjectType, slashProposal.evidence, depositAmount);
         _emitHook(abi.encodeWithSignature("hook_slashProposalCreated(uint256,uint8,uint256)", proposalId, slashProposal.subjectType, slashProposal.subjectId));
         return proposalId;
