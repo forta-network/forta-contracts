@@ -1,0 +1,9 @@
+// SPDX-License-Identifier: UNLICENSED
+// See Forta Network License: https://github.com/forta-protocol/forta-contracts/blob/master/LICENSE.md
+
+pragma solidity ^0.8.4;
+
+interface ISlashingExecutor {
+    function freeze(uint8 subjectType, uint256 subject, bool frozen) external;
+    function slash(uint8 subjectType, uint256 subject, uint256 stakeValue) external returns (uint256);
+}

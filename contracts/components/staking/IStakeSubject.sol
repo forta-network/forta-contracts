@@ -11,4 +11,5 @@ interface IStakeSubject {
     }
     function getStakeThreshold(uint256 subject) external view returns (StakeThreshold memory);
     function isStakedOverMin(uint256 subject) external view returns (bool);
+    function isRegistered(uint256 subjectId) external view returns(bool);
 }

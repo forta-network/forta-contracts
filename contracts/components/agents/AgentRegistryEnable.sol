@@ -27,12 +27,12 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
 
     /**
      * @notice Check if agent is enabled
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      * @return true if the agent exist, has not been disabled, and is staked over minimum
      * Returns false if otherwise
      */
     function isEnabled(uint256 agentId) public view virtual returns (bool) {
-        return isCreated(agentId) &&
+        return isRegistered(agentId) &&
             getDisableFlags(agentId) == 0 &&
             _isStakedOverMin(agentId); 
     }
@@ -40,7 +40,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     /**
      * @notice Enable an agent if sender has correct permission and the agent is staked over minimum stake.
      * @dev agents can be disabled by ADMIN or OWNER.
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      * @param permission the sender claims to have to enable the agent.
      */
     function enableAgent(uint256 agentId, Permission permission) public virtual {
@@ -52,7 +52,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     /**
      * @notice Disable an agent if sender has correct permission.
      * @dev agents can be disabled by ADMIN or OWNER.
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      * @param permission the sender claims to have to enable the agent.
      */
     function disableAgent(uint256 agentId, Permission permission) public virtual {
@@ -64,7 +64,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
      * @notice Get the disabled flags for an agentId.
      * @dev Permission (uint8) is used for indexing, so we don't need to loop. 
      * If not disabled, all flags will be 0.
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      * @return uint256 containing the byte flags.
      */
     function getDisableFlags(uint256 agentId) public view returns (uint256) {
@@ -74,7 +74,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     /**
      * @notice Permission check.
      * @dev it does not uses AccessManager since it is agent specific
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      * @param permission the sender claims to have to enable the agent.
      * @return true if: permission.ADMIN and _msgSender is ADMIN_ROLE, Permission.OWNER and owner of agentId,
      * false otherwise.
@@ -88,7 +88,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     /**
      * @notice Internal methods for enabling the agent.
      * @dev fires hook _before and _after enable within the inheritance tree.
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      * @param permission the sender claims to have to enable the agent.
      * @param enable true if enabling, false if disabling.
      */
@@ -101,7 +101,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     /**
      * @notice Hook _before agent enable
      * @dev does nothing in this contract
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      * @param permission the sender claims to have to enable the agent.
      * @param value true if enabling, false if disabling.
      */
@@ -111,7 +111,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     /**
      * @notice Logic for enabling agents, sets flag corresponding to permission.
      * @dev does nothing in this contract
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      * @param permission the sender claims to have to enable the agent.
      * @param value true if enabling, false if disabling.
      */
@@ -123,7 +123,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     /**
      * @notice Hook _after agent enable
      * @dev emits Router hook
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      * @param permission the sender claims to have to enable the agent.
      * @param value true if enabling, false if disabling.
      */

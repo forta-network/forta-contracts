@@ -17,7 +17,7 @@ contract AgentRegistry is
     AgentRegistryMetadata,
     AgentRegistryEnumerable
 {
-    string public constant version = "0.1.3";
+    string public constant version = "0.1.4";
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -25,8 +25,8 @@ contract AgentRegistry is
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
      * @param __router address of Router.
-     * @param __name ERC1155 token name.
-     * @param __symbol ERC1155 token symbol.
+     * @param __name ERC721 token name.
+     * @param __symbol ERC721 token symbol.
      */
     function initialize(
         address __manager,
@@ -42,8 +42,8 @@ contract AgentRegistry is
 
     /**
      * @notice Gets all Agent state.
-     * @param agentId ERC1155 token id of the agent.
-     * @return created if agent exists.
+     * @param agentId ERC721 token id of the agent.
+     * @return registered if agent exists.
      * @return owner address.
      * @return agentVersion of the agent.
      * @return metadata IPFS pointer.
@@ -54,7 +54,7 @@ contract AgentRegistry is
     function getAgentState(uint256 agentId)
         public view
         returns (
-            bool created,
+            bool registered,
             address owner,
             uint256 agentVersion,
             string memory metadata,
@@ -62,9 +62,9 @@ contract AgentRegistry is
             bool enabled,
             uint256 disabledFlags
         ) {
-        (created, owner, agentVersion, metadata, chainIds) = getAgent(agentId);
+        (registered, owner, agentVersion, metadata, chainIds) = getAgent(agentId);
         return (
-            created,
+            registered,
             owner,
             agentVersion,
             metadata,

@@ -21,6 +21,8 @@ describe('Slashing Proposals', function () {
         await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user3.address);
         await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.minter.address);
 
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHING_ARBITER, this.accounts.user2.address);
+
         await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('100000'));
         await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, ethers.utils.parseEther('100000'));
         await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, ethers.utils.parseEther('100000'));
@@ -29,13 +31,11 @@ describe('Slashing Proposals', function () {
         await this.token.connect(this.accounts.user2).approve(this.slashing.address, ethers.constants.MaxUint256);
         await this.token.connect(this.accounts.user3).approve(this.slashing.address, ethers.constants.MaxUint256);
 
-        await this.token.connect(this.accounts.user3).approve(this.slashing.address, ethers.constants.MaxUint256);
-
-
-        // await this.scanners.connect(this.accounts.manager).adminRegister(SUBJECT_1_ADDRESS, this.accounts.user1.address, 1, 'metadata');
+        await this.scanners.connect(this.accounts.manager).adminRegister(SUBJECT_1_ADDRESS, this.accounts.user1.address, 1, 'metadata');
     });
 
     describe('Proposal Lifecycle', function () {
+
         it('From proposal to slashing', async function () {
             await expect(
                 this.slashing.connect(this.accounts.user1).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH)
@@ -47,7 +47,13 @@ describe('Slashing Proposals', function () {
                 .to.emit(this.slashing, 'StateTransition')
                 .withArgs(BigNumber.from('1'), BigNumber.from('0'), BigNumber.from('1'))
                 .to.emit(this.token, 'Transfer')
-                .withArgs(this.accounts.user1.address, this.slashing.address, STAKING_DEPOSIT);
+                .withArgs(this.accounts.user1.address, this.slashing.address, STAKING_DEPOSIT)
+                .to.emit(this.staking, 'Froze')
+                .withArgs(subjects[0].type, subjects[0].id, this.slashing.address, true);
+
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id));
+
+            await expect(this.slashing.connect(this.accounts.user2).markAsInReviewSlashProposal())
 
         });
 
@@ -57,5 +63,25 @@ describe('Slashing Proposals', function () {
         it.skip('should not propose if proposal has empty evidence');
         it.skip('should not propose if proposal has invalid subject type');
         it.skip('should not propose if proposal if subject is not registered');
+
+        it.skip('should not move from CREATED if not authorized');
+        it.skip('should not move from CREATED to wrong states');
+        //DISMISSED, REJECTED or IN_REVIEW
+        it.skip('should not move from DISMISSED to wrong states');
+        it.skip('should not move from REJECTED to wrong states');
+        it.skip('should not move from IN_REVIEW to wrong states');
+
+        it.skip('should not move from IN_REVIEW if not authorized');
+
+        // IN_REVIEW --> REVIEWED or REVERTED
+        it.skip('should not move from REVIEWED if not authorized');
+        it.skip('should not move from REVIEWED to wrong states');
+        it.skip('should not move from REVERTED to wrong states');
+        it.skip('should not move from EXECUTED to wrong states');
+        // REVIEWED --> EXECUTED or REVERTED
+
+    });
+
+    describe('Parameter setting', function () {
     });
 });

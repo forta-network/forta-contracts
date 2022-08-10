@@ -18,7 +18,7 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
 
     /**
      * @notice Checks sender (or metatx signer) is manager of the scanner token.
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId ERC721 token id of the scanner.
      */
     modifier onlyManagerOf(uint256 scannerId) {
         if (!_managers[scannerId].contains(_msgSender())) revert SenderNotManager(_msgSender(), scannerId);
@@ -27,7 +27,7 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
 
     /**
      * @notice Checks if address is defined as a manager for a scanner.
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId ERC721 token id of the scanner.
      * @param manager address to check.
      * @return true if defined as manager for scanner, false otherwise.
      */
@@ -38,7 +38,7 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
     /**
      * @notice Gets total managers defined for a scanner.
      * @dev helper for external iteration.
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId ERC721 token id of the scanner.
      * @return total managers defined for a scanner.
      */
     function getManagerCount(uint256 scannerId) public view virtual returns (uint256) {
@@ -48,7 +48,7 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
     /**
      * @notice Gets manager address at certain position of the scanner's manager set.
      * @dev helper for external iteration.
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId ERC721 token id of the scanner.
      * @param index position in the set.
      * @return address of the manager at index.
      */
@@ -58,7 +58,7 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
 
     /**
      * @notice Adds or removes a manager to a certain scanner. Restricted to scanner owner.
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId ERC721 token id of the scanner.
      * @param manager address to be added or removed fromm manager list for the scanner.
      * @param enable true for adding, false for removing.
      */

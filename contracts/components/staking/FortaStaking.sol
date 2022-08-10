@@ -14,6 +14,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Supp
 import "./FortaStakingUtils.sol";
 import "./SubjectTypes.sol";
 import "./IStakeController.sol";
+import "./ISlashingExecutor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 import "../../errors/GeneralErrors.sol";
@@ -50,7 +51,7 @@ interface IRewardReceiver {
  * succeed but you will not be able to withdraw or mint new shares from the contract. If this happens, transfer your
  * shares to an EOA or fully ERC1155 compatible contract.
  */
-contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, SubjectTypeValidator {
+contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, SubjectTypeValidator, ISlashingExecutor {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers        for Timers.Timestamp;

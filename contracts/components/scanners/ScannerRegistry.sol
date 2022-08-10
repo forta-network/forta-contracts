@@ -24,8 +24,8 @@ contract ScannerRegistry is
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
      * @param __router address of Router.
-     * @param __name ERC1155 token name.
-     * @param __symbol ERC1155 token symbol.
+     * @param __name ERC721 token name.
+     * @param __symbol ERC721 token symbol.
      */
     function initialize(
         address __manager,
@@ -41,7 +41,7 @@ contract ScannerRegistry is
 
     /**
      * @notice Gets all scanner properties and state
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId ERC721 token id of the scanner.
      * @return registered true if scanner exists.
      * @return owner address.
      * @return chainId the scanner is monitoring.

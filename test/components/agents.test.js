@@ -40,7 +40,7 @@ describe('Agent Registry', function () {
                 expect(
                     await this.agents
                         .getAgent(AGENT_ID)
-                        .then((agent) => [agent.created, agent.owner, agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
+                        .then((agent) => [agent.registered, agent.owner, agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
                 ).to.be.deep.equal([false, ethers.constants.AddressZero, 0, '', []]);
             });
 
@@ -78,12 +78,12 @@ describe('Agent Registry', function () {
                     .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
                     .to.emit(this.agents, 'AgentUpdated')
                     .withArgs(AGENT_ID, this.accounts.other.address, 'Metadata1', [1, 3, 4, 5]);
-                expect(await this.agents.isCreated(AGENT_ID)).to.be.equal(true);
+                expect(await this.agents.isRegistered(AGENT_ID)).to.be.equal(true);
                 expect(await this.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
                 expect(
                     await this.agents
                         .getAgent(AGENT_ID)
-                        .then((agent) => [agent.created, agent.owner, agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
+                        .then((agent) => [agent.registered, agent.owner, agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
                 ).to.be.deep.equal([true, this.accounts.user1.address, 1, args[2], args[3]]);
                 expect(await this.agents.getAgentCount()).to.be.equal('1');
                 expect(await this.agents.getAgentCountByChain(1)).to.be.equal('1');
@@ -136,7 +136,7 @@ describe('Agent Registry', function () {
                 expect(
                     await this.agents
                         .getAgent(AGENT_ID)
-                        .then((agent) => [agent.created, agent.owner, agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
+                        .then((agent) => [agent.registered, agent.owner, agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
                 ).to.be.deep.equal([true, this.accounts.user1.address, 1, 'Metadata1', [1, 3, 4]]);
                 expect(await this.agents.getAgentCount()).to.be.equal('1');
                 expect(await this.agents.getAgentCountByChain(1)).to.be.equal('1');
@@ -157,7 +157,7 @@ describe('Agent Registry', function () {
                 expect(
                     await this.agents
                         .getAgent(AGENT_ID)
-                        .then((agent) => [agent.created, agent.owner, agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
+                        .then((agent) => [agent.registered, agent.owner, agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
                 ).to.be.deep.equal([true, this.accounts.user1.address, 2, 'Metadata2', [1, 4, 5]]);
                 expect(await this.agents.getAgentCount()).to.be.equal('1');
                 expect(await this.agents.getAgentCountByChain(1)).to.be.equal('1');

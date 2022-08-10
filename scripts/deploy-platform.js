@@ -314,6 +314,8 @@ async function migrate(config = {}) {
                 [
                     contracts.access.address,
                     contracts.router.address,
+                    contracts.staking.address,
+                    contracts.stakingParameters.address,
                     contracts.token.address,
                     TREASURY(chainId, deployer),
                     SLASHING_DEPOSIT_AMOUNT(chainId),
@@ -347,6 +349,7 @@ async function migrate(config = {}) {
             SCANNER_ADMIN: ethers.utils.id('SCANNER_ADMIN_ROLE'),
             DISPATCHER: ethers.utils.id('DISPATCHER_ROLE'),
             SLASHER: ethers.utils.id('SLASHER_ROLE'),
+            SLASHING_ARBITER: ethers.utils.id('SLASHING_ARBITER_ROLE'),
             SWEEPER: ethers.utils.id('SWEEPER_ROLE'),
             REWARDS_ADMIN: ethers.utils.id('REWARDS_ADMIN_ROLE'),
             SCANNER_VERSION: ethers.utils.id('SCANNER_VERSION_ROLE'),
