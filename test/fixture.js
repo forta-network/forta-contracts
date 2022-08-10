@@ -55,6 +55,7 @@ function prepare(config = {}) {
                 this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
                 this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
                 this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address),
+                this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.slashing.address),
                 this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
                 this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
                 this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address),
