@@ -5,8 +5,8 @@ const stakingUtils = require('./utils/staking.js');
 
 const fs = require('fs');
 
-const INITIAL_DATE = '2022-03-28T00:00:00Z';
-const END_DATE = '2022-04-10T00:00:00Z'; //new Date().toISOString();
+const INITIAL_DATE = '2022-05-19T00:00:00Z'; //'2022-03-28T00:00:00Z';
+const END_DATE = '2022-06-01T00:00:00Z'; //new Date().toISOString();
 
 async function getClaimStats(config = {}) {
     const initialDate = config.startDate ?? INITIAL_DATE;
@@ -53,7 +53,7 @@ async function getClaimStats(config = {}) {
     console.table(deposits);
 
     console.log('Writing results to:');
-    const path = `./scripts/data/share-ids-${initialDate}-${endDate}.json`;
+    const path = `./scripts/data/${chainId}-share-ids-${initialDate}-${endDate}.json`;
     console.log(path);
     fs.writeFileSync(path, JSON.stringify(deposits));
 }

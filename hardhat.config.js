@@ -27,6 +27,13 @@ task('forta:share-type', 'Checks if a list of shares is active or inactive')
         getShareTypes({ shareIds: taskArgs.ids.split(',') });
     });
 
+task('forta:gnosis-tx-builder-gen', 'Creates a json with a Tx Builder Proposal')
+    .addParam('path', 'Path to proposal config file.')
+    .setAction(async (taskArgs) => {
+        const getShareTypes = require('./scripts/get-share-types');
+        getShareTypes({ shareIds: taskArgs.ids.split(',') });
+    });
+
 module.exports = {};
 
 /**

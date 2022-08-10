@@ -209,9 +209,12 @@ async function getLogsForBlockInterval(initialBlock, endBlock, contract, filters
 }
 
 async function getEventsForTimeInterval(provider, initialDate, endDate, contract, filters) {
+    DEBUG(initialDate);
     const dater = new EthDater(provider);
     const initialBlock = await dater.getDate(initialDate, true);
     DEBUG(initialBlock);
+    DEBUG(endDate);
+
     const endBlock = await dater.getDate(endDate, true);
     DEBUG(endBlock);
 
@@ -244,6 +247,8 @@ Array.range = function (start, stop = undefined, step = 1) {
 Array.prototype.chunk = function (size) {
     return Array.range(Math.ceil(this.length / size)).map((i) => this.slice(i * size, i * size + size));
 };
+
+
 /*********************************************************************************************************************
  *                                                        Strings                                                       *
  *********************************************************************************************************************/
