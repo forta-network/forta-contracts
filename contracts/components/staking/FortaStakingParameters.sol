@@ -17,6 +17,7 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
     event FortaStakingChanged(address staking);
 
     string public constant version = "0.1.0";
+    uint256 public constant maxSlashableStakePercent = 90;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -85,6 +86,5 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
     function isRegistered(uint8 subjectType, uint256 subject) external view returns (bool) {
         return _stakeSubjectHandlers[subjectType].isRegistered(subject);
     }
-    
-    function maxSlashableStakeFor(uint8 subjectType, uint256 subject) external view override returns (uint256) {}
+
 }

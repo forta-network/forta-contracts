@@ -12,6 +12,6 @@ interface IStakeController {
     function maxStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
     function minStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
     function totalStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
-    function maxSlashableStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
+    function maxSlashableStakePercent() external view returns(uint256);
     function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns(bool);
 }

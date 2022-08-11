@@ -48,4 +48,10 @@ abstract contract StateMachines {
         return _machines[_machineId] == _state;
     }
 
+    function currentState(uint256 _machineId) public view returns (uint256) {
+        return _machines[_machineId];
+    }
+
+    uint256[48] private __gap;
+
 }

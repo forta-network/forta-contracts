@@ -584,7 +584,7 @@ describe('Forta Staking', function () {
     describe('Freezing', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
-            await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
+            await expect(this.staking.connect(this.accounts.admin).setSlashingController(this.accounts.slasher.address)).to.be.not.reverted;
             await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;
         });
 
@@ -620,7 +620,7 @@ describe('Forta Staking', function () {
     describe('Slashing', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
-            await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
+            await expect(this.staking.connect(this.accounts.admin).setSlashingController(this.accounts.slasher.address)).to.be.not.reverted;
             await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;
         });
 
@@ -774,7 +774,7 @@ describe('Forta Staking', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
             this.accounts.getAccount('sweeper');
-            await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
+            await expect(this.staking.connect(this.accounts.admin).setSlashingController(this.accounts.slasher.address)).to.be.not.reverted;
             await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SWEEPER, this.accounts.sweeper.address)).to.be.not.reverted;
             await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.sweeper.address)).to.be.not.reverted;
             await expect(this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.sweeper.address)).to.be.not.reverted;

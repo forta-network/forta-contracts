@@ -10,6 +10,7 @@ import "./FortaStakingParameters.sol";
 import "../utils/StateMachines.sol";
 import "../../errors/GeneralErrors.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectTypeValidator {
@@ -59,6 +60,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     FortaStakingParameters public stakingParameters;
     IERC20 public depositToken;
     uint256 public depositAmount;
+    uint256 public slashPercentToProposer;
     address public treasury;
 
     string public constant version = "0.1.0";
@@ -68,6 +70,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     event SlashingExecutorChanged(address indexed slashingExecutor);
     event StakingParametersManagerChanged(address indexed stakingParametersManager);
     event DepositAmountChanged(uint256 amount);
+    event SlashPercentToProposerChanged(uint256 amount);
     event TreasuryChanged(address newTreasury);
     event DepositReturned(address indexed proposer, uint256 amount);
     event DepositSlashed(address indexed proposer, uint256 amount);
@@ -78,9 +81,15 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     error NonExistentProposal(uint256 proposalId);
     error UnauthorizedToSlashProposal(bytes32 roleNeeded, address caller);
     error NonRegisteredSubject(uint8 subjectType, uint256 subjectId);
+    error WrongPercentValue(uint256 value);
 
     modifier onlyValidSlashPenaltyId(bytes32 penaltyId) {
         if (penalties[penaltyId].mode == PenaltyMode.UNDEFINED) revert WrongSlashPenaltyId(penaltyId);
+        _;
+    }
+
+    modifier onlyValidPercent(uint256 percent) {
+        if (percent > 100) revert WrongPercentValue(percent);
         _;
     }
 
@@ -100,6 +109,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         address __depositToken,
         address __treasury,
         uint256 __depositAmount,
+        uint256 __slashPercentToProposer,
         bytes32[] calldata __slashPenaltyIds,
         SlashPenalty[] calldata __slashPenalties
     ) public initializer {
@@ -111,6 +121,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         _setStakingParametersManager(__stakingParameters);
         _setTreasury(__treasury);
         _setDepositAmount(__depositAmount);
+        _setSlashPercentToProposer(__slashPercentToProposer);
         _setSlashPenalties(__slashPenaltyIds, __slashPenalties);
 
         if (__depositToken == address(0)) revert ZeroAddress("__depositToken");
@@ -140,6 +151,8 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         afterReviewed[1] = uint256(SlashStates.REVERTED);
         _configureState(uint256(SlashStates.REVIEWED), afterReviewed);
     }
+
+    // Proposal LifeCycle
 
     function proposeSlash(
         string calldata _evidence,
@@ -218,12 +231,43 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     }
 
     function executeSlashProposal(uint256 _proposalId) external onlyRole(SLASHER_ROLE) {
-        /*if (slashPercents[proposals[_proposalId].penaltyId])
         _transitionTo(_proposalId, uint256(SlashStates.EXECUTED));
+        slashingExecutor.slash(_proposalId);
         slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
-
-        );*/
     }
+
+    // Penalty calculation (ISlashingController)
+    function getSlashedStakeValue(uint256 _proposalId) public view returns (uint256) {
+        Proposal memory proposal = proposals[_proposalId];
+        SlashPenalty memory penalty = penalties[proposal.penaltyId];
+        uint256 totalStake = stakingParameters.totalStakeFor(proposal.subjectType, proposal.subjectId);
+        uint256 max = Math.mulDiv(totalStake, stakingParameters.maxSlashableStakePercent(), 100);
+        if (penalty.mode == PenaltyMode.UNDEFINED) {
+            return 0;
+        } else if (penalty.mode == PenaltyMode.MAX_STAKE) {
+            return Math.min(
+                    max,
+                    Math.mulDiv(stakingParameters.maxStakeFor(proposal.subjectType, proposal.subjectId), penalty.percentSlashed, 100)
+                );
+        } else if (penalty.mode == PenaltyMode.MIN_STAKE) {
+            return Math.min(
+                    max,
+                    Math.mulDiv(stakingParameters.minStakeFor(proposal.subjectType, proposal.subjectId), penalty.percentSlashed, 100)
+                );
+        } else if (penalty.mode == PenaltyMode.CURRENT_STAKE) {
+            return Math.min(max, Math.mulDiv(totalStake, penalty.percentSlashed, 100));
+        }
+    }
+
+    function getSubject(uint256 _proposalId) external view returns (uint8 subjectType, uint256 subject) {
+        return (proposals[_proposalId].subjectType, proposals[_proposalId].subjectId);
+    }
+
+    function getProposer(uint256 _proposalId) external view returns (address) {
+        return proposals[_proposalId].proposer;
+    }
+
+    // Admin methods
 
     function setSlashingExecutor(ISlashingExecutor _executor) external onlyRole(STAKING_ADMIN_ROLE) {
         _setSlashingExecutor(_executor);
@@ -237,6 +281,10 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         _setDepositAmount(_amount);
     }
 
+    function setSlashPercentToProposer(uint256 _amount) external onlyRole(STAKING_ADMIN_ROLE) {
+        _setSlashPercentToProposer(_amount);
+    }
+
     function setTreasury(address _treasury) external onlyRole(STAKING_ADMIN_ROLE) {
         _setTreasury(_treasury);
     }
@@ -244,6 +292,8 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     function setSlashPenalties(bytes32[] calldata _slashReasons, SlashPenalty[] calldata _slashPenalties) external onlyRole(STAKING_ADMIN_ROLE) {
         _setSlashPenalties(_slashReasons, _slashPenalties);
     }
+
+    // Private validations
 
     function _authorizeRevertSlashProposal(uint256 _proposalId) private view {
         if (isInState(_proposalId, uint256(SlashStates.IN_REVIEW)) && !hasRole(SLASHING_ARBITER_ROLE, msg.sender)) {
@@ -257,6 +307,8 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     function _validateProposal(Proposal memory _slashProposal) private view onlyValidSlashPenaltyId(_slashProposal.penaltyId) onlyValidSubjectType(_slashProposal.subjectType) {
         if (bytes(_slashProposal.evidence).length == 0) revert EmptyString("_slashProposal.evidence");
     }
+
+    // Private param setting
 
     function _setSlashingExecutor(ISlashingExecutor _executor) private {
         if (address(_executor) == address(0)) revert ZeroAddress("_executor");
@@ -276,6 +328,10 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         emit DepositAmountChanged(depositAmount);
     }
 
+    function _setSlashPercentToProposer(uint256 _amount) onlyValidPercent(_amount) private {
+        slashPercentToProposer = _amount;
+        emit SlashPercentToProposerChanged(_amount);
+    }
 
     function _setTreasury(address _treasury) private {
         if (_treasury == address(0)) revert ZeroAddress("_treasury");
@@ -294,6 +350,8 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
             emit SlashPenaltyAdded(_slashReasons[i], _slashPenalties[i].percentSlashed, _slashPenalties[i].mode);
         }
     }
+
+    // Private deposit handling
 
     function _returnDeposit(uint256 _proposalId) private {
         SafeERC20.safeTransfer(depositToken, proposals[_proposalId].proposer, deposits[_proposalId]);
