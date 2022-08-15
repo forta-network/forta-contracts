@@ -8,7 +8,7 @@
 
 **Change License:** GNU General Public License 3.0 or later
 
-**Licensed Work:** `forta-contracts` located at https://github.com/forta-protocol/forta-contracts. The Licensed Work is Copyright (c) 2022 Forta Foundation
+**Licensed Work:** `forta-contracts` located at https://github.com/forta-network/forta-contracts. The Licensed Work is Copyright (c) 2022 Forta Foundation
 
 **Licensor:**  Forta Foundation     
 
