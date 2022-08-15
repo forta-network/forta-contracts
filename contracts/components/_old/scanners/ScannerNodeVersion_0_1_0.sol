@@ -1,6 +1,6 @@
 // Sources flattened with hardhat v2.7.0 https://hardhat.org
 // SPDX-License-Identifier: UNLICENSED
-// See Forta Network License: https://github.com/forta-protocol/forta-contracts/blob/master/LICENSE.md
+// See Forta Network License: https://github.com/forta-network/forta-contracts/blob/master/LICENSE.md
 // File @openzeppelin/contracts/utils/Address.sol@v4.4.0
 
 

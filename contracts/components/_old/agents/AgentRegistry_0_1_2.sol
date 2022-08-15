@@ -3,7 +3,7 @@
 // File @openzeppelin/contracts/utils/Address.sol@v4.4.0
 
 // SPDX-License-Identifier: UNLICENSED
-// See Forta Network License: https://github.com/forta-protocol/forta-contracts/blob/master/LICENSE.md
+// See Forta Network License: https://github.com/forta-network/forta-contracts/blob/master/LICENSE.md
 // OpenZeppelin Contracts v4.4.0 (utils/Address.sol)
 
 pragma solidity ^0.8.0;
