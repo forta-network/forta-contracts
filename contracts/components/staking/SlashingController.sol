@@ -12,6 +12,8 @@ import "../../errors/GeneralErrors.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "hardhat/console.sol";
+
 
 contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectTypeValidator {
     using Counters for Counters.Counter;
@@ -61,7 +63,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     IERC20 public depositToken;
     uint256 public depositAmount;
     uint256 public slashPercentToProposer;
-    address public treasury;
 
     string public constant version = "0.1.0";
 
@@ -71,7 +72,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     event StakingParametersManagerChanged(address indexed stakingParametersManager);
     event DepositAmountChanged(uint256 amount);
     event SlashPercentToProposerChanged(uint256 amount);
-    event TreasuryChanged(address newTreasury);
     event DepositReturned(address indexed proposer, uint256 amount);
     event DepositSlashed(address indexed proposer, uint256 amount);
     event SlashPenaltyAdded(bytes32 indexed penaltyId, uint256 percentSlashed, PenaltyMode mode);
@@ -107,7 +107,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         ISlashingExecutor __executor,
         FortaStakingParameters __stakingParameters,
         address __depositToken,
-        address __treasury,
         uint256 __depositAmount,
         uint256 __slashPercentToProposer,
         bytes32[] calldata __slashPenaltyIds,
@@ -119,7 +118,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
 
         _setSlashingExecutor(__executor);
         _setStakingParametersManager(__stakingParameters);
-        _setTreasury(__treasury);
         _setDepositAmount(__depositAmount);
         _setSlashPercentToProposer(__slashPercentToProposer);
         _setSlashPenalties(__slashPenaltyIds, __slashPenalties);
@@ -160,7 +158,9 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         uint256 _subjectId,
         bytes32 _penaltyId
     ) external returns (uint256 proposalId) {
+        // multiple proposals?
         if (!stakingParameters.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
+        if (stakingParameters.totalStakeFor(_subjectType, _subjectId) == 0) revert ZeroAmount("subject stake");
         Proposal memory slashProposal = Proposal(_evidence, _subjectId, msg.sender, _penaltyId, _subjectType);
         _validateProposal(slashProposal);
         SafeERC20.safeTransferFrom(depositToken, msg.sender, address(this), depositAmount);
@@ -285,10 +285,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         _setSlashPercentToProposer(_amount);
     }
 
-    function setTreasury(address _treasury) external onlyRole(STAKING_ADMIN_ROLE) {
-        _setTreasury(_treasury);
-    }
-
     function setSlashPenalties(bytes32[] calldata _slashReasons, SlashPenalty[] calldata _slashPenalties) external onlyRole(STAKING_ADMIN_ROLE) {
         _setSlashPenalties(_slashReasons, _slashPenalties);
     }
@@ -333,12 +329,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         emit SlashPercentToProposerChanged(_amount);
     }
 
-    function _setTreasury(address _treasury) private {
-        if (_treasury == address(0)) revert ZeroAddress("_treasury");
-        treasury = _treasury;
-        emit TreasuryChanged(_treasury);
-    }
-
     function _setSlashPenalties(bytes32[] calldata _slashReasons, SlashPenalty[] calldata _slashPenalties) private {
         uint256 length = _slashReasons.length;
         if (length != _slashPenalties.length) revert DifferentLenghtArray("_slashReasons", "_slashPenalties");
@@ -360,7 +350,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     }
 
     function _slashDeposit(uint256 _proposalId) private {
-        SafeERC20.safeTransfer(depositToken, treasury, deposits[_proposalId]);
+        SafeERC20.safeTransfer(depositToken, slashingExecutor.treasury(), deposits[_proposalId]);
         deposits[_proposalId] = 0;
         emit DepositSlashed(proposals[_proposalId].proposer, deposits[_proposalId]);
     }

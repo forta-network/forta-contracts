@@ -151,6 +151,11 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         emit TreasurySet(__treasury);
     }
 
+    /// Returns treasury address (slashed tokens destination)
+    function treasury() public view returns (address) {
+        return _treasury;
+    }
+
     /**
      * @notice Get stake of a subject (not marked for withdrawal).
      * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol

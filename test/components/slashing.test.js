@@ -1,4 +1,5 @@
 const { ethers, upgrades, network } = require('hardhat');
+const { parseEther } = ethers.utils;
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { BigNumber } = require('ethers');
@@ -9,8 +10,11 @@ const subjects = [
     { id: ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), type: 1 }, // Agent id, agent type
 ];
 
-const MAX_STAKE = '10000';
-const STAKING_DEPOSIT = ethers.utils.parseEther('1000');
+const MAX_STAKE = parseEther('10000');
+const MIN_STAKE = parseEther('100');
+const STAKING_DEPOSIT = parseEther('1000');
+
+let slashTreasuryAddress, proposerPercent;
 
 const STATES = {
     UNDEFINED: BigNumber.from('0'),
@@ -24,7 +28,7 @@ const STATES = {
 };
 
 describe('Slashing Proposals', function () {
-    prepare({ stake: { min: '1', max: MAX_STAKE, activated: true } });
+    prepare({ stake: { min: MIN_STAKE, max: MAX_STAKE, activated: true } });
 
     beforeEach(async function () {
         await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
@@ -32,67 +36,87 @@ describe('Slashing Proposals', function () {
         await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user3.address);
         await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.minter.address);
 
-        await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHING_ARBITER, this.accounts.user2.address);
-        await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.user3.address);
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHING_ARBITER, this.accounts.user3.address);
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.admin.address);
 
-        await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('100000'));
-        await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, ethers.utils.parseEther('100000'));
-        await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, ethers.utils.parseEther('100000'));
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, parseEther('100000'));
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, parseEther('100000'));
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, parseEther('100000'));
 
         await this.token.connect(this.accounts.user1).approve(this.slashing.address, ethers.constants.MaxUint256);
         await this.token.connect(this.accounts.user2).approve(this.slashing.address, ethers.constants.MaxUint256);
         await this.token.connect(this.accounts.user3).approve(this.slashing.address, ethers.constants.MaxUint256);
 
-        await this.scanners.connect(this.accounts.manager).adminRegister(SUBJECT_1_ADDRESS, this.accounts.user1.address, 1, 'metadata');
+        await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
+        await this.token.connect(this.accounts.user2).approve(this.staking.address, ethers.constants.MaxUint256);
+        await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
+
+        await this.scanners.connect(this.accounts.manager).adminRegister(SUBJECT_1_ADDRESS, this.accounts.user2.address, 1, 'metadata');
+        await this.staking.connect(this.accounts.user2).deposit(0, SUBJECT_1_ADDRESS, STAKING_DEPOSIT);
+
+        slashTreasuryAddress = await this.staking.treasury();
+        proposerPercent = await this.slashing.slashPercentToProposer();
     });
 
     describe('Proposal Lifecycle', function () {
         it('From proposal to slashing', async function () {
             const PROPOSAL_ID = BigNumber.from('1');
-            const initialDepositorBalance = await this.token.balanceOf(this.accounts.user1.address);
+            const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
+            const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
+
             await expect(
-                this.slashing.connect(this.accounts.user1).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH)
+                this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH)
             )
                 .to.emit(this.slashing, 'SlashProposalCreated')
-                .withArgs(PROPOSAL_ID, this.accounts.user1.address, subjects[0].id, subjects[0].type, 'EVIDENCE_IPFS_HASH', STAKING_DEPOSIT)
+                .withArgs(PROPOSAL_ID, this.accounts.user2.address, subjects[0].id, subjects[0].type, 'EVIDENCE_IPFS_HASH', STAKING_DEPOSIT)
                 .to.emit(this.slashing, 'MachineCreated')
                 .withArgs(PROPOSAL_ID, STATES.CREATED)
                 .to.emit(this.slashing, 'StateTransition')
                 .withArgs(PROPOSAL_ID, STATES.UNDEFINED, STATES.CREATED)
                 .to.emit(this.token, 'Transfer')
-                .withArgs(this.accounts.user1.address, this.slashing.address, STAKING_DEPOSIT)
+                .withArgs(this.accounts.user2.address, this.slashing.address, STAKING_DEPOSIT)
                 .to.emit(this.staking, 'Froze')
                 .withArgs(subjects[0].type, subjects[0].id, this.slashing.address, true);
 
             expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(true);
-            expect(await this.token.balanceOf(this.accounts.user1.address)).to.eq(initialDepositorBalance.sub(STAKING_DEPOSIT));
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance.sub(STAKING_DEPOSIT));
             expect(await this.token.balanceOf(this.slashing.address)).to.eq(STAKING_DEPOSIT);
             expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.CREATED);
 
-            await expect(this.slashing.connect(this.accounts.user2).markAsInReviewSlashProposal(PROPOSAL_ID))
+            await expect(this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID))
                 .to.emit(this.slashing, 'StateTransition')
                 .withArgs(PROPOSAL_ID, STATES.CREATED, STATES.IN_REVIEW)
                 .to.emit(this.token, 'Transfer')
-                .withArgs(this.slashing.address, this.accounts.user1.address, STAKING_DEPOSIT);
+                .withArgs(this.slashing.address, this.accounts.user2.address, STAKING_DEPOSIT);
 
-            expect(await this.token.balanceOf(this.accounts.user1.address)).to.eq(initialDepositorBalance);
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance);
             expect(await this.token.balanceOf(this.slashing.address)).to.eq(BigNumber.from('0'));
             expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.IN_REVIEW);
 
-            await expect(this.slashing.connect(this.accounts.user2).markAsReviewedSlashProposal(PROPOSAL_ID))
+            await expect(this.slashing.connect(this.accounts.user3).markAsReviewedSlashProposal(PROPOSAL_ID))
                 .to.emit(this.slashing, 'StateTransition')
                 .withArgs(PROPOSAL_ID, STATES.IN_REVIEW, STATES.REVIEWED);
 
             expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.REVIEWED);
-            
-            await expect(this.slashing.connect(this.accounts.user3).executeSlashProposal(PROPOSAL_ID))
+
+            const slashedAmount = parseEther('15');
+            const proposerShare = slashedAmount.mul(proposerPercent).div('100');
+            const treasuryShare = slashedAmount.sub(proposerShare);
+
+            await expect(this.slashing.connect(this.accounts.admin).executeSlashProposal(PROPOSAL_ID))
                 .to.emit(this.slashing, 'StateTransition')
                 .withArgs(PROPOSAL_ID, STATES.REVIEWED, STATES.EXECUTED)
                 .to.emit(this.staking, 'Froze')
-                .withArgs(subjects[0].type, subjects[0].id, this.slashing.address, false);
-
+                .withArgs(subjects[0].type, subjects[0].id, this.slashing.address, false)
+                .to.emit(this.staking, 'Slashed')
+                .withArgs(subjects[0].type, subjects[0].id, this.slashing.address, parseEther('15'))
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.staking.address, slashTreasuryAddress, treasuryShare)
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.staking.address, this.accounts.user2.address, proposerShare);
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance.add(proposerShare));
+            expect(await this.token.balanceOf(slashTreasuryAddress)).to.eq(initialTreasuryBalance.add(treasuryShare));
             expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(false);
-
         });
 
         it.skip('should not propose if proposer does not have deposit');
@@ -117,6 +141,80 @@ describe('Slashing Proposals', function () {
         it.skip('should not move from REVERTED to wrong states');
         it.skip('should not move from EXECUTED to wrong states');
         // REVIEWED --> EXECUTED or REVERTED
+    });
+
+    describe('Slashing amounts', function () {
+        beforeEach(async function () {
+            const slashReasons = [ethers.utils.id('MIN_STAKE'), ethers.utils.id('MAX_STAKE'), ethers.utils.id('CURRENT_STAKE')];
+            const slashPenalties = [
+                { mode: this.slashParams.penaltyModes.MIN_STAKE, percentSlashed: '10' },
+                { mode: this.slashParams.penaltyModes.MAX_STAKE, percentSlashed: '20' },
+                { mode: this.slashParams.penaltyModes.CURRENT_STAKE, percentSlashed: '30' },
+            ];
+            await this.slashing.connect(this.accounts.admin).setSlashPenalties(slashReasons, slashPenalties);
+        });
+
+        it('min stake', async function () {
+            // All active stake
+            await this.staking.connect(this.accounts.user2).deposit(subjects[1].type, subjects[1].id, STAKING_DEPOSIT);
+            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'));
+            expect(await this.slashing.getSlashedStakeValue('1')).to.eq(MIN_STAKE.mul('10').div('100'));
+            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('1');
+
+            // Mix active and inactive stake
+            await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, STAKING_DEPOSIT.div(2));
+            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'));
+            expect(await this.slashing.getSlashedStakeValue('2')).to.eq(MIN_STAKE.mul('10').div('100'));
+            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('2');
+
+            // All inactive stake
+            await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, STAKING_DEPOSIT.div(2));
+            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'));
+            expect(await this.slashing.getSlashedStakeValue('3')).to.eq(MIN_STAKE.mul('10').div('100'));
+        });
+
+        it('max possible stake', async function () {
+            const maxSlashableStakePercent = await this.stakingParameters.maxSlashableStakePercent();
+            const totalStake = await this.stakingParameters.totalStakeFor(subjects[0].type, subjects[0].id);
+            const maxSlashable = totalStake.mul(maxSlashableStakePercent).div('100');
+
+            // All active stake
+            await this.staking.connect(this.accounts.user2).deposit(subjects[1].type, subjects[1].id, MAX_STAKE);
+            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('MAX_STAKE'));
+            console.log(MAX_STAKE.mul('20').div('100'));
+            expect(await this.slashing.getSlashedStakeValue('1')).to.eq(maxSlashable);
+            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('1');
+
+            // Mix active and inactive stake
+            await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, MAX_STAKE.div(2));
+            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('MAX_STAKE'));
+            expect(await this.slashing.getSlashedStakeValue('2')).to.eq(maxSlashable);
+            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('2');
+
+            // All inactive stake
+            await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, MAX_STAKE.div(2));
+            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('MAX_STAKE'));
+            expect(await this.slashing.getSlashedStakeValue('3')).to.eq(maxSlashable.toString());
+        });
+
+        it('current stake', async function () {
+            // All active stake
+            await this.staking.connect(this.accounts.user2).deposit(subjects[1].type, subjects[1].id, STAKING_DEPOSIT);
+            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('CURRENT_STAKE'));
+            expect(await this.slashing.getSlashedStakeValue('1')).to.eq(STAKING_DEPOSIT.mul('30').div('100'));
+            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('1');
+
+            // Mix active and inactive stake
+            await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, STAKING_DEPOSIT.div(2));
+            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('CURRENT_STAKE'));
+            expect(await this.slashing.getSlashedStakeValue('2')).to.eq(STAKING_DEPOSIT.mul('30').div('100'));
+            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('2');
+
+            // All inactive stake
+            await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, STAKING_DEPOSIT.div(2));
+            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('CURRENT_STAKE'));
+            expect(await this.slashing.getSlashedStakeValue('3')).to.eq(STAKING_DEPOSIT.mul('30').div('100'));
+        });
     });
 
     describe('Parameter setting', function () {});

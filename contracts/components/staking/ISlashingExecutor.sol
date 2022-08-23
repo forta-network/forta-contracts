@@ -6,4 +6,5 @@ pragma solidity ^0.8.4;
 interface ISlashingExecutor {
     function freeze(uint8 subjectType, uint256 subject, bool frozen) external;
     function slash(uint256 slashProposalId) external returns (uint256);
+    function treasury() external returns (address);
 }

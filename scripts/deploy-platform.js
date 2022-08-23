@@ -87,13 +87,23 @@ const TREASURY = (chainId, deployer) => {
     }
 };
 
+const SLASH_PERCENT_TO_PROPOSER = (chainId) => {
+    switch (chainId) {
+        case 8001:
+        case 31337:
+            return '10';
+        default:
+            throw new Error('SLASH_PERCENT_TO_PROPOSER not configured for chainId: ', chainId);
+    }
+};
+
 const SLASHING_DEPOSIT_AMOUNT = (chainId) => {
     switch (chainId) {
         case 8001:
         case 31337:
             return ethers.utils.parseEther('1000');
         default:
-            throw new Error('Treasury not configured for chainId: ', chainId);
+            throw new Error('SLASHING_DEPOSIT_AMOUNT not configured for chainId: ', chainId);
     }
 };
 
@@ -317,8 +327,8 @@ async function migrate(config = {}) {
                     contracts.staking.address,
                     contracts.stakingParameters.address,
                     contracts.token.address,
-                    TREASURY(chainId, deployer),
                     SLASHING_DEPOSIT_AMOUNT(chainId),
+                    SLASH_PERCENT_TO_PROPOSER(chainId),
                     reasonIds,
                     Object.keys(reasons).map((reason) => penalties[reasons[reason]]),
                 ],
@@ -355,6 +365,7 @@ async function migrate(config = {}) {
             DISPATCHER: ethers.utils.id('DISPATCHER_ROLE'),
             SLASHER: ethers.utils.id('SLASHER_ROLE'),
             SLASHING_ARBITER: ethers.utils.id('SLASHING_ARBITER_ROLE'),
+            STAKING_ADMIN: ethers.utils.id('STAKING_ADMIN_ROLE'),
             SWEEPER: ethers.utils.id('SWEEPER_ROLE'),
             REWARDS_ADMIN: ethers.utils.id('REWARDS_ADMIN_ROLE'),
             SCANNER_VERSION: ethers.utils.id('SCANNER_VERSION_ROLE'),
