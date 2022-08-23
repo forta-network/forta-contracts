@@ -6,6 +6,7 @@ const _ = require('lodash');
 
 const ADDRESS = '0x15d3c7e811582Be09Bb8673cD603Bb2F22D1e47B';
 const SUBJECT_TYPE = 0;
+const SHARE_TYPE = 'inactive';
 
 const exclusion = [
     '0x52bb254898620Fb3F75956Cf6EC00131e48B7Aed',
@@ -58,6 +59,8 @@ async function getSharesFor(config = {}) {
     DEBUG(`Network:  ${name} (${chainId})`);
     DEBUG(`Deployer: ${deployer.address}`);
     DEBUG(`Checking ownership of: ${ADDRESS}`);
+    DEBUG(`Share type: ${SHARE_TYPE}`);
+
     DEBUG(await CACHE.get('staking.address'));
     DEBUG('----------------------------------------------------');
 
@@ -74,16 +77,17 @@ async function getSharesFor(config = {}) {
         ).then(Object.fromEntries));
 
     const data = shares.map((item) => {
+        const shareId = SHARE_TYPE == 'active' ? item.activeSharesId : item.inactiveSharesId;
         return {
             registryId: item.subject,
-            activeShareId: item.activeSharesId,
-            call: contracts.staking.interface.encodeFunctionData('balanceOf', [ADDRESS, item.activeSharesId]),
+            shareId: shareId,
+            call: contracts.staking.interface.encodeFunctionData('balanceOf', [ADDRESS, shareId]),
         };
     });
     const idChunks = [];
     const balances = await Promise.all(
         data
-            .map((x) => [x.registryId, x.activeShareId, x.call])
+            .map((x) => [x.registryId, x.shareId, x.call])
             .chunk(50)
             .map((chunk) => {
                 idChunks.push(chunk.map((x) => [x[0], x[1]]));
@@ -96,7 +100,7 @@ async function getSharesFor(config = {}) {
     console.log('allShares', allShares.length);
     DEBUG(allShares);
     const ownedByAddress = allShares.filter((x) => ethers.BigNumber.from(x[1]).gt(ethers.BigNumber.from(0)));
-    
+
     console.log('ownedByAddress', ownedByAddress.length);
     DEBUG(ownedByAddress);
 
@@ -115,16 +119,15 @@ async function getSharesFor(config = {}) {
                     id: ethers.utils.hexZeroPad(x.id, 20),
                 };
             })
-            .filter((item) => !exclusion.find((x) => x === item.id.toLowerCase())),
-        subjectIds: ownedByAddress
-            .map((x) => ethers.utils.hexValue(ethers.BigNumber.from(x[0][0]), 20))
-            .map((x) => ethers.utils.hexZeroPad(x, 20))
-            .filter((item) => !exclusion.find((x) => x === item.toLowerCase())),
+            .filter((x) => ethers.utils.parseEther(x.amount).gt(ethers.BigNumber.from(0))),
+        //.filter((item) => !exclusion.find((x) => x === item.id.toLowerCase())),
+        subjectIds: ownedByAddress.map((x) => ethers.utils.hexValue(ethers.BigNumber.from(x[0][0]), 20)).map((x) => ethers.utils.hexZeroPad(x, 20)),
+        //.filter((item) => !exclusion.find((x) => x === item.toLowerCase())),
     };
     results.subjectIdsAndAmounts = _.uniqBy(results.subjectIdsAndAmounts, 'id');
     results.subjectIds = _.uniq(results.subjectIds);
 
-    const fileName = `./scripts/data/active_shares_${ADDRESS}.json`;
+    const fileName = `./scripts/data/${SHARE_TYPE == 'inactive' ? 'in' : ''}active_shares_${ADDRESS}.json`;
     fs.writeFileSync(fileName, JSON.stringify(results));
     console.log('Saved to: ', fileName);
 }

@@ -1,5 +1,3 @@
-const { ethers } = require('hardhat');
-const parseEther = ethers.utils.parseEther;
 const DEBUG = require('debug')('forta');
 const utils = require('./utils');
 require('dotenv/config');
@@ -7,11 +5,11 @@ console.log(process.env);
 const { DefenderRelayProvider, DefenderRelaySigner } = require('defender-relay-client/lib/ethers');
 
 const credentials = { apiKey: process.env.DEFENDER_RELAYER_KEY, apiSecret: process.env.DEFENDER_RELAYER_SECRET };
-console.log(credentials)
 const provider = new DefenderRelayProvider(credentials);
 const signer = new DefenderRelaySigner(credentials, provider, { speed: 'fast' });
-const SUBJECT_IDS = [];
 const SUBJECT_TYPE = 0;
+const ADDRESS = '0x';
+const METHOD = 'withdraw';
 
 async function stakeAll(config = {}) {
 
@@ -42,9 +40,9 @@ async function stakeAll(config = {}) {
             }).map((entry) => Promise.all(entry))
         ).then(Object.fromEntries));
 
-    const toUnstake = require('./data/active_shares_0x15d3c7e811582Be09Bb8673cD603Bb2F22D1e47B.json').subjectIdsAndAmounts;
+    const toUnstake = require(`./data/inactive_shares_${ADDRESS}.json`).subjectIds;
     DEBUG('staking...');
-    const stakingCalls = toUnstake.map((item) => contracts.staking.interface.encodeFunctionData('initiateWithdrawal', [SUBJECT_TYPE, item.id, parseEther(item.amount)]));
+    const stakingCalls = toUnstake.map((item) => contracts.staking.interface.encodeFunctionData(METHOD, [SUBJECT_TYPE, item]));
     DEBUG('staking ', stakingCalls.length);
 
     const stakingReceipts = await Promise.all(
@@ -56,7 +54,6 @@ async function stakeAll(config = {}) {
 
     console.log('unstaked.');
     console.log(stakingReceipts);
-
 }
 
 if (require.main === module) {
