@@ -14,7 +14,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "hardhat/console.sol";
 
-
 contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectTypeValidator {
     using Counters for Counters.Counter;
 
@@ -151,7 +150,14 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     }
 
     // Proposal LifeCycle
-
+    /**
+     * @notice Creates a slash proposal pointing to a slashable subject. To do so, the proposer must provide a FORT deposit and present evidence.
+     * @param _subjectType type of the subject.
+     * @param _subjectId ERC721 registry id of the stake subject.
+     * @param _penaltyId if of the SlashPenalty to inflict upon the subject if the proposal goes through.
+     * @param _evidence IPFS hashes of the evidence files, proof of the subject being slash worthy.
+     * @return proposalId the proposal identifier.
+     */
     function proposeSlash(
         uint8 _subjectType,
         uint256 _subjectId,
@@ -173,6 +179,12 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         return proposalId;
     }
 
+    /**
+     * @notice Arbiter dismisses a slash proposal (the proposal is legitimate, but after investigation, it is not a slashable offense)
+     * The deposit is returned to the proposer, and the stake of the subject is unfrozen
+     * @param _proposalId the proposal identifier.
+     * @param _evidence IPFS hashes of the evidence files, proof of the subject not being slashable.
+     */
     function dismissSlashProposal(uint256 _proposalId, string[] calldata _evidence) external onlyRole(SLASHING_ARBITER_ROLE) {
         if (deposits[_proposalId] == 0) revert ZeroAmount("deposit on _proposalId");
         _transitionTo(_proposalId, uint256(SlashStates.DISMISSED));
@@ -181,6 +193,12 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
     }
 
+    /**
+     * @notice Arbiter rejects a slash proposal, slashing the deposit of the proposer (the proposal is deemed as spam, malicious, or similar)
+     * and unfreezing the subject's stake.
+     * @param _proposalId the proposal identifier.
+     * @param _evidence IPFS hashes of the evidence files, justification for slashing the proposer's deposit.
+     */
     function rejectSlashProposal(uint256 _proposalId, string[] calldata _evidence) external onlyRole(SLASHING_ARBITER_ROLE) {
         if (deposits[_proposalId] == 0) revert ZeroAmount("deposit on _proposalId");
         _transitionTo(_proposalId, uint256(SlashStates.REJECTED));
@@ -189,12 +207,25 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
     }
 
+    /**
+     * @notice Arbiter recognizes the report as valid and procceeds to investigate. The deposit is returned to proposer, stake remains frozen.
+     * @param _proposalId the proposal identifier.
+     */
     function markAsInReviewSlashProposal(uint256 _proposalId) external onlyRole(SLASHING_ARBITER_ROLE) {
         if (deposits[_proposalId] == 0) revert ZeroAmount("deposit on _proposalId");
         _transitionTo(_proposalId, uint256(SlashStates.IN_REVIEW));
         _returnDeposit(_proposalId);
     }
 
+    /**
+     * @notice After investigation, arbiter updates the proposal's incorrect assumptions. This can only be done if the proposal is IN_REVIEW, and 
+     * presenting evidence for the changes.
+     * @param _proposalId the proposal identifier.
+     * @param _subjectType type of the subject.
+     * @param _subjectId ERC721 registry id of the stake subject.
+     * @param _penaltyId if of the SlashPenalty to inflict upon the subject if the proposal goes through.
+     * @param _evidence IPFS hashes of the evidence files, proof of need for proposal changes.
+     */
     function reviewSlashProposalParameters(
         uint256 _proposalId,
         uint8 _subjectType,
@@ -209,10 +240,21 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         emit SlashProposalUpdated(msg.sender, _proposalId, uint256(SlashStates.IN_REVIEW), slashProposal.proposer, slashProposal.subjectId, slashProposal.subjectType);
     }
 
+    /**
+     * @notice Arbiter marks the proposal as reviewed, so the slasher can execute or revert.
+     * @param _proposalId the proposal identifier.
+     */
     function markAsReviewedSlashProposal(uint256 _proposalId) external onlyRole(SLASHING_ARBITER_ROLE) {
         _transitionTo(_proposalId, uint256(SlashStates.REVIEWED));
     }
 
+    /**
+     * @notice The slashing proposal should not be executed. Stake is unfrozen.
+     * If the proposal is IN_REVIEW, this can be executed by the SLASHING_ARBITER_ROLE.
+     * If the proposal is REVIEWED, this can be executed by the SLASHER_ROLE.
+     * @param _proposalId the proposal identifier.
+     * @param _evidence IPFS hashes of the evidence files, proof of the slash being not valid.
+     */
     function revertSlashProposal(uint256 _proposalId, string[] calldata _evidence) external {
         _authorizeRevertSlashProposal(_proposalId);
         _transitionTo(_proposalId, uint256(SlashStates.REVERTED));
@@ -220,6 +262,12 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
     }
 
+    /**
+     * @notice The slashing proposal is executed. Subject's stake is slashed and unfrozen.
+     * The proposer gets a % of the slashed stake as defined by slashPercentToProposer.
+     * Only executable by SLASHER_ROLE
+     * @param _proposalId the proposal identifier.
+     */
     function executeSlashProposal(uint256 _proposalId) external onlyRole(SLASHER_ROLE) {
         _transitionTo(_proposalId, uint256(SlashStates.EXECUTED));
         slashingExecutor.slash(_proposalId);
@@ -227,6 +275,15 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     }
 
     // Penalty calculation (ISlashingController)
+
+    /**
+     * @notice gets the stake amount to be slashed.
+     * The amount deppends on the StakePenalty.
+     * In all cases, the amount will be the minimum of the max slashable stake for the subject and:
+     * MAX_STAKE: a % of the subject's MAX_STAKE
+     * MIN_STAKE: a % of the subject's MIN_STAKE
+     * CURRENT_STAKE: a % of the subject's active + inactive stake.
+     */
     function getSlashedStakeValue(uint256 _proposalId) public view returns (uint256) {
         Proposal memory proposal = proposals[_proposalId];
         SlashPenalty memory penalty = penalties[proposal.penaltyId];
@@ -247,18 +304,20 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         } else if (penalty.mode == PenaltyMode.CURRENT_STAKE) {
             return Math.min(max, Math.mulDiv(totalStake, penalty.percentSlashed, 100));
         }
+        return 0;
     }
 
+    // Gets the subjectType and subjectId for a proposalId
     function getSubject(uint256 _proposalId) external view returns (uint8 subjectType, uint256 subject) {
         return (proposals[_proposalId].subjectType, proposals[_proposalId].subjectId);
     }
 
+    // Gets the proposer of a proposalId
     function getProposer(uint256 _proposalId) external view returns (address) {
         return proposals[_proposalId].proposer;
     }
 
     // Admin methods
-
     function setSlashingExecutor(ISlashingExecutor _executor) external onlyRole(STAKING_ADMIN_ROLE) {
         _setSlashingExecutor(_executor);
     }
@@ -337,7 +396,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
 
 
     // Private deposit handling
-
     function _returnDeposit(uint256 _proposalId) private {
         SafeERC20.safeTransfer(depositToken, proposals[_proposalId].proposer, deposits[_proposalId]);
         deposits[_proposalId] = 0;

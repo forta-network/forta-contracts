@@ -1,5 +1,5 @@
-const { ethers, upgrades, network } = require('hardhat');
-const { parseEther } = ethers.utils;
+const { ethers } = require('hardhat');
+const { parseEther, id } = ethers.utils;
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { BigNumber } = require('ethers');
@@ -75,8 +75,8 @@ describe('Slashing Proposals', function () {
         proposerPercent = await this.slashing.slashPercentToProposer();
     });
 
-    describe('Proposal Lifecycle', function () {
-        it('From proposal to slashing', async function () {
+    describe('Correct Proposal Lifecycle', function () {
+        it('From CREATED to EXECUTED', async function () {
             const PROPOSAL_ID = BigNumber.from('1');
             const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
             const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
@@ -89,7 +89,7 @@ describe('Slashing Proposals', function () {
                 .to.emit(this.slashing, 'SlashProposalUpdated')
                 .withArgs(this.accounts.user2.address, PROPOSAL_ID, this.accounts.user2.address, subjects[0].id, subjects[0].type, STAKING_DEPOSIT)
                 .to.emit(this.slashing, 'EvidenceSubmitted')
-                .withArgs(EVIDENCE_FOR_STATE(STATES.CREATED))
+                .withArgs(PROPOSAL_ID, STATES.CREATED, EVIDENCE_FOR_STATE(STATES.CREATED))
                 .to.emit(this.slashing, 'MachineCreated')
                 .withArgs(PROPOSAL_ID, STATES.CREATED)
                 .to.emit(this.slashing, 'StateTransition')
@@ -140,15 +140,179 @@ describe('Slashing Proposals', function () {
             expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(false);
         });
 
-        it.skip('should not propose if proposer does not have deposit');
-        it.skip('should not propose if proposal already exists');
-        it.skip('should not propose if proposal has invalid reason');
-        it.skip('should not propose if proposal has empty evidence');
-        it.skip('should not propose if proposal has invalid subject type');
-        it.skip('should not propose if proposal if subject is not registered');
+        it.skip('From CREATED to EXECUTED, modifying the proposal', async function () {
+            
+        });
 
-        it.skip('should not move from CREATED if not authorized');
-        it.skip('should not move from CREATED to wrong states');
+        it('From CREATED to REJECTED', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+            const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
+            const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
+
+            await expect(
+                this.slashing
+                    .connect(this.accounts.user2)
+                    .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED))
+            )
+                .to.emit(this.slashing, 'SlashProposalUpdated')
+                .withArgs(this.accounts.user2.address, PROPOSAL_ID, this.accounts.user2.address, subjects[0].id, subjects[0].type, STAKING_DEPOSIT)
+                .to.emit(this.slashing, 'EvidenceSubmitted')
+                .withArgs(EVIDENCE_FOR_STATE(STATES.CREATED))
+                .to.emit(this.slashing, 'MachineCreated')
+                .withArgs(PROPOSAL_ID, STATES.CREATED)
+                .to.emit(this.slashing, 'StateTransition')
+                .withArgs(PROPOSAL_ID, STATES.UNDEFINED, STATES.CREATED)
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.accounts.user2.address, this.slashing.address, STAKING_DEPOSIT)
+                .to.emit(this.staking, 'Froze')
+                .withArgs(subjects[0].type, subjects[0].id, this.slashing.address, true);
+
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(true);
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance.sub(STAKING_DEPOSIT));
+            expect(await this.token.balanceOf(this.slashing.address)).to.eq(STAKING_DEPOSIT);
+            expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.CREATED);
+
+            await expect(this.slashing.connect(this.accounts.user3).rejectSlashProposal(PROPOSAL_ID, EVIDENCE_FOR_STATE(STATES.REJECTED)))
+                .to.emit(this.slashing, 'StateTransition')
+                .withArgs(PROPOSAL_ID, STATES.CREATED, STATES.REJECTED)
+                .to.emit(this.slashing, 'EvidenceSubmitted')
+                .withArgs(PROPOSAL_ID, STATES.REJECTED, EVIDENCE_FOR_STATE(STATES.REJECTED))
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.slashing.address, slashTreasuryAddress, STAKING_DEPOSIT);
+
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance.sub(STAKING_DEPOSIT));
+            expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.REJECTED);
+            expect(await this.token.balanceOf(slashTreasuryAddress)).to.eq(initialTreasuryBalance.add(STAKING_DEPOSIT));
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(false);
+        });
+
+        it('From CREATED to DISMISSED', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+            const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
+            const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
+
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(true);
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance.sub(STAKING_DEPOSIT));
+            expect(await this.token.balanceOf(this.slashing.address)).to.eq(STAKING_DEPOSIT);
+            expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.CREATED);
+
+            await expect(this.slashing.connect(this.accounts.user3).dismissSlashProposal(PROPOSAL_ID, EVIDENCE_FOR_STATE(STATES.DISMISSED)))
+                .to.emit(this.slashing, 'StateTransition')
+                .withArgs(PROPOSAL_ID, STATES.CREATED, STATES.DISMISSED)
+                .to.emit(this.slashing, 'EvidenceSubmitted')
+                .withArgs(PROPOSAL_ID, STATES.DISMISSED, EVIDENCE_FOR_STATE(STATES.DISMISSED))
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.slashing.address, this.accounts.user2.address, STAKING_DEPOSIT);
+
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance);
+            expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.DISMISSED);
+            expect(await this.token.balanceOf(slashTreasuryAddress)).to.eq(initialTreasuryBalance);
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(false);
+        });
+
+        it('From CREATED to REVERTED by Arbiter', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+            const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
+            const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
+
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(true);
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance.sub(STAKING_DEPOSIT));
+            expect(await this.token.balanceOf(this.slashing.address)).to.eq(STAKING_DEPOSIT);
+            expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.CREATED);
+
+            await expect(this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID))
+                .to.emit(this.slashing, 'StateTransition')
+                .withArgs(PROPOSAL_ID, STATES.CREATED, STATES.IN_REVIEW)
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.slashing.address, this.accounts.user2.address, STAKING_DEPOSIT);
+
+            await expect(this.slashing.connect(this.accounts.user3).revertSlashProposal(PROPOSAL_ID, EVIDENCE_FOR_STATE(STATES.REVERTED)))
+                .to.emit(this.slashing, 'StateTransition')
+                .withArgs(PROPOSAL_ID, STATES.IN_REVIEW, STATES.REVERTED)
+                .to.emit(this.slashing, 'EvidenceSubmitted')
+                .withArgs(PROPOSAL_ID, STATES.REVERTED, EVIDENCE_FOR_STATE(STATES.REVERTED));
+
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance);
+            expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.REVERTED);
+            expect(await this.token.balanceOf(slashTreasuryAddress)).to.eq(initialTreasuryBalance);
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(false);
+        });
+
+        it('From CREATED to REVERTED by Slasher', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+            const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
+            const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
+
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(true);
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance.sub(STAKING_DEPOSIT));
+            expect(await this.token.balanceOf(this.slashing.address)).to.eq(STAKING_DEPOSIT);
+            expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.CREATED);
+
+            await expect(this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID))
+                .to.emit(this.slashing, 'StateTransition')
+                .withArgs(PROPOSAL_ID, STATES.CREATED, STATES.IN_REVIEW)
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.slashing.address, this.accounts.user2.address, STAKING_DEPOSIT);
+
+            await expect(this.slashing.connect(this.accounts.user3).markAsReviewedSlashProposal(PROPOSAL_ID))
+                .to.emit(this.slashing, 'StateTransition')
+                .withArgs(PROPOSAL_ID, STATES.IN_REVIEW, STATES.REVIEWED);
+
+            await expect(this.slashing.connect(this.accounts.admin).revertSlashProposal(PROPOSAL_ID, EVIDENCE_FOR_STATE(STATES.REVERTED)))
+                .to.emit(this.slashing, 'StateTransition')
+                .withArgs(PROPOSAL_ID, STATES.REVIEWED, STATES.REVERTED)
+                .to.emit(this.slashing, 'EvidenceSubmitted')
+                .withArgs(PROPOSAL_ID, STATES.REVERTED, EVIDENCE_FOR_STATE(STATES.REVERTED));
+
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance);
+            expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.REVERTED);
+            expect(await this.token.balanceOf(slashTreasuryAddress)).to.eq(initialTreasuryBalance);
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(false);
+        });
+    });
+    describe('Proposal lifecycle wrong paths and auths', function () {
+        it('should not move from CREATED if not authorized', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+            this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+            await expect(this.slashing.connect(this.accounts.user2).markAsInReviewSlashProposal(PROPOSAL_ID)).to.be.revertedWith(
+                `MissingRole("${id('SLASHING_ARBITER_ROLE')}", "${this.accounts.user2.address}")`
+            );
+            await expect(this.slashing.connect(this.accounts.user2).dismissSlashProposal(PROPOSAL_ID, EVIDENCE_FOR_STATE(STATES.DISMISSED))).to.be.revertedWith(
+                `MissingRole("${id('SLASHING_ARBITER_ROLE')}", "${this.accounts.user2.address}")`
+            );
+            await expect(this.slashing.connect(this.accounts.user2).rejectSlashProposal(PROPOSAL_ID, EVIDENCE_FOR_STATE(STATES.REJECTED))).to.be.revertedWith(
+                `MissingRole("${id('SLASHING_ARBITER_ROLE')}", "${this.accounts.user2.address}")`
+            );
+        });
+        it.skip('should not move from CREATED to wrong states', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+            this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+            await expect(this.slashing.connect(this.accounts.user3).markAsReviewedSlashProposal(PROPOSAL_ID)).to.be.revertedWith(
+                `StateUnreachable(${STATES.CREATED}, ${STATES.REVIEWED})`
+            );
+            await expect(this.slashing.connect(this.accounts.user3).revertSlashProposal(PROPOSAL_ID, EVIDENCE_FOR_STATE(STATES.REVERTED))).to.be.revertedWith(
+                `StateUnreachable(${STATES.CREATED}, ${STATES.REVERTED})`
+            );
+            await expect(this.slashing.connect(this.accounts.user3).executeSlashProposal(PROPOSAL_ID)).to.be.revertedWith(
+                `StateUnreachable(${STATES.CREATED}, ${STATES.EXECUTED})`
+            );
+        });
         //DISMISSED, REJECTED or IN_REVIEW
         it.skip('should not move from DISMISSED to wrong states');
         it.skip('should not move from REJECTED to wrong states');
@@ -164,6 +328,39 @@ describe('Slashing Proposals', function () {
         // REVIEWED --> EXECUTED or REVERTED
     });
 
+    describe('Proposal creation conditions', function () {
+        it('should not propose if proposer does not have deposit', async function () {
+            await this.token.connect(this.accounts.user2).transfer(this.accounts.user3.address, await this.token.balanceOf(this.accounts.user2.address));
+            await expect(
+                this.slashing
+                    .connect(this.accounts.user2)
+                    .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED))
+            ).to.be.revertedWith('ERC20: transfer amount exceeds balance');
+        });
+        it('should not propose if subject is not registered', async function () {
+            await expect(
+                this.slashing
+                    .connect(this.accounts.user2)
+                    .proposeSlash(subjects[1].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED))
+            ).to.be.revertedWith('NonRegisteredSubject');
+        });
+        it('should not propose if proposal has empty evidence', async function () {
+            await expect(
+                this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, [])
+            ).to.be.revertedWith('ZeroAmount("evidence lenght")');
+        });
+        it('should not propose if proposal has invalid subject type', async function () {
+            await expect(
+                this.slashing.connect(this.accounts.user2).proposeSlash(123, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED))
+            ).to.be.revertedWith('InvalidSubjectType');
+        });
+    });
+    describe('Proposal rejection conditions', function () {});
+    describe('Proposal dismissal conditions', function () {});
+
+    describe('Proposal review conditions', function () {});
+
+    describe('Proposal revert conditions', function () {});
     describe('Slashing amounts', function () {
         beforeEach(async function () {
             const slashReasons = [ethers.utils.id('MIN_STAKE'), ethers.utils.id('MAX_STAKE'), ethers.utils.id('CURRENT_STAKE')];
