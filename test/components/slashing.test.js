@@ -27,6 +27,23 @@ const STATES = {
     REVERTED: BigNumber.from('7'),
 };
 
+const EVIDENCE_FOR_STATE = (state) => {
+    switch (state) {
+        case STATES.CREATED:
+            return ['CREATED evidence', '2'];
+        case STATES.REJECTED:
+            return ['REJECTED evidence', '2'];
+        case STATES.DISMISSED:
+            return ['DISMISSED evidence', '2'];
+        case STATES.REVIEWED:
+            return ['REVIEWED evidence', '2'];
+        case STATES.REVERTED:
+            return ['REVERTED evidence', '2'];
+        default:
+            throw new Error(`No need of evidence for ${state.toString()}`);
+    }
+};
+
 describe('Slashing Proposals', function () {
     prepare({ stake: { min: MIN_STAKE, max: MAX_STAKE, activated: true } });
 
@@ -65,10 +82,14 @@ describe('Slashing Proposals', function () {
             const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
 
             await expect(
-                this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH)
+                this.slashing
+                    .connect(this.accounts.user2)
+                    .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED))
             )
-                .to.emit(this.slashing, 'SlashProposalCreated')
-                .withArgs(PROPOSAL_ID, this.accounts.user2.address, subjects[0].id, subjects[0].type, 'EVIDENCE_IPFS_HASH', STAKING_DEPOSIT)
+                .to.emit(this.slashing, 'SlashProposalUpdated')
+                .withArgs(this.accounts.user2.address, PROPOSAL_ID, this.accounts.user2.address, subjects[0].id, subjects[0].type, STAKING_DEPOSIT)
+                .to.emit(this.slashing, 'EvidenceSubmitted')
+                .withArgs(EVIDENCE_FOR_STATE(STATES.CREATED))
                 .to.emit(this.slashing, 'MachineCreated')
                 .withArgs(PROPOSAL_ID, STATES.CREATED)
                 .to.emit(this.slashing, 'StateTransition')
@@ -157,19 +178,19 @@ describe('Slashing Proposals', function () {
         it('min stake', async function () {
             // All active stake
             await this.staking.connect(this.accounts.user2).deposit(subjects[1].type, subjects[1].id, STAKING_DEPOSIT);
-            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('1')).to.eq(MIN_STAKE.mul('10').div('100'));
-            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('1');
+            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('1', EVIDENCE_FOR_STATE(STATES.DISMISSED));
 
             // Mix active and inactive stake
             await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, STAKING_DEPOSIT.div(2));
-            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('2')).to.eq(MIN_STAKE.mul('10').div('100'));
-            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('2');
+            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('2', EVIDENCE_FOR_STATE(STATES.DISMISSED));
 
             // All inactive stake
             await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, STAKING_DEPOSIT.div(2));
-            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('3')).to.eq(MIN_STAKE.mul('10').div('100'));
         });
 
@@ -180,39 +201,39 @@ describe('Slashing Proposals', function () {
 
             // All active stake
             await this.staking.connect(this.accounts.user2).deposit(subjects[1].type, subjects[1].id, MAX_STAKE);
-            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('MAX_STAKE'));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('MAX_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             console.log(MAX_STAKE.mul('20').div('100'));
             expect(await this.slashing.getSlashedStakeValue('1')).to.eq(maxSlashable);
-            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('1');
+            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('1', EVIDENCE_FOR_STATE(STATES.DISMISSED));
 
             // Mix active and inactive stake
             await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, MAX_STAKE.div(2));
-            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('MAX_STAKE'));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('MAX_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('2')).to.eq(maxSlashable);
-            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('2');
+            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('2', EVIDENCE_FOR_STATE(STATES.DISMISSED));
 
             // All inactive stake
             await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, MAX_STAKE.div(2));
-            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('MAX_STAKE'));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('MAX_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('3')).to.eq(maxSlashable.toString());
         });
 
         it('current stake', async function () {
             // All active stake
             await this.staking.connect(this.accounts.user2).deposit(subjects[1].type, subjects[1].id, STAKING_DEPOSIT);
-            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('CURRENT_STAKE'));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('CURRENT_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('1')).to.eq(STAKING_DEPOSIT.mul('30').div('100'));
-            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('1');
+            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('1', EVIDENCE_FOR_STATE(STATES.DISMISSED));
 
             // Mix active and inactive stake
             await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, STAKING_DEPOSIT.div(2));
-            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('CURRENT_STAKE'));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('CURRENT_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('2')).to.eq(STAKING_DEPOSIT.mul('30').div('100'));
-            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('2');
+            await this.slashing.connect(this.accounts.user3).dismissSlashProposal('2', EVIDENCE_FOR_STATE(STATES.DISMISSED));
 
             // All inactive stake
             await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, STAKING_DEPOSIT.div(2));
-            await this.slashing.connect(this.accounts.user2).proposeSlash('EVIDENCE_IPFS_HASH', subjects[0].type, subjects[0].id, ethers.utils.id('CURRENT_STAKE'));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('CURRENT_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('3')).to.eq(STAKING_DEPOSIT.mul('30').div('100'));
         });
     });

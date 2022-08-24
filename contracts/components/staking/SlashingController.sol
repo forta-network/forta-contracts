@@ -47,7 +47,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     }
 
     struct Proposal {
-        string evidence;
         uint256 subjectId;
         address proposer;
         bytes32 penaltyId;
@@ -65,9 +64,10 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     uint256 public slashPercentToProposer;
 
     string public constant version = "0.1.0";
+    uint256 public constant MAX_EVIDENCE_LENGTH = 5;
 
-    event SlashProposalCreated(uint256 indexed proposalId, address indexed reporter, uint256 subjectId, uint8 subjectType, string evidence, uint256 deposit);
-    event SlashProposalUpdated(address indexed reviewer, uint256 indexed proposalId, address indexed reporter, uint256 subjectId, uint8 subjectType, string evidence);
+    event SlashProposalUpdated(address indexed updater, uint256 indexed proposalId, uint256 indexed stateId, address reporter, uint256 subjectId, uint8 subjectType);
+    event EvidenceSubmitted(uint256 proposalId, uint256 stateId, string[] evidence);
     event SlashingExecutorChanged(address indexed slashingExecutor);
     event StakingParametersManagerChanged(address indexed stakingParametersManager);
     event DepositAmountChanged(uint256 amount);
@@ -153,37 +153,38 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     // Proposal LifeCycle
 
     function proposeSlash(
-        string calldata _evidence,
         uint8 _subjectType,
         uint256 _subjectId,
-        bytes32 _penaltyId
-    ) external returns (uint256 proposalId) {
-        // multiple proposals?
+        bytes32 _penaltyId,
+        string[] calldata _evidence
+    ) external onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) returns (uint256 proposalId) {
         if (!stakingParameters.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
         if (stakingParameters.totalStakeFor(_subjectType, _subjectId) == 0) revert ZeroAmount("subject stake");
-        Proposal memory slashProposal = Proposal(_evidence, _subjectId, msg.sender, _penaltyId, _subjectType);
-        _validateProposal(slashProposal);
+        Proposal memory slashProposal = Proposal(_subjectId, msg.sender, _penaltyId, _subjectType);
         SafeERC20.safeTransferFrom(depositToken, msg.sender, address(this), depositAmount);
         _proposalIds.increment();
         proposalId = _proposalIds.current();
         proposals[proposalId] = slashProposal;
         deposits[proposalId] = depositAmount;
         _createMachine(proposalId, uint256(SlashStates.CREATED));
-        emit SlashProposalCreated(proposalId, slashProposal.proposer, slashProposal.subjectId, slashProposal.subjectType, slashProposal.evidence, depositAmount);
+        emit SlashProposalUpdated(msg.sender, proposalId, uint256(SlashStates.CREATED), slashProposal.proposer, slashProposal.subjectId, slashProposal.subjectType);
+        _submitEvidence(proposalId, uint256(SlashStates.CREATED), _evidence);
         slashingExecutor.freeze(_subjectType, _subjectId, true);
         return proposalId;
     }
 
-    function dismissSlashProposal(uint256 _proposalId) external onlyRole(SLASHING_ARBITER_ROLE) {
+    function dismissSlashProposal(uint256 _proposalId, string[] calldata _evidence) external onlyRole(SLASHING_ARBITER_ROLE) {
         if (deposits[_proposalId] == 0) revert ZeroAmount("deposit on _proposalId");
         _transitionTo(_proposalId, uint256(SlashStates.DISMISSED));
+        _submitEvidence(_proposalId, uint256(SlashStates.DISMISSED), _evidence);
         _returnDeposit(_proposalId);
         slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
     }
 
-    function rejectSlashProposal(uint256 _proposalId) external onlyRole(SLASHING_ARBITER_ROLE) {
+    function rejectSlashProposal(uint256 _proposalId, string[] calldata _evidence) external onlyRole(SLASHING_ARBITER_ROLE) {
         if (deposits[_proposalId] == 0) revert ZeroAmount("deposit on _proposalId");
         _transitionTo(_proposalId, uint256(SlashStates.REJECTED));
+        _submitEvidence(_proposalId, uint256(SlashStates.REJECTED), _evidence);
         _slashDeposit(_proposalId);
         slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
     }
@@ -196,37 +197,26 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
 
     function reviewSlashProposalParameters(
         uint256 _proposalId,
-        string calldata _evidence,
         uint8 _subjectType,
         uint256 _subjectId,
-        bytes32 _penaltyId
-    ) external onlyRole(SLASHING_ARBITER_ROLE) onlyInState(_proposalId, uint256(SlashStates.IN_REVIEW)) {
+        bytes32 _penaltyId,
+        string[] calldata _evidence
+    ) external onlyRole(SLASHING_ARBITER_ROLE) onlyInState(_proposalId, uint256(SlashStates.IN_REVIEW)) onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) {
         if (proposals[_proposalId].proposer == address(0)) revert NonExistentProposal(_proposalId);
-        if (_subjectType != proposals[_proposalId].subjectType || _subjectId != proposals[_proposalId].subjectId) {
-            _emitHook(
-                abi.encodeWithSignature(
-                    "hook_slashProposalUpdated(uint256,uint8,uint256,uint8,uint25)",
-                    _proposalId,
-                    _subjectType,
-                    _subjectId,
-                    proposals[_proposalId].subjectType,
-                    proposals[_proposalId].subjectId
-                )
-            );
-        }
-        Proposal memory slashProposal = Proposal(_evidence, _subjectId, proposals[_proposalId].proposer, _penaltyId, _subjectType);
-        _validateProposal(slashProposal);
+        _submitEvidence(_proposalId, uint256(SlashStates.IN_REVIEW), _evidence);
+        Proposal memory slashProposal = Proposal(_subjectId, proposals[_proposalId].proposer, _penaltyId, _subjectType);
         proposals[_proposalId] = slashProposal;
-        emit SlashProposalUpdated(msg.sender, _proposalId, slashProposal.proposer, slashProposal.subjectId, slashProposal.subjectType, slashProposal.evidence);
+        emit SlashProposalUpdated(msg.sender, _proposalId, uint256(SlashStates.IN_REVIEW), slashProposal.proposer, slashProposal.subjectId, slashProposal.subjectType);
     }
 
     function markAsReviewedSlashProposal(uint256 _proposalId) external onlyRole(SLASHING_ARBITER_ROLE) {
         _transitionTo(_proposalId, uint256(SlashStates.REVIEWED));
     }
 
-    function revertSlashProposal(uint256 _proposalId) external {
+    function revertSlashProposal(uint256 _proposalId, string[] calldata _evidence) external {
         _authorizeRevertSlashProposal(_proposalId);
         _transitionTo(_proposalId, uint256(SlashStates.REVERTED));
+        _submitEvidence(_proposalId, uint256(SlashStates.REVERTED), _evidence);
         slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
     }
 
@@ -300,10 +290,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         // If it's in another state, _transitionTo() will revert
     }
 
-    function _validateProposal(Proposal memory _slashProposal) private view onlyValidSlashPenaltyId(_slashProposal.penaltyId) onlyValidSubjectType(_slashProposal.subjectType) {
-        if (bytes(_slashProposal.evidence).length == 0) revert EmptyString("_slashProposal.evidence");
-    }
-
     // Private param setting
 
     function _setSlashingExecutor(ISlashingExecutor _executor) private {
@@ -340,6 +326,15 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
             emit SlashPenaltyAdded(_slashReasons[i], _slashPenalties[i].percentSlashed, _slashPenalties[i].mode);
         }
     }
+
+    // Evidence handling
+    function _submitEvidence(uint256 _proposalId, uint256 _stateId, string[] calldata _evidence) private {
+        uint256 evidenceLength = _evidence.length;
+        if (evidenceLength == 0) revert ZeroAmount("evidence lenght");
+        if (evidenceLength > MAX_EVIDENCE_LENGTH) revert ArrayTooBig(evidenceLength, MAX_EVIDENCE_LENGTH);
+        emit EvidenceSubmitted(_proposalId, _stateId, _evidence);
+    }
+
 
     // Private deposit handling
 
