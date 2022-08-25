@@ -253,7 +253,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         bytes32 _penaltyId,
         string[] calldata _evidence
     ) external onlyRole(SLASHING_ARBITER_ROLE) onlyInState(_proposalId, uint256(SlashStates.IN_REVIEW)) onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) {
-        if (proposals[_proposalId].proposer == address(0)) revert NonExistentProposal(_proposalId);
+        // No need to check for proposal existence, onlyInState will revert if _proposalId is in undefined state
         if (!stakingParameters.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
 
         _submitEvidence(_proposalId, uint256(SlashStates.IN_REVIEW), _evidence);

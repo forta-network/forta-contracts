@@ -39,6 +39,8 @@ const EVIDENCE_FOR_STATE = (state) => {
             return ['REVIEWED evidence', '2'];
         case STATES.REVERTED:
             return ['REVERTED evidence', '2'];
+        case STATES.IN_REVIEW:
+            return ['IN_REVIEW evidence', 'modifying'];
         default:
             throw new Error(`No need of evidence for ${state.toString()}`);
     }
@@ -485,13 +487,116 @@ describe('Slashing Proposals', function () {
         });
     });
 
-    describe('Review modification conditions', function () {});
-    describe('Proposal rejection conditions', function () {});
-    describe('Proposal dismissal conditions', function () {});
+    describe('Review modification conditions', function () {
+        /*
+        function reviewSlashProposalParameters(
+        uint256 _proposalId,
+        uint8 _subjectType,
+        uint256 _subjectId,
+        bytes32 _penaltyId,
+        string[] calldata _evidence
+    ) external onlyRole(SLASHING_ARBITER_ROLE) onlyInState(_proposalId, uint256(SlashStates.IN_REVIEW)) onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) {
+        if (proposals[_proposalId].proposer == address(0)) revert NonExistentProposal(_proposalId);
+        if (!stakingParameters.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
 
-    describe('Proposal review conditions', function () {});
+        _submitEvidence(_proposalId, uint256(SlashStates.IN_REVIEW), _evidence);
+        if (_subjectType != proposals[_proposalId].subjectType|| _subjectId != proposals[_proposalId].subjectId) {
+            slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
+            slashingExecutor.freeze(_subjectType, _subjectId, true);
+        }
+        Proposal memory slashProposal = Proposal(_subjectId, proposals[_proposalId].proposer, _penaltyId, _subjectType);
+        proposals[_proposalId] = slashProposal;
+        emit SlashProposalUpdated(
+            msg.sender,
+            _proposalId,
+            uint256(SlashStates.IN_REVIEW),
+            slashProposal.proposer,
+            slashProposal.subjectId,
+            slashProposal.subjectType,
+            slashProposal.penaltyId
+        );
+    }
+        */
+        it('should not modify if proposal nonexistent', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+            await this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
+            await expect(
+                this.slashing
+                    .connect(this.accounts.user3)
+                    .reviewSlashProposalParameters('2', subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.IN_REVIEW))
+            ).to.be.revertedWith('InvalidState(4)');
+        });
 
-    describe('Proposal revert conditions', function () {});
+        it('should not modify if not in state', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+
+            await expect(
+                this.slashing
+                    .connect(this.accounts.user3)
+                    .reviewSlashProposalParameters(PROPOSAL_ID, subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.IN_REVIEW))
+            ).to.be.revertedWith('InvalidState(4)');
+        });
+
+        it('should not modify if subject is not registered', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+            await this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
+            await expect(
+                this.slashing
+                    .connect(this.accounts.user3)
+                    .reviewSlashProposalParameters(PROPOSAL_ID, subjects[1].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.IN_REVIEW))
+            ).to.be.revertedWith('NonRegisteredSubject');
+        });
+        it('should not modify if caller is not authorized', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+            await this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
+            await expect(
+                this.slashing
+                    .connect(this.accounts.user2)
+                    .reviewSlashProposalParameters(PROPOSAL_ID, subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.IN_REVIEW))
+            ).to.be.revertedWith(`MissingRole("${id('SLASHING_ARBITER_ROLE')}", "${this.accounts.user2.address}")`);
+        });
+
+        it('should not modify if proposal has empty evidence', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.IN_REVIEW));
+            await this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
+            await expect(
+                this.slashing
+                    .connect(this.accounts.user3)
+                    .reviewSlashProposalParameters(PROPOSAL_ID, subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, [])
+            ).to.be.revertedWith('ZeroAmount("evidence lenght")');
+        });
+
+        it('should not modify if proposal has invalid subject type', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.IN_REVIEW));
+            await this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
+            await expect(
+                this.slashing
+                    .connect(this.accounts.user3)
+                    .reviewSlashProposalParameters(PROPOSAL_ID, 65, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.IN_REVIEW))
+            ).to.be.revertedWith('InvalidSubjectType');
+        });
+    });
+    describe.skip('Proposal rejection conditions', function () {});
+    describe.skip('Proposal dismissal conditions', function () {});
+
+    describe.skip('Proposal review conditions', function () {});
+
+    describe.skip('Proposal revert conditions', function () {});
     describe('Slashing amounts', function () {
         beforeEach(async function () {
             const slashReasons = [ethers.utils.id('MIN_STAKE'), ethers.utils.id('MAX_STAKE'), ethers.utils.id('CURRENT_STAKE')];
