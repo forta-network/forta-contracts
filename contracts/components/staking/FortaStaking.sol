@@ -293,7 +293,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         if (reachedMax) {
             emit MaxStakeReached(subjectType, subject);
         }
-        uint256 sharesValue = _stakeToActiveShares(activeSharesId, stakeValue);
+        uint256 sharesValue = stakeToActiveShares(activeSharesId, stakeValue);
         SafeERC20.safeTransferFrom(stakedToken, staker, address(this), stakeValue);
 
         _activeStake.mint(activeSharesId, stakeValue);
@@ -355,8 +355,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _lockingDelay[activeSharesId][staker].setDeadline(deadline);
 
         uint256 activeShares = Math.min(sharesValue, balanceOf(staker, activeSharesId));
-        uint256 stakeValue = _activeSharesToStake(activeSharesId, activeShares);
-        uint256 inactiveShares = _stakeToInactiveShares(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
+        uint256 stakeValue = activeSharesToStake(activeSharesId, activeShares);
+        uint256 inactiveShares = stakeToInactiveShares(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
 
         _activeStake.burn(activeSharesId, stakeValue);
         _inactiveStake.mint(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
@@ -391,7 +391,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         emit WithdrawalExecuted(subjectType, subject, staker);
 
         uint256 inactiveShares = balanceOf(staker, inactiveSharesId);
-        uint256 stakeValue = _inactiveSharesToStake(inactiveSharesId, inactiveShares);
+        uint256 stakeValue = inactiveSharesToStake(inactiveSharesId, inactiveShares);
 
         _inactiveStake.burn(inactiveSharesId, stakeValue);
         _burn(staker, inactiveSharesId, inactiveShares);
@@ -422,7 +422,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         // We set the slash limit at 90% of the stake, so new depositors on slashed pools (with now 0 stake) won't mint
         // an amounts of shares so big that they might cause overflows.
         // New shares = pool shares * new staked amount / pool stake
-        // See deposit and _stakeToActiveShares methods.
+        // See deposit and stakeToActiveShares methods.
         uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, _stakingParameters.maxSlashableStakePercent(), 100);
         if (stakeValue > maxSlashableStake) revert SlashingOver90Percent();
 
@@ -634,22 +634,47 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     // Conversions
-    function _stakeToActiveShares(uint256 activeSharesId, uint256 amount) internal view returns (uint256) {
+
+    /**
+     * @notice Convert active token stake amount to active shares amount
+     * @param activeSharesId ERC1155 active shares id
+     * @param amount active stake amount
+     * @return ERC1155 active shares amount
+     */
+    function stakeToActiveShares(uint256 activeSharesId, uint256 amount) public view returns (uint256) {
         uint256 activeStake = _activeStake.balanceOf(activeSharesId);
         return activeStake == 0 ? amount : Math.mulDiv(totalSupply(activeSharesId), amount, activeStake);
     }
 
-    function _stakeToInactiveShares(uint256 inactiveSharesId, uint256 amount) internal view returns (uint256) {
+    /**
+     * @notice Convert inactive token stake amount to inactive shares amount
+     * @param inactiveSharesId ERC1155 inactive shares id
+     * @param amount inactive stake amount
+     * @return ERC1155 inactive shares amount
+     */
+    function stakeToInactiveShares(uint256 inactiveSharesId, uint256 amount) public view returns (uint256) {
         uint256 inactiveStake = _inactiveStake.balanceOf(inactiveSharesId);
         return inactiveStake == 0 ? amount : Math.mulDiv(totalSupply(inactiveSharesId), amount, inactiveStake);
     }
 
-    function _activeSharesToStake(uint256 activeSharesId, uint256 amount) internal view returns (uint256) {
+    /**
+     * @notice Convert active shares amount to active stake amount.
+     * @param activeSharesId ERC1155 active shares id
+     * @param amount ERC1155 active shares amount
+     * @return active stake amount
+     */
+    function activeSharesToStake(uint256 activeSharesId, uint256 amount) public view returns (uint256) {
         uint256 activeSupply = totalSupply(activeSharesId);
         return activeSupply == 0 ? 0 : Math.mulDiv(_activeStake.balanceOf(activeSharesId), amount, activeSupply);
     }
 
-    function _inactiveSharesToStake(uint256 inactiveSharesId, uint256 amount) internal view returns (uint256) {
+    /**
+     * @notice Convert inactive shares amount to inactive stake amount.
+     * @param inactiveSharesId ERC1155 inactive shares id
+     * @param amount ERC1155 inactive shares amount
+     * @return inactive stake amount
+     */
+    function inactiveSharesToStake(uint256 inactiveSharesId, uint256 amount) public view returns (uint256) {
         uint256 inactiveSupply = totalSupply(inactiveSharesId);
         return inactiveSupply == 0 ? 0 : Math.mulDiv(_inactiveStake.balanceOf(inactiveSharesId), amount, inactiveSupply);
     }
