@@ -41,7 +41,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     }
 
     struct Deposit {
-        address reporter;
+        address proposer;
         uint256 amount;
     }
 
@@ -65,14 +65,23 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     string public constant version = "0.1.0";
     uint256 public constant MAX_EVIDENCE_LENGTH = 5;
 
-    event SlashProposalUpdated(address indexed updater, uint256 indexed proposalId, uint256 indexed stateId, address reporter, uint256 subjectId, uint8 subjectType);
+    event SlashProposalUpdated(
+        address indexed updater,
+        uint256 indexed proposalId,
+        uint256 indexed stateId,
+        address proposer,
+        uint256 subjectId,
+        uint8 subjectType,
+        bytes32 penaltyId
+    );
     event EvidenceSubmitted(uint256 proposalId, uint256 stateId, string[] evidence);
     event SlashingExecutorChanged(address indexed slashingExecutor);
     event StakingParametersManagerChanged(address indexed stakingParametersManager);
     event DepositAmountChanged(uint256 amount);
     event SlashPercentToProposerChanged(uint256 amount);
-    event DepositReturned(address indexed proposer, uint256 amount);
-    event DepositSlashed(address indexed proposer, uint256 amount);
+    event DepositSubmitted(uint256 indexed proposalId, address indexed proposer, uint256 amount);
+    event DepositReturned(uint256 indexed proposalId, address indexed proposer, uint256 amount);
+    event DepositSlashed(uint256 indexed proposalId, address indexed proposer, uint256 amount);
     event SlashPenaltyAdded(bytes32 indexed penaltyId, uint256 percentSlashed, PenaltyMode mode);
     event SlashPenaltyRemoved(bytes32 indexed penaltyId, uint256 percentSlashed, PenaltyMode mode);
 
@@ -172,8 +181,17 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         proposalId = _proposalIds.current();
         proposals[proposalId] = slashProposal;
         deposits[proposalId] = depositAmount;
+        emit DepositSubmitted(proposalId, msg.sender, depositAmount);
         _createMachine(proposalId, uint256(SlashStates.CREATED));
-        emit SlashProposalUpdated(msg.sender, proposalId, uint256(SlashStates.CREATED), slashProposal.proposer, slashProposal.subjectId, slashProposal.subjectType);
+        emit SlashProposalUpdated(
+            msg.sender,
+            proposalId,
+            uint256(SlashStates.CREATED),
+            slashProposal.proposer,
+            slashProposal.subjectId,
+            slashProposal.subjectType,
+            slashProposal.penaltyId
+        );
         _submitEvidence(proposalId, uint256(SlashStates.CREATED), _evidence);
         slashingExecutor.freeze(_subjectType, _subjectId, true);
         return proposalId;
@@ -220,6 +238,8 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     /**
      * @notice After investigation, arbiter updates the proposal's incorrect assumptions. This can only be done if the proposal is IN_REVIEW, and 
      * presenting evidence for the changes.
+     * Changing the subject and subjectType will unfreeze the previous target and freeze the new.
+     * Changing the penalty will affect slashing amounts.
      * @param _proposalId the proposal identifier.
      * @param _subjectType type of the subject.
      * @param _subjectId ERC721 registry id of the stake subject.
@@ -234,10 +254,24 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         string[] calldata _evidence
     ) external onlyRole(SLASHING_ARBITER_ROLE) onlyInState(_proposalId, uint256(SlashStates.IN_REVIEW)) onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) {
         if (proposals[_proposalId].proposer == address(0)) revert NonExistentProposal(_proposalId);
+        if (!stakingParameters.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
+
         _submitEvidence(_proposalId, uint256(SlashStates.IN_REVIEW), _evidence);
+        if (_subjectType != proposals[_proposalId].subjectType|| _subjectId != proposals[_proposalId].subjectId) {
+            slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
+            slashingExecutor.freeze(_subjectType, _subjectId, true);
+        }
         Proposal memory slashProposal = Proposal(_subjectId, proposals[_proposalId].proposer, _penaltyId, _subjectType);
         proposals[_proposalId] = slashProposal;
-        emit SlashProposalUpdated(msg.sender, _proposalId, uint256(SlashStates.IN_REVIEW), slashProposal.proposer, slashProposal.subjectId, slashProposal.subjectType);
+        emit SlashProposalUpdated(
+            msg.sender,
+            _proposalId,
+            uint256(SlashStates.IN_REVIEW),
+            slashProposal.proposer,
+            slashProposal.subjectId,
+            slashProposal.subjectType,
+            slashProposal.penaltyId
+        );
     }
 
     /**
@@ -399,12 +433,12 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
     function _returnDeposit(uint256 _proposalId) private {
         SafeERC20.safeTransfer(depositToken, proposals[_proposalId].proposer, deposits[_proposalId]);
         deposits[_proposalId] = 0;
-        emit DepositReturned(proposals[_proposalId].proposer, deposits[_proposalId]);
+        emit DepositReturned(_proposalId, proposals[_proposalId].proposer, deposits[_proposalId]);
     }
 
     function _slashDeposit(uint256 _proposalId) private {
         SafeERC20.safeTransfer(depositToken, slashingExecutor.treasury(), deposits[_proposalId]);
         deposits[_proposalId] = 0;
-        emit DepositSlashed(proposals[_proposalId].proposer, deposits[_proposalId]);
+        emit DepositSlashed(_proposalId, proposals[_proposalId].proposer, deposits[_proposalId]);
     }
 }

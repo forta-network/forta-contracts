@@ -69,7 +69,11 @@ describe('Slashing Proposals', function () {
         await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
 
         await this.scanners.connect(this.accounts.manager).adminRegister(SUBJECT_1_ADDRESS, this.accounts.user2.address, 1, 'metadata');
+        const args = [subjects[1].id, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
+        await this.agents.connect(this.accounts.other).createAgent(...args);
+
         await this.staking.connect(this.accounts.user2).deposit(0, SUBJECT_1_ADDRESS, STAKING_DEPOSIT);
+        await this.staking.connect(this.accounts.user2).deposit(1, subjects[1].id, STAKING_DEPOSIT);
 
         slashTreasuryAddress = await this.staking.treasury();
         proposerPercent = await this.slashing.slashPercentToProposer();
@@ -87,7 +91,17 @@ describe('Slashing Proposals', function () {
                     .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED))
             )
                 .to.emit(this.slashing, 'SlashProposalUpdated')
-                .withArgs(this.accounts.user2.address, PROPOSAL_ID, this.accounts.user2.address, subjects[0].id, subjects[0].type, STAKING_DEPOSIT)
+                .withArgs(
+                    this.accounts.user2.address,
+                    PROPOSAL_ID,
+                    STATES.CREATED,
+                    this.accounts.user2.address,
+                    subjects[0].id,
+                    subjects[0].type,
+                    this.slashParams.reasons.OPERATIONAL_SLASH
+                )
+                .to.emit(this.slashing, 'DepositSubmitted')
+                .withArgs(PROPOSAL_ID, STAKING_DEPOSIT)
                 .to.emit(this.slashing, 'EvidenceSubmitted')
                 .withArgs(PROPOSAL_ID, STATES.CREATED, EVIDENCE_FOR_STATE(STATES.CREATED))
                 .to.emit(this.slashing, 'MachineCreated')
@@ -105,6 +119,8 @@ describe('Slashing Proposals', function () {
             expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.CREATED);
 
             await expect(this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID))
+                .to.emit(this.slashing, 'DepositReturned')
+                .withArgs(PROPOSAL_ID, this.accounts.user2.address, STAKING_DEPOSIT)
                 .to.emit(this.slashing, 'StateTransition')
                 .withArgs(PROPOSAL_ID, STATES.CREATED, STATES.IN_REVIEW)
                 .to.emit(this.token, 'Transfer')
@@ -140,8 +156,103 @@ describe('Slashing Proposals', function () {
             expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(false);
         });
 
-        it.skip('From CREATED to EXECUTED, modifying the proposal', async function () {
-            
+        it('From CREATED to EXECUTED, modifying the proposal', async function () {
+            const PROPOSAL_ID = BigNumber.from('1');
+            const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
+            const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
+
+            this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance.sub(STAKING_DEPOSIT));
+
+            this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
+
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance);
+            expect(await this.token.balanceOf(this.slashing.address)).to.eq(BigNumber.from('0'));
+            expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.IN_REVIEW);
+
+            // Modifying
+            const EVIDENCE_CHANGE_SUBJECT1 = ['EVIDENCE_CHANGE_SUBJECT1'];
+            const EVIDENCE_CHANGE_SUBJECT2 = ['EVIDENCE_CHANGE_SUBJECT2'];
+            // Subject
+
+            const oldProposal = await this.slashing.proposals(PROPOSAL_ID);
+            await expect(
+                this.slashing
+                    .connect(this.accounts.user3)
+                    .reviewSlashProposalParameters(PROPOSAL_ID, subjects[1].type, subjects[1].id, oldProposal.penaltyId, EVIDENCE_CHANGE_SUBJECT1)
+            )
+                .to.emit(this.slashing, 'EvidenceSubmitted')
+                .withArgs(PROPOSAL_ID, STATES.IN_REVIEW, EVIDENCE_CHANGE_SUBJECT1)
+                .to.emit(this.staking, 'Froze')
+                .withArgs(subjects[0].type, subjects[0].id, this.slashing.address, false)
+                .to.emit(this.staking, 'Froze')
+                .withArgs(subjects[1].type, subjects[1].id, this.slashing.address, true)
+                .to.emit(this.slashing, 'SlashProposalUpdated')
+                .withArgs(
+                    this.accounts.user3.address,
+                    PROPOSAL_ID,
+                    STATES.IN_REVIEW,
+                    this.accounts.user2.address,
+                    subjects[1].id,
+                    subjects[1].type,
+                    this.slashParams.reasons.OPERATIONAL_SLASH
+                );
+            const subject = await this.slashing.getSubject(PROPOSAL_ID);
+            expect(subject.subjectType).to.eq(subjects[1].type);
+            expect(subject.subject).to.eq(subjects[1].id);
+
+            expect(await this.staking.isFrozen(subjects[1].type, subjects[1].id)).to.eq(true);
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(false);
+
+            // Penalty
+            await expect(
+                this.slashing
+                    .connect(this.accounts.user3)
+                    .reviewSlashProposalParameters(PROPOSAL_ID, subjects[1].type, subjects[1].id, this.slashParams.reasons.MALICIOUS_SUBJECT_SLASH, EVIDENCE_CHANGE_SUBJECT2)
+            )
+                .to.emit(this.slashing, 'EvidenceSubmitted')
+                .withArgs(PROPOSAL_ID, STATES.IN_REVIEW, EVIDENCE_CHANGE_SUBJECT2)
+                .to.emit(this.slashing, 'SlashProposalUpdated')
+                .withArgs(
+                    this.accounts.user3.address,
+                    PROPOSAL_ID,
+                    STATES.IN_REVIEW,
+                    this.accounts.user2.address,
+                    subjects[1].id,
+                    subjects[1].type,
+                    this.slashParams.reasons.MALICIOUS_SUBJECT_SLASH
+                );
+
+            const newProposal = await this.slashing.proposals(PROPOSAL_ID);
+            expect(newProposal.penaltyId).to.eq(this.slashParams.reasons.MALICIOUS_SUBJECT_SLASH);
+
+            // Continue
+            await expect(this.slashing.connect(this.accounts.user3).markAsReviewedSlashProposal(PROPOSAL_ID))
+                .to.emit(this.slashing, 'StateTransition')
+                .withArgs(PROPOSAL_ID, STATES.IN_REVIEW, STATES.REVIEWED);
+
+            expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.REVIEWED);
+
+            const slashedAmount = parseEther('900');
+            const proposerShare = slashedAmount.mul(proposerPercent).div('100');
+            const treasuryShare = slashedAmount.sub(proposerShare);
+
+            await expect(this.slashing.connect(this.accounts.admin).executeSlashProposal(PROPOSAL_ID))
+                .to.emit(this.slashing, 'StateTransition')
+                .withArgs(PROPOSAL_ID, STATES.REVIEWED, STATES.EXECUTED)
+                .to.emit(this.staking, 'Froze')
+                .withArgs(subjects[1].type, subjects[1].id, this.slashing.address, false)
+                .to.emit(this.staking, 'Slashed')
+                .withArgs(subjects[1].type, subjects[1].id, this.slashing.address, parseEther('900'))
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.staking.address, slashTreasuryAddress, treasuryShare)
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.staking.address, this.accounts.user2.address, proposerShare);
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance.add(proposerShare));
+            expect(await this.token.balanceOf(slashTreasuryAddress)).to.eq(initialTreasuryBalance.add(treasuryShare));
+            expect(await this.staking.isFrozen(subjects[1].type, subjects[1].id)).to.eq(false);
         });
 
         it('From CREATED to REJECTED', async function () {
@@ -155,9 +266,19 @@ describe('Slashing Proposals', function () {
                     .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED))
             )
                 .to.emit(this.slashing, 'SlashProposalUpdated')
-                .withArgs(this.accounts.user2.address, PROPOSAL_ID, this.accounts.user2.address, subjects[0].id, subjects[0].type, STAKING_DEPOSIT)
+                .withArgs(
+                    this.accounts.user2.address,
+                    PROPOSAL_ID,
+                    STATES.CREATED,
+                    this.accounts.user2.address,
+                    subjects[0].id,
+                    subjects[0].type,
+                    this.slashParams.reasons.OPERATIONAL_SLASH
+                )
+                .to.emit(this.slashing, 'DepositSubmitted')
+                .withArgs(PROPOSAL_ID, this.accounts.user2.address, STAKING_DEPOSIT)
                 .to.emit(this.slashing, 'EvidenceSubmitted')
-                .withArgs(EVIDENCE_FOR_STATE(STATES.CREATED))
+                .withArgs(PROPOSAL_ID, STATES.CREATED, EVIDENCE_FOR_STATE(STATES.CREATED))
                 .to.emit(this.slashing, 'MachineCreated')
                 .withArgs(PROPOSAL_ID, STATES.CREATED)
                 .to.emit(this.slashing, 'StateTransition')
@@ -173,6 +294,8 @@ describe('Slashing Proposals', function () {
             expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.CREATED);
 
             await expect(this.slashing.connect(this.accounts.user3).rejectSlashProposal(PROPOSAL_ID, EVIDENCE_FOR_STATE(STATES.REJECTED)))
+                .to.emit(this.slashing, 'DepositSlashed')
+                .withArgs(PROPOSAL_ID, this.accounts.user2.address, STAKING_DEPOSIT)
                 .to.emit(this.slashing, 'StateTransition')
                 .withArgs(PROPOSAL_ID, STATES.CREATED, STATES.REJECTED)
                 .to.emit(this.slashing, 'EvidenceSubmitted')
@@ -201,6 +324,8 @@ describe('Slashing Proposals', function () {
             expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.CREATED);
 
             await expect(this.slashing.connect(this.accounts.user3).dismissSlashProposal(PROPOSAL_ID, EVIDENCE_FOR_STATE(STATES.DISMISSED)))
+                .to.emit(this.slashing, 'DepositReturned')
+                .withArgs(PROPOSAL_ID, this.accounts.user2.address, STAKING_DEPOSIT)
                 .to.emit(this.slashing, 'StateTransition')
                 .withArgs(PROPOSAL_ID, STATES.CREATED, STATES.DISMISSED)
                 .to.emit(this.slashing, 'EvidenceSubmitted')
@@ -229,6 +354,8 @@ describe('Slashing Proposals', function () {
             expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.CREATED);
 
             await expect(this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID))
+                .to.emit(this.slashing, 'DepositReturned')
+                .withArgs(PROPOSAL_ID, this.accounts.user2.address, STAKING_DEPOSIT)
                 .to.emit(this.slashing, 'StateTransition')
                 .withArgs(PROPOSAL_ID, STATES.CREATED, STATES.IN_REVIEW)
                 .to.emit(this.token, 'Transfer')
@@ -261,6 +388,8 @@ describe('Slashing Proposals', function () {
             expect(await this.slashing.currentState(PROPOSAL_ID)).to.eq(STATES.CREATED);
 
             await expect(this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID))
+                .to.emit(this.slashing, 'DepositReturned')
+                .withArgs(PROPOSAL_ID, this.accounts.user2.address, STAKING_DEPOSIT)
                 .to.emit(this.slashing, 'StateTransition')
                 .withArgs(PROPOSAL_ID, STATES.CREATED, STATES.IN_REVIEW)
                 .to.emit(this.token, 'Transfer')
@@ -355,6 +484,8 @@ describe('Slashing Proposals', function () {
             ).to.be.revertedWith('InvalidSubjectType');
         });
     });
+
+    describe('Review modification conditions', function () {});
     describe('Proposal rejection conditions', function () {});
     describe('Proposal dismissal conditions', function () {});
 
