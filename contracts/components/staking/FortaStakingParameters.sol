@@ -79,10 +79,12 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
         return _fortaStaking.activeStakeFor(subjectType, subject);
     }
 
+    /// Gets active and inactive stake (amount of staked tokens) on `subject` id for `subjectType`
     function totalStakeFor(uint8 subjectType, uint256 subject) external view override returns (uint256) {
         return _fortaStaking.activeStakeFor(subjectType, subject) + _fortaStaking.inactiveStakeFor(subjectType, subject);
     }
 
+    /// Checks if subject, subjectType is registered
     function isRegistered(uint8 subjectType, uint256 subject) external view returns (bool) {
         return _stakeSubjectHandlers[subjectType].isRegistered(subject);
     }
