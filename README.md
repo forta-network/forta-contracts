@@ -21,7 +21,7 @@ The contracts coordinate and govern Forta Network's Detection Bots (formerly Age
 
 ## FORT token
 
-- [Folder](https://github.com/forta-protocol/forta-contracts/tree/master/contracts/token)
+- [Folder](https://github.com/forta-network/forta-contracts/tree/master/contracts/token)
 
 FORT is the ERC-20 Token of the Forta Network. It acts as:
 - Governance token (see our [path to decentralization](https://forta.org/blog/decentralizing-governance/))
@@ -32,7 +32,7 @@ FORT is deployed on Ethereum Mainnet and bridged to Polygon using [Polygon's PoS
 
 ## Agent Registry (Bot registry)
 
-- [Folder](https://github.com/forta-protocol/forta-contracts/tree/master/contracts/components/agents)
+- [Folder](https://github.com/forta-network/forta-contracts/tree/master/contracts/components/agents)
 
 Contract responsible of Agent registration, updates, enabling, disabling and defining the Staking Threshold for agents.
 Agents are identified by `uint256(keccak256(UUIDv4))`
@@ -40,7 +40,7 @@ Compliant with ERC-721 standard.
 
 ## Scanner Node Registry
 
-- [Folder](https://github.com/forta-protocol/forta-contracts/tree/master/contracts/components/scanners)
+- [Folder](https://github.com/forta-network/forta-contracts/tree/master/contracts/components/scanners)
 
 Contract responsible of Scanner Node registration, updates, enabling, disabling and defining the Staking Threshold for Scanner Nodes.
 Scanners are identified by their EOA Address casted to `uint256`
@@ -48,13 +48,13 @@ Compliant with ERC-721 standard.
 
 ## Dispatch
 
-- [Folder](https://github.com/forta-protocol/forta-contracts/blob/master/contracts/components/dispatch/Dispatch.sol)
+- [Folder](https://github.com/forta-network/forta-contracts/blob/master/contracts/components/dispatch/Dispatch.sol)
 
 Register of the assignments of Agents and Scanners, governed by the Assigner Software.
 
 ## Staking
 
-- [Folder](https://github.com/forta-protocol/forta-contracts/tree/master/contracts/components/staking)
+- [Folder](https://github.com/forta-network/forta-contracts/tree/master/contracts/components/staking)
 
 Contract handling staking of FORT tokens on subjects (participant of the network), slashing and reward distribution.
 Deposited stake is represented by ERC-1155 shares, for active and inactive (withdrawal initiated, non-transferrable) stake.
@@ -62,7 +62,7 @@ Share ID is derived from the subject type, subject ID and it being active or ina
 
 ## ScannerNodeVersion
 
-- [Folder](https://github.com/forta-protocol/forta-contracts/blob/master/contracts/components/scanners/ScannerNodeVersion.sol)
+- [Folder](https://github.com/forta-network/forta-contracts/blob/master/contracts/components/scanners/ScannerNodeVersion.sol)
 
 Holds the accepted Scanner Node software image IPFS hash. A change in the version will trigger Scanner Node autoupdate. New versions will be proposed by governance.
 
@@ -70,19 +70,19 @@ Holds the accepted Scanner Node software image IPFS hash. A change in the versio
 
 ### AccessManager
 
-- [File](https://github.com/forta-protocol/forta-contracts/blob/master/contracts/components/access/AccessManager.sol)
+- [File](https://github.com/forta-network/forta-contracts/blob/master/contracts/components/access/AccessManager.sol)
 
 [Access Control](https://docs.openzeppelin.com/contracts/4.x/api/access#AccessControl) Singleton for all contracts except Token and VestingWallets
 
 ### Router
 
-- [File](https://github.com/forta-protocol/forta-contracts/blob/master/contracts/components/router/Router.sol)
+- [File](https://github.com/forta-network/forta-contracts/blob/master/contracts/components/router/Router.sol)
 
 Observer pattern allowing actions in contracts to have side effects. Currently unused.
 
 ### Forwarder
 
-- [File](https://github.com/forta-protocol/forta-contracts/blob/master/contracts/components/metatx/Forwarder.sol)
+- [File](https://github.com/forta-network/forta-contracts/blob/master/contracts/components/metatx/Forwarder.sol)
 
 Meta tx contract, based on the [Permit Singleton](https://github.com/amxx/permit).
 
@@ -90,19 +90,19 @@ Meta tx contract, based on the [Permit Singleton](https://github.com/amxx/permit
 
 ### VestingWallet
 
-- [Folder](https://github.com/forta-protocol/forta-contracts/tree/master/contracts/vesting)
+- [Folder](https://github.com/forta-network/forta-contracts/tree/master/contracts/vesting)
 
 Vesting contracts. Can bridge tokens to Polygon to a `StakingEscrow` contract destination so they can participate on staking.
 
 ### StakingEscrow
 
-- [Folder](https://github.com/forta-protocol/forta-contracts/tree/master/contracts/vesting/escrow)
+- [Folder](https://github.com/forta-network/forta-contracts/tree/master/contracts/vesting/escrow)
 
 Contracts that allow vested token holders to stake on `FortaStaking`
 
 # Audits
 
-[Openzeppelin](https://github.com/forta-protocol/forta-contracts/blob/readme/audits/Forta%20Audit%20-%20Shared%20Report.pdf)
+[Openzeppelin](https://github.com/forta-network/forta-contracts/blob/readme/audits/Forta%20Audit%20-%20Shared%20Report.pdf)
 
 # Development
 
