@@ -1,6 +1,7 @@
-const { ethers, upgrades, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
+const { deploy } = require('../../scripts/utils');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
 
 const SUBJECT_1_ADDRESS = '0x727E5FCcb9e2367555373e90E637500BCa5Da40c';
@@ -620,8 +621,10 @@ describe('Forta Staking', function () {
     describe('Slashing', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
-            await expect(this.staking.connect(this.accounts.admin).setSlashingController(this.accounts.slasher.address)).to.be.not.reverted;
-            await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;
+            this.slasherMock = await deploy('SlashingControllerMock');
+            await this.slasherMock.setFortaStaking(this.staking.address);
+            await expect(this.staking.connect(this.accounts.admin).setSlashingController(this.slasherMock.address)).to.be.not.reverted;
+            await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.slasherMock.address)).to.be.not.reverted;
         });
 
         it('slashing → withdraw', async function () {
@@ -634,7 +637,10 @@ describe('Forta Staking', function () {
             expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('50');
             expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('150');
 
-            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '30'))
+            await this.slasherMock.setSlashedStakeValue('30');
+            await this.slasherMock.setSubject(subjectType1, subject1);
+
+            await expect(this.slasherMock.connect(this.accounts.slasher).slash())
                 .to.emit(this.token, 'Transfer')
                 .withArgs(this.staking.address, this.accounts.treasure.address, '30');
 
@@ -677,7 +683,10 @@ describe('Forta Staking', function () {
             expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('50');
             expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('150');
 
-            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '30'))
+            await this.slasherMock.setSlashedStakeValue('30');
+            await this.slasherMock.setSubject(subjectType1, subject1);
+
+            await expect(this.slasherMock.connect(this.accounts.slasher).slash())
                 .to.emit(this.token, 'Transfer')
                 .withArgs(this.staking.address, this.accounts.treasure.address, '30');
 
@@ -745,7 +754,10 @@ describe('Forta Staking', function () {
             expect(await this.staking.balanceOf(this.accounts.user1.address, inactive1)).to.be.equal('100');
             expect(await this.staking.balanceOf(this.accounts.user2.address, inactive1)).to.be.equal('50');
 
-            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '120'))
+            await this.slasherMock.setSlashedStakeValue('120');
+            await this.slasherMock.setSubject(subjectType1, subject1);
+
+            await expect(this.slasherMock.connect(this.accounts.slasher).slash())
                 .to.emit(this.token, 'Transfer')
                 .withArgs(this.staking.address, this.accounts.treasure.address, '120');
 
@@ -783,7 +795,12 @@ describe('Forta Staking', function () {
             await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '50')).to.be.not.reverted;
             await expect(this.staking.connect(this.accounts.user2).deposit(subjectType1, subject1, '100')).to.be.not.reverted;
             await expect(this.staking.connect(this.accounts.user3).reward(subjectType1, subject1, '100'));
-            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '120')).to.be.not.reverted;
+            this.slasherMock = await deploy('SlashingControllerMock');
+            await this.slasherMock.setFortaStaking(this.staking.address);
+            await expect(this.staking.connect(this.accounts.admin).setSlashingController(this.slasherMock.address)).to.be.not.reverted;
+            await this.slasherMock.setSlashedStakeValue('120');
+            await this.slasherMock.setSubject(subjectType1, subject1);
+            await this.slasherMock.connect(this.accounts.slasher).slash();
         });
 
         it('sweep unrelated token', async function () {
@@ -804,7 +821,7 @@ describe('Forta Staking', function () {
             expect(await this.otherToken.balanceOf(this.staking.address)).to.be.equal('0');
         });
 
-        it('sweep staked token', async function () {
+        it.only('sweep staked token', async function () {
             expect(await this.token.balanceOf(this.staking.address)).to.be.equal('180');
 
             await expect(this.token.connect(this.accounts.user3).transfer(this.staking.address, '17')).to.be.not.reverted;

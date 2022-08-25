@@ -6,6 +6,7 @@ pragma solidity ^0.8.4;
 import "../BaseComponentUpgradeable.sol";
 import "./SubjectTypes.sol";
 import "./ISlashingExecutor.sol";
+import "./ISlashingController.sol";
 import "./FortaStakingParameters.sol";
 import "../utils/StateMachines.sol";
 import "../../errors/GeneralErrors.sol";
@@ -14,7 +15,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "hardhat/console.sol";
 
-contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectTypeValidator {
+contract SlashingController is BaseComponentUpgradeable, ISlashingController, StateMachines, SubjectTypeValidator {
     using Counters for Counters.Counter;
 
     enum SlashStates {
