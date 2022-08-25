@@ -32,7 +32,6 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
     enum PenaltyMode {
         UNDEFINED,
         MIN_STAKE,
-        MAX_STAKE,
         CURRENT_STAKE
     }
 
@@ -316,7 +315,6 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
      * @notice gets the stake amount to be slashed.
      * The amount deppends on the StakePenalty.
      * In all cases, the amount will be the minimum of the max slashable stake for the subject and:
-     * MAX_STAKE: a % of the subject's MAX_STAKE
      * MIN_STAKE: a % of the subject's MIN_STAKE
      * CURRENT_STAKE: a % of the subject's active + inactive stake.
      */
@@ -327,11 +325,6 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         uint256 max = Math.mulDiv(totalStake, stakingParameters.maxSlashableStakePercent(), 100);
         if (penalty.mode == PenaltyMode.UNDEFINED) {
             return 0;
-        } else if (penalty.mode == PenaltyMode.MAX_STAKE) {
-            return Math.min(
-                    max,
-                    Math.mulDiv(stakingParameters.maxStakeFor(proposal.subjectType, proposal.subjectId), penalty.percentSlashed, 100)
-                );
         } else if (penalty.mode == PenaltyMode.MIN_STAKE) {
             return Math.min(
                     max,
