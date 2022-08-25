@@ -46,6 +46,8 @@ const EVIDENCE_FOR_STATE = (state) => {
     }
 };
 
+const PROPOSAL_ID = BigNumber.from('1');
+
 describe('Slashing Proposals', function () {
     prepare({ stake: { min: MIN_STAKE, max: MAX_STAKE, activated: true } });
 
@@ -83,7 +85,6 @@ describe('Slashing Proposals', function () {
 
     describe('Correct Proposal Lifecycle', function () {
         it('From CREATED to EXECUTED', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
             const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
             const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
 
@@ -159,7 +160,6 @@ describe('Slashing Proposals', function () {
         });
 
         it('From CREATED to EXECUTED, modifying the proposal', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
             const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
             const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
 
@@ -258,7 +258,6 @@ describe('Slashing Proposals', function () {
         });
 
         it('From CREATED to REJECTED', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
             const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
             const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
 
@@ -312,7 +311,6 @@ describe('Slashing Proposals', function () {
         });
 
         it('From CREATED to DISMISSED', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
             const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
             const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
 
@@ -342,7 +340,6 @@ describe('Slashing Proposals', function () {
         });
 
         it('From CREATED to REVERTED by Arbiter', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
             const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
             const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
 
@@ -376,7 +373,6 @@ describe('Slashing Proposals', function () {
         });
 
         it('From CREATED to REVERTED by Slasher', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
             const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
             const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
 
@@ -413,9 +409,36 @@ describe('Slashing Proposals', function () {
             expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(false);
         });
     });
-    describe('Proposal lifecycle wrong paths and auths', function () {
+    describe('State configuration', function () {
+        it('should have correct state config', async function () {
+            // UNDEFINED --> CREATED
+            let reachableStateNumber = await this.slashing.getRechableStatesNumber(STATES.UNDEFINED);
+            expect(reachableStateNumber).to.eq(1);
+            expect(await this.slashing.getReachableStateAt(STATES.UNDEFINED, 0)).to.eq(STATES.CREATED);
+
+            // CREATED --> DISMISSED, REJECTED or IN_REVIEW
+            reachableStateNumber = await this.slashing.getRechableStatesNumber(STATES.CREATED);
+            expect(reachableStateNumber).to.eq(3);
+            expect(await this.slashing.getReachableStateAt(STATES.CREATED, 0)).to.eq(STATES.DISMISSED);
+            expect(await this.slashing.getReachableStateAt(STATES.CREATED, 1)).to.eq(STATES.REJECTED);
+            expect(await this.slashing.getReachableStateAt(STATES.CREATED, 2)).to.eq(STATES.IN_REVIEW);
+
+            // IN_REVIEW --> REVIEWED or REVERTED
+            reachableStateNumber = await this.slashing.getRechableStatesNumber(STATES.IN_REVIEW);
+            expect(reachableStateNumber).to.eq(2);
+            expect(await this.slashing.getReachableStateAt(STATES.IN_REVIEW, 0)).to.eq(STATES.REVIEWED);
+            expect(await this.slashing.getReachableStateAt(STATES.IN_REVIEW, 1)).to.eq(STATES.REVERTED);
+
+            // REVIEWED --> EXECUTED or REVERTED
+            reachableStateNumber = await this.slashing.getRechableStatesNumber(STATES.REVIEWED);
+            expect(reachableStateNumber).to.eq(2);
+            expect(await this.slashing.getReachableStateAt(STATES.REVIEWED, 0)).to.eq(STATES.EXECUTED);
+            expect(await this.slashing.getReachableStateAt(STATES.REVIEWED, 1)).to.eq(STATES.REVERTED);
+        });
+    });
+
+    describe('Proposal lifecycle wrong auths', function () {
         it('should not move from CREATED if not authorized', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
             this.slashing
                 .connect(this.accounts.user2)
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
@@ -429,34 +452,33 @@ describe('Slashing Proposals', function () {
                 `MissingRole("${id('SLASHING_ARBITER_ROLE')}", "${this.accounts.user2.address}")`
             );
         });
-        it.skip('should not move from CREATED to wrong states', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
-            this.slashing
+
+        it('should not move from IN_REVIEW if not authorized', async function () {
+            await this.slashing
                 .connect(this.accounts.user2)
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
-            await expect(this.slashing.connect(this.accounts.user3).markAsReviewedSlashProposal(PROPOSAL_ID)).to.be.revertedWith(
-                `StateUnreachable(${STATES.CREATED}, ${STATES.REVIEWED})`
+            await this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
+            await expect(this.slashing.connect(this.accounts.user2).markAsReviewedSlashProposal(PROPOSAL_ID)).to.be.revertedWith(
+                `MissingRole("${id('SLASHING_ARBITER_ROLE')}", "${this.accounts.user2.address}")`
             );
-            await expect(this.slashing.connect(this.accounts.user3).revertSlashProposal(PROPOSAL_ID, EVIDENCE_FOR_STATE(STATES.REVERTED))).to.be.revertedWith(
-                `StateUnreachable(${STATES.CREATED}, ${STATES.REVERTED})`
-            );
-            await expect(this.slashing.connect(this.accounts.user3).executeSlashProposal(PROPOSAL_ID)).to.be.revertedWith(
-                `StateUnreachable(${STATES.CREATED}, ${STATES.EXECUTED})`
+            await expect(this.slashing.connect(this.accounts.user2).revertSlashProposal(PROPOSAL_ID, EVIDENCE_FOR_STATE(STATES.REVERTED))).to.be.revertedWith(
+                `MissingRole("${id('SLASHING_ARBITER_ROLE')}", "${this.accounts.user2.address}")`
             );
         });
-        //DISMISSED, REJECTED or IN_REVIEW
-        it.skip('should not move from DISMISSED to wrong states');
-        it.skip('should not move from REJECTED to wrong states');
-        it.skip('should not move from IN_REVIEW to wrong states');
 
-        it.skip('should not move from IN_REVIEW if not authorized');
-
-        // IN_REVIEW --> REVIEWED or REVERTED
-        it.skip('should not move from REVIEWED if not authorized');
-        it.skip('should not move from REVIEWED to wrong states');
-        it.skip('should not move from REVERTED to wrong states');
-        it.skip('should not move from EXECUTED to wrong states');
-        // REVIEWED --> EXECUTED or REVERTED
+        it('should not move from REVIEWED if not authorized', async function () {
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+            await this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
+            await this.slashing.connect(this.accounts.user3).markAsReviewedSlashProposal(PROPOSAL_ID);
+            await expect(this.slashing.connect(this.accounts.user2).executeSlashProposal(PROPOSAL_ID)).to.be.revertedWith(
+                `MissingRole("${id('SLASHER_ROLE')}", "${this.accounts.user2.address}")`
+            );
+            await expect(this.slashing.connect(this.accounts.user2).revertSlashProposal(PROPOSAL_ID, EVIDENCE_FOR_STATE(STATES.REVERTED))).to.be.revertedWith(
+                `MissingRole("${id('SLASHER_ROLE')}", "${this.accounts.user2.address}")`
+            );
+        });
     });
 
     describe('Proposal creation conditions', function () {
@@ -488,37 +510,7 @@ describe('Slashing Proposals', function () {
     });
 
     describe('Review modification conditions', function () {
-        /*
-        function reviewSlashProposalParameters(
-        uint256 _proposalId,
-        uint8 _subjectType,
-        uint256 _subjectId,
-        bytes32 _penaltyId,
-        string[] calldata _evidence
-    ) external onlyRole(SLASHING_ARBITER_ROLE) onlyInState(_proposalId, uint256(SlashStates.IN_REVIEW)) onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) {
-        if (proposals[_proposalId].proposer == address(0)) revert NonExistentProposal(_proposalId);
-        if (!stakingParameters.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
-
-        _submitEvidence(_proposalId, uint256(SlashStates.IN_REVIEW), _evidence);
-        if (_subjectType != proposals[_proposalId].subjectType|| _subjectId != proposals[_proposalId].subjectId) {
-            slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
-            slashingExecutor.freeze(_subjectType, _subjectId, true);
-        }
-        Proposal memory slashProposal = Proposal(_subjectId, proposals[_proposalId].proposer, _penaltyId, _subjectType);
-        proposals[_proposalId] = slashProposal;
-        emit SlashProposalUpdated(
-            msg.sender,
-            _proposalId,
-            uint256(SlashStates.IN_REVIEW),
-            slashProposal.proposer,
-            slashProposal.subjectId,
-            slashProposal.subjectType,
-            slashProposal.penaltyId
-        );
-    }
-        */
         it('should not modify if proposal nonexistent', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
             await this.slashing
                 .connect(this.accounts.user2)
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
@@ -531,8 +523,6 @@ describe('Slashing Proposals', function () {
         });
 
         it('should not modify if not in state', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
-
             await expect(
                 this.slashing
                     .connect(this.accounts.user3)
@@ -541,7 +531,6 @@ describe('Slashing Proposals', function () {
         });
 
         it('should not modify if subject is not registered', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
             await this.slashing
                 .connect(this.accounts.user2)
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
@@ -553,7 +542,6 @@ describe('Slashing Proposals', function () {
             ).to.be.revertedWith('NonRegisteredSubject');
         });
         it('should not modify if caller is not authorized', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
             await this.slashing
                 .connect(this.accounts.user2)
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
@@ -566,7 +554,6 @@ describe('Slashing Proposals', function () {
         });
 
         it('should not modify if proposal has empty evidence', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
             await this.slashing
                 .connect(this.accounts.user2)
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.IN_REVIEW));
@@ -579,7 +566,6 @@ describe('Slashing Proposals', function () {
         });
 
         it('should not modify if proposal has invalid subject type', async function () {
-            const PROPOSAL_ID = BigNumber.from('1');
             await this.slashing
                 .connect(this.accounts.user2)
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.IN_REVIEW));
@@ -591,12 +577,33 @@ describe('Slashing Proposals', function () {
             ).to.be.revertedWith('InvalidSubjectType');
         });
     });
-    describe.skip('Proposal rejection conditions', function () {});
-    describe.skip('Proposal dismissal conditions', function () {});
+    describe('Proposal dismissal conditions', function () {
+        it('should not dismiss without evidence', async function () {
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+            await expect(this.slashing.connect(this.accounts.user3).dismissSlashProposal(PROPOSAL_ID, [])).to.be.revertedWith('ZeroAmount("evidence lenght")');
+        });
+    });
+    describe('Proposal rejection conditions', function () {
+        it('should not reject without evidence', async function () {
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
 
-    describe.skip('Proposal review conditions', function () {});
+            await expect(this.slashing.connect(this.accounts.user3).rejectSlashProposal(PROPOSAL_ID, [])).to.be.revertedWith('ZeroAmount("evidence lenght")');
+        });
+    });
 
-    describe.skip('Proposal revert conditions', function () {});
+    describe('Proposal revert conditions', function () {
+        it('should not revert without evidence', async function () {
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+
+            await expect(this.slashing.connect(this.accounts.user3).dismissSlashProposal(PROPOSAL_ID, [])).to.be.revertedWith('ZeroAmount("evidence lenght")');
+        });
+    });
     describe('Slashing amounts', function () {
         beforeEach(async function () {
             const slashReasons = [ethers.utils.id('MIN_STAKE'), ethers.utils.id('MAX_STAKE'), ethers.utils.id('CURRENT_STAKE')];

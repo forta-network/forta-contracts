@@ -87,7 +87,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
 
     error WrongSlashPenaltyId(bytes32 penaltyId);
     error NonExistentProposal(uint256 proposalId);
-    error UnauthorizedToSlashProposal(bytes32 roleNeeded, address caller);
     error NonRegisteredSubject(uint8 subjectType, uint256 subjectId);
     error WrongPercentValue(uint256 value);
 
@@ -146,7 +145,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
         _configureState(uint256(SlashStates.CREATED), afterCreated);
 
         // IN_REVIEW --> REVIEWED or REVERTED
-        uint256[] memory afterInReview = new uint256[](3);
+        uint256[] memory afterInReview = new uint256[](2);
         afterInReview[0] = uint256(SlashStates.REVIEWED);
         afterInReview[1] = uint256(SlashStates.REVERTED);
         _configureState(uint256(SlashStates.IN_REVIEW), afterInReview);
@@ -204,7 +203,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
      * @param _evidence IPFS hashes of the evidence files, proof of the subject not being slashable.
      */
     function dismissSlashProposal(uint256 _proposalId, string[] calldata _evidence) external onlyRole(SLASHING_ARBITER_ROLE) {
-        if (deposits[_proposalId] == 0) revert ZeroAmount("deposit on _proposalId");
         _transitionTo(_proposalId, uint256(SlashStates.DISMISSED));
         _submitEvidence(_proposalId, uint256(SlashStates.DISMISSED), _evidence);
         _returnDeposit(_proposalId);
@@ -218,7 +216,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
      * @param _evidence IPFS hashes of the evidence files, justification for slashing the proposer's deposit.
      */
     function rejectSlashProposal(uint256 _proposalId, string[] calldata _evidence) external onlyRole(SLASHING_ARBITER_ROLE) {
-        if (deposits[_proposalId] == 0) revert ZeroAmount("deposit on _proposalId");
         _transitionTo(_proposalId, uint256(SlashStates.REJECTED));
         _submitEvidence(_proposalId, uint256(SlashStates.REJECTED), _evidence);
         _slashDeposit(_proposalId);
@@ -376,9 +373,9 @@ contract SlashingController is BaseComponentUpgradeable, StateMachines, SubjectT
 
     function _authorizeRevertSlashProposal(uint256 _proposalId) private view {
         if (isInState(_proposalId, uint256(SlashStates.IN_REVIEW)) && !hasRole(SLASHING_ARBITER_ROLE, msg.sender)) {
-            revert UnauthorizedToSlashProposal(SLASHING_ARBITER_ROLE, msg.sender);
+            revert MissingRole(SLASHING_ARBITER_ROLE, msg.sender);
         } else if (isInState(_proposalId, uint256(SlashStates.REVIEWED)) && !hasRole(SLASHER_ROLE, msg.sender)) {
-            revert UnauthorizedToSlashProposal(SLASHER_ROLE, msg.sender);
+            revert MissingRole(SLASHER_ROLE, msg.sender);
         }
         // If it's in another state, _transitionTo() will revert
     }

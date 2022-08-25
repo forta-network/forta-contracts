@@ -94,6 +94,22 @@ abstract contract StateMachines {
         return _machines[_machineId];
     }
 
+    /**
+     * Gets number of reachable states from _state.
+     * @dev use for enumeration
+     */
+    function getRechableStatesNumber(uint256 _state) external view returns (uint256) {
+        return _states[_state].length();
+    }
+
+    /**
+     * Gets reachable state from _state at index.
+     * @dev use for enumeration
+     */
+    function getReachableStateAt(uint256 _state, uint256 _index) external view returns (uint256) {
+        return _states[_state].at(_index);
+    }
+
     uint256[48] private __gap;
 
 }
