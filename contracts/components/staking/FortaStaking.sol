@@ -406,7 +406,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     /**
      * @notice Slash a fraction of a subject stake, and transfer it to the treasury. Restricted to the `SLASHER_ROLE`.
      * @dev This will alter the relationship between shares and stake, reducing shares value for a subject.
-     * Can only be called by the slash
+     * Can only be called by the SlashController contract, which will provide the stake amount deppending on the
+     * SlashProposal penalty.
      * Emits a Slashed event.
      * @param slashProposalId identifier of the proposal being executed.
      * @return stakeValue
