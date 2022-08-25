@@ -13,7 +13,6 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
  * some business logic into them.
  */
 abstract contract StateMachines {
-
     using EnumerableSet for EnumerableSet.UintSet;
     
     mapping(uint256 => uint256) private _machines; // Machine id --> currentstate
@@ -38,7 +37,7 @@ abstract contract StateMachines {
      * @dev The state definitions should be called in constructors or initializers. It is not recommended
      * to add or modify states and nextStates after initialization, since the machine logic can break.
      * There is no check for states defined in a way they are unreachable, the developer needs to map the 
-     * correct state diagram
+     * correct state diagram.
      * NOTE: for the correct functionality of the contract, id 0 is the UNDEFINED first state, needed to order
      * to check if a machine exists. A state transition from UNDEFINED to a first state must be defined.
      * @param _state the configured state id

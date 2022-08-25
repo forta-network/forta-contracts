@@ -821,7 +821,7 @@ describe('Forta Staking', function () {
             expect(await this.otherToken.balanceOf(this.staking.address)).to.be.equal('0');
         });
 
-        it.only('sweep staked token', async function () {
+        it('sweep staked token', async function () {
             expect(await this.token.balanceOf(this.staking.address)).to.be.equal('180');
 
             await expect(this.token.connect(this.accounts.user3).transfer(this.staking.address, '17')).to.be.not.reverted;

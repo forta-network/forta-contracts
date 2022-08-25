@@ -63,6 +63,7 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
     uint256 public depositAmount;
     uint256 public slashPercentToProposer;
 
+    //solhint-disable-next-line const-name-snakecase
     string public constant version = "0.1.0";
     uint256 public constant MAX_EVIDENCE_LENGTH = 5;
 
@@ -250,7 +251,10 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         uint256 _subjectId,
         bytes32 _penaltyId,
         string[] calldata _evidence
-    ) external onlyRole(SLASHING_ARBITER_ROLE) onlyInState(_proposalId, uint256(SlashStates.IN_REVIEW)) onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) {
+    ) external
+    onlyRole(SLASHING_ARBITER_ROLE)
+    onlyInState(_proposalId, uint256(SlashStates.IN_REVIEW))
+    onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) {
         // No need to check for proposal existence, onlyInState will revert if _proposalId is in undefined state
         if (!stakingParameters.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
 
@@ -401,7 +405,7 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         emit DepositAmountChanged(depositAmount);
     }
 
-    function _setSlashPercentToProposer(uint256 _amount) onlyValidPercent(_amount) private {
+    function _setSlashPercentToProposer(uint256 _amount) private onlyValidPercent(_amount) {
         slashPercentToProposer = _amount;
         emit SlashPercentToProposerChanged(_amount);
     }
@@ -425,7 +429,6 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         if (evidenceLength > MAX_EVIDENCE_LENGTH) revert ArrayTooBig(evidenceLength, MAX_EVIDENCE_LENGTH);
         emit EvidenceSubmitted(_proposalId, _stateId, _evidence);
     }
-
 
     // Private deposit handling
     function _returnDeposit(uint256 _proposalId) private {
