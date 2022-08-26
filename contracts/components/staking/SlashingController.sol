@@ -422,9 +422,10 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
 
     // Private deposit handling
     function _returnDeposit(uint256 _proposalId) private {
-        SafeERC20.safeTransfer(depositToken, proposals[_proposalId].proposer, deposits[_proposalId]);
-        deposits[_proposalId] = 0;
-        emit DepositReturned(_proposalId, proposals[_proposalId].proposer, deposits[_proposalId]);
+        uint256 amount = deposits[_proposalId];
+        delete deposits[_proposalId];
+        SafeERC20.safeTransfer(depositToken, proposals[_proposalId].proposer, amount);
+        emit DepositReturned(_proposalId, proposals[_proposalId].proposer, amount);
     }
 
     function _slashDeposit(uint256 _proposalId) private {
