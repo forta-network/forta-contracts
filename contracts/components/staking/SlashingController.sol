@@ -370,11 +370,8 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
     // Private validations
 
     function _authorizeRevertSlashProposal(uint256 _proposalId) private view {
-        if (isInState(_proposalId, uint256(SlashStates.IN_REVIEW)) && !hasRole(SLASHING_ARBITER_ROLE, msg.sender)) {
-            revert MissingRole(SLASHING_ARBITER_ROLE, msg.sender);
-        } else if (isInState(_proposalId, uint256(SlashStates.REVIEWED)) && !hasRole(SLASHER_ROLE, msg.sender)) {
-            revert MissingRole(SLASHER_ROLE, msg.sender);
-        }
+        bytes32 requiredRole = isInState(_proposalId, uint256(SlashStates.IN_REVIEW)) ? SLASHING_ARBITER_ROLE : SLASHER_ROLE;
+        _checkRole(requiredRole, _msgSender());
         // If it's in another state, _transitionTo() will revert
     }
 
