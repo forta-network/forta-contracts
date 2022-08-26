@@ -66,6 +66,7 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
     //solhint-disable-next-line const-name-snakecase
     string public constant version = "0.1.0";
     uint256 public constant MAX_EVIDENCE_LENGTH = 5;
+    uint256 public constant MAX_CHAR_LENGTH = 200;
 
     event SlashProposalUpdated(
         address indexed updater,
@@ -419,6 +420,9 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         uint256 evidenceLength = _evidence.length;
         if (evidenceLength == 0) revert ZeroAmount("evidence lenght");
         if (evidenceLength > MAX_EVIDENCE_LENGTH) revert ArrayTooBig(evidenceLength, MAX_EVIDENCE_LENGTH);
+        for (uint256 i = 0; i < evidenceLength; i++) {            
+            if (bytes(_evidence[i]).length > MAX_CHAR_LENGTH) revert StringTooLarge(bytes(_evidence[i]).length, MAX_CHAR_LENGTH);
+        }
         emit EvidenceSubmitted(_proposalId, _stateId, _evidence);
     }
 

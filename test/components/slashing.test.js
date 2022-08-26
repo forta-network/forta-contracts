@@ -490,6 +490,7 @@ describe('Slashing Proposals', function () {
                     .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED))
             ).to.be.revertedWith('ERC20: transfer amount exceeds balance');
         });
+
         it('should not propose if subject is not registered', async function () {
             await expect(
                 this.slashing
@@ -497,11 +498,29 @@ describe('Slashing Proposals', function () {
                     .proposeSlash(subjects[1].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED))
             ).to.be.revertedWith('NonRegisteredSubject');
         });
+
         it('should not propose if proposal has empty evidence', async function () {
             await expect(
                 this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, [])
             ).to.be.revertedWith('ZeroAmount("evidence lenght")');
         });
+
+        it('should not propose if proposal if evidence string too large', async function () {
+            const longString = new Array(201).fill('+').reduce((prev, next) => prev + next, '');
+            console.log(longString);
+            await expect(
+                this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, [longString])
+            ).to.be.revertedWith('StringTooLarge(201, 200)');
+        });
+
+        it('should not propose if proposal if evidence string too large', async function () {
+            await expect(
+                this.slashing
+                    .connect(this.accounts.user2)
+                    .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, ['1', '2', '3', '4', '5', '6'])
+            ).to.be.revertedWith('ArrayTooBig(6, 5)');
+        });
+
         it('should not propose if proposal has invalid subject type', async function () {
             await expect(
                 this.slashing.connect(this.accounts.user2).proposeSlash(123, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED))
