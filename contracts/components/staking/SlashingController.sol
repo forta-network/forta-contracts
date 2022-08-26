@@ -175,16 +175,16 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
     ) external onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) returns (uint256 proposalId) {
         if (!stakingParameters.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
         if (stakingParameters.totalStakeFor(_subjectType, _subjectId) == 0) revert ZeroAmount("subject stake");
-        Proposal memory slashProposal = Proposal(_subjectId, msg.sender, _penaltyId, _subjectType);
-        SafeERC20.safeTransferFrom(depositToken, msg.sender, address(this), depositAmount);
+        Proposal memory slashProposal = Proposal(_subjectId, _msgSender(), _penaltyId, _subjectType);
+        SafeERC20.safeTransferFrom(depositToken, _msgSender(), address(this), depositAmount);
         _proposalIds.increment();
         proposalId = _proposalIds.current();
         proposals[proposalId] = slashProposal;
         deposits[proposalId] = depositAmount;
-        emit DepositSubmitted(proposalId, msg.sender, depositAmount);
+        emit DepositSubmitted(proposalId, _msgSender(), depositAmount);
         _createMachine(proposalId, uint256(SlashStates.CREATED));
         emit SlashProposalUpdated(
-            msg.sender,
+            _msgSender(),
             proposalId,
             uint256(SlashStates.CREATED),
             slashProposal.proposer,
@@ -265,7 +265,7 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         Proposal memory slashProposal = Proposal(_subjectId, proposals[_proposalId].proposer, _penaltyId, _subjectType);
         proposals[_proposalId] = slashProposal;
         emit SlashProposalUpdated(
-            msg.sender,
+            _msgSender(),
             _proposalId,
             uint256(SlashStates.IN_REVIEW),
             slashProposal.proposer,
@@ -371,7 +371,9 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
 
     function _authorizeRevertSlashProposal(uint256 _proposalId) private view {
         bytes32 requiredRole = isInState(_proposalId, uint256(SlashStates.IN_REVIEW)) ? SLASHING_ARBITER_ROLE : SLASHER_ROLE;
-        _checkRole(requiredRole, _msgSender());
+        if (!hasRole(requiredRole, _msgSender())) {
+            revert MissingRole(requiredRole, _msgSender());
+        }
         // If it's in another state, _transitionTo() will revert
     }
 
