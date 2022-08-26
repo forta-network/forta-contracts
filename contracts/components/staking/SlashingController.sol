@@ -58,7 +58,8 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
     mapping(bytes32 => SlashPenalty) public penalties; // penaltyId --> SlashPenalty
     ISlashingExecutor public slashingExecutor;
     FortaStakingParameters public stakingParameters;
-    IERC20 public depositToken;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    IERC20 public immutable depositToken;
     uint256 public depositAmount;
     uint256 public slashPercentToProposer;
 
@@ -102,7 +103,10 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+    constructor(address _forwarder, address _depositToken) initializer ForwardedContext(_forwarder) {
+        if (_depositToken == address(0)) revert ZeroAddress("_depositToken");
+        depositToken = IERC20(_depositToken);
+    }
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
@@ -114,7 +118,6 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         address __router,
         ISlashingExecutor __executor,
         FortaStakingParameters __stakingParameters,
-        address __depositToken,
         uint256 __depositAmount,
         uint256 __slashPercentToProposer,
         bytes32[] calldata __slashPenaltyIds,
@@ -129,9 +132,6 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         _setDepositAmount(__depositAmount);
         _setSlashPercentToProposer(__slashPercentToProposer);
         _setSlashPenalties(__slashPenaltyIds, __slashPenalties);
-
-        if (__depositToken == address(0)) revert ZeroAddress("__depositToken");
-        depositToken = IERC20(__depositToken);
 
         // UNDEFINED --> CREATED
         uint256[] memory afterUndefined = new uint256[](1);

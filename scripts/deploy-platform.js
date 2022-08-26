@@ -325,14 +325,13 @@ async function migrate(config = {}) {
                     contracts.router.address,
                     contracts.staking.address,
                     contracts.stakingParameters.address,
-                    contracts.token.address,
                     SLASHING_DEPOSIT_AMOUNT(chainId),
                     SLASH_PERCENT_TO_PROPOSER(chainId),
                     reasonIds,
                     Object.keys(reasons).map((reason) => penalties[reasons[reason]]),
                 ],
                 {
-                    constructorArgs: [contracts.forwarder.address],
+                    constructorArgs: [contracts.forwarder.address, contracts.token.address],
                     unsafeAllow: 'delegatecall',
                 }
             )
