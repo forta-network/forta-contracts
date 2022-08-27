@@ -2,7 +2,9 @@
 pragma solidity ^0.8.15;
 
 /**
- * Codifies Finite State Machines 
+ * Library to handle Finite State Machines and codify their transitions in a uint256.
+ * NOTE: the number of states is limited to 16.
+ * Rewritten by Hadrien Croubois, https://github.com/Amxx
  */
 library StateMachines {
     type Machine is uint256;
