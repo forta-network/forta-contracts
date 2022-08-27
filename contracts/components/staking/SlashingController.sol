@@ -15,19 +15,18 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "hardhat/console.sol";
 
-contract SlashingController is BaseComponentUpgradeable, ISlashingController, StateMachines, SubjectTypeValidator {
+contract SlashingController is BaseComponentUpgradeable, ISlashingController, StateMachineController, SubjectTypeValidator {
     using Counters for Counters.Counter;
+    using StateMachines for StateMachines.Machine;
 
-    enum SlashStates {
-        UNDEFINED,
-        CREATED,
-        REJECTED,
-        DISMISSED,
-        IN_REVIEW,
-        REVIEWED,
-        EXECUTED,
-        REVERTED
-    }
+    StateMachines.State public constant UNDEFINED = StateMachines.State._00;
+    StateMachines.State public constant CREATED = StateMachines.State._01;
+    StateMachines.State public constant REJECTED = StateMachines.State._02;
+    StateMachines.State public constant DISMISSED = StateMachines.State._03;
+    StateMachines.State public constant IN_REVIEW = StateMachines.State._04;
+    StateMachines.State public constant REVIEWED = StateMachines.State._05;
+    StateMachines.State public constant EXECUTED = StateMachines.State._06;
+    StateMachines.State public constant REVERTED = StateMachines.State._07;
 
     enum PenaltyMode {
         UNDEFINED,
@@ -58,10 +57,12 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
     mapping(bytes32 => SlashPenalty) public penalties; // penaltyId --> SlashPenalty
     ISlashingExecutor public slashingExecutor;
     FortaStakingParameters public stakingParameters;
-    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    IERC20 public immutable depositToken;
     uint256 public depositAmount;
     uint256 public slashPercentToProposer;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    IERC20 public immutable depositToken;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    StateMachines.Machine private immutable _transitiontable;
 
     //solhint-disable-next-line const-name-snakecase
     string public constant version = "0.1.0";
@@ -71,13 +72,13 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
     event SlashProposalUpdated(
         address indexed updater,
         uint256 indexed proposalId,
-        uint256 indexed stateId,
+        StateMachines.State indexed stateId,
         address proposer,
         uint256 subjectId,
         uint8 subjectType,
         bytes32 penaltyId
     );
-    event EvidenceSubmitted(uint256 proposalId, uint256 stateId, string[] evidence);
+    event EvidenceSubmitted(uint256 proposalId, StateMachines.State stateId, string[] evidence);
     event SlashingExecutorChanged(address indexed slashingExecutor);
     event StakingParametersManagerChanged(address indexed stakingParametersManager);
     event DepositAmountChanged(uint256 amount);
@@ -107,6 +108,16 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
     constructor(address _forwarder, address _depositToken) initializer ForwardedContext(_forwarder) {
         if (_depositToken == address(0)) revert ZeroAddress("_depositToken");
         depositToken = IERC20(_depositToken);
+        _transitiontable = StateMachines
+            .EMPTY_MACHINE
+            .addEdgeTransition(UNDEFINED, CREATED)
+            .addEdgeTransition(CREATED, DISMISSED)
+            .addEdgeTransition(CREATED, REJECTED)
+            .addEdgeTransition(CREATED, IN_REVIEW)
+            .addEdgeTransition(IN_REVIEW, REVIEWED)
+            .addEdgeTransition(IN_REVIEW, REVERTED)
+            .addEdgeTransition(REVIEWED, EXECUTED)
+            .addEdgeTransition(REVIEWED, REVERTED);
     }
 
     /**
@@ -133,30 +144,6 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         _setDepositAmount(__depositAmount);
         _setSlashPercentToProposer(__slashPercentToProposer);
         _setSlashPenalties(__slashPenaltyIds, __slashPenalties);
-
-        // UNDEFINED --> CREATED
-        uint256[] memory afterUndefined = new uint256[](1);
-        afterUndefined[0] = uint256(SlashStates.CREATED);
-        _configureState(uint256(SlashStates.UNDEFINED), afterUndefined);
-
-        // CREATED --> DISMISSED, REJECTED or IN_REVIEW
-        uint256[] memory afterCreated = new uint256[](3);
-        afterCreated[0] = uint256(SlashStates.DISMISSED);
-        afterCreated[1] = uint256(SlashStates.REJECTED);
-        afterCreated[2] = uint256(SlashStates.IN_REVIEW);
-        _configureState(uint256(SlashStates.CREATED), afterCreated);
-
-        // IN_REVIEW --> REVIEWED or REVERTED
-        uint256[] memory afterInReview = new uint256[](2);
-        afterInReview[0] = uint256(SlashStates.REVIEWED);
-        afterInReview[1] = uint256(SlashStates.REVERTED);
-        _configureState(uint256(SlashStates.IN_REVIEW), afterInReview);
-
-        // REVIEWED --> EXECUTED or REVERTED
-        uint256[] memory afterReviewed = new uint256[](2);
-        afterReviewed[0] = uint256(SlashStates.EXECUTED);
-        afterReviewed[1] = uint256(SlashStates.REVERTED);
-        _configureState(uint256(SlashStates.REVIEWED), afterReviewed);
     }
 
     // Proposal LifeCycle
@@ -180,20 +167,12 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         SafeERC20.safeTransferFrom(depositToken, _msgSender(), address(this), depositAmount);
         _proposalIds.increment();
         proposalId = _proposalIds.current();
-        proposals[proposalId] = slashProposal;
         deposits[proposalId] = depositAmount;
+        proposals[proposalId] = slashProposal;
         emit DepositSubmitted(proposalId, _msgSender(), depositAmount);
-        _createMachine(proposalId, uint256(SlashStates.CREATED));
-        emit SlashProposalUpdated(
-            _msgSender(),
-            proposalId,
-            uint256(SlashStates.CREATED),
-            slashProposal.proposer,
-            slashProposal.subjectId,
-            slashProposal.subjectType,
-            slashProposal.penaltyId
-        );
-        _submitEvidence(proposalId, uint256(SlashStates.CREATED), _evidence);
+        _transition(proposalId, CREATED);
+        emit SlashProposalUpdated(_msgSender(), proposalId, CREATED, slashProposal.proposer, slashProposal.subjectId, slashProposal.subjectType, slashProposal.penaltyId);
+        _submitEvidence(proposalId, CREATED, _evidence);
         slashingExecutor.freeze(_subjectType, _subjectId, true);
         return proposalId;
     }
@@ -205,8 +184,8 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
      * @param _evidence IPFS hashes of the evidence files, proof of the subject not being slashable.
      */
     function dismissSlashProposal(uint256 _proposalId, string[] calldata _evidence) external onlyRole(SLASHING_ARBITER_ROLE) {
-        _transitionTo(_proposalId, uint256(SlashStates.DISMISSED));
-        _submitEvidence(_proposalId, uint256(SlashStates.DISMISSED), _evidence);
+        _transition(_proposalId, DISMISSED);
+        _submitEvidence(_proposalId, DISMISSED, _evidence);
         _returnDeposit(_proposalId);
         slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
     }
@@ -218,8 +197,8 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
      * @param _evidence IPFS hashes of the evidence files, justification for slashing the proposer's deposit.
      */
     function rejectSlashProposal(uint256 _proposalId, string[] calldata _evidence) external onlyRole(SLASHING_ARBITER_ROLE) {
-        _transitionTo(_proposalId, uint256(SlashStates.REJECTED));
-        _submitEvidence(_proposalId, uint256(SlashStates.REJECTED), _evidence);
+        _transition(_proposalId, REJECTED);
+        _submitEvidence(_proposalId, REJECTED, _evidence);
         _slashDeposit(_proposalId);
         slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
     }
@@ -230,12 +209,12 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
      */
     function markAsInReviewSlashProposal(uint256 _proposalId) external onlyRole(SLASHING_ARBITER_ROLE) {
         if (deposits[_proposalId] == 0) revert ZeroAmount("deposit on _proposalId");
-        _transitionTo(_proposalId, uint256(SlashStates.IN_REVIEW));
+        _transition(_proposalId, IN_REVIEW);
         _returnDeposit(_proposalId);
     }
 
     /**
-     * @notice After investigation, arbiter updates the proposal's incorrect assumptions. This can only be done if the proposal is IN_REVIEW, and 
+     * @notice After investigation, arbiter updates the proposal's incorrect assumptions. This can only be done if the proposal is IN_REVIEW, and
      * presenting evidence for the changes.
      * Changing the subject and subjectType will unfreeze the previous target and freeze the new.
      * Changing the penalty will affect slashing amounts.
@@ -251,29 +230,18 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         uint256 _subjectId,
         bytes32 _penaltyId,
         string[] calldata _evidence
-    ) external
-    onlyRole(SLASHING_ARBITER_ROLE)
-    onlyInState(_proposalId, uint256(SlashStates.IN_REVIEW))
-    onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) {
+    ) external onlyRole(SLASHING_ARBITER_ROLE) onlyInState(_proposalId, IN_REVIEW) onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) {
         // No need to check for proposal existence, onlyInState will revert if _proposalId is in undefined state
         if (!stakingParameters.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
 
-        _submitEvidence(_proposalId, uint256(SlashStates.IN_REVIEW), _evidence);
-        if (_subjectType != proposals[_proposalId].subjectType|| _subjectId != proposals[_proposalId].subjectId) {
+        _submitEvidence(_proposalId, IN_REVIEW, _evidence);
+        if (_subjectType != proposals[_proposalId].subjectType || _subjectId != proposals[_proposalId].subjectId) {
             slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
             slashingExecutor.freeze(_subjectType, _subjectId, true);
         }
         Proposal memory slashProposal = Proposal(_subjectId, proposals[_proposalId].proposer, _penaltyId, _subjectType);
         proposals[_proposalId] = slashProposal;
-        emit SlashProposalUpdated(
-            _msgSender(),
-            _proposalId,
-            uint256(SlashStates.IN_REVIEW),
-            slashProposal.proposer,
-            slashProposal.subjectId,
-            slashProposal.subjectType,
-            slashProposal.penaltyId
-        );
+        emit SlashProposalUpdated(_msgSender(), _proposalId, IN_REVIEW, slashProposal.proposer, slashProposal.subjectId, slashProposal.subjectType, slashProposal.penaltyId);
     }
 
     /**
@@ -281,7 +249,7 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
      * @param _proposalId the proposal identifier.
      */
     function markAsReviewedSlashProposal(uint256 _proposalId) external onlyRole(SLASHING_ARBITER_ROLE) {
-        _transitionTo(_proposalId, uint256(SlashStates.REVIEWED));
+        _transition(_proposalId, REVIEWED);
     }
 
     /**
@@ -293,8 +261,8 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
      */
     function revertSlashProposal(uint256 _proposalId, string[] calldata _evidence) external {
         _authorizeRevertSlashProposal(_proposalId);
-        _transitionTo(_proposalId, uint256(SlashStates.REVERTED));
-        _submitEvidence(_proposalId, uint256(SlashStates.REVERTED), _evidence);
+        _transition(_proposalId, REVERTED);
+        _submitEvidence(_proposalId, REVERTED, _evidence);
         slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
     }
 
@@ -305,7 +273,7 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
      * @param _proposalId the proposal identifier.
      */
     function executeSlashProposal(uint256 _proposalId) external onlyRole(SLASHER_ROLE) {
-        _transitionTo(_proposalId, uint256(SlashStates.EXECUTED));
+        _transition(_proposalId, EXECUTED);
         slashingExecutor.slash(_proposalId);
         slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
     }
@@ -327,10 +295,7 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         if (penalty.mode == PenaltyMode.UNDEFINED) {
             return 0;
         } else if (penalty.mode == PenaltyMode.MIN_STAKE) {
-            return Math.min(
-                    max,
-                    Math.mulDiv(stakingParameters.minStakeFor(proposal.subjectType, proposal.subjectId), penalty.percentSlashed, 100)
-                );
+            return Math.min(max, Math.mulDiv(stakingParameters.minStakeFor(proposal.subjectType, proposal.subjectId), penalty.percentSlashed, 100));
         } else if (penalty.mode == PenaltyMode.CURRENT_STAKE) {
             return Math.min(max, Math.mulDiv(totalStake, penalty.percentSlashed, 100));
         }
@@ -371,11 +336,11 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
     // Private validations
 
     function _authorizeRevertSlashProposal(uint256 _proposalId) private view {
-        bytes32 requiredRole = isInState(_proposalId, uint256(SlashStates.IN_REVIEW)) ? SLASHING_ARBITER_ROLE : SLASHER_ROLE;
+        bytes32 requiredRole = currentState(_proposalId) == IN_REVIEW ? SLASHING_ARBITER_ROLE : SLASHER_ROLE;
         if (!hasRole(requiredRole, _msgSender())) {
             revert MissingRole(requiredRole, _msgSender());
         }
-        // If it's in another state, _transitionTo() will revert
+        // If it's in another state, _transition() will revert
     }
 
     // Private param setting
@@ -416,11 +381,15 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
     }
 
     // Evidence handling
-    function _submitEvidence(uint256 _proposalId, uint256 _stateId, string[] calldata _evidence) private {
+    function _submitEvidence(
+        uint256 _proposalId,
+        StateMachines.State _stateId,
+        string[] calldata _evidence
+    ) private {
         uint256 evidenceLength = _evidence.length;
         if (evidenceLength == 0) revert ZeroAmount("evidence lenght");
         if (evidenceLength > MAX_EVIDENCE_LENGTH) revert ArrayTooBig(evidenceLength, MAX_EVIDENCE_LENGTH);
-        for (uint256 i = 0; i < evidenceLength; i++) {            
+        for (uint256 i = 0; i < evidenceLength; i++) {
             if (bytes(_evidence[i]).length > MAX_CHAR_LENGTH) revert StringTooLarge(bytes(_evidence[i]).length, MAX_CHAR_LENGTH);
         }
         emit EvidenceSubmitted(_proposalId, _stateId, _evidence);
@@ -439,5 +408,9 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
         delete deposits[_proposalId];
         SafeERC20.safeTransfer(depositToken, slashingExecutor.treasury(), amount);
         emit DepositSlashed(_proposalId, proposals[_proposalId].proposer, amount);
+    }
+
+    function transitionTable() public view virtual override returns (StateMachines.Machine) {
+        return _transitiontable;
     }
 }

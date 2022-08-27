@@ -410,30 +410,12 @@ describe('Slashing Proposals', function () {
         });
     });
     describe('State configuration', function () {
-        it('should have correct state config', async function () {
-            // UNDEFINED --> CREATED
-            let reachableStateNumber = await this.slashing.getRechableStatesNumber(STATES.UNDEFINED);
-            expect(reachableStateNumber).to.eq(1);
-            expect(await this.slashing.getReachableStateAt(STATES.UNDEFINED, 0)).to.eq(STATES.CREATED);
 
-            // CREATED --> DISMISSED, REJECTED or IN_REVIEW
-            reachableStateNumber = await this.slashing.getRechableStatesNumber(STATES.CREATED);
-            expect(reachableStateNumber).to.eq(3);
-            expect(await this.slashing.getReachableStateAt(STATES.CREATED, 0)).to.eq(STATES.DISMISSED);
-            expect(await this.slashing.getReachableStateAt(STATES.CREATED, 1)).to.eq(STATES.REJECTED);
-            expect(await this.slashing.getReachableStateAt(STATES.CREATED, 2)).to.eq(STATES.IN_REVIEW);
-
-            // IN_REVIEW --> REVIEWED or REVERTED
-            reachableStateNumber = await this.slashing.getRechableStatesNumber(STATES.IN_REVIEW);
-            expect(reachableStateNumber).to.eq(2);
-            expect(await this.slashing.getReachableStateAt(STATES.IN_REVIEW, 0)).to.eq(STATES.REVIEWED);
-            expect(await this.slashing.getReachableStateAt(STATES.IN_REVIEW, 1)).to.eq(STATES.REVERTED);
-
-            // REVIEWED --> EXECUTED or REVERTED
-            reachableStateNumber = await this.slashing.getRechableStatesNumber(STATES.REVIEWED);
-            expect(reachableStateNumber).to.eq(2);
-            expect(await this.slashing.getReachableStateAt(STATES.REVIEWED, 0)).to.eq(STATES.EXECUTED);
-            expect(await this.slashing.getReachableStateAt(STATES.REVIEWED, 1)).to.eq(STATES.REVERTED);
+        it('should not have incorrect state transtions', async function () {
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+            await expect(this.slashing.connect(this.accounts.user3).markAsReviewedSlashProposal(PROPOSAL_ID)).to.be.revertedWith(`InvalidStateTransition(1, 5)`);
         });
     });
 
