@@ -341,10 +341,6 @@ async function migrate(config = {}) {
         slashParams.penalties = penalties;
         DEBUG(`[10] slashing proposal: ${contracts.slashing.address}`);
 
-        if ((await contracts.staking.slashingController()) === ethers.constants.AddressZero) {
-            await contracts.staking.setSlashingController(contracts.slashing.address);
-            DEBUG(`[10.1] slashing controller set in staking: ${contracts.slashing.address}`);
-        }
     }
 
     // Roles dictionary

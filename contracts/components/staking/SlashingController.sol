@@ -1,21 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 // See Forta Network License: https://github.com/forta-protocol/forta-contracts/blob/master/LICENSE.md
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.15;
 
 import "../BaseComponentUpgradeable.sol";
 import "./SubjectTypes.sol";
 import "./ISlashingExecutor.sol";
-import "./ISlashingController.sol";
 import "./FortaStakingParameters.sol";
 import "../utils/StateMachines.sol";
 import "../../errors/GeneralErrors.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
 
-contract SlashingController is BaseComponentUpgradeable, ISlashingController, StateMachineController, SubjectTypeValidator {
+contract SlashingController is BaseComponentUpgradeable, StateMachineController, SubjectTypeValidator {
     using Counters for Counters.Counter;
     using StateMachines for StateMachines.Machine;
 
@@ -274,8 +272,9 @@ contract SlashingController is BaseComponentUpgradeable, ISlashingController, St
      */
     function executeSlashProposal(uint256 _proposalId) external onlyRole(SLASHER_ROLE) {
         _transition(_proposalId, EXECUTED);
-        slashingExecutor.slash(_proposalId);
-        slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
+        Proposal memory proposal = proposals[_proposalId];
+        slashingExecutor.slash(proposal.subjectType, proposal.subjectId, getSlashedStakeValue(_proposalId), proposal.proposer, slashPercentToProposer);
+        slashingExecutor.freeze(proposal.subjectType, proposal.subjectId, false);
     }
 
     // Penalty calculation (ISlashingController)

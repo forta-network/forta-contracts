@@ -489,7 +489,6 @@ describe('Slashing Proposals', function () {
 
         it('should not propose if proposal if evidence string too large', async function () {
             const longString = new Array(201).fill('+').reduce((prev, next) => prev + next, '');
-            console.log(longString);
             await expect(
                 this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, [longString])
             ).to.be.revertedWith('StringTooLarge(201, 200)');

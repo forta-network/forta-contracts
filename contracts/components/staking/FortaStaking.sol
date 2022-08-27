@@ -15,7 +15,6 @@ import "./FortaStakingUtils.sol";
 import "./SubjectTypes.sol";
 import "./IStakeController.sol";
 import "./ISlashingExecutor.sol";
-import "./ISlashingController.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 import "../../errors/GeneralErrors.sol";
@@ -88,19 +87,17 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     IStakeController private _stakingParameters;
 
-    ISlashingController public slashingController;
-
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
     event WithdrawalInitiated(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint64 deadline);
     event WithdrawalExecuted(uint8 indexed subjectType, uint256 indexed subject, address indexed account);
     event Froze(uint8 indexed subjectType, uint256 indexed subject, address indexed by, bool isFrozen);
     event Slashed(uint8 indexed subjectType, uint256 indexed subject, address indexed by, uint256 value);
+    event SlashedShareSent(uint8 indexed subjectType, uint256 indexed subject, address indexed by, uint256 value);
     event Rewarded(uint8 indexed subjectType, uint256 indexed subject, address indexed from, uint256 value);
     event Released(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
     event StakeParamsManagerSet(address indexed newManager);
-    event SlashingControllerSet(address indexed slashincController);
     event MaxStakeReached(uint8 indexed subjectType, uint256 indexed subject);
     event TokensSwept(address indexed token, address to, uint256 amount);
 
@@ -111,14 +108,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     error NoActiveShares();
     error NoInactiveShares();
     error StakeInactiveOrSubjectNotFound();
-    error SenderNotSlashingController(address sender);
 
     string public constant version = "0.1.1";
-
-    modifier onlySlashingController() {
-        if (address(slashingController) != msg.sender) revert SenderNotSlashingController(msg.sender);
-        _;
-    }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -406,15 +397,21 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     /**
      * @notice Slash a fraction of a subject stake, and transfer it to the treasury. Restricted to the `SLASHER_ROLE`.
      * @dev This will alter the relationship between shares and stake, reducing shares value for a subject.
-     * Can only be called by the SlashController contract, which will provide the stake amount deppending on the
-     * SlashProposal penalty.
      * Emits a Slashed event.
-     * @param slashProposalId identifier of the proposal being executed.
+     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * @param subject id identifying subject (external to FortaStaking).
+     * @param stakeValue amount of staked token to be slashed.
+     * @param proposer address of the slash proposer. Must be nonzero address if proposerPercent > 0
+     * @param proposerPercent percentage of stakeValue sent to the proposer. From 0 to FortaStakingParameters.maxSlashableStakePercent()
      * @return stakeValue
      */
-    function slash(uint256 slashProposalId) public onlySlashingController returns (uint256) {
-        (uint8 subjectType, uint256 subject) = slashingController.getSubject(slashProposalId);
-        uint256 stakeValue = slashingController.getSlashedStakeValue(slashProposalId);
+    function slash(
+        uint8 subjectType,
+        uint256 subject,
+        uint256 stakeValue,
+        address proposer,
+        uint256 proposerPercent
+    ) public onlyRole(SLASHER_ROLE) returns (uint256) {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         uint256 activeStake = _activeStake.balanceOf(activeSharesId);
         uint256 inactiveStake = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
@@ -433,17 +430,14 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _activeStake.burn(activeSharesId, slashFromActive);
         _inactiveStake.burn(FortaStakingUtils.activeToInactive(activeSharesId), slashFromInactive);
 
-        if (slashingController.slashPercentToProposer() > 0) {
-            SafeERC20.safeTransfer(
-                stakedToken,
-                slashingController.getProposer(slashProposalId),
-                Math.mulDiv(stakeValue, slashingController.slashPercentToProposer(), 100)
-            );
-            SafeERC20.safeTransfer(stakedToken, _treasury, Math.mulDiv(stakeValue, 100 - slashingController.slashPercentToProposer(), 100));
+        if (proposerPercent > 0) {
+            if (proposer == address(0)) revert ZeroAddress("proposer");
+            SafeERC20.safeTransfer(stakedToken, proposer, Math.mulDiv(stakeValue, proposerPercent, 100));
+            emit SlashedShareSent(subjectType, subject, proposer, Math.mulDiv(stakeValue, proposerPercent, 100));
+            SafeERC20.safeTransfer(stakedToken, _treasury, Math.mulDiv(stakeValue, 100 - proposerPercent, 100));
         } else {
             SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue);
         }
-
         emit Slashed(subjectType, subject, _msgSender(), stakeValue);
 
         return stakeValue;
@@ -462,7 +456,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint8 subjectType,
         uint256 subject,
         bool frozen
-    ) public onlySlashingController onlyValidSubjectType(subjectType) {
+    ) public onlyRole(SLASHER_ROLE) onlyValidSubjectType(subjectType) {
         _frozen[FortaStakingUtils.subjectToActive(subjectType, subject)] = frozen;
         emit Froze(subjectType, subject, _msgSender(), frozen);
     }
@@ -707,13 +701,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _stakingParameters = newStakingParameters;
     }
 
-    // Admin: change slashing controller
-    function setSlashingController(address newSlashingController) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (newSlashingController == address(0)) revert ZeroAddress("newSlashingController");
-        emit SlashingControllerSet(newSlashingController);
-        slashingController = ISlashingController(newSlashingController);
-    }
-
     // Overrides
 
     /**
@@ -740,5 +727,5 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         return super._msgData();
     }
 
-    uint256[39] private __gap;
+    uint256[40] private __gap;
 }
