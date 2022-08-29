@@ -24,6 +24,7 @@ describe('Staking Escrow', function () {
         this.accounts.getAccount('manager');
 
         await Promise.all([
+            this.token.connect(this.accounts.admin).grantRole(ethers.utils.id('WHITELISTER_ROLE'), this.escrowFactory.address),
             this.token.connect(this.accounts.admin).deposit(this.accounts.user1.address, ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther('1000')])),
             this.token.connect(this.accounts.admin).deposit(this.accounts.user2.address, ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther('1000')])),
             this.token.connect(this.accounts.admin).deposit(this.accounts.user3.address, ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther('1000')])),
@@ -41,12 +42,8 @@ describe('Staking Escrow', function () {
             this.escrow = await this.escrowFactory.predictWallet(this.vesting, this.accounts.manager.address).then((address) => utils.attach('StakingEscrow', address));
 
             await expect(this.token.connect(this.accounts.admin).deposit(this.escrow.address, ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther('1000')])))
-                .to.emit(this.token, 'RoleGranted')
-                .withArgs(this.roles.WHITELIST, this.escrow.address, this.accounts.admin.address)
                 .to.emit(this.token, 'Transfer')
-                .withArgs(ethers.constants.AddressZero, this.escrow.address, ethers.utils.parseEther('1000'))
-                .to.emit(this.token, 'RoleRevoked')
-                .withArgs(this.roles.WHITELIST, this.escrow.address, this.accounts.admin.address);
+                .withArgs(ethers.constants.AddressZero, this.escrow.address, ethers.utils.parseEther('1000'));
 
             await expect(this.escrowFactory.newWallet(this.vesting, this.accounts.manager.address))
                 .to.emit(this.token, 'RoleGranted')
