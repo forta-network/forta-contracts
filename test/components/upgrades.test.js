@@ -9,7 +9,7 @@ describe('Upgrades testing', function () {
     prepare();
 
     describe('Agent Registry', async function () {
-        it(' 0.1.1 -> 0.1.3', async function () {
+        it.skip(' 0.1.1 -> 0.1.4', async function () {
             const AgentRegistry_0_1_1 = await ethers.getContractFactory('AgentRegistry_0_1_1');
             originalAgents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, this.contracts.router.address, 'Forta Agents', 'FAgents'], {
                 constructorArgs: [this.contracts.forwarder.address],

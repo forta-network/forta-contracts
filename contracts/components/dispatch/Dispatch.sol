@@ -15,7 +15,7 @@ contract Dispatch is BaseComponentUpgradeable {
     AgentRegistry   private _agents;
     ScannerRegistry private _scanners;
 
-    string public constant version = "0.1.4";
+    string public constant version = "0.1.5";
 
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
@@ -197,7 +197,7 @@ contract Dispatch is BaseComponentUpgradeable {
      * @param scannerId ERC1155 token id of the scanner.
      */
     function unlink(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
-        if (!_agents.isCreated(agentId)) revert InvalidId("Agent", agentId);
+        if (!_agents.isRegistered(agentId)) revert InvalidId("Agent", agentId);
         if (!_scanners.isRegistered(scannerId)) revert InvalidId("Scanner", scannerId);
 
         if (!scannerToAgents[scannerId].remove(agentId) || !agentToScanners[agentId].remove(scannerId)) {

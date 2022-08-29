@@ -55,7 +55,7 @@ abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
     /**
      * @notice hook fired before agent creation or update.
      * @dev stores agent in _allAgents if it wasn't there, manages agent arrays by chain.
-     * @param agentId ERC1155 token id of the agent to be created or updated.
+     * @param agentId ERC721 token id of the agent to be created or updated.
      * @param newMetadata IPFS pointer to agent's metadata JSON.
      * @param newChainIds ordered list of chainIds where the agent wants to run.
      */

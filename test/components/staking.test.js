@@ -1,6 +1,7 @@
-const { ethers, upgrades, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
+const { deploy } = require('../../scripts/utils');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
 
 const SUBJECT_1_ADDRESS = '0x727E5FCcb9e2367555373e90E637500BCa5Da40c';
@@ -584,7 +585,7 @@ describe('Forta Staking', function () {
     describe('Freezing', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
-            await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
+            await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
             await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;
         });
 
@@ -620,8 +621,35 @@ describe('Forta Staking', function () {
     describe('Slashing', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
-            await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
-            await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;
+            await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
+            await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address);
+
+        });
+
+        it('slashing split shares', async function () {
+            await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100')).to.be.not.reverted;
+            await expect(this.staking.connect(this.accounts.user2).deposit(subjectType1, subject1, '50')).to.be.not.reverted;
+
+            expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.be.equal('150');
+            expect(await this.staking.totalActiveStake()).to.be.equal('150');
+            expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user1.address)).to.be.equal('100');
+            expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('50');
+            expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('150');
+
+            const balanceOfTreasury = await this.token.balanceOf(this.accounts.treasure.address);
+            const balanceOfSlasher = await this.token.balanceOf(this.accounts.slasher.address);
+            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '30', this.accounts.slasher.address, '50'))
+                .to.emit(this.staking, 'Slashed')
+                .withArgs(subjectType1, subject1, this.accounts.slasher.address, '30')
+                .to.emit(this.staking, 'SlashedShareSent')
+                .withArgs(subjectType1, subject1, this.accounts.slasher.address, '15')
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.staking.address, this.accounts.slasher.address, '15')
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.staking.address, this.accounts.treasure.address, '15');
+
+            expect(await this.token.balanceOf(this.accounts.treasure.address)).to.eq(balanceOfTreasury.add('15'));
+            expect(await this.token.balanceOf(this.accounts.slasher.address)).to.eq(balanceOfSlasher.add('15'));
         });
 
         it('slashing → withdraw', async function () {
@@ -634,7 +662,9 @@ describe('Forta Staking', function () {
             expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('50');
             expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('150');
 
-            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '30'))
+            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '30', ethers.constants.AddressZero, '0'))
+                .to.emit(this.staking, 'Slashed')
+                .withArgs(subjectType1, subject1, this.accounts.slasher.address, '30')
                 .to.emit(this.token, 'Transfer')
                 .withArgs(this.staking.address, this.accounts.treasure.address, '30');
 
@@ -677,7 +707,9 @@ describe('Forta Staking', function () {
             expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('50');
             expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('150');
 
-            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '30'))
+            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '30', ethers.constants.AddressZero, '0'))
+                .to.emit(this.staking, 'Slashed')
+                .withArgs(subjectType1, subject1, this.accounts.slasher.address, '30')
                 .to.emit(this.token, 'Transfer')
                 .withArgs(this.staking.address, this.accounts.treasure.address, '30');
 
@@ -745,7 +777,9 @@ describe('Forta Staking', function () {
             expect(await this.staking.balanceOf(this.accounts.user1.address, inactive1)).to.be.equal('100');
             expect(await this.staking.balanceOf(this.accounts.user2.address, inactive1)).to.be.equal('50');
 
-            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '120'))
+            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '120', ethers.constants.AddressZero, '0'))
+                .to.emit(this.staking, 'Slashed')
+                .withArgs(subjectType1, subject1, this.accounts.slasher.address, '120')
                 .to.emit(this.token, 'Transfer')
                 .withArgs(this.staking.address, this.accounts.treasure.address, '120');
 
@@ -774,16 +808,16 @@ describe('Forta Staking', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
             this.accounts.getAccount('sweeper');
-            await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
             await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SWEEPER, this.accounts.sweeper.address)).to.be.not.reverted;
             await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.sweeper.address)).to.be.not.reverted;
             await expect(this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.sweeper.address)).to.be.not.reverted;
+            await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
 
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100')).to.be.not.reverted;
             await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '50')).to.be.not.reverted;
             await expect(this.staking.connect(this.accounts.user2).deposit(subjectType1, subject1, '100')).to.be.not.reverted;
             await expect(this.staking.connect(this.accounts.user3).reward(subjectType1, subject1, '100'));
-            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '120')).to.be.not.reverted;
+            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '120', ethers.constants.AddressZero, '0')).to.be.not.reverted;
         });
 
         it('sweep unrelated token', async function () {

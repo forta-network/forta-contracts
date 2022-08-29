@@ -15,7 +15,7 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
 
     /**
      * @notice Gets all scanner properties.
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId ERC721 token id of the scanner.
      * @return registered true if scanner exists.
      * @return owner address.
      * @return chainId the scanner is monitoring.
@@ -33,7 +33,7 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
 
     /**
      * @notice Gets scanner chain Ids.
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId ERC721 token id of the scanner.
      * @return chainId the scanner is monitoring.
      */
     function getScannerChainId(uint256 scannerId) public view returns (uint256) {
@@ -43,7 +43,7 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
     
     /**
      * @dev checks the StakeThreshold for the chainId the scanner with id `subject` was registered to monitor.
-     * @param subject ERC1155 token id of the scanner.
+     * @param subject ERC721 token id of the scanner.
      * @return StakeThreshold registered for `chainId`, or StakeThreshold(0,0,false) if `chainId` not found.
      */
     function _getStakeThreshold(uint256 subject) override virtual internal view returns(StakeThreshold memory) {
@@ -53,7 +53,7 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
     /**
      * @notice internal logic for scanner update.
      * @dev adds metadata and chainId for that scanner
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId ERC721 token id of the scanner.
      * @param chainId the scanner scans.
      * @param metadata IPFS pointer for the scanner's JSON metadata.
      */

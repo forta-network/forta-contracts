@@ -28,7 +28,7 @@ abstract contract AgentRegistryCore is
 
     /**
      * @notice Checks sender (or metatx signer) is owner of the agent token.
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      */
     modifier onlyOwnerOf(uint256 agentId) {
         if (_msgSender() != ownerOf(agentId)) revert SenderNotOwner(_msgSender(), agentId);
@@ -56,11 +56,11 @@ abstract contract AgentRegistryCore is
     }
 
     /**
-     * @notice Agent creation method. Mints an ERC1155 token with the agent id for the owner and stores metadata.
+     * @notice Agent creation method. Mints an ERC721 token with the agent id for the owner and stores metadata.
      * @dev fires _before and _after hooks within the inheritance tree.
      * If front run protection is enabled (disabled by default), it will check if the keccak256 hash of the parameters
      * has been committed in prepareAgent(bytes32).
-     * @param agentId ERC1155 token id of the agent to be created.
+     * @param agentId ERC721 token id of the agent to be created.
      * @param owner address to have ownership privileges in the agent methods.
      * @param metadata IPFS pointer to agent's metadata JSON.
      * @param chainIds ordered list of chainIds where the agent wants to run.
@@ -78,17 +78,17 @@ abstract contract AgentRegistryCore is
 
     /**
      * @notice Checks if the agentId has been minted.
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      * @return true if agentId exists, false otherwise.
      */
-    function isCreated(uint256 agentId) public view returns(bool) {
+    function isRegistered(uint256 agentId) public view returns(bool) {
         return _exists(agentId);
     }
 
     /**
      * @notice Updates parameters of an agentId (metadata, image, chain IDs...) if called by the agent owner.
      * @dev fires _before and _after hooks within the inheritance tree.
-     * @param agentId ERC1155 token id of the agent to be updated.
+     * @param agentId ERC721 token id of the agent to be updated.
      * @param metadata IPFS pointer to agent's metadata JSON.
      * @param chainIds ordered list of chainIds where the agent wants to run. 
      */
@@ -143,7 +143,7 @@ abstract contract AgentRegistryCore is
     /**
      * @notice hook fired before agent creation or update.
      * @dev does nothing in this contract.
-     * @param agentId ERC1155 token id of the agent to be created or updated.
+     * @param agentId ERC721 token id of the agent to be created or updated.
      * @param newMetadata IPFS pointer to agent's metadata JSON.
      * @param newChainIds ordered list of chainIds where the agent wants to run.
     */
@@ -153,7 +153,7 @@ abstract contract AgentRegistryCore is
     /**
      * @notice logic for agent update.
      * @dev emits AgentUpdated, will be extended by child contracts.
-     * @param agentId ERC1155 token id of the agent to be created or updated.
+     * @param agentId ERC721 token id of the agent to be created or updated.
      * @param newMetadata IPFS pointer to agent's metadata JSON.
      * @param newChainIds ordered list of chainIds where the agent wants to run.
      */
@@ -164,7 +164,7 @@ abstract contract AgentRegistryCore is
     /**
      * @notice hook fired after agent creation or update.
      * @dev emits Router hook.
-     * @param agentId ERC1155 token id of the agent to be created or updated.
+     * @param agentId ERC721 token id of the agent to be created or updated.
      * @param newMetadata IPFS pointer to agent's metadata JSON.
      * @param newChainIds ordered list of chainIds where the agent wants to run.
      */

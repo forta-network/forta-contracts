@@ -20,7 +20,10 @@ bytes32 constant DISPATCHER_ROLE    = keccak256("DISPATCHER_ROLE");
 // Staking
 bytes32 constant SLASHER_ROLE       = keccak256("SLASHER_ROLE");
 bytes32 constant SWEEPER_ROLE       = keccak256("SWEEPER_ROLE");
-bytes32 constant REWARDS_ADMIN      = keccak256("REWARDS_ADMIN_ROLE");
+bytes32 constant REWARDS_ADMIN_ROLE      = keccak256("REWARDS_ADMIN_ROLE");
+bytes32 constant SLASHING_ARBITER_ROLE      = keccak256("SLASHING_ARBITER_ROLE");
+bytes32 constant STAKING_ADMIN_ROLE      = keccak256("STAKING_ADMIN_ROLE");
+
 // Scanner Node Version
 bytes32 constant SCANNER_VERSION_ROLE = keccak256("SCANNER_VERSION_ROLE");
 bytes32 constant SCANNER_BETA_VERSION_ROLE = keccak256("SCANNER_BETA_VERSION_ROLE");
