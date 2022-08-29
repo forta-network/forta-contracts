@@ -171,3 +171,7 @@ Some other parts of the system do not support this feature in ABIs yet. To gener
 3. `npx hardhat run --network goerli scripts/matic/enter.js`
 4. Eventually, Polygon PoS Bridge will send the tokens to your wallet. It may take a while (10+ mins).
 5. To stake, call `deposit(uint8 subjectType, uint256 subject, uint256 stakeValue)` in `FortaStaking` instance (check `scripts/.cache-80001.json -> staking -> address`)
+
+## Bug Bounty
+
+We have a [bug bounty program on Immunefi](https://immunefi.com/bounty/forta). Please report any security issues you find through the Immunefi dashboard, or reach out to (tech@forta.org)[mailto:tech@forta.org]
