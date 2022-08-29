@@ -160,6 +160,7 @@ type Subject @entity {
   inactiveStake: BigInt
   isFrozen: Boolean
   slashedTotal: Int
+  stakes: [Stake!]! @derivedFrom(field: "subject")
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "subject")
 }
 
@@ -187,11 +188,9 @@ type Staker @entity {
 
 type Stake @entity {
   id: ID!
-  subjectId: String
-  subjectType: Int
+  subject: Subject!
   staker: Staker!
   isActive: Boolean
-  stake: BigInt
   shares: BigInt
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
 }

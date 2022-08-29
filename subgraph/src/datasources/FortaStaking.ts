@@ -6,6 +6,8 @@ import {
   Slashed as SlashedEvent,
   Froze as FrozeEvent,
   FortaStaking as FortaStakingContract,
+  WithdrawalInitiated,
+  WithdrawalExecuted,
 } from "../../generated/FortaStaking/FortaStaking";
 import {
   Reward,
@@ -19,55 +21,93 @@ import { fetchAccount } from "../fetch/account";
 
 import { events, transactions } from "@amxx/graphprotocol-utils/";
 
-export function handleStakeDeposited(event: StakeDepositedEvent): void {
-  let subject = Subject.load(event.params.subject.toHex());
-  let staker = new Staker(event.params.account.toHex());
-  let stake = new Stake(events.id(event));
-  const fortaStaking = FortaStakingContract.bind(event.address);
+function updateStake(
+  _stakingContractAddress: Address,
+  _subjectType: i32,
+  _subject: BigInt,
+  _staker: Address): string {
+  const _subjectId = _subject.toHex();
+  const _stakerId = _staker.toHex();
+  let subject = Subject.load(_subjectId);
+  let stake = Stake.load(_subjectId + _stakerId);
+  let staker = Staker.load(_stakerId);
+  const fortaStaking = FortaStakingContract.bind(_stakingContractAddress);
 
   if (subject == null) {
-    subject = new Subject(event.params.subject.toHex());
+    subject = new Subject(_subjectId);
     subject.isFrozen = false;
     subject.slashedTotal = 0;
   }
   subject.activeStake = fortaStaking.activeStakeFor(
-    event.params.subjectType,
-    event.params.subject
+    _subjectType,
+    _subject
   );
   subject.inactiveStake = fortaStaking.inactiveStakeFor(
-    event.params.subjectType,
-    event.params.subject
+    _subjectType,
+    _subject
   );
-  subject.inactiveShares = fortaStaking.inactiveSharesOf(
-    event.params.subjectType,
-    event.params.subject,
-    event.params.account
+  subject.activeShares = fortaStaking.totalShares(
+    _subjectType,
+    _subject
   );
-  subject.activeShares = fortaStaking.sharesOf(
-    event.params.subjectType,
-    event.params.subject,
-    event.params.account
+  subject.inactiveShares = fortaStaking.totalInactiveShares(
+    _subjectType,
+    _subject
   );
-  subject.subjectType = event.params.subjectType;
-  stake.subjectId = event.params.subject.toHex();
-  stake.subjectType = event.params.subjectType;
+  subject.subjectType = _subjectType;
+
+  if (staker == null) {
+    staker = new Staker(_stakerId);
+  }
+
+  if (stake == null) {
+    stake = new Stake(_subjectId + _stakerId);
+  }
+  stake.subject = _subjectId;
   stake.isActive = true;
-  stake.staker = event.params.account.toHex();
-  stake.stake = event.params.amount;
+  stake.staker = _stakerId;
   stake.shares = fortaStaking.sharesOf(
-    event.params.subjectType,
-    event.params.subject,
-    event.params.account
+    _subjectType,
+    _subject,
+    _staker
   );
   subject.save();
-  staker.save();
   stake.save();
+  staker.save();
+  return _subjectId + _stakerId;
+}
+
+export function handleStakeDeposited(event: StakeDepositedEvent): void {
+  const stakeId = updateStake(
+    event.address,
+    event.params.subjectType,
+    event.params.subject,
+    event.params.account,
+  );
   const stakeDepositedEvent = new StakeDepositEvent(events.id(event));
   stakeDepositedEvent.transaction = transactions.log(event).id;
   stakeDepositedEvent.timestamp = event.block.timestamp;
-  stakeDepositedEvent.stake = stake.id;
-  stakeDepositedEvent.subject = subject.id;
+  stakeDepositedEvent.stake = stakeId;
+  stakeDepositedEvent.subject = event.params.subject.toHex();
   stakeDepositedEvent.save();
+}
+
+export function handleWithdrawalInitiated(event: WithdrawalInitiated): void {
+  updateStake(
+    event.address,
+    event.params.subjectType,
+    event.params.subject,
+    event.params.account,
+  );
+}
+
+export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {
+  updateStake(
+    event.address,
+    event.params.subjectType,
+    event.params.subject,
+    event.params.account,
+  );
 }
 
 export function handleRewarded(event: RewardedEvent): void {
