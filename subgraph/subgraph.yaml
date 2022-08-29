@@ -11,7 +11,7 @@ dataSources:
       startBlock: 20187154
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       entities:
         - Scanner
@@ -38,7 +38,7 @@ dataSources:
       startBlock: 20187154
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       entities:
         - Bot
@@ -62,7 +62,7 @@ dataSources:
       startBlock: 20187154
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       entities:
         - Scanner
@@ -83,7 +83,7 @@ dataSources:
       startBlock: 20187154
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       entities:
         - Bot
@@ -93,6 +93,10 @@ dataSources:
       eventHandlers:
         - event: StakeDeposited(indexed uint8,indexed uint256,indexed address,uint256)
           handler: handleStakeDeposited
+        - event: WithdrawalInitiated(indexed uint8,indexed uint256,indexed address,uint64)
+          handler: handleWithdrawalInitiated
+        - event: WithdrawalExecuted(indexed uint8,indexed uint256,indexed address)
+          handler: handleWithdrawalExecuted
         - event: Rewarded(indexed uint8,indexed uint256,indexed address,uint256)
           handler: handleRewarded
         - event: Slashed(indexed uint8,indexed uint256,indexed address,uint256)
