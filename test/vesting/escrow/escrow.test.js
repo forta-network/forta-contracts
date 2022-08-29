@@ -24,11 +24,6 @@ describe('Staking Escrow', function () {
         this.accounts.getAccount('manager');
 
         await Promise.all([
-            this.token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.escrowFactory.address),
-            this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.manager.address),
-            this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address),
-            this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user2.address),
-            this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user3.address),
             this.token.connect(this.accounts.admin).deposit(this.accounts.user1.address, ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther('1000')])),
             this.token.connect(this.accounts.admin).deposit(this.accounts.user2.address, ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther('1000')])),
             this.token.connect(this.accounts.admin).deposit(this.accounts.user3.address, ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther('1000')])),

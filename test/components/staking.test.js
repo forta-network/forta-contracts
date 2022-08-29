@@ -27,11 +27,6 @@ describe('Forta Staking', function () {
     prepare({ stake: { min: '1', max: MAX_STAKE, activated: true } });
 
     beforeEach(async function () {
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user2.address);
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user3.address);
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.minter.address);
-
         await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('1000'));
         await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, ethers.utils.parseEther('1000'));
         await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, ethers.utils.parseEther('1000'));
@@ -586,7 +581,6 @@ describe('Forta Staking', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
             await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
-            await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;
         });
 
         it('freeze → withdraw', async function () {
@@ -622,8 +616,6 @@ describe('Forta Staking', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
             await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
-            await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address);
-
         });
 
         it('slashing split shares', async function () {
@@ -809,8 +801,6 @@ describe('Forta Staking', function () {
             this.accounts.getAccount('slasher');
             this.accounts.getAccount('sweeper');
             await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SWEEPER, this.accounts.sweeper.address)).to.be.not.reverted;
-            await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.sweeper.address)).to.be.not.reverted;
-            await expect(this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.sweeper.address)).to.be.not.reverted;
             await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
 
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100')).to.be.not.reverted;
@@ -864,7 +854,6 @@ describe('Forta Staking', function () {
             this.accounts.getAccount('slasher');
             await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
             await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.ROUTER_ADMIN, this.accounts.admin.address)).to.be.not.reverted;
-            await expect(this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.slasher.address)).to.be.not.reverted;
             await this.router.connect(this.accounts.admin).setRoutingTable(this.signature, this.sink.address, true, false);
         });
 

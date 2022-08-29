@@ -47,9 +47,6 @@ describe('VestingWallet', function () {
             }
         );
 
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.predicate.address);
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.vesting.address);
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.other.address);
         await this.token.connect(this.accounts.minter).mint(this.vesting.address, this.amount);
     });
 

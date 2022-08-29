@@ -166,8 +166,7 @@ Some other parts of the system do not support this feature in ABIs yet. To gener
 
 
 ## Mint and bridge TEST FORT L1 -> L2
-1. Make sure the wallets in `.env` has `WHITELIST_ROLE` in Goerli and Mumbai and `MINTER_ROLE` in Goerli (see `env.example` for reference`). FORT will be sent in Mumbai to the same wallet you provided in `.env -> GOERLI_MNEMONIC`
-2. Open `scripts/matic/enter.js` and edit `AMOUNT` to set the FORT to mint and bridge
-3. `npx hardhat run --network goerli scripts/matic/enter.js`
-4. Eventually, Polygon PoS Bridge will send the tokens to your wallet. It may take a while (10+ mins).
-5. To stake, call `deposit(uint8 subjectType, uint256 subject, uint256 stakeValue)` in `FortaStaking` instance (check `scripts/.cache-80001.json -> staking -> address`)
+1. Open `scripts/matic/enter.js` and edit `AMOUNT` to set the FORT to mint and bridge
+2. `npx hardhat run --network goerli scripts/matic/enter.js`
+3. Eventually, Polygon PoS Bridge will send the tokens to your wallet. It may take a while (10+ mins).
+4. To stake, call `deposit(uint8 subjectType, uint256 subject, uint256 stakeValue)` in `FortaStaking` instance (check `scripts/.cache-80001.json -> staking -> address`)
