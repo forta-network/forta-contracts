@@ -206,8 +206,8 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
      * @param _proposalId the proposal identifier.
      */
     function markAsInReviewSlashProposal(uint256 _proposalId) external onlyRole(SLASHING_ARBITER_ROLE) {
-        if (deposits[_proposalId] == 0) revert ZeroAmount("deposit on _proposalId");
         _transition(_proposalId, IN_REVIEW);
+        if (deposits[_proposalId] == 0) revert ZeroAmount("deposit on _proposalId");
         _returnDeposit(_proposalId);
     }
 
