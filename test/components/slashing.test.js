@@ -405,7 +405,6 @@ describe('Slashing Proposals', function () {
         });
     });
     describe('State configuration', function () {
-
         it('should not have incorrect state transtions', async function () {
             await this.slashing
                 .connect(this.accounts.user2)

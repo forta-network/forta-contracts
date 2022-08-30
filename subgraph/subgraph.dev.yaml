@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: ScannerRegistry
-    network: matic
+    network: mumbai
     source:
-      address: "0xbF2920129f83d75DeC95D97A879942cCe3DcD387"
+      address: "0xa30c3951f85941bfe474620dA25DEb90283C99D7"
       abi: ScannerRegistry
-      startBlock: 20187154
+      startBlock: 21300000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -31,11 +31,11 @@ dataSources:
       file: ./src/datasources/ScannerRegistry.ts
   - kind: ethereum
     name: AgentRegistry
-    network: matic
+    network: mumbai
     source:
-      address: "0x61447385B019187daa48e91c55c02AF1F1f3F863"
+      address: "0x5Cf7008aC441Ec1797fAfA4EE132eA4277E9239B"
       abi: AgentRegistry
-      startBlock: 20187154
+      startBlock: 21300000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -55,11 +55,11 @@ dataSources:
       file: ./src/datasources/AgentRegistry.ts
   - kind: ethereum
     name: Dispatcher
-    network: matic
+    network: mumbai
     source:
-      address: "0xd46832F3f8EA8bDEFe5316696c0364F01b31a573"
+      address: "0x634C83F3213CcfC895A4e6A2c137b2B572fa64ad"
       abi: Dispatcher
-      startBlock: 20187154
+      startBlock: 21300000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -76,11 +76,11 @@ dataSources:
       file: ./src/datasources/Dispatcher.ts
   - kind: ethereum
     name: FortaStaking
-    network: matic
+    network: mumbai
     source:
-      address: "0xd2863157539b1D11F39ce23fC4834B62082F6874"
+      address: "0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
       abi: FortaStaking
-      startBlock: 20187154
+      startBlock: 21300000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
