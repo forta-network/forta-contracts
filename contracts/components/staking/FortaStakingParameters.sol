@@ -12,7 +12,7 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
 
     event FortaStakingChanged(address staking);
 
-    string public constant version = "0.1.0";
+    string public constant version = "0.1.1";
     uint256 public constant maxSlashableStakePercent = 90;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
