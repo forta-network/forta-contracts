@@ -1,11 +1,375 @@
 // Sources flattened with hardhat v2.9.9 https://hardhat.org
 
-// File @openzeppelin/contracts/utils/Address.sol@v4.7.0
-
 // SPDX-License-Identifier: UNLICENSED
 // See Forta Network License: https://github.com/forta-network/forta-contracts/blob/master/LICENSE.md
 
 pragma solidity ^0.8.4;
+
+/**
+ * @dev Library for managing
+ * https://en.wikipedia.org/wiki/Set_(abstract_data_type)[sets] of primitive
+ * types.
+ *
+ * Sets have the following properties:
+ *
+ * - Elements are added, removed, and checked for existence in constant time
+ * (O(1)).
+ * - Elements are enumerated in O(n). No guarantees are made on the ordering.
+ *
+ * ```
+ * contract Example {
+ *     // Add the library methods
+ *     using EnumerableSet for EnumerableSet.AddressSet;
+ *
+ *     // Declare a set state variable
+ *     EnumerableSet.AddressSet private mySet;
+ * }
+ * ```
+ *
+ * As of v3.3.0, sets of type `bytes32` (`Bytes32Set`), `address` (`AddressSet`)
+ * and `uint256` (`UintSet`) are supported.
+ *
+ * [WARNING]
+ * ====
+ *  Trying to delete such a structure from storage will likely result in data corruption, rendering the structure unusable.
+ *  See https://github.com/ethereum/solidity/pull/11843[ethereum/solidity#11843] for more info.
+ *
+ *  In order to clean an EnumerableSet, you can either remove all elements one by one or create a fresh instance using an array of EnumerableSet.
+ * ====
+ */
+library EnumerableSet {
+    // To implement this library for multiple types with as little code
+    // repetition as possible, we write it in terms of a generic Set type with
+    // bytes32 values.
+    // The Set implementation uses private functions, and user-facing
+    // implementations (such as AddressSet) are just wrappers around the
+    // underlying Set.
+    // This means that we can only create new EnumerableSets for types that fit
+    // in bytes32.
+
+    struct Set {
+        // Storage of set values
+        bytes32[] _values;
+        // Position of the value in the `values` array, plus 1 because index 0
+        // means a value is not in the set.
+        mapping(bytes32 => uint256) _indexes;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function _add(Set storage set, bytes32 value) private returns (bool) {
+        if (!_contains(set, value)) {
+            set._values.push(value);
+            // The value is stored at length-1, but we add 1 to all indexes
+            // and use 0 as a sentinel value
+            set._indexes[value] = set._values.length;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function _remove(Set storage set, bytes32 value) private returns (bool) {
+        // We read and store the value's index to prevent multiple reads from the same storage slot
+        uint256 valueIndex = set._indexes[value];
+
+        if (valueIndex != 0) {
+            // Equivalent to contains(set, value)
+            // To delete an element from the _values array in O(1), we swap the element to delete with the last one in
+            // the array, and then remove the last element (sometimes called as 'swap and pop').
+            // This modifies the order of the array, as noted in {at}.
+
+            uint256 toDeleteIndex = valueIndex - 1;
+            uint256 lastIndex = set._values.length - 1;
+
+            if (lastIndex != toDeleteIndex) {
+                bytes32 lastValue = set._values[lastIndex];
+
+                // Move the last value to the index where the value to delete is
+                set._values[toDeleteIndex] = lastValue;
+                // Update the index for the moved value
+                set._indexes[lastValue] = valueIndex; // Replace lastValue's index to valueIndex
+            }
+
+            // Delete the slot where the moved value was stored
+            set._values.pop();
+
+            // Delete the index for the deleted slot
+            delete set._indexes[value];
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function _contains(Set storage set, bytes32 value) private view returns (bool) {
+        return set._indexes[value] != 0;
+    }
+
+    /**
+     * @dev Returns the number of values on the set. O(1).
+     */
+    function _length(Set storage set) private view returns (uint256) {
+        return set._values.length;
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function _at(Set storage set, uint256 index) private view returns (bytes32) {
+        return set._values[index];
+    }
+
+    /**
+     * @dev Return the entire set in an array
+     *
+     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
+     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
+     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
+     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
+     */
+    function _values(Set storage set) private view returns (bytes32[] memory) {
+        return set._values;
+    }
+
+    // Bytes32Set
+
+    struct Bytes32Set {
+        Set _inner;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function add(Bytes32Set storage set, bytes32 value) internal returns (bool) {
+        return _add(set._inner, value);
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function remove(Bytes32Set storage set, bytes32 value) internal returns (bool) {
+        return _remove(set._inner, value);
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(Bytes32Set storage set, bytes32 value) internal view returns (bool) {
+        return _contains(set._inner, value);
+    }
+
+    /**
+     * @dev Returns the number of values in the set. O(1).
+     */
+    function length(Bytes32Set storage set) internal view returns (uint256) {
+        return _length(set._inner);
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(Bytes32Set storage set, uint256 index) internal view returns (bytes32) {
+        return _at(set._inner, index);
+    }
+
+    /**
+     * @dev Return the entire set in an array
+     *
+     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
+     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
+     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
+     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
+     */
+    function values(Bytes32Set storage set) internal view returns (bytes32[] memory) {
+        return _values(set._inner);
+    }
+
+    // AddressSet
+
+    struct AddressSet {
+        Set _inner;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function add(AddressSet storage set, address value) internal returns (bool) {
+        return _add(set._inner, bytes32(uint256(uint160(value))));
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function remove(AddressSet storage set, address value) internal returns (bool) {
+        return _remove(set._inner, bytes32(uint256(uint160(value))));
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(AddressSet storage set, address value) internal view returns (bool) {
+        return _contains(set._inner, bytes32(uint256(uint160(value))));
+    }
+
+    /**
+     * @dev Returns the number of values in the set. O(1).
+     */
+    function length(AddressSet storage set) internal view returns (uint256) {
+        return _length(set._inner);
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(AddressSet storage set, uint256 index) internal view returns (address) {
+        return address(uint160(uint256(_at(set._inner, index))));
+    }
+
+    /**
+     * @dev Return the entire set in an array
+     *
+     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
+     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
+     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
+     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
+     */
+    function values(AddressSet storage set) internal view returns (address[] memory) {
+        bytes32[] memory store = _values(set._inner);
+        address[] memory result;
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            result := store
+        }
+
+        return result;
+    }
+
+    // UintSet
+
+    struct UintSet {
+        Set _inner;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function add(UintSet storage set, uint256 value) internal returns (bool) {
+        return _add(set._inner, bytes32(value));
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function remove(UintSet storage set, uint256 value) internal returns (bool) {
+        return _remove(set._inner, bytes32(value));
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(UintSet storage set, uint256 value) internal view returns (bool) {
+        return _contains(set._inner, bytes32(value));
+    }
+
+    /**
+     * @dev Returns the number of values on the set. O(1).
+     */
+    function length(UintSet storage set) internal view returns (uint256) {
+        return _length(set._inner);
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(UintSet storage set, uint256 index) internal view returns (uint256) {
+        return uint256(_at(set._inner, index));
+    }
+
+    /**
+     * @dev Return the entire set in an array
+     *
+     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
+     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
+     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
+     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
+     */
+    function values(UintSet storage set) internal view returns (uint256[] memory) {
+        bytes32[] memory store = _values(set._inner);
+        uint256[] memory result;
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            result := store
+        }
+
+        return result;
+    }
+}
+
+
+// File @openzeppelin/contracts/utils/Address.sol@v4.7.0
 
 /**
  * @dev Collection of functions related to the address type
@@ -267,8 +631,6 @@ interface IERC1822ProxiableUpgradeable {
 
 
 // File @openzeppelin/contracts-upgradeable/proxy/beacon/IBeaconUpgradeable.sol@v4.7.0
-
-
 /**
  * @dev This is the interface that {BeaconProxy} expects of its beacon.
  */
@@ -1125,7 +1487,6 @@ interface IAccessControl {
 
 // File @openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol@v4.7.0
 
-
 /**
  * @dev Provides information about the current execution context, including the
  * sender of the transaction and its data. While these are generally available
@@ -1291,6 +1652,7 @@ library ERC165CheckerUpgradeable {
         return success && abi.decode(result, (bool));
     }
 }
+
 
 // File contracts/errors/GeneralErrors.sol
 
@@ -1580,7 +1942,6 @@ abstract contract BaseComponentUpgradeable is
 
 // File @openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol@v4.7.0
 
-
 /**
  * @dev Required interface of an ERC721 compliant contract.
  */
@@ -1721,7 +2082,6 @@ interface IERC721Upgradeable is IERC165Upgradeable {
 
 // File @openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol@v4.7.0
 
-
 /**
  * @title ERC721 token receiver interface
  * @dev Interface for any contract that wants to support safeTransfers
@@ -1748,7 +2108,6 @@ interface IERC721ReceiverUpgradeable {
 
 // File @openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol@v4.7.0
 
-
 /**
  * @title ERC-721 Non-Fungible Token Standard, optional metadata extension
  * @dev See https://eips.ethereum.org/EIPS/eip-721
@@ -1772,7 +2131,6 @@ interface IERC721MetadataUpgradeable is IERC721Upgradeable {
 
 
 // File @openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol@v4.7.0
-
 
 /**
  * @dev String operations.
@@ -2341,7 +2699,6 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
 
 
 // File contracts/components/staking/IStakeSubject.sol
-
 interface IStakeSubject {
     struct StakeThreshold {
         uint256 min;
@@ -2355,7 +2712,6 @@ interface IStakeSubject {
 
 
 // File contracts/components/staking/IStakeController.sol
-
 interface IStakeController {
     event StakeSubjectHandlerChanged(address newHandler, address oldHandler);
     function setStakeSubjectHandler(uint8 subjectType, IStakeSubject subjectHandler) external;
@@ -2674,7 +3030,6 @@ abstract contract AgentRegistryCore is
 
 // File @openzeppelin/contracts/utils/structs/BitMaps.sol@v4.7.0
 
-
 /**
  * @dev Library for managing uint256 to bool mapping in a compact and efficient way, providing the keys are sequential.
  * Largelly inspired by Uniswap's https://github.com/Uniswap/merkle-distributor/blob/master/contracts/MerkleDistributor.sol[merkle-distributor].
@@ -2875,372 +3230,6 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
 }
 
 
-// File @openzeppelin/contracts/utils/structs/EnumerableSet.sol@v4.7.0
-
-/**
- * @dev Library for managing
- * https://en.wikipedia.org/wiki/Set_(abstract_data_type)[sets] of primitive
- * types.
- *
- * Sets have the following properties:
- *
- * - Elements are added, removed, and checked for existence in constant time
- * (O(1)).
- * - Elements are enumerated in O(n). No guarantees are made on the ordering.
- *
- * ```
- * contract Example {
- *     // Add the library methods
- *     using EnumerableSet for EnumerableSet.AddressSet;
- *
- *     // Declare a set state variable
- *     EnumerableSet.AddressSet private mySet;
- * }
- * ```
- *
- * As of v3.3.0, sets of type `bytes32` (`Bytes32Set`), `address` (`AddressSet`)
- * and `uint256` (`UintSet`) are supported.
- *
- * [WARNING]
- * ====
- *  Trying to delete such a structure from storage will likely result in data corruption, rendering the structure unusable.
- *  See https://github.com/ethereum/solidity/pull/11843[ethereum/solidity#11843] for more info.
- *
- *  In order to clean an EnumerableSet, you can either remove all elements one by one or create a fresh instance using an array of EnumerableSet.
- * ====
- */
-library EnumerableSet {
-    // To implement this library for multiple types with as little code
-    // repetition as possible, we write it in terms of a generic Set type with
-    // bytes32 values.
-    // The Set implementation uses private functions, and user-facing
-    // implementations (such as AddressSet) are just wrappers around the
-    // underlying Set.
-    // This means that we can only create new EnumerableSets for types that fit
-    // in bytes32.
-
-    struct Set {
-        // Storage of set values
-        bytes32[] _values;
-        // Position of the value in the `values` array, plus 1 because index 0
-        // means a value is not in the set.
-        mapping(bytes32 => uint256) _indexes;
-    }
-
-    /**
-     * @dev Add a value to a set. O(1).
-     *
-     * Returns true if the value was added to the set, that is if it was not
-     * already present.
-     */
-    function _add(Set storage set, bytes32 value) private returns (bool) {
-        if (!_contains(set, value)) {
-            set._values.push(value);
-            // The value is stored at length-1, but we add 1 to all indexes
-            // and use 0 as a sentinel value
-            set._indexes[value] = set._values.length;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * @dev Removes a value from a set. O(1).
-     *
-     * Returns true if the value was removed from the set, that is if it was
-     * present.
-     */
-    function _remove(Set storage set, bytes32 value) private returns (bool) {
-        // We read and store the value's index to prevent multiple reads from the same storage slot
-        uint256 valueIndex = set._indexes[value];
-
-        if (valueIndex != 0) {
-            // Equivalent to contains(set, value)
-            // To delete an element from the _values array in O(1), we swap the element to delete with the last one in
-            // the array, and then remove the last element (sometimes called as 'swap and pop').
-            // This modifies the order of the array, as noted in {at}.
-
-            uint256 toDeleteIndex = valueIndex - 1;
-            uint256 lastIndex = set._values.length - 1;
-
-            if (lastIndex != toDeleteIndex) {
-                bytes32 lastValue = set._values[lastIndex];
-
-                // Move the last value to the index where the value to delete is
-                set._values[toDeleteIndex] = lastValue;
-                // Update the index for the moved value
-                set._indexes[lastValue] = valueIndex; // Replace lastValue's index to valueIndex
-            }
-
-            // Delete the slot where the moved value was stored
-            set._values.pop();
-
-            // Delete the index for the deleted slot
-            delete set._indexes[value];
-
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * @dev Returns true if the value is in the set. O(1).
-     */
-    function _contains(Set storage set, bytes32 value) private view returns (bool) {
-        return set._indexes[value] != 0;
-    }
-
-    /**
-     * @dev Returns the number of values on the set. O(1).
-     */
-    function _length(Set storage set) private view returns (uint256) {
-        return set._values.length;
-    }
-
-    /**
-     * @dev Returns the value stored at position `index` in the set. O(1).
-     *
-     * Note that there are no guarantees on the ordering of values inside the
-     * array, and it may change when more values are added or removed.
-     *
-     * Requirements:
-     *
-     * - `index` must be strictly less than {length}.
-     */
-    function _at(Set storage set, uint256 index) private view returns (bytes32) {
-        return set._values[index];
-    }
-
-    /**
-     * @dev Return the entire set in an array
-     *
-     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
-     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
-     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
-     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
-     */
-    function _values(Set storage set) private view returns (bytes32[] memory) {
-        return set._values;
-    }
-
-    // Bytes32Set
-
-    struct Bytes32Set {
-        Set _inner;
-    }
-
-    /**
-     * @dev Add a value to a set. O(1).
-     *
-     * Returns true if the value was added to the set, that is if it was not
-     * already present.
-     */
-    function add(Bytes32Set storage set, bytes32 value) internal returns (bool) {
-        return _add(set._inner, value);
-    }
-
-    /**
-     * @dev Removes a value from a set. O(1).
-     *
-     * Returns true if the value was removed from the set, that is if it was
-     * present.
-     */
-    function remove(Bytes32Set storage set, bytes32 value) internal returns (bool) {
-        return _remove(set._inner, value);
-    }
-
-    /**
-     * @dev Returns true if the value is in the set. O(1).
-     */
-    function contains(Bytes32Set storage set, bytes32 value) internal view returns (bool) {
-        return _contains(set._inner, value);
-    }
-
-    /**
-     * @dev Returns the number of values in the set. O(1).
-     */
-    function length(Bytes32Set storage set) internal view returns (uint256) {
-        return _length(set._inner);
-    }
-
-    /**
-     * @dev Returns the value stored at position `index` in the set. O(1).
-     *
-     * Note that there are no guarantees on the ordering of values inside the
-     * array, and it may change when more values are added or removed.
-     *
-     * Requirements:
-     *
-     * - `index` must be strictly less than {length}.
-     */
-    function at(Bytes32Set storage set, uint256 index) internal view returns (bytes32) {
-        return _at(set._inner, index);
-    }
-
-    /**
-     * @dev Return the entire set in an array
-     *
-     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
-     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
-     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
-     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
-     */
-    function values(Bytes32Set storage set) internal view returns (bytes32[] memory) {
-        return _values(set._inner);
-    }
-
-    // AddressSet
-
-    struct AddressSet {
-        Set _inner;
-    }
-
-    /**
-     * @dev Add a value to a set. O(1).
-     *
-     * Returns true if the value was added to the set, that is if it was not
-     * already present.
-     */
-    function add(AddressSet storage set, address value) internal returns (bool) {
-        return _add(set._inner, bytes32(uint256(uint160(value))));
-    }
-
-    /**
-     * @dev Removes a value from a set. O(1).
-     *
-     * Returns true if the value was removed from the set, that is if it was
-     * present.
-     */
-    function remove(AddressSet storage set, address value) internal returns (bool) {
-        return _remove(set._inner, bytes32(uint256(uint160(value))));
-    }
-
-    /**
-     * @dev Returns true if the value is in the set. O(1).
-     */
-    function contains(AddressSet storage set, address value) internal view returns (bool) {
-        return _contains(set._inner, bytes32(uint256(uint160(value))));
-    }
-
-    /**
-     * @dev Returns the number of values in the set. O(1).
-     */
-    function length(AddressSet storage set) internal view returns (uint256) {
-        return _length(set._inner);
-    }
-
-    /**
-     * @dev Returns the value stored at position `index` in the set. O(1).
-     *
-     * Note that there are no guarantees on the ordering of values inside the
-     * array, and it may change when more values are added or removed.
-     *
-     * Requirements:
-     *
-     * - `index` must be strictly less than {length}.
-     */
-    function at(AddressSet storage set, uint256 index) internal view returns (address) {
-        return address(uint160(uint256(_at(set._inner, index))));
-    }
-
-    /**
-     * @dev Return the entire set in an array
-     *
-     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
-     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
-     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
-     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
-     */
-    function values(AddressSet storage set) internal view returns (address[] memory) {
-        bytes32[] memory store = _values(set._inner);
-        address[] memory result;
-
-        /// @solidity memory-safe-assembly
-        assembly {
-            result := store
-        }
-
-        return result;
-    }
-
-    // UintSet
-
-    struct UintSet {
-        Set _inner;
-    }
-
-    /**
-     * @dev Add a value to a set. O(1).
-     *
-     * Returns true if the value was added to the set, that is if it was not
-     * already present.
-     */
-    function add(UintSet storage set, uint256 value) internal returns (bool) {
-        return _add(set._inner, bytes32(value));
-    }
-
-    /**
-     * @dev Removes a value from a set. O(1).
-     *
-     * Returns true if the value was removed from the set, that is if it was
-     * present.
-     */
-    function remove(UintSet storage set, uint256 value) internal returns (bool) {
-        return _remove(set._inner, bytes32(value));
-    }
-
-    /**
-     * @dev Returns true if the value is in the set. O(1).
-     */
-    function contains(UintSet storage set, uint256 value) internal view returns (bool) {
-        return _contains(set._inner, bytes32(value));
-    }
-
-    /**
-     * @dev Returns the number of values on the set. O(1).
-     */
-    function length(UintSet storage set) internal view returns (uint256) {
-        return _length(set._inner);
-    }
-
-    /**
-     * @dev Returns the value stored at position `index` in the set. O(1).
-     *
-     * Note that there are no guarantees on the ordering of values inside the
-     * array, and it may change when more values are added or removed.
-     *
-     * Requirements:
-     *
-     * - `index` must be strictly less than {length}.
-     */
-    function at(UintSet storage set, uint256 index) internal view returns (uint256) {
-        return uint256(_at(set._inner, index));
-    }
-
-    /**
-     * @dev Return the entire set in an array
-     *
-     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
-     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
-     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
-     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
-     */
-    function values(UintSet storage set) internal view returns (uint256[] memory) {
-        bytes32[] memory store = _values(set._inner);
-        uint256[] memory result;
-
-        /// @solidity memory-safe-assembly
-        assembly {
-            result := store
-        }
-
-        return result;
-    }
-}
-
-
 // File contracts/components/agents/AgentRegistryMetadata.sol
 
 abstract contract AgentRegistryMetadata is AgentRegistryCore {
@@ -3387,14 +3376,14 @@ abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
 
 // File contracts/components/agents/AgentRegistry.sol
 
-contract AgentRegistry_0_1_4 is
+contract AgentRegistry is
     BaseComponentUpgradeable,
     AgentRegistryCore,
     AgentRegistryEnable,
     AgentRegistryMetadata,
     AgentRegistryEnumerable
 {
-    string public constant version = "0.1.4";
+    string public constant version = "0.1.5";
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -3488,4 +3477,843 @@ contract AgentRegistry_0_1_4 is
     }
 
     uint256[50] private __gap;
+}
+
+
+// File contracts/components/scanners/ScannerRegistryCore.sol
+
+abstract contract ScannerRegistryCore is
+    BaseComponentUpgradeable,
+    ERC721Upgradeable,
+    StakeSubjectUpgradeable
+{
+    mapping(uint256 => StakeThreshold) internal _stakeThresholds;
+    
+    event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata);
+    event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
+    
+    error ScannerNotRegistered(address scanner);
+    error PublicRegistrationDisabled(uint256 chainId);
+
+    /**
+     * @notice Checks sender (or metatx signer) is owner of the scanner token.
+     * @param scannerId ERC721 token id of the scanner.
+     */
+    modifier onlyOwnerOf(uint256 scannerId) {
+        if (_msgSender() != ownerOf(scannerId)) revert SenderNotOwner(_msgSender(), scannerId);
+        _;
+    }
+
+    /**
+     * @notice Scanner registration via admin key.
+     * @dev restricted to SCANNER_ADMIN_ROLE. Scanner address will be converted to uin256 ERC721 token id.
+     * @param scanner address generated by scanner software.
+     * @param owner of the scanner. Will have admin privileges over the registering scanner.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
+     */
+    function adminRegister(address scanner, address owner, uint256 chainId, string calldata metadata) public onlyRole(SCANNER_ADMIN_ROLE) {
+        _register(scanner, owner, chainId, metadata);
+    }
+
+    /**
+     * @notice Checks if scannerId has been registered (minted).
+     * @param scannerId ERC721 token id of the scanner.
+     * @return true if scannerId exists, false otherwise.
+     */
+    function isRegistered(uint256 scannerId) public view override returns(bool) {
+        return _exists(scannerId);
+    }
+
+    /**
+     * @notice Public method for scanners to self register in Forta and mint registration ERC721 token.
+     * @dev _msgSender() will be considered the Scanner Node address.
+     * @param owner of the scanner. Will have admin privileges over the registering scanner.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
+     */
+    function register(address owner, uint256 chainId, string calldata metadata) virtual public {
+        if (!(_stakeThresholds[chainId].activated)) revert PublicRegistrationDisabled(chainId);
+        _register(_msgSender(), owner, chainId, metadata);
+    }
+
+    /**
+     * @notice Internal method for scanners to self register in Forta and mint registration ERC721 token.
+     * Public staking must be activated in the target chainId.
+     * @dev Scanner address will be converted to uin256 ERC721 token id. Will trigger _before and _after hooks within
+     * the inheritance tree.
+     * @param owner of the scanner. Will have admin privileges over the registering scanner.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
+     */
+    function _register(address scanner, address owner, uint256 chainId, string calldata metadata) internal {
+        uint256 scannerId = scannerAddressToId(scanner);
+        _mint(owner, scannerId);
+
+        _beforeScannerUpdate(scannerId, chainId, metadata);
+        _scannerUpdate(scannerId, chainId, metadata);
+        _afterScannerUpdate(scannerId, chainId, metadata);
+    }
+
+    /**
+     * @notice Allows the admin to update chainId and metadata.
+     * @dev Restricted to SCANNER_ADMIN_ROLE. Will trigger _before and _after hooks within the inheritance tree.
+     * @param scanner address of the Scanner Node.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
+     */
+    function adminUpdate(address scanner, uint256 chainId, string calldata metadata) public onlyRole(SCANNER_ADMIN_ROLE) {
+        uint256 scannerId = scannerAddressToId(scanner);
+        if (!isRegistered(scannerId)) revert ScannerNotRegistered(scanner);
+        _beforeScannerUpdate(scannerId, chainId, metadata);
+        _scannerUpdate(scannerId, chainId, metadata);
+        _afterScannerUpdate(scannerId, chainId, metadata);
+    }
+
+    /// Converts scanner address to uint256 for ERC721 Token Id.
+    function scannerAddressToId(address scanner) public pure returns(uint256) {
+        return uint256(uint160(scanner));
+    }
+
+    /**
+     * @notice Sets stake parameters (min, max, activated) for a `chainId`. Restricted to SCANNER_ADMIN_ROLE
+     * @param newStakeThreshold struct with stake parameters.
+     * @param chainId chain the parameters will affect.
+     */
+    function setStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(SCANNER_ADMIN_ROLE) {
+        if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
+        emit StakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
+        _stakeThresholds[chainId] = newStakeThreshold;
+    }
+
+    /**
+     * @dev internal getter for _getStakeThreshold, inheriting contracts may define logic to associate
+     * a scanner with a StakeThreshold
+     */
+    function _getStakeThreshold(uint256 subject) internal virtual view returns(StakeThreshold memory);
+
+    /**
+     * @notice Getter for StakeThreshold for the scanner with id `subject`
+     */
+    function getStakeThreshold(uint256 subject) external view returns(StakeThreshold memory) {
+        return _getStakeThreshold(subject);
+    }
+
+    /**
+     * Checks if scanner is staked over minimum stake
+     * @param scannerId scanner
+     * @return true if scanner is staked over the minimum threshold for that chainId and is registered,
+     * or staking is not yet enabled (stakeController = 0).
+     * false otherwise
+     */
+    function _isStakedOverMin(uint256 scannerId) internal virtual override view returns(bool) {
+        if (address(getStakeController()) == address(0)) {
+            return true;
+        }
+        return getStakeController().activeStakeFor(SCANNER_SUBJECT, scannerId) >= _getStakeThreshold(scannerId).min && _exists(scannerId);
+    }
+
+    /**
+     * @notice _before hook triggered before scanner creation or update.
+     * @dev Does nothing in this base contract.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
+    */
+    function _beforeScannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
+    }
+
+    /**
+     * @notice Scanner update logic.
+     * @dev Emits ScannerUpdated(scannerId, chainId, metadata)
+     * @param scannerId ERC721 token id of the scanner.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
+     */
+    function _scannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
+        emit ScannerUpdated(scannerId, chainId, metadata);
+    }
+
+    /**
+     * @notice _after hook triggered after scanner creation or update.
+     * @dev emits Router hook
+     * @param scannerId ERC721 token id of the scanner.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
+     */
+    function _afterScannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
+        _emitHook(abi.encodeWithSignature("hook_afterScannerUpdate(uint256,uint256,string)", scannerId, chainId, metadata));
+    }
+
+    /**
+     * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.
+     * @inheritdoc ForwardedContext
+     */
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, ContextUpgradeable) returns (address sender) {
+        return super._msgSender();
+    }
+
+    /**
+     * @notice Helper to get msg.data if not a meta transaction, forwarder data in metatx if it is.
+     * @inheritdoc ForwardedContext
+     */
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, ContextUpgradeable) returns (bytes calldata) {
+        return super._msgData();
+    }
+
+    uint256[44] private __gap; // 50 - 1 (_stakeThresholds) - 5 (StakeSubjectUpgradeable)
+}
+
+
+// File contracts/components/scanners/ScannerRegistryManaged.sol
+abstract contract ScannerRegistryManaged is ScannerRegistryCore {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    mapping(uint256 => EnumerableSet.AddressSet) private _managers;
+
+    event ManagerEnabled(uint256 indexed scannerId, address indexed manager, bool enabled);
+
+    error SenderNotManager(address sender, uint256 scannerId);
+
+    /**
+     * @notice Checks sender (or metatx signer) is manager of the scanner token.
+     * @param scannerId ERC721 token id of the scanner.
+     */
+    modifier onlyManagerOf(uint256 scannerId) {
+        if (!_managers[scannerId].contains(_msgSender())) revert SenderNotManager(_msgSender(), scannerId);
+        _;
+    }
+
+    /**
+     * @notice Checks if address is defined as a manager for a scanner.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param manager address to check.
+     * @return true if defined as manager for scanner, false otherwise.
+     */
+    function isManager(uint256 scannerId, address manager) public view virtual returns (bool) {
+        return _managers[scannerId].contains(manager);
+    }
+
+    /**
+     * @notice Gets total managers defined for a scanner.
+     * @dev helper for external iteration.
+     * @param scannerId ERC721 token id of the scanner.
+     * @return total managers defined for a scanner.
+     */
+    function getManagerCount(uint256 scannerId) public view virtual returns (uint256) {
+        return _managers[scannerId].length();
+    }
+
+    /**
+     * @notice Gets manager address at certain position of the scanner's manager set.
+     * @dev helper for external iteration.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param index position in the set.
+     * @return address of the manager at index.
+     */
+    function getManagerAt(uint256 scannerId, uint256 index) public view virtual returns (address) {
+        return _managers[scannerId].at(index);
+    }
+
+    /**
+     * @notice Adds or removes a manager to a certain scanner. Restricted to scanner owner.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param manager address to be added or removed fromm manager list for the scanner.
+     * @param enable true for adding, false for removing.
+     */
+    function setManager(uint256 scannerId, address manager, bool enable) public onlyOwnerOf(scannerId) {
+        if (enable) {
+            _managers[scannerId].add(manager);
+        } else {
+            _managers[scannerId].remove(manager);
+        }
+        emit ManagerEnabled(scannerId, manager, enable);
+    }
+
+    uint256[49] private __gap;
+}
+
+
+// File contracts/components/scanners/ScannerRegistryEnable.sol
+
+
+/**
+* @dev ScannerRegistry methods and state handling disabling and enabling scanners, and
+* recognizing stake changes that might disable a scanner.
+* NOTE: This contract was deployed before StakeAwareUpgradeable was created, so __StakeAwareUpgradeable_init
+* is not called.
+*/
+abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
+    using BitMaps for BitMaps.BitMap;
+
+    enum Permission {
+        ADMIN,
+        SELF,
+        OWNER,
+        MANAGER,
+        length
+    }
+
+    mapping(uint256 => BitMaps.BitMap) private _disabled;
+
+    event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, Permission permission, bool value);
+
+    /**
+    * @notice Check if scanner is enabled
+    * @param scannerId ERC721 token id of the scanner.
+    * @return true if the scanner is registered, has not been disabled, and is staked over minimum value.
+    * Returns false if otherwise
+    */
+    function isEnabled(uint256 scannerId) public view virtual returns (bool) {
+        return isRegistered(scannerId) &&
+            getDisableFlags(scannerId) == 0 &&
+            _isStakedOverMin(scannerId); 
+    }
+
+    /**
+     * @notice Public method to enable a scanner, if caller has permission. Scanner must be staked over minimum defined
+     * for the scanner's chainId.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the caller claims to have.
+     */
+    function enableScanner(uint256 scannerId, Permission permission) public virtual {
+        if (!_isStakedOverMin(scannerId)) revert StakedUnderMinimum(scannerId);
+        if (!_hasPermission(scannerId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), scannerId);
+        _enable(scannerId, permission, true);
+    }
+
+    /**
+     * @notice Public method to disable a scanner, if caller has permission.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the caller claims to have.
+     */
+    function disableScanner(uint256 scannerId, Permission permission) public virtual {
+        if (!_hasPermission(scannerId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), scannerId);
+        _enable(scannerId, permission, false);
+    }
+
+    /**
+     * Get the disabled flags for an agentId. Permission (uint8) is used for indexing, so we don't
+     * need to loop. 
+     * If not disabled, all flags will be 0
+     * @param scannerId ERC721 token id of the scanner.
+     * @return uint256 containing the byte flags.
+     */
+    function getDisableFlags(uint256 scannerId) public view returns (uint256) {
+        return _disabled[scannerId]._data[0];
+    }
+
+    /**
+     * @notice Method that does permission checks.
+     * @dev AccessManager is not used since the permission is specific for scannerId
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the caller claims to have.
+     * @return true if (ADMIN and _msgSender() has SCANNER_ADMIN_ROLE), if _msgSender() is the scanner itself, its owner
+     * or manager for each respective permission, false otherwise.
+     */
+    function _hasPermission(uint256 scannerId, Permission permission) internal view returns (bool) {
+        if (permission == Permission.ADMIN)   { return hasRole(SCANNER_ADMIN_ROLE, _msgSender()); }
+        if (permission == Permission.SELF)    { return uint256(uint160(_msgSender())) == scannerId; }
+        if (permission == Permission.OWNER)   { return _msgSender() == ownerOf(scannerId); }
+        if (permission == Permission.MANAGER) { return isManager(scannerId, _msgSender()); }
+        return false;
+    }
+
+    /**
+     * @notice Internal method to enable a scanner.
+     * @dev will trigger _before and _after enable hooks within the inheritance tree.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the caller claims to have.
+     * @param enable true for enabling, false for disabling
+     */
+    function _enable(uint256 scannerId, Permission permission, bool enable) internal {
+        _beforeScannerEnable(scannerId, permission, enable);
+        _scannerEnable(scannerId, permission, enable);
+        _afterScannerEnable(scannerId, permission, enable);
+    }
+
+
+    /**
+     * @notice Hook _before scanner enable
+     * @dev does nothing in this contract
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the sender claims to have to enable the agent.
+     * @param value true if enabling, false if disabling.
+     */
+    function _beforeScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
+    }
+
+    /**
+     * @notice Logic for enabling or disabling the scanner.
+     * @dev sets the corresponding byte in _disabled bitmap for scannerId. Emits ScannerEnabled event.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the sender claims to have to enable the agent.
+     * @param value true if enabling, false if disabling.
+     */
+    function _scannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
+        _disabled[scannerId].setTo(uint8(permission), !value);
+        emit ScannerEnabled(scannerId, isEnabled(scannerId), permission, value);
+    }
+
+    /**
+     * @notice Hook _after scanner enable
+     * @dev emits Router hook.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the sender claims to have to enable the agent.
+     * @param value true if enabling, false if disabling.
+     */
+    function _afterScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
+        _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256,uint8,bool)", scannerId, uint8(permission), value));
+    }
+
+    /**
+     * Obligatory inheritance dismambiguation of ForwardedContext's _msgSender()
+     * @return sender msg.sender if not a meta transaction, signer of forwarder metatx if it is.
+     */
+    function _msgSender() internal view virtual override(ScannerRegistryCore) returns (address sender) {
+        return super._msgSender();
+    }
+    /**
+     * Obligatory inheritance dismambiguation of ForwardedContext's _msgSender()
+     * @return sender msg.data if not a meta transaction, forwarder data in metatx if it is.
+     */
+    function _msgData() internal view virtual override(ScannerRegistryCore) returns (bytes calldata) {
+        return super._msgData();
+    }
+
+    uint256[49] private __gap;
+}
+
+
+// File contracts/components/scanners/ScannerRegistryMetadata.sol
+
+abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
+    struct ScannerMetadata {
+        uint256 chainId;
+        string metadata;
+    }
+
+    mapping(uint256 => ScannerMetadata) private _scannerMetadata;
+
+    /**
+     * @notice Gets all scanner properties.
+     * @param scannerId ERC721 token id of the scanner.
+     * @return registered true if scanner exists.
+     * @return owner address.
+     * @return chainId the scanner is monitoring.
+     * @return metadata IPFS pointer for the scanner's JSON metadata.
+     */
+    function getScanner(uint256 scannerId) public view returns (bool registered, address owner, uint256 chainId, string memory metadata) {
+        bool exists = _exists(scannerId);
+        return (
+            exists,
+            exists ? ownerOf(scannerId) : address(0),
+            _scannerMetadata[scannerId].chainId,
+            _scannerMetadata[scannerId].metadata
+        );
+    }
+
+    /**
+     * @notice Gets scanner chain Ids.
+     * @param scannerId ERC721 token id of the scanner.
+     * @return chainId the scanner is monitoring.
+     */
+    function getScannerChainId(uint256 scannerId) public view returns (uint256) {
+        return _scannerMetadata[scannerId].chainId;
+    }
+    
+    
+    /**
+     * @dev checks the StakeThreshold for the chainId the scanner with id `subject` was registered to monitor.
+     * @param subject ERC721 token id of the scanner.
+     * @return StakeThreshold registered for `chainId`, or StakeThreshold(0,0,false) if `chainId` not found.
+     */
+    function _getStakeThreshold(uint256 subject) override virtual internal view returns(StakeThreshold memory) {
+        return _stakeThresholds[getScannerChainId(subject)];
+    }
+
+    /**
+     * @notice internal logic for scanner update.
+     * @dev adds metadata and chainId for that scanner
+     * @param scannerId ERC721 token id of the scanner.
+     * @param chainId the scanner scans.
+     * @param metadata IPFS pointer for the scanner's JSON metadata.
+     */
+    function _scannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual override {
+        super._scannerUpdate(scannerId, chainId, metadata);
+        _scannerMetadata[scannerId] = ScannerMetadata({ chainId: chainId, metadata: metadata });
+    }
+
+    uint256[49] private __gap;
+}
+
+
+// File contracts/components/scanners/ScannerRegistry.sol
+
+contract ScannerRegistry is
+    BaseComponentUpgradeable,
+    ScannerRegistryCore,
+    ScannerRegistryManaged,
+    ScannerRegistryEnable,
+    ScannerRegistryMetadata
+{
+    string public constant version = "0.1.2";
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+
+    /**
+     * @notice Initializer method, access point to initialize inheritance tree.
+     * @param __manager address of AccessManager.
+     * @param __router address of Router.
+     * @param __name ERC721 token name.
+     * @param __symbol ERC721 token symbol.
+     */
+    function initialize(
+        address __manager,
+        address __router,
+        string calldata __name,
+        string calldata __symbol
+    ) public initializer {
+        __AccessManaged_init(__manager);
+        __Routed_init(__router);
+        __UUPSUpgradeable_init();
+        __ERC721_init(__name, __symbol);
+    }
+
+    /**
+     * @notice Gets all scanner properties and state
+     * @param scannerId ERC721 token id of the scanner.
+     * @return registered true if scanner exists.
+     * @return owner address.
+     * @return chainId the scanner is monitoring.
+     * @return metadata IPFS pointer for the scanner's JSON metadata.
+     * @return enabled true if staked over minimum and not disabled.
+     * @return disabledFlags 0 if not disabled, Permission if disabled.
+     */
+    function getScannerState(uint256 scannerId)
+        external
+        view
+        returns (
+            bool registered,
+            address owner,
+            uint256 chainId,
+            string memory metadata,
+            bool enabled,
+            uint256 disabledFlags
+         ) {
+        (registered, owner, chainId, metadata) = super.getScanner(scannerId);
+        return (
+            registered,
+            owner,
+            chainId,
+            metadata,
+            isEnabled(scannerId),
+            getDisableFlags(scannerId)
+        );
+    }
+
+    /**
+     * @notice Inheritance disambiguation for _scannerUpdate internal logic.
+     * @inheritdoc ScannerRegistryCore
+     */
+    function _scannerUpdate(
+        uint256 scannerId,
+        uint256 chainId,
+        string calldata metadata
+    ) internal virtual override(
+        ScannerRegistryCore,
+        ScannerRegistryMetadata
+    ) {
+        super._scannerUpdate(scannerId, chainId, metadata);
+    }
+
+    /**
+     * @dev inheritance disambiguation for _getStakeThreshold
+     * see ScannerRegistryMetadata
+     */
+    function _getStakeThreshold(uint256 subject) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) view returns(StakeThreshold memory) {
+        return super._getStakeThreshold(subject);
+    }
+
+    /**
+     * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.
+     * @inheritdoc ForwardedContext
+     */
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (address sender) {
+        return super._msgSender();
+    }
+
+    /**
+     * @notice Helper to get msg.data if not a meta transaction, forwarder data in metatx if it is.
+     * @inheritdoc ForwardedContext
+     */
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (bytes calldata) {
+        return super._msgData();
+    }
+
+    uint256[50] private __gap;
+}
+
+
+// File contracts/components/dispatch/Dispatch.sol
+
+contract Dispatch_0_1_5 is BaseComponentUpgradeable {
+    using EnumerableSet for EnumerableSet.UintSet;
+
+    AgentRegistry   private _agents;
+    ScannerRegistry private _scanners;
+
+    string public constant version = "0.1.5";
+
+    mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
+    mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
+
+    error Disabled(string name);
+    error InvalidId(string name, uint256 id);
+    
+    event AlreadyLinked(uint256 agentId, uint256 scannerId, bool enable);
+    event Link(uint256 agentId, uint256 scannerId, bool enable);
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+
+    /**
+     * @notice Initializer method, access point to initialize inheritance tree.
+     * @param __manager address of AccessManager.
+     * @param __router address of Router.
+     * @param __agents address of AgentRegistry.
+     * @param __scanners address of ScannerRegistry.
+     */
+    function initialize(
+        address __manager,
+        address __router,
+        address __agents,
+        address __scanners
+    ) public initializer {
+        __AccessManaged_init(__manager);
+        __Routed_init(__router);
+        _agents   = AgentRegistry(__agents);
+        _scanners = ScannerRegistry(__scanners);
+    }
+
+    /**
+    * @notice Getter for AgentRegistry.
+    * @return AgentRegistry.
+    */
+    function agentRegistry() public view returns (AgentRegistry) {
+        return _agents;
+    }
+
+    /**
+    * @notice Getter for ScannerRegistry.
+    * @return ScannerRegistry.
+    */
+    function scannerRegistry() public view returns (ScannerRegistry) {
+        return _scanners;
+    }
+
+    /**
+    * @notice Get total agents linked to a scanner.
+    * @dev helper for external iteration.
+    * @param scannerId ERC1155 token id of the scanner.
+    * @return total agents linked to a scanner
+    */
+    function numAgentsFor(uint256 scannerId) public view returns (uint256) {
+        return scannerToAgents[scannerId].length();
+    }
+
+    /**
+    * @notice Get total scanners where an agent is running in.
+    * @dev helper for external iteration.
+    * @param agentId ERC1155 token id of the agent.
+    * @return total scanners running an scanner
+    */
+    function numScannersFor(uint256 agentId) public view returns (uint256) {
+        return agentToScanners[agentId].length();
+    }
+
+    /**
+    * @notice Get agentId linked to a scanner in certain position.  
+    * @dev helper for external iteration.
+    * @param scannerId ERC1155 token id of the scanner.
+    * @param pos index for iteration.
+    * @return ERC1155 token id of the agent. 
+    */
+    function agentAt(uint256 scannerId, uint256 pos) public view returns (uint256) {
+        return scannerToAgents[scannerId].at(pos);
+    }
+
+    /**
+    * @notice Get data of an agent linked to a scanner at a certain position.  
+    * @dev helper for external iteration.
+    * @param scannerId ERC1155 token id of the scanner.
+    * @param pos index for iteration.
+    * @return registered bool if agent exists, false otherwise.
+    * @return owner address. 
+    * @return agentId ERC1155 token id of the agent. 
+    * @return agentVersion agent version number.
+    * @return metadata IPFS pointer for agent metadata.
+    * @return chainIds ordered array of chainId were the agent wants to run.
+    * @return enabled bool if agent is enabled, false otherwise.
+    * @return disabledFlags 0 if not disabled, Permission that disabled the scnner otherwise.
+    */
+    function agentRefAt(uint256 scannerId, uint256 pos)
+        external view
+        returns (
+            bool registered,
+            address owner,
+            uint256 agentId,
+            uint256 agentVersion,
+            string memory metadata,
+            uint256[] memory chainIds,
+            bool enabled,
+            uint256 disabledFlags
+        ) {
+        agentId = agentAt(scannerId, pos);
+        (registered, owner, agentVersion, metadata, chainIds, enabled, disabledFlags) = _agents.getAgentState(agentId);
+        return (registered, owner,agentId, agentVersion, metadata, chainIds, enabled, disabledFlags);
+    }
+
+    /**
+    * @notice Get scannerId running an agent at a certain position.  
+    * @dev helper for external iteration.
+    * @param agentId ERC1155 token id of the scanner.
+    * @param pos index for iteration.
+    * @return ERC1155 token id of the scanner. 
+    */
+    function scannerAt(uint256 agentId, uint256 pos) public view returns (uint256) {
+        return agentToScanners[agentId].at(pos);
+    }
+
+    /**
+    * @notice Get data of ascanner running an agent at a certain position.  
+    * @dev helper for external iteration.
+    * @param agentId ERC1155 token id of the agent.
+    * @param pos index for iteration.
+    * @return registered true if scanner is registered.
+    * @return scannerId ERC1155 token id of the scanner. 
+    * @return owner address.
+    * @return chainId that the scanner monitors.
+    * @return metadata IPFS pointer for agent metadata.
+    * @return enabled true if scanner is enabled, false otherwise.
+    * @return disabledFlags 0 if not disabled, Permission that disabled the scnner otherwise.
+    */
+    function scannerRefAt(uint256 agentId, uint256 pos)
+        external view
+        returns (
+            bool registered,
+            uint256 scannerId,
+            address owner,
+            uint256 chainId,
+            string memory metadata,
+            bool enabled,
+            uint256 disabledFlags
+        ) {
+        scannerId = scannerAt(agentId, pos);
+        (registered,owner, chainId, metadata, enabled, disabledFlags) = _scanners.getScannerState(scannerId);
+        return (registered, scannerId, owner, chainId, metadata, enabled, disabledFlags);
+    }
+
+    /// Returns true if scanner and agents are linked, false otherwise.
+    function areTheyLinked(uint256 agentId, uint256 scannerId) external view returns(bool) {
+        return scannerToAgents[scannerId].contains(agentId) && agentToScanners[agentId].contains(scannerId);
+    }
+
+    /**
+     * @notice Assigns the job of running an agent to a scanner.
+     * @dev currently only allowed for DISPATCHER_ROLE (Assigner software).
+     * @dev emits Link(agentId, scannerId, true) event.
+     * @param agentId ERC1155 token id of the agent.
+     * @param scannerId ERC1155 token id of the scanner.
+     */
+    function link(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
+        if (!_agents.isEnabled(agentId)) revert Disabled("Agent");
+        if (!_scanners.isEnabled(scannerId)) revert Disabled("Scanner");
+
+        if (!scannerToAgents[scannerId].add(agentId) || !agentToScanners[agentId].add(scannerId)) {
+          emit AlreadyLinked(agentId, scannerId, true);
+        } else {
+          emit Link(agentId, scannerId, true);
+        }
+    }
+
+    /**
+     * @notice Unassigns the job of running an agent to a scanner.
+     * @dev currently only allowed for DISPATCHER_ROLE (Assigner software).
+     * @dev emits Link(agentId, scannerId, false) event.
+     * @param agentId ERC1155 token id of the agent.
+     * @param scannerId ERC1155 token id of the scanner.
+     */
+    function unlink(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
+        if (!_agents.isRegistered(agentId)) revert InvalidId("Agent", agentId);
+        if (!_scanners.isRegistered(scannerId)) revert InvalidId("Scanner", scannerId);
+
+        if (!scannerToAgents[scannerId].remove(agentId) || !agentToScanners[agentId].remove(scannerId)) {
+          emit AlreadyLinked(agentId, scannerId, false);
+        } else {
+          emit Link(agentId, scannerId, false);
+        }
+    }
+
+    /**
+     * @notice Sets agent registry address.
+     * @dev only DEFAULT_ADMIN_ROLE (governance).
+     * @param newAgentRegistry agent of the new AgentRegistry.
+     */
+    function setAgentRegistry(address newAgentRegistry) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _agents = AgentRegistry(newAgentRegistry);
+    }
+
+    /**
+     * @notice Sets scanner registry address.
+     * @dev only DEFAULT_ADMIN_ROLE (governance).
+     * @param newScannerRegistry agent of the new ScannerRegistry.
+     */
+    function setScannerRegistry(address newScannerRegistry) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _scanners = ScannerRegistry(newScannerRegistry);
+    }
+
+    /**
+     * Method to hash the amount of scanners an agent is running in, and their status
+     * @dev method marked for deprecation in next version.
+     */
+    function agentHash(uint256 agentId) external view returns (uint256 length, bytes32 manifest) {
+        uint256[] memory scanners = agentToScanners[agentId].values();
+        bool[]    memory enabled = new bool[](scanners.length);
+
+        for (uint256 i = 0; i < scanners.length; i++) {
+            enabled[i] = _scanners.isEnabled(scanners[i]);
+        }
+
+        return (
+            scanners.length,
+            keccak256(abi.encodePacked(scanners, enabled))
+        );
+    }
+
+    /**
+     * @dev method used by Scanner Node software to know if their list of assigned agents has changed,
+     * their enabled state or version has changed so they can start managing changes
+     * (loading new agent images, removing not assigned agents, updating agents...).
+     * @param scannerId ERC1155 token id of the scanner.
+     * @return length amount of agents.
+     * @return manifest keccak256 of list of agents, list of agentVersion and list of enabled states.
+     */
+    function scannerHash(uint256 scannerId) external view returns (uint256 length, bytes32 manifest) {
+        uint256[] memory agents  = scannerToAgents[scannerId].values();
+        uint256[] memory agentVersion = new uint256[](agents.length);
+        bool[]    memory enabled = new bool[](agents.length);
+
+        for (uint256 i = 0; i < agents.length; i++) {
+            (,,agentVersion[i],,) = _agents.getAgent(agents[i]);
+            enabled[i]     = _agents.isEnabled(agents[i]);
+        }
+
+        return (
+            agents.length,
+            keccak256(abi.encodePacked(agents, agentVersion, enabled))
+        );
+    }
+
+    uint256[48] private __gap;
 }

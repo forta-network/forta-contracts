@@ -3326,7 +3326,7 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
 
 // File contracts/components/scanners/ScannerRegistry.sol
 
-contract ScannerRegistry is
+contract ScannerRegistry_0_1_2 is
     BaseComponentUpgradeable,
     ScannerRegistryCore,
     ScannerRegistryManaged,

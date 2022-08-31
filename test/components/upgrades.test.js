@@ -4,41 +4,41 @@ const { prepare } = require('../fixture');
 
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
 
-let originalScanners, originalAgents;
+let originalScanners, agents;
 describe('Upgrades testing', function () {
     prepare();
 
     describe('Agent Registry', async function () {
-        it.skip(' 0.1.1 -> 0.1.4', async function () {
+        it.only(' 0.1.1 -> 0.1.5', async function () {
             const AgentRegistry_0_1_1 = await ethers.getContractFactory('AgentRegistry_0_1_1');
-            originalAgents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, this.contracts.router.address, 'Forta Agents', 'FAgents'], {
+            agents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, this.contracts.router.address, 'Forta Agents', 'FAgents'], {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             });
-            await originalAgents.deployed();
+            await agents.deployed();
 
             //create agent
             const AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
             const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
-            await originalAgents.prepareAgent(prepareCommit(...args));
+            await agents.prepareAgent(prepareCommit(...args));
             await network.provider.send('evm_increaseTime', [300]);
-            await expect(originalAgents.connect(this.accounts.other).createAgent(...args));
+            await expect(agents.connect(this.accounts.other).createAgent(...args));
 
             // Checks
             //expect(await this.agents.isCreated(AGENT_ID)).to.be.equal(true); //Does not exist in 0.1.1
-            expect(await originalAgents.name()).to.be.equal('Forta Agents');
-            expect(await originalAgents.symbol()).to.be.equal('FAgents');
-            expect(await originalAgents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
+            expect(await agents.name()).to.be.equal('Forta Agents');
+            expect(await agents.symbol()).to.be.equal('FAgents');
+            expect(await agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
             expect(
-                await originalAgents.getAgent(AGENT_ID).then((agent) => [agent.version.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
+                await agents.getAgent(AGENT_ID).then((agent) => [agent.version.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
             ).to.be.deep.equal([1, args[2], args[3]]);
-            await originalAgents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1);
-            expect(await originalAgents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true);
-            await originalAgents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
-            expect(await originalAgents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
-            expect(await originalAgents.connect(this.accounts.user1).getAgentCount()).to.be.equal(1);
-            const NewImplementation = await ethers.getContractFactory('AgentRegistry');
-            const agentRegistry = await upgrades.upgradeProxy(originalAgents.address, NewImplementation, {
+            await agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1);
+            expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true);
+            await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
+            expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
+            expect(await agents.connect(this.accounts.user1).getAgentCount()).to.be.equal(1);
+            const AgentRegistry_0_1_2 = await ethers.getContractFactory('AgentRegistry_0_1_2');
+            agents = await upgrades.upgradeProxy(agents.address, AgentRegistry_0_1_2, {
                 call: {
                     fn: 'setStakeController(address)',
                     args: [this.contracts.stakingParameters.address],
@@ -47,17 +47,37 @@ describe('Upgrades testing', function () {
                 unsafeAllow: ['delegatecall'],
                 unsafeSkipStorageCheck: true,
             });
-            await agentRegistry.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
-            expect(await agentRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
-            expect(await agentRegistry.version()).to.be.equal('0.1.3');
-            expect(await agentRegistry.isCreated(AGENT_ID)).to.be.equal(true);
-            expect(await agentRegistry.getDisableFlags(AGENT_ID)).to.be.equal([2]);
-            expect(await agentRegistry.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
-            await agentRegistry.connect(this.accounts.user1).enableAgent(AGENT_ID, 1);
-            expect(await agentRegistry.getDisableFlags(AGENT_ID)).to.be.equal([0]);
-            expect(await agentRegistry.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true);
-            expect(await agentRegistry.name()).to.be.equal('Forta Agents');
-            expect(await agentRegistry.symbol()).to.be.equal('FAgents');
+            await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
+            expect(await agents.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
+            expect(await agents.version()).to.be.equal('0.1.2');
+            expect(await agents.isCreated(AGENT_ID)).to.be.equal(true);
+            expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
+            await agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1);
+            expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true);
+            expect(await agents.name()).to.be.equal('Forta Agents');
+            expect(await agents.symbol()).to.be.equal('FAgents');
+
+            const AgentRegistry_0_1_4 = await ethers.getContractFactory('AgentRegistry_0_1_4');
+            agents = await upgrades.upgradeProxy(agents.address, AgentRegistry_0_1_4, {
+                call: {
+                    fn: 'setStakeController(address)',
+                    args: [this.contracts.stakingParameters.address],
+                },
+                constructorArgs: [this.contracts.forwarder.address],
+                unsafeAllow: ['delegatecall'],
+                unsafeSkipStorageCheck: true,
+            });
+            await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
+            expect(await agents.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
+            expect(await agents.version()).to.be.equal('0.1.4');
+            expect(await agents.isRegistered(AGENT_ID)).to.be.equal(true);
+            expect(await agents.getDisableFlags(AGENT_ID)).to.be.equal([2]);
+            expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
+            await agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1);
+            expect(await agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
+            expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true);
+            expect(await agents.name()).to.be.equal('Forta Agents');
+            expect(await agents.symbol()).to.be.equal('FAgents');
         });
     });
 

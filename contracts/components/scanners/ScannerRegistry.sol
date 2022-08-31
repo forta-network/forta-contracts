@@ -16,7 +16,7 @@ contract ScannerRegistry is
     ScannerRegistryEnable,
     ScannerRegistryMetadata
 {
-    string public constant version = "0.1.2";
+    string public constant version = "0.1.3";
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
