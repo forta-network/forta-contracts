@@ -162,37 +162,23 @@ async function migrate(config = {}) {
 
         DEBUG(`[3] access: ${contracts.access.address}`);
 
-        contracts.router = await ethers
-            .getContractFactory('Router', deployer)
-            .then((factory) =>
-                utils.tryFetchProxy(CACHE, 'router', factory, 'uups', [contracts.access.address], { constructorArgs: [contracts.forwarder.address], unsafeAllow: 'delegatecall' })
-            );
-
-        DEBUG(`[4] router: ${contracts.router.address}`);
         contracts.staking = await ethers.getContractFactory('FortaStaking', deployer).then((factory) =>
-            utils.tryFetchProxy(
-                CACHE,
-                'staking',
-                factory,
-                'uups',
-                [contracts.access.address, contracts.router.address, contracts.token.address, delay, TREASURY(chainId, deployer)],
-                {
-                    constructorArgs: [contracts.forwarder.address],
-                    unsafeAllow: ['delegatecall'],
-                }
-            )
-        );
-
-        DEBUG(`[5.0] staking: ${contracts.staking.address}`);
-
-        contracts.stakingParameters = await ethers.getContractFactory('FortaStakingParameters', deployer).then((factory) =>
-            utils.tryFetchProxy(CACHE, 'staking-parameters', factory, 'uups', [contracts.access.address, contracts.router.address, contracts.staking.address], {
+            utils.tryFetchProxy(CACHE, 'staking', factory, 'uups', [contracts.access.address, contracts.token.address, delay, TREASURY(chainId, deployer)], {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             })
         );
 
-        DEBUG(`[5.1] staking parameters: ${contracts.stakingParameters.address}`);
+        DEBUG(`[4.0] staking: ${contracts.staking.address}`);
+
+        contracts.stakingParameters = await ethers.getContractFactory('FortaStakingParameters', deployer).then((factory) =>
+            utils.tryFetchProxy(CACHE, 'staking-parameters', factory, 'uups', [contracts.access.address, contracts.staking.address], {
+                constructorArgs: [contracts.forwarder.address],
+                unsafeAllow: ['delegatecall'],
+            })
+        );
+
+        DEBUG(`[4.1] staking parameters: ${contracts.stakingParameters.address}`);
         DEBUG('setFortaStaking?');
         const stakingUpdatedLogs = await utils.getEventsFromContractCreation(CACHE, 'staking-parameters', 'FortaStakingChanged', contracts.stakingParameters);
         if (stakingUpdatedLogs[stakingUpdatedLogs.length - 1]?.args[0] !== contracts.staking.address) {
@@ -212,7 +198,7 @@ async function migrate(config = {}) {
             DEBUG('Not neededed');
         }
 
-        DEBUG(`[5.2] connected staking params and staking`);
+        DEBUG(`[4.2] connected staking params and staking`);
 
         const forwarderAddress = await CACHE.get('forwarder.address');
         const stakingAddress = await CACHE.get('staking.address');
@@ -220,16 +206,16 @@ async function migrate(config = {}) {
             .getContractFactory('StakingEscrowFactory', deployer)
             .then((factory) => utils.tryFetchContract(CACHE, 'escrow-factory', factory, [forwarderAddress, stakingAddress]));
 
-        DEBUG(`[5.3] escrow factory: ${contracts.escrowFactory.address}`);
+        DEBUG(`[4.3] escrow factory: ${contracts.escrowFactory.address}`);
 
         contracts.agents = await ethers.getContractFactory('AgentRegistry', deployer).then((factory) =>
-            utils.tryFetchProxy(CACHE, 'agents', factory, 'uups', [contracts.access.address, contracts.router.address, 'Forta Agents', 'FAgents'], {
+            utils.tryFetchProxy(CACHE, 'agents', factory, 'uups', [contracts.access.address, 'Forta Agents', 'FAgents'], {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: 'delegatecall',
             })
         );
 
-        DEBUG(`[6] agents: ${contracts.agents.address}`);
+        DEBUG(`[5] agents: ${contracts.agents.address}`);
 
         // Upgrades
         // Agents v0.1.2
@@ -249,16 +235,16 @@ async function migrate(config = {}) {
             }
         }
 
-        DEBUG(`[6.1] staking for agents configured`);
+        DEBUG(`[5.1] staking for agents configured`);
 
         contracts.scanners = await ethers.getContractFactory('ScannerRegistry', deployer).then((factory) =>
-            utils.tryFetchProxy(CACHE, 'scanners', factory, 'uups', [contracts.access.address, contracts.router.address, 'Forta Scanners', 'FScanners'], {
+            utils.tryFetchProxy(CACHE, 'scanners', factory, 'uups', [contracts.access.address, 'Forta Scanners', 'FScanners'], {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: 'delegatecall',
             })
         );
 
-        DEBUG(`[7] scanners: ${contracts.scanners.address}`);
+        DEBUG(`[6] scanners: ${contracts.scanners.address}`);
 
         // Scanners v0.1.1
 
@@ -276,31 +262,25 @@ async function migrate(config = {}) {
             }
         }
 
-        DEBUG(`[7.1] staking for scanners configured`);
+        DEBUG(`[6.1] staking for scanners configured`);
 
-        contracts.dispatch = await ethers
-            .getContractFactory('Dispatch', deployer)
-            .then((factory) =>
-                utils.tryFetchProxy(
-                    CACHE,
-                    'dispatch',
-                    factory,
-                    'uups',
-                    [contracts.access.address, contracts.router.address, contracts.agents.address, contracts.scanners.address],
-                    { constructorArgs: [contracts.forwarder.address], unsafeAllow: 'delegatecall' }
-                )
-            );
-
-        DEBUG(`[8] dispatch: ${contracts.dispatch.address}`);
-
-        contracts.scannerNodeVersion = await ethers.getContractFactory('ScannerNodeVersion', deployer).then((factory) =>
-            utils.tryFetchProxy(CACHE, 'scanner-node-version', factory, 'uups', [contracts.access.address, contracts.router.address], {
+        contracts.dispatch = await ethers.getContractFactory('Dispatch', deployer).then((factory) =>
+            utils.tryFetchProxy(CACHE, 'dispatch', factory, 'uups', [contracts.access.address, contracts.agents.address, contracts.scanners.address], {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: 'delegatecall',
             })
         );
 
-        DEBUG(`[9] scanner node version: ${contracts.scannerNodeVersion.address}`);
+        DEBUG(`[7] dispatch: ${contracts.dispatch.address}`);
+
+        contracts.scannerNodeVersion = await ethers.getContractFactory('ScannerNodeVersion', deployer).then((factory) =>
+            utils.tryFetchProxy(CACHE, 'scanner-node-version', factory, 'uups', [contracts.access.address], {
+                constructorArgs: [contracts.forwarder.address],
+                unsafeAllow: 'delegatecall',
+            })
+        );
+
+        DEBUG(`[8] scanner node version: ${contracts.scannerNodeVersion.address}`);
         const penaltyModes = {};
         penaltyModes.UNDEFINED = 0;
         penaltyModes.MIN_STAKE = 1;
@@ -322,7 +302,6 @@ async function migrate(config = {}) {
                 'uups',
                 [
                     contracts.access.address,
-                    contracts.router.address,
                     contracts.staking.address,
                     contracts.stakingParameters.address,
                     SLASHING_DEPOSIT_AMOUNT(chainId),
@@ -339,8 +318,7 @@ async function migrate(config = {}) {
         slashParams.penaltyModes = penaltyModes;
         slashParams.reasons = reasons;
         slashParams.penalties = penalties;
-        DEBUG(`[10] slashing proposal: ${contracts.slashing.address}`);
-
+        DEBUG(`[9] slashing proposal: ${contracts.slashing.address}`);
     }
 
     // Roles dictionary
@@ -349,7 +327,6 @@ async function migrate(config = {}) {
             DEFAULT_ADMIN: ethers.constants.HashZero,
             ADMIN: ethers.utils.id('ADMIN_ROLE'),
             MINTER: ethers.utils.id('MINTER_ROLE'),
-            ROUTER_ADMIN: ethers.utils.id('ROUTER_ADMIN_ROLE'),
             ENS_MANAGER: ethers.utils.id('ENS_MANAGER_ROLE'),
             UPGRADER: ethers.utils.id('UPGRADER_ROLE'),
             AGENT_ADMIN: ethers.utils.id('AGENT_ADMIN_ROLE'),
@@ -406,7 +383,6 @@ async function migrate(config = {}) {
                     registerNode('access.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.access.address, chainId: chainId }),
                     registerNode('dispatch.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.dispatch.address, chainId: chainId }),
                     registerNode('forwarder.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.forwarder.address, chainId: chainId }),
-                    registerNode('router.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.router.address, chainId: chainId }),
                     registerNode('staking.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.staking.address, chainId: chainId }),
                     registerNode('slashing.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.staking.address, chainId: chainId }),
                     registerNode('staking-params.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.stakingParameters.address, chainId: chainId }),
@@ -430,7 +406,6 @@ async function migrate(config = {}) {
         if (config.childChain) {
             reverseRegisters = reverseRegisters.concat([
                 reverseRegister(contracts.access, 'access.forta.eth'),
-                reverseRegister(contracts.router, 'router.forta.eth'),
                 reverseRegister(contracts.dispatch, 'dispatch.forta.eth'),
                 reverseRegister(contracts.staking, 'staking.forta.eth'),
                 reverseRegister(contracts.slashing, 'slashing.forta.eth'),

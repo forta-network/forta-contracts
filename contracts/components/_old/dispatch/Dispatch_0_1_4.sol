@@ -4063,7 +4063,7 @@ contract Dispatch_0_1_5 is BaseComponentUpgradeable {
     AgentRegistry_v015   private _agents;
     ScannerRegistry_v012 private _scanners;
 
-    string public constant version = "0.1.5";
+    string public constant version = "0.1.4";
 
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;

@@ -24,19 +24,15 @@ contract AgentRegistry is
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
-     * @param __router address of Router.
      * @param __name ERC721 token name.
      * @param __symbol ERC721 token symbol.
      */
     function initialize(
         address __manager,
-        address __router,
         string calldata __name,
         string calldata __symbol
     ) public initializer {
-        __AccessManaged_init(__manager);
-        __Routed_init(__router);
-        __UUPSUpgradeable_init();
+        __BaseComponentUpgradeable_init(__manager);
         __ERC721_init(__name, __symbol);
     }
 

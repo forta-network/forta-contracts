@@ -12,7 +12,8 @@ describe('Upgrades testing', function () {
     describe('Agent Registry', async function () {
         it(' 0.1.1 -> 0.1.5', async function () {
             const AgentRegistry_0_1_1 = await ethers.getContractFactory('AgentRegistry_0_1_1');
-            agents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, this.contracts.router.address, 'Forta Agents', 'FAgents'], {
+            // Router is deprecated, just set an address
+            agents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, this.contracts.access.address, 'Forta Agents', 'FAgents'], {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             });
@@ -86,7 +87,8 @@ describe('Upgrades testing', function () {
         it(' 0.1.0 -> 0.1.2', async function () {
             this.accounts.getAccount('scanner');
             const ScannerRegistry_0_1_0 = await ethers.getContractFactory('ScannerRegistry_0_1_0');
-            originalScanners = await upgrades.deployProxy(ScannerRegistry_0_1_0, [this.contracts.access.address, this.contracts.router.address, 'Forta Scanners', 'FScanners'], {
+            // Router is deprecated, just set an address
+            originalScanners = await upgrades.deployProxy(ScannerRegistry_0_1_0, [this.contracts.access.address, this.contracts.access.address, 'Forta Scanners', 'FScanners'], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
@@ -132,7 +134,7 @@ describe('Upgrades testing', function () {
             for (const scanner of SCANNERS) {
                 const scannerId = scanner.address;
                 expect(await scannerRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
-                expect(await scannerRegistry.version()).to.be.equal('0.1.2');
+                expect(await scannerRegistry.version()).to.be.equal('0.1.3');
                 expect(await scannerRegistry.isEnabled(scannerId)).to.be.equal(false);
                 expect(await scannerRegistry.isManager(scannerId, this.accounts.user2.address)).to.be.equal(true);
                 expect(await scannerRegistry.getManagerCount(scannerId)).to.be.equal(1);
@@ -157,7 +159,8 @@ describe('Upgrades testing', function () {
             const DELAY = 123123;
             const TREASURY = await ethers.Wallet.createRandom().address;
             const FortaStaking_0_1_0 = await ethers.getContractFactory('FortaStaking_0_1_0');
-            this.staking = await upgrades.deployProxy(FortaStaking_0_1_0, [this.access.address, this.router.address, this.token.address, DELAY, TREASURY], {
+            const fakeRouter = ethers.Wallet.createRandom().address;
+            this.staking = await upgrades.deployProxy(FortaStaking_0_1_0, [this.access.address, fakeRouter, this.token.address, DELAY, TREASURY], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
@@ -165,7 +168,7 @@ describe('Upgrades testing', function () {
             await this.staking.deployed();
 
             const FortaStakingParameters_0_1_0 = await ethers.getContractFactory('FortaStakingParameters_0_1_0');
-            this.stakingParameters = await upgrades.deployProxy(FortaStakingParameters_0_1_0, [this.access.address, this.router.address, this.staking.address], {
+            this.stakingParameters = await upgrades.deployProxy(FortaStakingParameters_0_1_0, [this.access.address, fakeRouter, this.staking.address], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],

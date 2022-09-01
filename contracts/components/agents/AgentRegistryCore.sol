@@ -169,7 +169,7 @@ abstract contract AgentRegistryCore is
      * @param newChainIds ordered list of chainIds where the agent wants to run.
      */
     function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256,string,uint256[])", agentId, newMetadata, newChainIds));
+        
     }
 
     /**

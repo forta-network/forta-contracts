@@ -29,6 +29,11 @@ abstract contract BaseComponentUpgradeable is
     UUPSUpgradeable,
     IVersioned
 {
+
+    function __BaseComponentUpgradeable_init(address __manager)  internal initializer {
+        __AccessManaged_init(__manager);
+        __UUPSUpgradeable_init();
+    }
     
     // Access control for the upgrade process
     function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(UPGRADER_ROLE) {

@@ -25,17 +25,14 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
-     * @param __router address of Router.
      * @param __fortaStaking address of FortaStaking.
      */
     function initialize(
         address __manager,
-        address __router,
         address __fortaStaking
     ) public initializer {
-        __AccessManaged_init(__manager);
-        __Routed_init(__router);
-        __UUPSUpgradeable_init();
+        __BaseComponentUpgradeable_init(__manager);
+        
         _setFortaStaking(__fortaStaking);
     }
 

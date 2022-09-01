@@ -48,7 +48,7 @@ describe('Scanner Node Software Version', function () {
     describe('upgrade', async function () {
         it('sets version', async function () {
             const ScannerVersion_0_1_0 = await ethers.getContractFactory('ScannerNodeVersion_0_1_0');
-            const originalScannerVersion = await upgrades.deployProxy(ScannerVersion_0_1_0, [this.contracts.access.address, this.contracts.router.address], {
+            const originalScannerVersion = await upgrades.deployProxy(ScannerVersion_0_1_0, [this.contracts.access.address, this.contracts.access.address], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
