@@ -1580,7 +1580,7 @@ abstract contract BaseComponentUpgradeable is
  * the nodes will listen to the resulting event, downloading the new version from IPFS.
  * A similar system is provided for pre release version.
  */
-contract ScannerNodeVersion is BaseComponentUpgradeable {
+contract ScannerNodeVersion_0_1_1 is BaseComponentUpgradeable {
 
     /**
      * Version of the scanner image software the network expects (IPFS hash)

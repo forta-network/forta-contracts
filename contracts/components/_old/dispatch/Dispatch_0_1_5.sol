@@ -3376,7 +3376,7 @@ abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
 
 // File contracts/components/agents/AgentRegistry.sol
 
-contract AgentRegistry is
+contract AgentRegistry_v015 is
     BaseComponentUpgradeable,
     AgentRegistryCore,
     AgentRegistryEnable,
@@ -3738,7 +3738,7 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
 
 
 /**
-* @dev ScannerRegistry methods and state handling disabling and enabling scanners, and
+* @dev ScannerRegistry_v012 methods and state handling disabling and enabling scanners, and
 * recognizing stake changes that might disable a scanner.
 * NOTE: This contract was deployed before StakeAwareUpgradeable was created, so __StakeAwareUpgradeable_init
 * is not called.
@@ -3950,7 +3950,7 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
 
 // File contracts/components/scanners/ScannerRegistry.sol
 
-contract ScannerRegistry is
+contract ScannerRegistry_v012 is
     BaseComponentUpgradeable,
     ScannerRegistryCore,
     ScannerRegistryManaged,
@@ -4060,8 +4060,8 @@ contract ScannerRegistry is
 contract Dispatch_0_1_5 is BaseComponentUpgradeable {
     using EnumerableSet for EnumerableSet.UintSet;
 
-    AgentRegistry   private _agents;
-    ScannerRegistry private _scanners;
+    AgentRegistry_v015   private _agents;
+    ScannerRegistry_v012 private _scanners;
 
     string public constant version = "0.1.5";
 
@@ -4082,7 +4082,7 @@ contract Dispatch_0_1_5 is BaseComponentUpgradeable {
      * @param __manager address of AccessManager.
      * @param __router address of Router.
      * @param __agents address of AgentRegistry.
-     * @param __scanners address of ScannerRegistry.
+     * @param __scanners address of ScannerRegistry_v012.
      */
     function initialize(
         address __manager,
@@ -4092,23 +4092,23 @@ contract Dispatch_0_1_5 is BaseComponentUpgradeable {
     ) public initializer {
         __AccessManaged_init(__manager);
         __Routed_init(__router);
-        _agents   = AgentRegistry(__agents);
-        _scanners = ScannerRegistry(__scanners);
+        _agents   = AgentRegistry_v015(__agents);
+        _scanners = ScannerRegistry_v012(__scanners);
     }
 
     /**
     * @notice Getter for AgentRegistry.
     * @return AgentRegistry.
     */
-    function agentRegistry() public view returns (AgentRegistry) {
+    function agentRegistry() public view returns (AgentRegistry_v015) {
         return _agents;
     }
 
     /**
-    * @notice Getter for ScannerRegistry.
-    * @return ScannerRegistry.
+    * @notice Getter for ScannerRegistry_v012.
+    * @return ScannerRegistry_v012.
     */
-    function scannerRegistry() public view returns (ScannerRegistry) {
+    function scannerRegistry() public view returns (ScannerRegistry_v012) {
         return _scanners;
     }
 
@@ -4261,16 +4261,16 @@ contract Dispatch_0_1_5 is BaseComponentUpgradeable {
      * @param newAgentRegistry agent of the new AgentRegistry.
      */
     function setAgentRegistry(address newAgentRegistry) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _agents = AgentRegistry(newAgentRegistry);
+        _agents = AgentRegistry_v015(newAgentRegistry);
     }
 
     /**
      * @notice Sets scanner registry address.
      * @dev only DEFAULT_ADMIN_ROLE (governance).
-     * @param newScannerRegistry agent of the new ScannerRegistry.
+     * @param newScannerRegistry agent of the new ScannerRegistry_v012.
      */
     function setScannerRegistry(address newScannerRegistry) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _scanners = ScannerRegistry(newScannerRegistry);
+        _scanners = ScannerRegistry_v012(newScannerRegistry);
     }
 
     /**

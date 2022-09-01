@@ -4461,7 +4461,7 @@ interface IRewardReceiver {
  * succeed but you will not be able to withdraw or mint new shares from the contract. If this happens, transfer your
  * shares to an EOA or fully ERC1155 compatible contract.
  */
-contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, SubjectTypeValidator, ISlashingExecutor {
+contract FortaStaking_v_011 is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, SubjectTypeValidator, ISlashingExecutor {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers for Timers.Timestamp;
@@ -5139,8 +5139,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
 // File contracts/components/staking/FortaStakingParameters.sol
 
-contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidator, IStakeController {
-    FortaStaking private _fortaStaking;
+contract FortaStakingParameters_0_1_1 is BaseComponentUpgradeable, SubjectTypeValidator, IStakeController {
+    FortaStaking_v_011 private _fortaStaking;
     // stake subject parameters for each subject
     mapping(uint8 => IStakeSubject) private _stakeSubjectHandlers;
 
@@ -5176,7 +5176,7 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
 
     function _setFortaStaking(address newFortaStaking) internal {
         if (newFortaStaking == address(0)) revert ZeroAddress("newFortaStaking");
-        _fortaStaking = FortaStaking(newFortaStaking);
+        _fortaStaking = FortaStaking_v_011(newFortaStaking);
         emit FortaStakingChanged(address(_fortaStaking));
     }
 
