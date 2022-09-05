@@ -435,8 +435,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
         if (proposerPercent > 0) {
             if (proposer == address(0)) revert ZeroAddress("proposer");
-            SafeERC20.safeTransfer(stakedToken, proposer, Math.mulDiv(stakeValue, proposerPercent, HUNDRED_PERCENT));
-            emit SlashedShareSent(subjectType, subject, proposer, Math.mulDiv(stakeValue, proposerPercent, HUNDRED_PERCENT));
+            uint256 proposerShare = Math.mulDiv(stakeValue, proposerPercent, HUNDRED_PERCENT);
+            SafeERC20.safeTransfer(stakedToken, proposer, proposerShare);
+            emit SlashedShareSent(subjectType, subject, proposer, proposerShare);
             SafeERC20.safeTransfer(stakedToken, _treasury, Math.mulDiv(stakeValue, HUNDRED_PERCENT - proposerPercent, HUNDRED_PERCENT));
         } else {
             SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue);
