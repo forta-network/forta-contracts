@@ -130,6 +130,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         address __treasury
     ) public initializer {
         if (__treasury == address(0)) revert ZeroAddress("__treasury");
+        if (address(__stakedToken) == address(0)) revert ZeroAddress("__stakedToken");
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
