@@ -17,7 +17,6 @@ import "./IStakeController.sol";
 import "./ISlashingExecutor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
-import "../../errors/GeneralErrors.sol";
 
 interface IRewardReceiver {
     function onRewardReceived(

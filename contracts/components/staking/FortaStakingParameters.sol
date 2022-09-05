@@ -3,11 +3,7 @@
 
 pragma solidity ^0.8.4;
 
-import "./IStakeController.sol";
-import "../BaseComponentUpgradeable.sol";
-import "./SubjectTypes.sol";
 import "./FortaStaking.sol";
-import "../../errors/GeneralErrors.sol";
 
 contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidator, IStakeController {
     FortaStaking private _fortaStaking;
