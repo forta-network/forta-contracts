@@ -414,7 +414,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 stakeValue,
         address proposer,
         uint256 proposerPercent
-    ) public onlyRole(SLASHER_ROLE) returns (uint256) {
+    ) public override onlyRole(SLASHER_ROLE) returns (uint256) {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         uint256 activeStake = _activeStake.balanceOf(activeSharesId);
         uint256 inactiveStake = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
@@ -460,7 +460,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint8 subjectType,
         uint256 subject,
         bool frozen
-    ) public onlyRole(SLASHER_ROLE) onlyValidSubjectType(subjectType) {
+    ) public override onlyRole(SLASHER_ROLE) onlyValidSubjectType(subjectType) {
         _frozen[FortaStakingUtils.subjectToActive(subjectType, subject)] = frozen;
         emit Froze(subjectType, subject, _msgSender(), frozen);
     }
