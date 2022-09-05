@@ -85,6 +85,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     // treasury for slashing
     address private _treasury;
 
+    uint256 private constant HUNDRED_PERCENT = 100;
+
+
     IStakeController private _stakingParameters;
 
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
@@ -420,7 +423,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         // an amounts of shares so big that they might cause overflows.
         // New shares = pool shares * new staked amount / pool stake
         // See deposit and stakeToActiveShares methods.
-        uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, _stakingParameters.maxSlashableStakePercent(), 100);
+        uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, _stakingParameters.maxSlashableStakePercent(), HUNDRED_PERCENT);
         if (stakeValue > maxSlashableStake) revert SlashingOver90Percent();
 
         uint256 slashFromActive = Math.mulDiv(activeStake, stakeValue, activeStake + inactiveStake);
@@ -432,9 +435,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
         if (proposerPercent > 0) {
             if (proposer == address(0)) revert ZeroAddress("proposer");
-            SafeERC20.safeTransfer(stakedToken, proposer, Math.mulDiv(stakeValue, proposerPercent, 100));
-            emit SlashedShareSent(subjectType, subject, proposer, Math.mulDiv(stakeValue, proposerPercent, 100));
-            SafeERC20.safeTransfer(stakedToken, _treasury, Math.mulDiv(stakeValue, 100 - proposerPercent, 100));
+            SafeERC20.safeTransfer(stakedToken, proposer, Math.mulDiv(stakeValue, proposerPercent, HUNDRED_PERCENT));
+            emit SlashedShareSent(subjectType, subject, proposer, Math.mulDiv(stakeValue, proposerPercent, HUNDRED_PERCENT));
+            SafeERC20.safeTransfer(stakedToken, _treasury, Math.mulDiv(stakeValue, HUNDRED_PERCENT - proposerPercent, HUNDRED_PERCENT));
         } else {
             SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue);
         }
