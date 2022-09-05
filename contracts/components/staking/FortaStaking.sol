@@ -61,7 +61,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     using Timers for Timers.Timestamp;
     using ERC165Checker for address;
 
-    IERC20 public stakedToken;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    IERC20 public immutable stakedToken;
 
     // subject => active stake
     Distributions.Balances private _activeStake;
@@ -115,20 +116,21 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     string public constant version = "0.1.1";
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+    constructor(address _forwarder, address _stakedToken) initializer ForwardedContext(_forwarder) {
+        if (_stakedToken == address(0)) revert ZeroAddress("stakedToken");
+        stakedToken = IERC20(_stakedToken);
+    }
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
      * @param __router address of Router.
-     * @param __stakedToken ERC20 to be staked (FORT).
      * @param __withdrawalDelay cooldown period between withdrawal init and withdrawal (in seconds).
      * @param __treasury address where the slashed tokens go to.
      */
     function initialize(
         address __manager,
         address __router,
-        IERC20 __stakedToken,
         uint64 __withdrawalDelay,
         address __treasury
     ) public initializer {
@@ -138,7 +140,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         __UUPSUpgradeable_init();
         __ERC1155_init("");
         __ERC1155Supply_init();
-        stakedToken = __stakedToken;
         _withdrawalDelay = __withdrawalDelay;
         _treasury = __treasury;
         emit DelaySet(__withdrawalDelay);
