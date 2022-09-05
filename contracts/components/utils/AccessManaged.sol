@@ -40,7 +40,7 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
     }
 
     /**
-     * @notice Checks if `accoung has `role` assigned.
+     * @notice Checks if `account has `role` assigned.
      * @param role the role to be tested, defined in Roles.sol and set in AccessManager instance.
      * @param account the address to be tested for the role.
      * @return return true if account has role, false otherwise.

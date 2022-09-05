@@ -86,7 +86,7 @@ describe('Forta Staking', function () {
                 const tx1 = await this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '50');
                 await expect(tx1)
                     .to.emit(this.staking, 'WithdrawalInitiated')
-                    //.withArgs(subjectType1, subject1, this.accounts.user1.address, await txTimestamp(tx1)) Off by 2 miliseconds
+                    //.withArgs(subjectType1, subject1, this.accounts.user1.address, await txTimestamp(tx1)) Off by 2 milliseconds
                     .to.emit(this.staking, 'TransferSingle') /*.withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, subject1, '50')*/
                     .to.emit(this.staking, 'TransferSingle'); /*.withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, inactive1, '50')*/
 

@@ -143,7 +143,7 @@ async function migrate(config = {}) {
     DEBUG('config.childChainManagerProxy', config.childChainManagerProxy);
 
     // For test compatibility: since we need to mint and FortaBridgedPolygon does not mint(), we base our decision to deploy
-    // FortaBridgedPolygon is based on the existance of childChainManagerProxy, not childChain
+    // FortaBridgedPolygon is based on the existence of childChainManagerProxy, not childChain
     config.childChainManagerProxy ? fortaConstructorArgs.push(config.childChainManagerProxy) : null;
     DEBUG(`Deploying token: ${config.childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta'}`);
 

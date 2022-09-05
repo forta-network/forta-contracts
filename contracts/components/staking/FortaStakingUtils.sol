@@ -16,7 +16,7 @@ library FortaStakingUtils {
     }
 
     /**
-     * @dev Encode "inactive" and subjectType in subjectby hashing them together, shifting left 9 bits,
+     * @dev Encode "inactive" and subjectType in subject by hashing them together, shifting left 9 bits,
      * letting bit 9 unset (to mark as inactive) and masking subjectType in.
      * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).

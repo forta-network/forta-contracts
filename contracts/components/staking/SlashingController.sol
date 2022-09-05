@@ -281,7 +281,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
 
     /**
      * @notice gets the stake amount to be slashed.
-     * The amount deppends on the StakePenalty.
+     * The amount depends on the StakePenalty.
      * In all cases, the amount will be the minimum of the max slashable stake for the subject and:
      * MIN_STAKE: a % of the subject's MIN_STAKE
      * CURRENT_STAKE: a % of the subject's active + inactive stake.
@@ -369,7 +369,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
 
     function _setSlashPenalties(bytes32[] calldata _slashReasons, SlashPenalty[] calldata _slashPenalties) private {
         uint256 length = _slashReasons.length;
-        if (length != _slashPenalties.length) revert DifferentLenghtArray("_slashReasons", "_slashPenalties");
+        if (length != _slashPenalties.length) revert DifferentLengthArray("_slashReasons", "_slashPenalties");
         for (uint256 i = 0; i < length; i++) {
             if (penalties[_slashReasons[i]].mode != PenaltyMode.UNDEFINED) {
                 emit SlashPenaltyRemoved(_slashReasons[i], penalties[_slashReasons[i]].percentSlashed, penalties[_slashReasons[i]].mode);
@@ -386,7 +386,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         string[] calldata _evidence
     ) private {
         uint256 evidenceLength = _evidence.length;
-        if (evidenceLength == 0) revert ZeroAmount("evidence lenght");
+        if (evidenceLength == 0) revert ZeroAmount("evidence length");
         if (evidenceLength > MAX_EVIDENCE_LENGTH) revert ArrayTooBig(evidenceLength, MAX_EVIDENCE_LENGTH);
         for (uint256 i = 0; i < evidenceLength; i++) {
             if (bytes(_evidence[i]).length > MAX_CHAR_LENGTH) revert StringTooLarge(bytes(_evidence[i]).length, MAX_CHAR_LENGTH);
