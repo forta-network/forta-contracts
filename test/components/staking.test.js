@@ -846,38 +846,6 @@ describe('Forta Staking', function () {
         });
     });
 
-    describe('signals routing', async function () {
-        beforeEach(async function () {
-            this.signature = ethers.utils.id('hook_afterStakeChanged(uint8, uint256)').slice(0, 10);
-
-            this.accounts.getAccount('slasher');
-            await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address)).to.be.not.reverted;
-            await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.ROUTER_ADMIN, this.accounts.admin.address)).to.be.not.reverted;
-            await this.router.connect(this.accounts.admin).setRoutingTable(this.signature, this.sink.address, true, false);
-        });
-
-        // NOTE: skipped until the reintroduction of hooks on the Router
-        it.skip('signals are emitted', async function () {
-            await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100'))
-                .to.emit(this.sink, 'GotSignal')
-                .withArgs(
-                    this.signature + ethers.utils.hexlify(ethers.utils.zeroPad(subjectType1, 32)).slice(2) + ethers.utils.hexlify(ethers.utils.zeroPad(subject1, 32)).slice(2)
-                );
-
-            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '50'))
-                .to.emit(this.sink, 'GotSignal')
-                .withArgs(
-                    this.signature + ethers.utils.hexlify(ethers.utils.zeroPad(subjectType1, 32)).slice(2) + ethers.utils.hexlify(ethers.utils.zeroPad(subject1, 32)).slice(2)
-                );
-
-            await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '50'))
-                .to.emit(this.sink, 'GotSignal')
-                .withArgs(
-                    this.signature + ethers.utils.hexlify(ethers.utils.zeroPad(subjectType1, 32)).slice(2) + ethers.utils.hexlify(ethers.utils.zeroPad(subject1, 32)).slice(2)
-                );
-        });
-    });
-
     describe('attack scenario', function () {
         it('dusting', async function () {
             await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: ethers.utils.parseEther('5000'), min: '1', activated: true }, 1);

@@ -18,7 +18,6 @@ import "../tools/ENSReverseRegistration.sol";
  *
  * This contract contains the base of Forta components. Contract  inheriting this will have to call
  * - __AccessManaged_init(address manager)
- * - __Routed_init(address router)
  * in their initialization process.
  */
 abstract contract BaseComponentUpgradeable is

@@ -74,12 +74,6 @@ Holds the accepted Scanner Node software image IPFS hash. A change in the versio
 
 [Access Control](https://docs.openzeppelin.com/contracts/4.x/api/access#AccessControl) Singleton for all contracts except Token and VestingWallets
 
-### Router
-
-- [File](https://github.com/forta-network/forta-contracts/blob/master/contracts/components/router/Router.sol)
-
-Observer pattern allowing actions in contracts to have side effects. Currently unused.
-
 ### Forwarder
 
 - [File](https://github.com/forta-network/forta-contracts/blob/master/contracts/components/metatx/Forwarder.sol)
