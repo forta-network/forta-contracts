@@ -17,7 +17,6 @@ import "./IStakeController.sol";
 import "./ISlashingExecutor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
-import "../../errors/GeneralErrors.sol";
 
 interface IRewardReceiver {
     function onRewardReceived(
@@ -61,7 +60,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     using Timers for Timers.Timestamp;
     using ERC165Checker for address;
 
-    IERC20 public stakedToken;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    IERC20 public immutable stakedToken;
 
     // subject => active stake
     Distributions.Balances private _activeStake;
@@ -84,6 +84,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     // treasury for slashing
     address private _treasury;
+
+    uint256 private constant HUNDRED_PERCENT = 100;
+
 
     IStakeController private _stakingParameters;
     uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
@@ -115,20 +118,21 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     string public constant version = "0.1.1";
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+    constructor(address _forwarder, address _stakedToken) initializer ForwardedContext(_forwarder) {
+        if (_stakedToken == address(0)) revert ZeroAddress("stakedToken");
+        stakedToken = IERC20(_stakedToken);
+    }
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
      * @param __router address of Router.
-     * @param __stakedToken ERC20 to be staked (FORT).
      * @param __withdrawalDelay cooldown period between withdrawal init and withdrawal (in seconds).
      * @param __treasury address where the slashed tokens go to.
      */
     function initialize(
         address __manager,
         address __router,
-        IERC20 __stakedToken,
         uint64 __withdrawalDelay,
         address __treasury
     ) public initializer {
@@ -139,7 +143,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         __UUPSUpgradeable_init();
         __ERC1155_init("");
         __ERC1155Supply_init();
-        stakedToken = __stakedToken;
         _withdrawalDelay = __withdrawalDelay;
         _treasury = __treasury;
         emit DelaySet(__withdrawalDelay);
@@ -415,7 +418,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 stakeValue,
         address proposer,
         uint256 proposerPercent
-    ) public onlyRole(SLASHER_ROLE) returns (uint256) {
+    ) public override onlyRole(SLASHER_ROLE) returns (uint256) {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         uint256 activeStake = _activeStake.balanceOf(activeSharesId);
         uint256 inactiveStake = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
@@ -424,7 +427,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         // an amounts of shares so big that they might cause overflows.
         // New shares = pool shares * new staked amount / pool stake
         // See deposit and stakeToActiveShares methods.
-        uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, _stakingParameters.maxSlashableStakePercent(), 100);
+        uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, _stakingParameters.maxSlashableStakePercent(), HUNDRED_PERCENT);
         if (stakeValue > maxSlashableStake) revert SlashingOver90Percent();
 
         uint256 slashFromActive = Math.mulDiv(activeStake, stakeValue, activeStake + inactiveStake);
@@ -436,9 +439,10 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
         if (proposerPercent > 0) {
             if (proposer == address(0)) revert ZeroAddress("proposer");
-            SafeERC20.safeTransfer(stakedToken, proposer, Math.mulDiv(stakeValue, proposerPercent, 100));
-            emit SlashedShareSent(subjectType, subject, proposer, Math.mulDiv(stakeValue, proposerPercent, 100));
-            SafeERC20.safeTransfer(stakedToken, _treasury, Math.mulDiv(stakeValue, 100 - proposerPercent, 100));
+            uint256 proposerShare = Math.mulDiv(stakeValue, proposerPercent, HUNDRED_PERCENT);
+            SafeERC20.safeTransfer(stakedToken, proposer, proposerShare);
+            emit SlashedShareSent(subjectType, subject, proposer, proposerShare);
+            SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue - proposerShare);
         } else {
             SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue);
         }
@@ -460,7 +464,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint8 subjectType,
         uint256 subject,
         bool frozen
-    ) public onlyRole(SLASHER_ROLE) onlyValidSubjectType(subjectType) {
+    ) public override onlyRole(SLASHER_ROLE) onlyValidSubjectType(subjectType) {
         _frozen[FortaStakingUtils.subjectToActive(subjectType, subject)] = frozen;
         emit Froze(subjectType, subject, _msgSender(), frozen);
     }

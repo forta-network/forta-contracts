@@ -170,17 +170,10 @@ async function migrate(config = {}) {
 
         DEBUG(`[4] router: ${contracts.router.address}`);
         contracts.staking = await ethers.getContractFactory('FortaStaking', deployer).then((factory) =>
-            utils.tryFetchProxy(
-                CACHE,
-                'staking',
-                factory,
-                'uups',
-                [contracts.access.address, contracts.router.address, contracts.token.address, delay, TREASURY(chainId, deployer)],
-                {
-                    constructorArgs: [contracts.forwarder.address],
-                    unsafeAllow: ['delegatecall'],
-                }
-            )
+            utils.tryFetchProxy(CACHE, 'staking', factory, 'uups', [contracts.access.address, contracts.router.address, delay, TREASURY(chainId, deployer)], {
+                constructorArgs: [contracts.forwarder.address, contracts.token.address],
+                unsafeAllow: ['delegatecall'],
+            })
         );
 
         DEBUG(`[5.0] staking: ${contracts.staking.address}`);
@@ -340,7 +333,6 @@ async function migrate(config = {}) {
         slashParams.reasons = reasons;
         slashParams.penalties = penalties;
         DEBUG(`[10] slashing proposal: ${contracts.slashing.address}`);
-
     }
 
     // Roles dictionary

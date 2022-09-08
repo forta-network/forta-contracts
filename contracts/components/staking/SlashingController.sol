@@ -3,12 +3,8 @@
 
 pragma solidity ^0.8.15;
 
-import "../BaseComponentUpgradeable.sol";
-import "./SubjectTypes.sol";
-import "./ISlashingExecutor.sol";
 import "./FortaStakingParameters.sol";
 import "../utils/StateMachines.sol";
-import "../../errors/GeneralErrors.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -66,6 +62,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     string public constant version = "0.1.0";
     uint256 public constant MAX_EVIDENCE_LENGTH = 5;
     uint256 public constant MAX_CHAR_LENGTH = 200;
+    uint256 private constant HUNDRED_PERCENT = 100;
 
     event SlashProposalUpdated(
         address indexed updater,
@@ -97,7 +94,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     }
 
     modifier onlyValidPercent(uint256 percent) {
-        if (percent > 100) revert WrongPercentValue(percent);
+        if (percent > HUNDRED_PERCENT) revert WrongPercentValue(percent);
         _;
     }
 
@@ -289,13 +286,13 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         Proposal memory proposal = proposals[_proposalId];
         SlashPenalty memory penalty = penalties[proposal.penaltyId];
         uint256 totalStake = stakingParameters.totalStakeFor(proposal.subjectType, proposal.subjectId);
-        uint256 max = Math.mulDiv(totalStake, stakingParameters.maxSlashableStakePercent(), 100);
+        uint256 max = Math.mulDiv(totalStake, stakingParameters.maxSlashableStakePercent(), HUNDRED_PERCENT);
         if (penalty.mode == PenaltyMode.UNDEFINED) {
             return 0;
         } else if (penalty.mode == PenaltyMode.MIN_STAKE) {
-            return Math.min(max, Math.mulDiv(stakingParameters.minStakeFor(proposal.subjectType, proposal.subjectId), penalty.percentSlashed, 100));
+            return Math.min(max, Math.mulDiv(stakingParameters.minStakeFor(proposal.subjectType, proposal.subjectId), penalty.percentSlashed, HUNDRED_PERCENT));
         } else if (penalty.mode == PenaltyMode.CURRENT_STAKE) {
-            return Math.min(max, Math.mulDiv(totalStake, penalty.percentSlashed, 100));
+            return Math.min(max, Math.mulDiv(totalStake, penalty.percentSlashed, HUNDRED_PERCENT));
         }
         return 0;
     }
