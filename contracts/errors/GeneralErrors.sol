@@ -11,6 +11,8 @@ error UnorderedArray(string name);
 error DifferentLengthArray(string array1, string array2);
 error ArrayTooBig(uint256 length, uint256 max);
 error StringTooLarge(uint256 length, uint256 max);
+error AmountTooLarge(uint256 amount, uint256 max);
+error AmountTooSmall(uint256 amount, uint256 min);
 
 error UnsupportedInterface(string name);
 

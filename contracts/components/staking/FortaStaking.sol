@@ -86,6 +86,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     address private _treasury;
 
     IStakeController private _stakingParameters;
+    uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
+    uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
+
 
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
     event WithdrawalInitiated(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint64 deadline);
@@ -681,6 +684,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @param newDelay in seconds.
      */
     function setDelay(uint64 newDelay) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (newDelay < MIN_WITHDRAWAL_DELAY) revert AmountTooSmall(newDelay, MIN_WITHDRAWAL_DELAY);
+        if (newDelay > MAX_WITHDRAWAL_DELAY) revert AmountTooLarge(newDelay, MAX_WITHDRAWAL_DELAY);
         _withdrawalDelay = newDelay;
         emit DelaySet(newDelay);
     }
