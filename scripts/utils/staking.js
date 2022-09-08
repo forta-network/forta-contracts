@@ -21,7 +21,7 @@ function subjectToActive(subjectType, subject) {
 }
 
 /**
- * Encode "inactive" and subjectType in subjectby hashing them together, shifting left 9 bits,
+ * Encode "inactive" and subjectType in subject by hashing them together, shifting left 9 bits,
  * letting bit 9 unset (to mark as inactive) and masking subjectType in
  */
 function subjectToInactive(subjectType, subject) {

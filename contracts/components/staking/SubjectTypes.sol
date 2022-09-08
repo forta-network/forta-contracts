@@ -13,7 +13,7 @@ contract SubjectTypeValidator {
     /**
      * @dev check if `subjectType` belongs to the defined SUBJECT_TYPES
      * @param subjectType is not an enum because some contracts using subjectTypes are not
-     * upgradeable (StakinEscrow)
+     * upgradeable (StakingEscrow)
      */
     modifier onlyValidSubjectType(uint8 subjectType) {
         if (

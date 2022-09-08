@@ -484,7 +484,7 @@ describe('Slashing Proposals', function () {
         it('should not propose if proposal has empty evidence', async function () {
             await expect(
                 this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, [])
-            ).to.be.revertedWith('ZeroAmount("evidence lenght")');
+            ).to.be.revertedWith('ZeroAmount("evidence length")');
         });
 
         it('should not propose if proposal if evidence string too large', async function () {
@@ -562,7 +562,7 @@ describe('Slashing Proposals', function () {
                 this.slashing
                     .connect(this.accounts.user3)
                     .reviewSlashProposalParameters(PROPOSAL_ID, subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, [])
-            ).to.be.revertedWith('ZeroAmount("evidence lenght")');
+            ).to.be.revertedWith('ZeroAmount("evidence length")');
         });
 
         it('should not modify if proposal has invalid subject type', async function () {
@@ -582,7 +582,7 @@ describe('Slashing Proposals', function () {
             await this.slashing
                 .connect(this.accounts.user2)
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
-            await expect(this.slashing.connect(this.accounts.user3).dismissSlashProposal(PROPOSAL_ID, [])).to.be.revertedWith('ZeroAmount("evidence lenght")');
+            await expect(this.slashing.connect(this.accounts.user3).dismissSlashProposal(PROPOSAL_ID, [])).to.be.revertedWith('ZeroAmount("evidence length")');
         });
     });
     describe('Proposal rejection conditions', function () {
@@ -591,7 +591,7 @@ describe('Slashing Proposals', function () {
                 .connect(this.accounts.user2)
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
 
-            await expect(this.slashing.connect(this.accounts.user3).rejectSlashProposal(PROPOSAL_ID, [])).to.be.revertedWith('ZeroAmount("evidence lenght")');
+            await expect(this.slashing.connect(this.accounts.user3).rejectSlashProposal(PROPOSAL_ID, [])).to.be.revertedWith('ZeroAmount("evidence length")');
         });
     });
 
@@ -601,7 +601,7 @@ describe('Slashing Proposals', function () {
                 .connect(this.accounts.user2)
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
 
-            await expect(this.slashing.connect(this.accounts.user3).dismissSlashProposal(PROPOSAL_ID, [])).to.be.revertedWith('ZeroAmount("evidence lenght")');
+            await expect(this.slashing.connect(this.accounts.user3).dismissSlashProposal(PROPOSAL_ID, [])).to.be.revertedWith('ZeroAmount("evidence length")');
         });
     });
     describe('Slashing amounts', function () {

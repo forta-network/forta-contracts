@@ -364,7 +364,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     /**
      * @notice Burn `sharesValue` inactive shares for a given `subject`, and withdraw the corresponding tokens
      * (if the subject type has not been frozen, and the withdrawal delay time has passed).
-     * @dev shars must have been marked for withdrawal before by initiateWithdrawal().
+     * @dev shares must have been marked for withdrawal before by initiateWithdrawal().
      * Emits events WithdrawalExecuted and ERC1155.TransferSingle.
      * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
