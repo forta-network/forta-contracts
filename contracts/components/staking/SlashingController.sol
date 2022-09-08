@@ -88,7 +88,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     event SlashPenaltyRemoved(bytes32 indexed penaltyId, uint256 percentSlashed, PenaltyMode mode);
 
     error WrongSlashPenaltyId(bytes32 penaltyId);
-    error NonExistentProposal(uint256 proposalId);
     error NonRegisteredSubject(uint8 subjectType, uint256 subjectId);
     error WrongPercentValue(uint256 value);
 
