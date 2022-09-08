@@ -60,7 +60,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IERC20 public immutable depositToken;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    StateMachines.Machine private immutable _transitiontable;
+    StateMachines.Machine private immutable _transitionTable;
 
     //solhint-disable-next-line const-name-snakecase
     string public constant version = "0.1.0";
@@ -105,7 +105,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     constructor(address _forwarder, address _depositToken) initializer ForwardedContext(_forwarder) {
         if (_depositToken == address(0)) revert ZeroAddress("_depositToken");
         depositToken = IERC20(_depositToken);
-        _transitiontable = StateMachines
+        _transitionTable = StateMachines
             .EMPTY_MACHINE
             .addEdgeTransition(UNDEFINED, CREATED)
             .addEdgeTransition(CREATED, DISMISSED)
@@ -409,6 +409,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     }
 
     function transitionTable() public view virtual override returns (StateMachines.Machine) {
-        return _transitiontable;
+        return _transitionTable;
     }
 }
