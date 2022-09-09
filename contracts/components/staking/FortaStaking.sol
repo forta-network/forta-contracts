@@ -60,8 +60,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     using Timers for Timers.Timestamp;
     using ERC165Checker for address;
 
-    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    IERC20 public immutable stakedToken;
+    // NOTE: do not set as immutable. Previous versions were deployed, and setting as immutable would
+    // generate an incopatible storage layout for new versions, risking storage layout collisions.
+    IERC20 public stakedToken;
 
     // subject => active stake
     Distributions.Balances private _activeStake;
@@ -118,9 +119,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     string public constant version = "0.1.1";
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address _forwarder, address _stakedToken) initializer ForwardedContext(_forwarder) {
-        if (_stakedToken == address(0)) revert ZeroAddress("stakedToken");
-        stakedToken = IERC20(_stakedToken);
+    constructor(address _forwarder) initializer ForwardedContext(_forwarder) {
+        
     }
 
     /**
@@ -134,10 +134,11 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         address __manager,
         address __router,
         uint64 __withdrawalDelay,
-        address __treasury
+        address __treasury,
+        address __stakedToken
     ) public initializer {
         if (__treasury == address(0)) revert ZeroAddress("__treasury");
-        if (address(__stakedToken) == address(0)) revert ZeroAddress("__stakedToken");
+        if (__stakedToken == address(0)) revert ZeroAddress("__stakedToken");
         __AccessManaged_init(__manager);
         __Routed_init(__router);
         __UUPSUpgradeable_init();
@@ -145,6 +146,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         __ERC1155Supply_init();
         _withdrawalDelay = __withdrawalDelay;
         _treasury = __treasury;
+        stakedToken = IERC20(__stakedToken);
         emit DelaySet(__withdrawalDelay);
         emit TreasurySet(__treasury);
     }
