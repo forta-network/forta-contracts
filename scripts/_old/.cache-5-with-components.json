@@ -48,7 +48,7 @@
 			"args": [
 				"0x366277FDf03594d421BaCddc942aa4189D8c2C6d"
 			],
-			"address": "0x7b7c1fe536c3b86a3b9ee64481d706a21e882963"
+			"address": "0x7b7C1fE536c3B86a3B9ee64481D706a21E882963"
 		},
 		"verified": "true"
 	},
@@ -109,14 +109,17 @@
 	},
 	"contracts": [
 		"forwarder",
+		"token",
 		"access",
 		"router",
 		"staking",
 		"staking-parameters",
+		"escrow-factory",
 		"agents",
 		"scanners",
 		"dispatch",
 		"scanner-node-version",
+		"slashing",
 		"ens"
 	],
 	"forwarder-pending": "0x03272d96cb89ff4ce96599c1ec216a746aaa8c917473d6d01d7dad60bddb5fcc",
@@ -130,5 +133,26 @@
 		"address": "0xAddB7894937085067c7F380c5a4FC9D37b7b3521",
 		"args": [],
 		"version": "0.0.0"
+	},
+	"escrow-factory-pending": "0x038262315ea076eae5216935125fb2224c59e858a510e8a79731e967360c0208",
+	"escrow-factory": {
+		"address": "0xcDC3a1495F8b852E15F91A84567Ba64082EBDFEC",
+		"args": [
+			"0x366277FDf03594d421BaCddc942aa4189D8c2C6d",
+			"0xc054a3DABfFEb0279E62669FB699a33D4cC5fC62"
+		],
+		"version": "0.0.0"
+	},
+	"slashing-pending": "0xdf8a4096767e54f0f7ed1e1a36aa62a4cd0c616a4800fb616b32f1f69fdc74a3",
+	"slashing": {
+		"address": "0x7f1a8df783Fa3F481F88d9a82239e349D4F5e485",
+		"impl": {
+			"args": [
+				"0x366277FDf03594d421BaCddc942aa4189D8c2C6d",
+				"0x95d9a757ad9C25999ffE93f3067221F04ce1Cc79"
+			],
+			"address": "0x6DA9CFD9663973202F5897FA4d4707daeA474e12",
+			"version": "0.1.0"
+		}
 	}
 }

@@ -192,7 +192,7 @@ describe('Upgrades testing', function () {
         });
     });
     describe('FortaStaking', async function () {
-        it('0.1.0 -> 0.1.1', async function () {
+        it.only('0.1.0 -> 0.1.1', async function () {
             this.accounts.getAccount('scanner');
             const STAKING_PARAMS = { max: '1000', min: '100', activated: true };
 
@@ -274,6 +274,14 @@ describe('Upgrades testing', function () {
 
             expect(await this.staking.totalActiveStake()).to.be.equal('75');
             expect(await this.staking.totalInactiveStake()).to.be.equal('75');
+
+            const FortaStakingParameters_0_1_1 = await ethers.getContractFactory('FortaStakingParameters_0_1_1');
+            this.stakingParameters = await upgrades.upgradeProxy(this.stakingParameters.address, FortaStakingParameters_0_1_1, {
+                constructorArgs: [this.contracts.forwarder.address],
+                unsafeAllow: ['delegatecall'],
+                //unsafeSkipStorageCheck: true,
+            });
+
 
             const FortaStaking_0_1_1 = await ethers.getContractFactory('FortaStaking');
             this.staking = await upgrades.upgradeProxy(this.staking.address, FortaStaking_0_1_1, {
