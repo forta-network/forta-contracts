@@ -36,17 +36,18 @@ async function main() {
     };
 
     const proposals = [];
-
+/*
     console.log('upgrading ScannerNodeVersion...');
     proposals.push(
         await defender.proposeUpgrade(contracts.scannerNodeVersion.address, await ethers.getContractFactory('ScannerNodeVersion', deployer), {
             unsafeAllow: ['delegatecall'],
             multisig: MULTISIG_ADDRESS,
             constructorArgs: [contracts.forwarder.address],
-            unsafeSkipStorageCheck: true,
+            //unsafeSkipStorageCheck: true,
         })
     );
     console.log('ScannerNodeVersion proposed!');
+    */
     console.log('upgrading AgentRegistry...');
 
     proposals.push(
@@ -58,6 +59,7 @@ async function main() {
         })
     );
     console.log('AgentRegistry proposed!');
+    /*
     console.log('upgrading ScannerRegistry...');
     proposals.push(
         await defender.proposeUpgrade(contracts.scanners.address, await ethers.getContractFactory('ScannerRegistry', deployer), {
@@ -99,11 +101,11 @@ async function main() {
             multisig: MULTISIG_ADDRESS,
             constructorArgs: [contracts.forwarder.address],
             //proxyAdmin?: string,
-            unsafeSkipStorageCheck: true,
+            //unsafeSkipStorageCheck: true,
         })
     );
     console.log('FortaStakingParameters proposed!');
-
+*/
     console.log(proposals.map((x) => x.url));
 }
 

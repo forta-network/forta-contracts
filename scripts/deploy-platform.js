@@ -80,7 +80,7 @@ const DELAY = {
 const TREASURY = (chainId, deployer) => {
     switch (chainId) {
         case 5:
-        case 8001:
+        case 80001:
         case 31337:
             return deployer.address;
         default:
@@ -91,7 +91,7 @@ const TREASURY = (chainId, deployer) => {
 const SLASH_PERCENT_TO_PROPOSER = (chainId) => {
     switch (chainId) {
         case 5:
-        case 8001:
+        case 80001:
         case 31337:
             return '10';
         default:
@@ -102,7 +102,7 @@ const SLASH_PERCENT_TO_PROPOSER = (chainId) => {
 const SLASHING_DEPOSIT_AMOUNT = (chainId) => {
     switch (chainId) {
         case 5:
-        case 8001:
+        case 80001:
         case 31337:
             return ethers.utils.parseEther('1000');
         default:
@@ -134,7 +134,7 @@ async function migrate(config = {}) {
     if (config?.force) {
         CACHE.clear();
     }
-    config.childChain = true;//config.childChain ? config.childChain : !!CHILD_CHAIN_MANAGER_PROXY[chainId];
+    config.childChain = config.childChain ? config.childChain : !!CHILD_CHAIN_MANAGER_PROXY[chainId];
     config.childChainManagerProxy = config.childChainManagerProxy ?? CHILD_CHAIN_MANAGER_PROXY[chainId];
     config.chainsToDeploy = config.chainsToDeploy ?? ['L1', 'L2'];
     const contracts = {};
