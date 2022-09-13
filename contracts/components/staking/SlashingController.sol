@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 // See Forta Network License: https://github.com/forta-protocol/forta-contracts/blob/master/LICENSE.md
 
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.9;
 
 import "./FortaStakingParameters.sol";
 import "../utils/StateMachines.sol";
