@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 // See Forta Network License: https://github.com/forta-network/forta-contracts/blob/master/LICENSE.md
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
