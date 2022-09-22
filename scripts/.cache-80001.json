@@ -43,7 +43,7 @@
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
 			"address": "0x3db7d890640957CCeeAA5411675fDfd678AC187d",
-			"version": "0.1.2"
+			"version": "0.1.5"
 		},
 		"verified": "true"
 	},
@@ -55,7 +55,7 @@
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
 			"address": "0x9A97d4f5f4711c2d629DA4D8Be072700eF15cb3e",
-			"version": "0.1.1"
+			"version": "0.1.3"
 		},
 		"verified": "true"
 	},
@@ -67,7 +67,7 @@
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
 			"address": "0x20b89b26a92Fb40536a27770BA03fd65ad7124eC",
-			"version": "0.1.3"
+			"version": "0.1.4"
 		},
 		"verified": "true"
 	},
@@ -103,7 +103,7 @@
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
 			"address": "0x1837CF2B32B25B6dDb4d8D004B3DC423d1d72243",
-			"version": "0.1.0"
+			"version": "0.1.1"
 		},
 		"verified": "true"
 	},

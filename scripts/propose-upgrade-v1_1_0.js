@@ -95,7 +95,7 @@ async function main() {
     console.log('upgrading FortaStakingParameters...');
 
     proposals.push(
-        await defender.proposeUpgrade(contracts.staking.address, await ethers.getContractFactory('FortaStakingParameters', deployer), {
+        await defender.proposeUpgrade(contracts.stakingParameters.address, await ethers.getContractFactory('FortaStakingParameters', deployer), {
             unsafeAllow: ['delegatecall'],
             multisig: MULTISIG_ADDRESS,
             constructorArgs: [contracts.forwarder.address],
