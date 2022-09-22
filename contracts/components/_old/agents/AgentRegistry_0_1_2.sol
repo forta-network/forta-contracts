@@ -922,7 +922,7 @@ abstract contract UUPSUpgradeable is Initializable, ERC1967UpgradeUpgradeable {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 // These are the roles used in the components of the Forta system, except
 // Forta token itself, that needs to define it's own roles for consistency across chains
@@ -1221,7 +1221,7 @@ library ERC165CheckerUpgradeable {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 error ZeroAddress(string name);
 error ZeroAmount(string name);
@@ -1240,7 +1240,7 @@ error DoesNotHavePermission(address sender, uint8 permission, uint256 id);
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 
 
@@ -1302,7 +1302,7 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
 
 // File contracts/components/utils/IVersioned.sol
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 interface IVersioned {
     function version() external returns(string memory v);
@@ -1313,7 +1313,7 @@ interface IVersioned {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 abstract contract ForwardedContext is ContextUpgradeable {
 
@@ -1366,7 +1366,7 @@ abstract contract ForwardedContext is ContextUpgradeable {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 interface IRouter {
     function hookHandler(bytes calldata) external;
@@ -1377,7 +1377,7 @@ interface IRouter {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 
 
@@ -1423,7 +1423,7 @@ abstract contract RoutedUpgradeable is AccessManagedUpgradeable {
 
 // File @ensdomains/ens-contracts/contracts/registry/ENS.sol@v0.0.7
 
-pragma solidity >=0.8.4;
+pragma solidity >=0.8.9;
 
 interface ENS {
 
@@ -1461,7 +1461,7 @@ interface ENS {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 interface IReverseRegistrar {
     function ADDR_REVERSE_NODE() external view returns (bytes32);
@@ -1487,7 +1487,7 @@ library ENSReverseRegistration {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 
 
@@ -2296,7 +2296,7 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 interface IStakeSubject {
     struct StakeThreshold {
@@ -2313,7 +2313,7 @@ interface IStakeSubject {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 interface IStakeController {
     event StakeSubjectHandlerChanged(address newHandler, address oldHandler);
@@ -2329,7 +2329,7 @@ interface IStakeController {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 uint8 constant SCANNER_SUBJECT = 0;
 uint8 constant AGENT_SUBJECT = 1;
@@ -2357,7 +2357,7 @@ contract SubjectTypeValidator {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 
 
@@ -2414,7 +2414,7 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 /**
  *@dev FrontRunningProtection class usef for commit-reveal schemes with deadline.
@@ -2465,7 +2465,7 @@ contract FrontRunningProtection {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 
 
@@ -2715,7 +2715,7 @@ library BitMaps {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 
 /**
@@ -3228,7 +3228,7 @@ library EnumerableSet {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 abstract contract AgentRegistryMetadata is AgentRegistryCore {
     struct AgentMetadata {
@@ -3292,7 +3292,7 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 
 abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
@@ -3381,7 +3381,7 @@ abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
 
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 
 

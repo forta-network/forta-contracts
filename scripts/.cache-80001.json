@@ -6,7 +6,7 @@
 			"args": [
 				"0xb5505a6d998549090530911180f38aC5130101c6"
 			],
-			"address": "0x21b1b0f8e9182c92c2a81f43f305ce25994d9d57",
+			"address": "0x21b1B0f8E9182c92C2A81F43f305cE25994D9d57",
 			"version": "0.1.1"
 		},
 		"verified": "true"
@@ -43,7 +43,7 @@
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
 			"address": "0x3db7d890640957CCeeAA5411675fDfd678AC187d",
-			"version": "0.1.2"
+			"version": "0.1.5"
 		},
 		"verified": "true"
 	},
@@ -55,7 +55,7 @@
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
 			"address": "0x9A97d4f5f4711c2d629DA4D8Be072700eF15cb3e",
-			"version": "0.1.1"
+			"version": "0.1.3"
 		},
 		"verified": "true"
 	},
@@ -67,7 +67,7 @@
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
 			"address": "0x20b89b26a92Fb40536a27770BA03fd65ad7124eC",
-			"version": "0.1.3"
+			"version": "0.1.4"
 		},
 		"verified": "true"
 	},
@@ -103,7 +103,7 @@
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
 			"address": "0x1837CF2B32B25B6dDb4d8D004B3DC423d1d72243",
-			"version": "0.1.0"
+			"version": "0.1.1"
 		},
 		"verified": "true"
 	},
@@ -114,7 +114,7 @@
 			"args": [
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
-			"address": "0xC5cC344881bd82795c3f651eFFcc54C7eef4faFf",
+			"address": "0x52a53DCC546c09CECe279F5549d0958433912802",
 			"version": "0.1.1"
 		},
 		"verified": "true"
@@ -131,8 +131,8 @@
 			"args": [
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
-			"address": "0x46DF428Fe81441468308D6dBa54f2c4D6C98fd51",
-			"version": "0.1.0"
+			"address": "0x7dBD9f6c557af8Dbb0A41281a150C761E57E4C85",
+			"version": "0.1.1"
 		},
 		"verified": "true"
 	},
@@ -166,5 +166,17 @@
 		"address": "0x83D5687F076f6AA81a9b1C8C3e2DD966C8AC416f",
 		"args": [],
 		"version": "0.0.0"
+	},
+	"slashing-pending": "0xf7eb5ef4ff57d3f19a0c34f3c66c1c659a3410c226f8a25e09515a2a6a4070b9",
+	"slashing": {
+		"address": "0xdc4A1Fe7D5c5546458463F6546bf6Fbe6a1a9704",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3"
+			],
+			"address": "0xc500d015E69721Ec3D29955EBF15bf9b8Ad832eA",
+			"version": "0.1.0"
+		}
 	}
 }

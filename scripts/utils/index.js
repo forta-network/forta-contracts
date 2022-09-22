@@ -135,10 +135,11 @@ async function getContractVersion(contract, deployParams = {}) {
         }
     } else if (deployParams.address && deployParams.provider) {
         try {
-            const abi = `{"inputs": [],"name": "version","outputs": [{"internalType": "string","name": "","type": "string"}],"stateMutability": "view","type": "function"}`;
-            const versioned = new ethers.Contract(deployParams.address, abi, deployParams.provider);
+            const abi = `[{"inputs": [],"name": "version","outputs": [{"internalType": "string","name": "","type": "string"}],"stateMutability": "view","type": "function"}]`;
+            const versioned = new ethers.Contract(deployParams.address, JSON.parse(abi), deployParams.provider);
             return await versioned.version();
         } catch (e) {
+            console.log(e);
             // Version not introduced in source code yet
             return '0.0.0';
         }

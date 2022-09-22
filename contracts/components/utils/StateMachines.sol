@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.9;
 
 /**
  * Library to handle Finite State Machines and codify their transitions in a uint256.
