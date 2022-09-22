@@ -2,7 +2,7 @@
 // See Forta Network License: https://github.com/forta-network/forta-contracts/blob/master/LICENSE.md
 
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 

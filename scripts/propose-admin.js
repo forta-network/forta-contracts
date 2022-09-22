@@ -66,7 +66,7 @@ const MULTICALL_ABI = {
 /*
 - Ethereum Mainnet (chainID: 1) -
 - Polygon (chainID: 137) -
-- Avalance (chainID: 43114) -
+- Avalanche (chainID: 43114) -
 - BSC (chainID: 56) -
 - Arbitrum One (chainID: 42161) -
 - Fantom Opera (chainID: 250) -

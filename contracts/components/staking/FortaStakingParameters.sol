@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 // See Forta Network License: https://github.com/forta-network/forta-contracts/blob/master/LICENSE.md
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
-import "./IStakeController.sol";
-import "../BaseComponentUpgradeable.sol";
-import "./SubjectTypes.sol";
 import "./FortaStaking.sol";
-import "../../errors/GeneralErrors.sol";
 
 contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidator, IStakeController {
     FortaStaking private _fortaStaking;

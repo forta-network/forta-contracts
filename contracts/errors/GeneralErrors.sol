@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 // See Forta Network License: https://github.com/forta-network/forta-contracts/blob/master/LICENSE.md
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 error ZeroAddress(string name);
 error ZeroAmount(string name);
 error EmptyArray(string name);
 error EmptyString(string name);
 error UnorderedArray(string name);
-error DifferentLenghtArray(string array1, string array2);
-error ArrayTooBig(uint256 lenght, uint256 max);
+error DifferentLengthArray(string array1, string array2);
+error ArrayTooBig(uint256 length, uint256 max);
 error StringTooLarge(uint256 length, uint256 max);
+error AmountTooLarge(uint256 amount, uint256 max);
+error AmountTooSmall(uint256 amount, uint256 min);
 
 error UnsupportedInterface(string name);
 
