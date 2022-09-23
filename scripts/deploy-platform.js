@@ -347,6 +347,18 @@ async function migrate(config = {}) {
         slashParams.reasons = reasons;
         slashParams.penalties = penalties;
         DEBUG(`[10] slashing proposal: ${contracts.slashing.address}`);
+
+        DEBUG(`[11] Deploying node runner registry...`);
+
+        contracts.nodeRunners = await ethers.getContractFactory('NodeRunnerRegistry', deployer).then((factory) =>
+            utils.tryFetchProxy(CACHE, 'node-runners', factory, 'uups', [contracts.access.address, contracts.router.address, 'Forta Node Runners', 'FNodeRunners'], {
+                constructorArgs: [contracts.forwarder.address],
+                unsafeAllow: 'delegatecall',
+            })
+        );
+
+        DEBUG(`[11] nodeRunners: ${contracts.nodeRunners.address}`);
+
     }
 
     // Roles dictionary

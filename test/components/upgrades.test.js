@@ -192,7 +192,7 @@ describe('Upgrades testing', function () {
         });
     });
     describe('FortaStaking', async function () {
-        it.only('0.1.0 -> 0.1.1', async function () {
+        it('0.1.0 -> 0.1.1', async function () {
             this.accounts.getAccount('scanner');
             const STAKING_PARAMS = { max: '1000', min: '100', activated: true };
 
