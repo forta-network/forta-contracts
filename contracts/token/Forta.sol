@@ -14,7 +14,7 @@ import "./FortaCommon.sol";
  */
 contract Forta is FortaCommon {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    uint256 public constant SUPPLY = 1000000000 ether;
+    uint256 public constant SUPPLY = 1000000000e18;
 
     error MintingMoreThanSupply();
 
