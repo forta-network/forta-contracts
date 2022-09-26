@@ -154,7 +154,7 @@ describe('Slashing Proposals', function () {
             expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(false);
         });
 
-        it('From CREATED to EXECUTED, modifying the proposal', async function () {
+        it.only('From CREATED to EXECUTED, modifying the proposal', async function () {
             const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
             const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
 
@@ -163,7 +163,7 @@ describe('Slashing Proposals', function () {
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance.sub(STAKING_DEPOSIT));
 
-            this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
+            await this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
 
             expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance);
             expect(await this.token.balanceOf(this.slashing.address)).to.eq(BigNumber.from('0'));
