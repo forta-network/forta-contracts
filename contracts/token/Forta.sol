@@ -14,6 +14,9 @@ import "./FortaCommon.sol";
  */
 contract Forta is FortaCommon {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    uint256 public constant SUPPLY = 1000000000e18;
+
+    error MintingMoreThanSupply();
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
@@ -26,6 +29,7 @@ contract Forta is FortaCommon {
 
     /// Allow MINTER_ROLE to mint new tokens
     function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
+        if (amount + totalSupply() > SUPPLY) revert MintingMoreThanSupply();
         _mint(to, amount);
     }
 
@@ -36,7 +40,7 @@ contract Forta is FortaCommon {
      * @return version of FORT deployed in L1
      */
     function version() external pure virtual override returns(string memory) {
-        return "0.1.0";
+        return "0.2.0";
     }
 
     uint256[50] private __gap; 

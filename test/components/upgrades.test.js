@@ -192,7 +192,7 @@ describe('Upgrades testing', function () {
         });
     });
     describe('FortaStaking', async function () {
-        it.only('0.1.0 -> 0.1.1', async function () {
+        it('0.1.0 -> 0.1.1', async function () {
             this.accounts.getAccount('scanner');
             const STAKING_PARAMS = { max: '1000', min: '100', activated: true };
 
@@ -219,11 +219,6 @@ describe('Upgrades testing', function () {
             await this.scanners.connect(this.accounts.manager).setStakeThreshold(STAKING_PARAMS, 1);
 
             await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.admin.address),
-                await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
-            await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user2.address);
-            await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.admin.address);
-            await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address);
-            await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, TREASURY);
 
             await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, '100000000');
             await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, '100000000');
