@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 // See Forta Network License: https://github.com/forta-network/forta-contracts/blob/master/LICENSE.md
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 import "../BaseComponentUpgradeable.sol";
 
@@ -64,7 +64,7 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
     }
 
     /**
-     * @notice Signal to the Scanner Nodes that there is a new beta release downloable from from IPFS,
+     * @notice Signal to the Scanner Nodes that there is a new beta release downloadable from from IPFS,
      * by emitting ScannerNodeVersionUpdated(newVersion, oldVersion).
      * @dev restricted to SCANNER_BETA_VERSION_ROLE.
      * @param _version IPFS pointer to the new image.

@@ -80,7 +80,7 @@ describe('Forta Staking', function () {
                 const tx1 = await this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '50');
                 await expect(tx1)
                     .to.emit(this.staking, 'WithdrawalInitiated')
-                    //.withArgs(subjectType1, subject1, this.accounts.user1.address, await txTimestamp(tx1)) Off by 2 miliseconds
+                    //.withArgs(subjectType1, subject1, this.accounts.user1.address, await txTimestamp(tx1)) Off by 2 milliseconds
                     .to.emit(this.staking, 'TransferSingle') /*.withArgs(this.accounts.user1.address, this.accounts.user1.address, ethers.constants.AddressZero, subject1, '50')*/
                     .to.emit(this.staking, 'TransferSingle'); /*.withArgs(this.accounts.user1.address, ethers.constants.AddressZero, this.accounts.user1.address, inactive1, '50')*/
 
@@ -312,8 +312,18 @@ describe('Forta Staking', function () {
         });
 
         describe('with delay', function () {
+            const DELAY = 86400;
             beforeEach(async function () {
-                await expect(this.staking.setDelay(3600)).to.emit(this.staking, 'DelaySet').withArgs(3600);
+                await expect(this.staking.setDelay(DELAY)).to.emit(this.staking, 'DelaySet').withArgs(DELAY);
+            });
+
+            it('fails to set delay if not withing limits', async function () {
+                const min = await this.staking.MIN_WITHDRAWAL_DELAY();
+                const tooSmall = min.sub(1);
+                await expect(this.staking.setDelay(tooSmall)).to.be.revertedWith(`AmountTooSmall(${tooSmall.toString()}, ${min.toString()})`);
+                const max = await this.staking.MAX_WITHDRAWAL_DELAY();
+                const tooBig = max.add(1);
+                await expect(this.staking.setDelay(tooBig)).to.be.revertedWith(`AmountTooLarge(${tooBig.toString()}, ${max.toString()})`);
             });
 
             it('happy path', async function () {
@@ -357,7 +367,7 @@ describe('Forta Staking', function () {
                 const tx1 = await this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '50');
                 await expect(tx1)
                     .to.emit(this.staking, 'WithdrawalInitiated')
-                    .withArgs(subjectType1, subject1, this.accounts.user1.address, (await txTimestamp(tx1)) + 3600)
+                    .withArgs(subjectType1, subject1, this.accounts.user1.address, (await txTimestamp(tx1)) + DELAY)
                     .to.emit(this.staking, 'TransferSingle') /*.withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, subject1, '100')*/
                     .to.emit(
                         this.staking,
@@ -366,7 +376,7 @@ describe('Forta Staking', function () {
 
                 await expect(this.staking.connect(this.accounts.user1).withdraw(subjectType1, subject1)).to.be.reverted;
 
-                await network.provider.send('evm_increaseTime', [3600]);
+                await network.provider.send('evm_increaseTime', [DELAY]);
 
                 await expect(this.staking.connect(this.accounts.user1).withdraw(subjectType1, subject1))
                     .to.emit(this.token, 'Transfer')
@@ -388,7 +398,7 @@ describe('Forta Staking', function () {
                 const tx2 = await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjectType1, subject1, '100');
                 await expect(tx2)
                     .to.emit(this.staking, 'WithdrawalInitiated')
-                    .withArgs(subjectType1, subject1, this.accounts.user2.address, (await txTimestamp(tx2)) + 3600)
+                    .withArgs(subjectType1, subject1, this.accounts.user2.address, (await txTimestamp(tx2)) + DELAY)
                     .to.emit(this.staking, 'TransferSingle') /*.withArgs(this.accounts.user2.address, this.accounts.user2.address, ethers.constants.AddressZero, subject1, '100')*/
                     .to.emit(
                         this.staking,
@@ -397,7 +407,7 @@ describe('Forta Staking', function () {
 
                 await expect(this.staking.connect(this.accounts.user2).withdraw(subjectType1, subject1)).to.be.reverted;
 
-                await network.provider.send('evm_increaseTime', [3600]);
+                await network.provider.send('evm_increaseTime', [DELAY]);
 
                 await expect(this.staking.connect(this.accounts.user2).withdraw(subjectType1, subject1))
                     .to.emit(this.token, 'Transfer')

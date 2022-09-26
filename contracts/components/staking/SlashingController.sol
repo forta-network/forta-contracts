@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 // See Forta Network License: https://github.com/forta-protocol/forta-contracts/blob/master/LICENSE.md
 
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.9;
 
-import "../BaseComponentUpgradeable.sol";
-import "./SubjectTypes.sol";
-import "./ISlashingExecutor.sol";
 import "./FortaStakingParameters.sol";
 import "../utils/StateMachines.sol";
-import "../../errors/GeneralErrors.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -60,12 +56,13 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IERC20 public immutable depositToken;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    StateMachines.Machine private immutable _transitiontable;
+    StateMachines.Machine private immutable _transitionTable;
 
     //solhint-disable-next-line const-name-snakecase
     string public constant version = "0.1.0";
     uint256 public constant MAX_EVIDENCE_LENGTH = 5;
     uint256 public constant MAX_CHAR_LENGTH = 200;
+    uint256 private constant HUNDRED_PERCENT = 100;
 
     event SlashProposalUpdated(
         address indexed updater,
@@ -88,7 +85,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     event SlashPenaltyRemoved(bytes32 indexed penaltyId, uint256 percentSlashed, PenaltyMode mode);
 
     error WrongSlashPenaltyId(bytes32 penaltyId);
-    error NonExistentProposal(uint256 proposalId);
     error NonRegisteredSubject(uint8 subjectType, uint256 subjectId);
     error WrongPercentValue(uint256 value);
 
@@ -98,7 +94,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     }
 
     modifier onlyValidPercent(uint256 percent) {
-        if (percent > 100) revert WrongPercentValue(percent);
+        if (percent > HUNDRED_PERCENT) revert WrongPercentValue(percent);
         _;
     }
 
@@ -106,7 +102,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     constructor(address _forwarder, address _depositToken) initializer ForwardedContext(_forwarder) {
         if (_depositToken == address(0)) revert ZeroAddress("_depositToken");
         depositToken = IERC20(_depositToken);
-        _transitiontable = StateMachines
+        _transitionTable = StateMachines
             .EMPTY_MACHINE
             .addEdgeTransition(UNDEFINED, CREATED)
             .addEdgeTransition(CREATED, DISMISSED)
@@ -281,7 +277,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
 
     /**
      * @notice gets the stake amount to be slashed.
-     * The amount deppends on the StakePenalty.
+     * The amount depends on the StakePenalty.
      * In all cases, the amount will be the minimum of the max slashable stake for the subject and:
      * MIN_STAKE: a % of the subject's MIN_STAKE
      * CURRENT_STAKE: a % of the subject's active + inactive stake.
@@ -290,13 +286,13 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         Proposal memory proposal = proposals[_proposalId];
         SlashPenalty memory penalty = penalties[proposal.penaltyId];
         uint256 totalStake = stakingParameters.totalStakeFor(proposal.subjectType, proposal.subjectId);
-        uint256 max = Math.mulDiv(totalStake, stakingParameters.maxSlashableStakePercent(), 100);
+        uint256 max = Math.mulDiv(totalStake, stakingParameters.maxSlashableStakePercent(), HUNDRED_PERCENT);
         if (penalty.mode == PenaltyMode.UNDEFINED) {
             return 0;
         } else if (penalty.mode == PenaltyMode.MIN_STAKE) {
-            return Math.min(max, Math.mulDiv(stakingParameters.minStakeFor(proposal.subjectType, proposal.subjectId), penalty.percentSlashed, 100));
+            return Math.min(max, Math.mulDiv(stakingParameters.minStakeFor(proposal.subjectType, proposal.subjectId), penalty.percentSlashed, HUNDRED_PERCENT));
         } else if (penalty.mode == PenaltyMode.CURRENT_STAKE) {
-            return Math.min(max, Math.mulDiv(totalStake, penalty.percentSlashed, 100));
+            return Math.min(max, Math.mulDiv(totalStake, penalty.percentSlashed, HUNDRED_PERCENT));
         }
         return 0;
     }
@@ -369,7 +365,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
 
     function _setSlashPenalties(bytes32[] calldata _slashReasons, SlashPenalty[] calldata _slashPenalties) private {
         uint256 length = _slashReasons.length;
-        if (length != _slashPenalties.length) revert DifferentLenghtArray("_slashReasons", "_slashPenalties");
+        if (length != _slashPenalties.length) revert DifferentLengthArray("_slashReasons", "_slashPenalties");
         for (uint256 i = 0; i < length; i++) {
             if (penalties[_slashReasons[i]].mode != PenaltyMode.UNDEFINED) {
                 emit SlashPenaltyRemoved(_slashReasons[i], penalties[_slashReasons[i]].percentSlashed, penalties[_slashReasons[i]].mode);
@@ -386,7 +382,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         string[] calldata _evidence
     ) private {
         uint256 evidenceLength = _evidence.length;
-        if (evidenceLength == 0) revert ZeroAmount("evidence lenght");
+        if (evidenceLength == 0) revert ZeroAmount("evidence length");
         if (evidenceLength > MAX_EVIDENCE_LENGTH) revert ArrayTooBig(evidenceLength, MAX_EVIDENCE_LENGTH);
         for (uint256 i = 0; i < evidenceLength; i++) {
             if (bytes(_evidence[i]).length > MAX_CHAR_LENGTH) revert StringTooLarge(bytes(_evidence[i]).length, MAX_CHAR_LENGTH);
@@ -410,6 +406,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     }
 
     function transitionTable() public view virtual override returns (StateMachines.Machine) {
-        return _transitiontable;
+        return _transitionTable;
     }
 }

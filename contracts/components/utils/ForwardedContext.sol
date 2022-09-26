@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 // See Forta Network License: https://github.com/forta-network/forta-contracts/blob/master/LICENSE.md
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
@@ -14,6 +14,9 @@ abstract contract ForwardedContext is ContextUpgradeable {
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address trustedForwarder) {
+        // WARNING: do not set this address to other than a deployed Forwarder instance.
+        // Forwarder is critical infrastructure with priviledged address, it is safe for the limited
+        // functionality of the Forwarder contract, any other EOA or contract could be a security issue.
         _trustedForwarder = trustedForwarder;
     }
 

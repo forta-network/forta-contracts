@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 // See Forta Network License: https://github.com/forta-network/forta-contracts/blob/master/LICENSE.md
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 import "../BaseComponentUpgradeable.sol";
 import "./ScannerRegistryCore.sol";
@@ -16,7 +16,7 @@ contract ScannerRegistry is
     ScannerRegistryEnable,
     ScannerRegistryMetadata
 {
-    string public constant version = "0.1.2";
+    string public constant version = "0.1.3";
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 

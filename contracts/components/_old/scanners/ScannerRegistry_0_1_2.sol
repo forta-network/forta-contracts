@@ -1,12 +1,11 @@
-// Sources flattened with hardhat v2.7.0 https://hardhat.org
+// Sources flattened with hardhat v2.9.9 https://hardhat.org
 
-// File @openzeppelin/contracts/utils/Address.sol@v4.4.0
+// File @openzeppelin/contracts/utils/Address.sol@v4.7.0
 
 // SPDX-License-Identifier: UNLICENSED
 // See Forta Network License: https://github.com/forta-network/forta-contracts/blob/master/LICENSE.md
-// OpenZeppelin Contracts v4.4.0 (utils/Address.sol)
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
 /**
  * @dev Collection of functions related to the address type
@@ -28,17 +27,22 @@ library Address {
      *  - an address where a contract will be created
      *  - an address where a contract lived, but was destroyed
      * ====
+     *
+     * [IMPORTANT]
+     * ====
+     * You shouldn't rely on `isContract` to protect against flash loan attacks!
+     *
+     * Preventing calls from contracts is highly discouraged. It breaks composability, breaks support for smart wallets
+     * like Gnosis Safe, and does not provide security since it can be circumvented by calling from a contract
+     * constructor.
+     * ====
      */
     function isContract(address account) internal view returns (bool) {
-        // This method relies on extcodesize, which returns 0 for contracts in
-        // construction, since the code is only stored at the end of the
-        // constructor execution.
+        // This method relies on extcodesize/address.code.length, which returns 0
+        // for contracts in construction, since the code is only stored at the end
+        // of the constructor execution.
 
-        uint256 size;
-        assembly {
-            size := extcodesize(account)
-        }
-        return size > 0;
+        return account.code.length > 0;
     }
 
     /**
@@ -209,7 +213,7 @@ library Address {
             // Look for revert reason and bubble it up if present
             if (returndata.length > 0) {
                 // The easiest way to bubble the revert reason is using memory via assembly
-
+                /// @solidity memory-safe-assembly
                 assembly {
                     let returndata_size := mload(returndata)
                     revert(add(32, returndata), returndata_size)
@@ -222,12 +226,7 @@ library Address {
 }
 
 
-// File @openzeppelin/contracts/utils/Multicall.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (utils/Multicall.sol)
-
-pragma solidity ^0.8.0;
+// File @openzeppelin/contracts/utils/Multicall.sol@v4.7.0
 
 /**
  * @dev Provides a function to batch together multiple calls in a single external call.
@@ -238,7 +237,7 @@ abstract contract Multicall {
     /**
      * @dev Receives and executes a batch of function calls on this contract.
      */
-    function multicall(bytes[] calldata data) external returns (bytes[] memory results) {
+    function multicall(bytes[] calldata data) external virtual returns (bytes[] memory results) {
         results = new bytes[](data.length);
         for (uint256 i = 0; i < data.length; i++) {
             results[i] = Address.functionDelegateCall(address(this), data[i]);
@@ -248,12 +247,27 @@ abstract contract Multicall {
 }
 
 
-// File @openzeppelin/contracts-upgradeable/proxy/beacon/IBeaconUpgradeable.sol@v4.4.0
+// File @openzeppelin/contracts-upgradeable/interfaces/draft-IERC1822Upgradeable.sol@v4.7.0
+
+/**
+ * @dev ERC1822: Universal Upgradeable Proxy Standard (UUPS) documents a method for upgradeability through a simplified
+ * proxy whose upgrades are fully controlled by the current implementation.
+ */
+interface IERC1822ProxiableUpgradeable {
+    /**
+     * @dev Returns the storage slot that the proxiable contract assumes is being used to store the implementation
+     * address.
+     *
+     * IMPORTANT: A proxy pointing at a proxiable contract should not be considered proxiable itself, because this risks
+     * bricking a proxy that upgrades to it, by delegating to itself until out of gas. Thus it is critical that this
+     * function revert if invoked through a proxy.
+     */
+    function proxiableUUID() external view returns (bytes32);
+}
 
 
-// OpenZeppelin Contracts v4.4.0 (proxy/beacon/IBeacon.sol)
+// File @openzeppelin/contracts-upgradeable/proxy/beacon/IBeaconUpgradeable.sol@v4.7.0
 
-pragma solidity ^0.8.0;
 
 /**
  * @dev This is the interface that {BeaconProxy} expects of its beacon.
@@ -268,12 +282,8 @@ interface IBeaconUpgradeable {
 }
 
 
-// File @openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol@v4.4.0
+// File @openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol@v4.7.0
 
-
-// OpenZeppelin Contracts v4.4.0 (utils/Address.sol)
-
-pragma solidity ^0.8.0;
 
 /**
  * @dev Collection of functions related to the address type
@@ -295,17 +305,22 @@ library AddressUpgradeable {
      *  - an address where a contract will be created
      *  - an address where a contract lived, but was destroyed
      * ====
+     *
+     * [IMPORTANT]
+     * ====
+     * You shouldn't rely on `isContract` to protect against flash loan attacks!
+     *
+     * Preventing calls from contracts is highly discouraged. It breaks composability, breaks support for smart wallets
+     * like Gnosis Safe, and does not provide security since it can be circumvented by calling from a contract
+     * constructor.
+     * ====
      */
     function isContract(address account) internal view returns (bool) {
-        // This method relies on extcodesize, which returns 0 for contracts in
-        // construction, since the code is only stored at the end of the
-        // constructor execution.
+        // This method relies on extcodesize/address.code.length, which returns 0
+        // for contracts in construction, since the code is only stored at the end
+        // of the constructor execution.
 
-        uint256 size;
-        assembly {
-            size := extcodesize(account)
-        }
-        return size > 0;
+        return account.code.length > 0;
     }
 
     /**
@@ -449,7 +464,7 @@ library AddressUpgradeable {
             // Look for revert reason and bubble it up if present
             if (returndata.length > 0) {
                 // The easiest way to bubble the revert reason is using memory via assembly
-
+                /// @solidity memory-safe-assembly
                 assembly {
                     let returndata_size := mload(returndata)
                     revert(add(32, returndata), returndata_size)
@@ -462,12 +477,7 @@ library AddressUpgradeable {
 }
 
 
-// File @openzeppelin/contracts-upgradeable/utils/StorageSlotUpgradeable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (utils/StorageSlot.sol)
-
-pragma solidity ^0.8.0;
+// File @openzeppelin/contracts-upgradeable/utils/StorageSlotUpgradeable.sol@v4.7.0
 
 /**
  * @dev Library for reading and writing primitive types to specific storage slots.
@@ -516,6 +526,7 @@ library StorageSlotUpgradeable {
      * @dev Returns an `AddressSlot` with member `value` located at `slot`.
      */
     function getAddressSlot(bytes32 slot) internal pure returns (AddressSlot storage r) {
+        /// @solidity memory-safe-assembly
         assembly {
             r.slot := slot
         }
@@ -525,6 +536,7 @@ library StorageSlotUpgradeable {
      * @dev Returns an `BooleanSlot` with member `value` located at `slot`.
      */
     function getBooleanSlot(bytes32 slot) internal pure returns (BooleanSlot storage r) {
+        /// @solidity memory-safe-assembly
         assembly {
             r.slot := slot
         }
@@ -534,6 +546,7 @@ library StorageSlotUpgradeable {
      * @dev Returns an `Bytes32Slot` with member `value` located at `slot`.
      */
     function getBytes32Slot(bytes32 slot) internal pure returns (Bytes32Slot storage r) {
+        /// @solidity memory-safe-assembly
         assembly {
             r.slot := slot
         }
@@ -543,6 +556,7 @@ library StorageSlotUpgradeable {
      * @dev Returns an `Uint256Slot` with member `value` located at `slot`.
      */
     function getUint256Slot(bytes32 slot) internal pure returns (Uint256Slot storage r) {
+        /// @solidity memory-safe-assembly
         assembly {
             r.slot := slot
         }
@@ -550,18 +564,33 @@ library StorageSlotUpgradeable {
 }
 
 
-// File @openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (proxy/utils/Initializable.sol)
-
-pragma solidity ^0.8.0;
+// File @openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol@v4.7.0
 
 /**
  * @dev This is a base contract to aid in writing upgradeable contracts, or any kind of contract that will be deployed
- * behind a proxy. Since a proxied contract can't have a constructor, it's common to move constructor logic to an
+ * behind a proxy. Since proxied contracts do not make use of a constructor, it's common to move constructor logic to an
  * external initializer function, usually called `initialize`. It then becomes necessary to protect this initializer
  * function so it can only be called once. The {initializer} modifier provided by this contract will have this effect.
+ *
+ * The initialization functions use a version number. Once a version number is used, it is consumed and cannot be
+ * reused. This mechanism prevents re-execution of each "step" but allows the creation of new initialization steps in
+ * case an upgrade adds a module that needs to be initialized.
+ *
+ * For example:
+ *
+ * [.hljs-theme-light.nopadding]
+ * ```
+ * contract MyToken is ERC20Upgradeable {
+ *     function initialize() initializer public {
+ *         __ERC20_init("MyToken", "MTK");
+ *     }
+ * }
+ * contract MyTokenV2 is MyToken, ERC20PermitUpgradeable {
+ *     function initializeV2() reinitializer(2) public {
+ *         __ERC20Permit_init("MyToken");
+ *     }
+ * }
+ * ```
  *
  * TIP: To avoid leaving the proxy in an uninitialized state, the initializer function should be called as early as
  * possible by providing the encoded function call as the `_data` argument to {ERC1967Proxy-constructor}.
@@ -574,21 +603,24 @@ pragma solidity ^0.8.0;
  * Avoid leaving a contract uninitialized.
  *
  * An uninitialized contract can be taken over by an attacker. This applies to both a proxy and its implementation
- * contract, which may impact the proxy. To initialize the implementation contract, you can either invoke the
- * initializer manually, or you can include a constructor to automatically mark it as initialized when it is deployed:
+ * contract, which may impact the proxy. To prevent the implementation contract from being used, you should invoke
+ * the {_disableInitializers} function in the constructor to automatically lock it when it is deployed:
  *
  * [.hljs-theme-light.nopadding]
  * ```
  * /// @custom:oz-upgrades-unsafe-allow constructor
- * constructor() initializer {}
+ * constructor() {
+ *     _disableInitializers();
+ * }
  * ```
  * ====
  */
 abstract contract Initializable {
     /**
      * @dev Indicates that the contract has been initialized.
+     * @custom:oz-retyped-from bool
      */
-    bool private _initialized;
+    uint8 private _initialized;
 
     /**
      * @dev Indicates that the contract is in the process of being initialized.
@@ -596,35 +628,78 @@ abstract contract Initializable {
     bool private _initializing;
 
     /**
-     * @dev Modifier to protect an initializer function from being invoked twice.
+     * @dev Triggered when the contract has been initialized or reinitialized.
+     */
+    event Initialized(uint8 version);
+
+    /**
+     * @dev A modifier that defines a protected initializer function that can be invoked at most once. In its scope,
+     * `onlyInitializing` functions can be used to initialize parent contracts. Equivalent to `reinitializer(1)`.
      */
     modifier initializer() {
-        require(_initializing || !_initialized, "Initializable: contract is already initialized");
-
         bool isTopLevelCall = !_initializing;
+        require(
+            (isTopLevelCall && _initialized < 1) || (!AddressUpgradeable.isContract(address(this)) && _initialized == 1),
+            "Initializable: contract is already initialized"
+        );
+        _initialized = 1;
         if (isTopLevelCall) {
             _initializing = true;
-            _initialized = true;
         }
-
         _;
-
         if (isTopLevelCall) {
             _initializing = false;
+            emit Initialized(1);
+        }
+    }
+
+    /**
+     * @dev A modifier that defines a protected reinitializer function that can be invoked at most once, and only if the
+     * contract hasn't been initialized to a greater version before. In its scope, `onlyInitializing` functions can be
+     * used to initialize parent contracts.
+     *
+     * `initializer` is equivalent to `reinitializer(1)`, so a reinitializer may be used after the original
+     * initialization step. This is essential to configure modules that are added through upgrades and that require
+     * initialization.
+     *
+     * Note that versions can jump in increments greater than 1; this implies that if multiple reinitializers coexist in
+     * a contract, executing them in the right order is up to the developer or operator.
+     */
+    modifier reinitializer(uint8 version) {
+        require(!_initializing && _initialized < version, "Initializable: contract is already initialized");
+        _initialized = version;
+        _initializing = true;
+        _;
+        _initializing = false;
+        emit Initialized(version);
+    }
+
+    /**
+     * @dev Modifier to protect an initialization function so that it can only be invoked by functions with the
+     * {initializer} and {reinitializer} modifiers, directly or indirectly.
+     */
+    modifier onlyInitializing() {
+        require(_initializing, "Initializable: contract is not initializing");
+        _;
+    }
+
+    /**
+     * @dev Locks the contract, preventing any future reinitialization. This cannot be part of an initializer call.
+     * Calling this in the constructor of a contract will prevent that contract from being initialized or reinitialized
+     * to any version. It is recommended to use this to lock implementation contracts that are designed to be called
+     * through proxies.
+     */
+    function _disableInitializers() internal virtual {
+        require(!_initializing, "Initializable: contract is initializing");
+        if (_initialized < type(uint8).max) {
+            _initialized = type(uint8).max;
+            emit Initialized(type(uint8).max);
         }
     }
 }
 
 
-// File @openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (proxy/ERC1967/ERC1967Upgrade.sol)
-
-pragma solidity ^0.8.2;
-
-
-
+// File @openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol@v4.7.0
 
 /**
  * @dev This abstract contract provides getters and event emitting update functions for
@@ -635,11 +710,10 @@ pragma solidity ^0.8.2;
  * @custom:oz-upgrades-unsafe-allow delegatecall
  */
 abstract contract ERC1967UpgradeUpgradeable is Initializable {
-    function __ERC1967Upgrade_init() internal initializer {
-        __ERC1967Upgrade_init_unchained();
+    function __ERC1967Upgrade_init() internal onlyInitializing {
     }
 
-    function __ERC1967Upgrade_init_unchained() internal initializer {
+    function __ERC1967Upgrade_init_unchained() internal onlyInitializing {
     }
     // This is the keccak-256 hash of "eip1967.proxy.rollback" subtracted by 1
     bytes32 private constant _ROLLBACK_SLOT = 0x4910fdfa16fed3260ed0e7147f7cc6da11a60208b5b9406d12a635614ffd9143;
@@ -702,33 +776,23 @@ abstract contract ERC1967UpgradeUpgradeable is Initializable {
      *
      * Emits an {Upgraded} event.
      */
-    function _upgradeToAndCallSecure(
+    function _upgradeToAndCallUUPS(
         address newImplementation,
         bytes memory data,
         bool forceCall
     ) internal {
-        address oldImplementation = _getImplementation();
-
-        // Initial upgrade and setup call
-        _setImplementation(newImplementation);
-        if (data.length > 0 || forceCall) {
-            _functionDelegateCall(newImplementation, data);
-        }
-
-        // Perform rollback test if not already in progress
-        StorageSlotUpgradeable.BooleanSlot storage rollbackTesting = StorageSlotUpgradeable.getBooleanSlot(_ROLLBACK_SLOT);
-        if (!rollbackTesting.value) {
-            // Trigger rollback using upgradeTo from the new implementation
-            rollbackTesting.value = true;
-            _functionDelegateCall(
-                newImplementation,
-                abi.encodeWithSignature("upgradeTo(address)", oldImplementation)
-            );
-            rollbackTesting.value = false;
-            // Check rollback was effective
-            require(oldImplementation == _getImplementation(), "ERC1967Upgrade: upgrade breaks further upgrades");
-            // Finally reset to the new implementation and log the upgrade
-            _upgradeTo(newImplementation);
+        // Upgrades from old implementations will perform a rollback test. This test requires the new
+        // implementation to upgrade back to the old, non-ERC1822 compliant, implementation. Removing
+        // this special case will break upgrade paths from old UUPS implementation to new ones.
+        if (StorageSlotUpgradeable.getBooleanSlot(_ROLLBACK_SLOT).value) {
+            _setImplementation(newImplementation);
+        } else {
+            try IERC1822ProxiableUpgradeable(newImplementation).proxiableUUID() returns (bytes32 slot) {
+                require(slot == _IMPLEMENTATION_SLOT, "ERC1967Upgrade: unsupported proxiableUUID");
+            } catch {
+                revert("ERC1967Upgrade: new implementation is not UUPS");
+            }
+            _upgradeToAndCall(newImplementation, data, forceCall);
         }
     }
 
@@ -830,17 +894,17 @@ abstract contract ERC1967UpgradeUpgradeable is Initializable {
         (bool success, bytes memory returndata) = target.delegatecall(data);
         return AddressUpgradeable.verifyCallResult(success, returndata, "Address: low-level delegate call failed");
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
     uint256[50] private __gap;
 }
 
 
-// File @openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (proxy/utils/UUPSUpgradeable.sol)
-
-pragma solidity ^0.8.0;
-
+// File @openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol@v4.7.0
 
 /**
  * @dev An upgradeability mechanism designed for UUPS proxies. The functions included here can perform an upgrade of an
@@ -854,13 +918,11 @@ pragma solidity ^0.8.0;
  *
  * _Available since v4.1._
  */
-abstract contract UUPSUpgradeable is Initializable, ERC1967UpgradeUpgradeable {
-    function __UUPSUpgradeable_init() internal initializer {
-        __ERC1967Upgrade_init_unchained();
-        __UUPSUpgradeable_init_unchained();
+abstract contract UUPSUpgradeable is Initializable, IERC1822ProxiableUpgradeable, ERC1967UpgradeUpgradeable {
+    function __UUPSUpgradeable_init() internal onlyInitializing {
     }
 
-    function __UUPSUpgradeable_init_unchained() internal initializer {
+    function __UUPSUpgradeable_init_unchained() internal onlyInitializing {
     }
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable state-variable-assignment
     address private immutable __self = address(this);
@@ -879,6 +941,27 @@ abstract contract UUPSUpgradeable is Initializable, ERC1967UpgradeUpgradeable {
     }
 
     /**
+     * @dev Check that the execution is not being performed through a delegate call. This allows a function to be
+     * callable on the implementing contract but not through proxies.
+     */
+    modifier notDelegated() {
+        require(address(this) == __self, "UUPSUpgradeable: must not be called through delegatecall");
+        _;
+    }
+
+    /**
+     * @dev Implementation of the ERC1822 {proxiableUUID} function. This returns the storage slot used by the
+     * implementation. It is used to validate that the this implementation remains valid after an upgrade.
+     *
+     * IMPORTANT: A proxy pointing at a proxiable contract should not be considered proxiable itself, because this risks
+     * bricking a proxy that upgrades to it, by delegating to itself until out of gas. Thus it is critical that this
+     * function revert if invoked through a proxy. This is guaranteed by the `notDelegated` modifier.
+     */
+    function proxiableUUID() external view virtual override notDelegated returns (bytes32) {
+        return _IMPLEMENTATION_SLOT;
+    }
+
+    /**
      * @dev Upgrade the implementation of the proxy to `newImplementation`.
      *
      * Calls {_authorizeUpgrade}.
@@ -887,7 +970,7 @@ abstract contract UUPSUpgradeable is Initializable, ERC1967UpgradeUpgradeable {
      */
     function upgradeTo(address newImplementation) external virtual onlyProxy {
         _authorizeUpgrade(newImplementation);
-        _upgradeToAndCallSecure(newImplementation, new bytes(0), false);
+        _upgradeToAndCallUUPS(newImplementation, new bytes(0), false);
     }
 
     /**
@@ -900,7 +983,7 @@ abstract contract UUPSUpgradeable is Initializable, ERC1967UpgradeUpgradeable {
      */
     function upgradeToAndCall(address newImplementation, bytes memory data) external payable virtual onlyProxy {
         _authorizeUpgrade(newImplementation);
-        _upgradeToAndCallSecure(newImplementation, data, true);
+        _upgradeToAndCallUUPS(newImplementation, data, true);
     }
 
     /**
@@ -914,15 +997,17 @@ abstract contract UUPSUpgradeable is Initializable, ERC1967UpgradeUpgradeable {
      * ```
      */
     function _authorizeUpgrade(address newImplementation) internal virtual;
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
     uint256[50] private __gap;
 }
 
 
 // File contracts/components/Roles.sol
-
-
-
-pragma solidity ^0.8.9;
 
 // These are the roles used in the components of the Forta system, except
 // Forta token itself, that needs to define it's own roles for consistency across chains
@@ -941,17 +1026,16 @@ bytes32 constant DISPATCHER_ROLE    = keccak256("DISPATCHER_ROLE");
 // Staking
 bytes32 constant SLASHER_ROLE       = keccak256("SLASHER_ROLE");
 bytes32 constant SWEEPER_ROLE       = keccak256("SWEEPER_ROLE");
-bytes32 constant REWARDS_ADMIN      = keccak256("REWARDS_ADMIN_ROLE");
+bytes32 constant REWARDS_ADMIN_ROLE      = keccak256("REWARDS_ADMIN_ROLE");
+bytes32 constant SLASHING_ARBITER_ROLE      = keccak256("SLASHING_ARBITER_ROLE");
+bytes32 constant STAKING_ADMIN_ROLE      = keccak256("STAKING_ADMIN_ROLE");
+
 // Scanner Node Version
 bytes32 constant SCANNER_VERSION_ROLE = keccak256("SCANNER_VERSION_ROLE");
+bytes32 constant SCANNER_BETA_VERSION_ROLE = keccak256("SCANNER_BETA_VERSION_ROLE");
 
 
-// File @openzeppelin/contracts/access/IAccessControl.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (access/IAccessControl.sol)
-
-pragma solidity ^0.8.0;
+// File @openzeppelin/contracts/access/IAccessControl.sol@v4.7.0
 
 /**
  * @dev External interface of AccessControl declared to support ERC165 detection.
@@ -1038,12 +1122,7 @@ interface IAccessControl {
 }
 
 
-// File @openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (utils/Context.sol)
-
-pragma solidity ^0.8.0;
+// File @openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol@v4.7.0
 
 /**
  * @dev Provides information about the current execution context, including the
@@ -1056,11 +1135,10 @@ pragma solidity ^0.8.0;
  * This contract is only required for intermediate, library-like contracts.
  */
 abstract contract ContextUpgradeable is Initializable {
-    function __Context_init() internal initializer {
-        __Context_init_unchained();
+    function __Context_init() internal onlyInitializing {
     }
 
-    function __Context_init_unchained() internal initializer {
+    function __Context_init_unchained() internal onlyInitializing {
     }
     function _msgSender() internal view virtual returns (address) {
         return msg.sender;
@@ -1069,16 +1147,17 @@ abstract contract ContextUpgradeable is Initializable {
     function _msgData() internal view virtual returns (bytes calldata) {
         return msg.data;
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
     uint256[50] private __gap;
 }
 
 
-// File @openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (utils/introspection/IERC165.sol)
-
-pragma solidity ^0.8.0;
+// File @openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol@v4.7.0
 
 /**
  * @dev Interface of the ERC165 standard, as defined in the
@@ -1102,12 +1181,7 @@ interface IERC165Upgradeable {
 }
 
 
-// File @openzeppelin/contracts-upgradeable/utils/introspection/ERC165CheckerUpgradeable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (utils/introspection/ERC165Checker.sol)
-
-pragma solidity ^0.8.0;
+// File @openzeppelin/contracts-upgradeable/utils/introspection/ERC165CheckerUpgradeable.sol@v4.7.0
 
 /**
  * @dev Library used to query support of an interface declared via {IERC165}.
@@ -1219,14 +1293,15 @@ library ERC165CheckerUpgradeable {
 
 // File contracts/errors/GeneralErrors.sol
 
-
-
-pragma solidity ^0.8.9;
-
 error ZeroAddress(string name);
 error ZeroAmount(string name);
 error EmptyArray(string name);
+error EmptyString(string name);
 error UnorderedArray(string name);
+error DifferentLenghtArray(string array1, string array2);
+error ArrayTooBig(uint256 lenght, uint256 max);
+error StringTooLarge(uint256 length, uint256 max);
+
 error UnsupportedInterface(string name);
 
 error SenderNotOwner(address sender, uint256 ownedId);
@@ -1237,14 +1312,6 @@ error DoesNotHavePermission(address sender, uint8 permission, uint256 id);
 
 
 // File contracts/components/utils/AccessManaged.sol
-
-
-
-pragma solidity ^0.8.9;
-
-
-
-
 
 abstract contract AccessManagedUpgradeable is ContextUpgradeable {
 
@@ -1302,19 +1369,12 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
 
 // File contracts/components/utils/IVersioned.sol
 
-pragma solidity ^0.8.9;
-
 interface IVersioned {
     function version() external returns(string memory v);
 }
 
 
 // File contracts/components/utils/ForwardedContext.sol
-
-
-
-pragma solidity ^0.8.9;
-
 abstract contract ForwardedContext is ContextUpgradeable {
 
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -1364,22 +1424,12 @@ abstract contract ForwardedContext is ContextUpgradeable {
 
 // File contracts/components/router/IRouter.sol
 
-
-
-pragma solidity ^0.8.9;
-
 interface IRouter {
     function hookHandler(bytes calldata) external;
 }
 
 
 // File contracts/components/utils/Routed.sol
-
-
-
-pragma solidity ^0.8.9;
-
-
 
 abstract contract RoutedUpgradeable is AccessManagedUpgradeable {
     IRouter private _router;
@@ -1423,7 +1473,6 @@ abstract contract RoutedUpgradeable is AccessManagedUpgradeable {
 
 // File @ensdomains/ens-contracts/contracts/registry/ENS.sol@v0.0.7
 
-pragma solidity >=0.8.9;
 
 interface ENS {
 
@@ -1459,10 +1508,6 @@ interface ENS {
 
 // File contracts/tools/ENSReverseRegistration.sol
 
-
-
-pragma solidity ^0.8.9;
-
 interface IReverseRegistrar {
     function ADDR_REVERSE_NODE() external view returns (bytes32);
     function ens() external view returns (ENS);
@@ -1484,17 +1529,6 @@ library ENSReverseRegistration {
 
 
 // File contracts/components/BaseComponentUpgradeable.sol
-
-
-
-pragma solidity ^0.8.9;
-
-
-
-
-
-
-
 
 /**
  * @dev The Forta platform is composed of "component" smart contracts that are upgradeable, share a common access
@@ -1543,12 +1577,7 @@ abstract contract BaseComponentUpgradeable is
 }
 
 
-// File @openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (token/ERC721/IERC721.sol)
-
-pragma solidity ^0.8.0;
+// File @openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol@v4.7.0
 
 /**
  * @dev Required interface of an ERC721 compliant contract.
@@ -1584,6 +1613,26 @@ interface IERC721Upgradeable is IERC165Upgradeable {
     function ownerOf(uint256 tokenId) external view returns (address owner);
 
     /**
+     * @dev Safely transfers `tokenId` token from `from` to `to`.
+     *
+     * Requirements:
+     *
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must exist and be owned by `from`.
+     * - If the caller is not `from`, it must be approved to move this token by either {approve} or {setApprovalForAll}.
+     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+     *
+     * Emits a {Transfer} event.
+     */
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes calldata data
+    ) external;
+
+    /**
      * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
      * are aware of the ERC721 protocol to prevent tokens from being forever locked.
      *
@@ -1592,7 +1641,7 @@ interface IERC721Upgradeable is IERC165Upgradeable {
      * - `from` cannot be the zero address.
      * - `to` cannot be the zero address.
      * - `tokenId` token must exist and be owned by `from`.
-     * - If the caller is not `from`, it must be have been allowed to move this token by either {approve} or {setApprovalForAll}.
+     * - If the caller is not `from`, it must have been allowed to move this token by either {approve} or {setApprovalForAll}.
      * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
      *
      * Emits a {Transfer} event.
@@ -1639,15 +1688,6 @@ interface IERC721Upgradeable is IERC165Upgradeable {
     function approve(address to, uint256 tokenId) external;
 
     /**
-     * @dev Returns the account approved for `tokenId` token.
-     *
-     * Requirements:
-     *
-     * - `tokenId` must exist.
-     */
-    function getApproved(uint256 tokenId) external view returns (address operator);
-
-    /**
      * @dev Approve or remove `operator` as an operator for the caller.
      * Operators can call {transferFrom} or {safeTransferFrom} for any token owned by the caller.
      *
@@ -1660,40 +1700,24 @@ interface IERC721Upgradeable is IERC165Upgradeable {
     function setApprovalForAll(address operator, bool _approved) external;
 
     /**
+     * @dev Returns the account approved for `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must exist.
+     */
+    function getApproved(uint256 tokenId) external view returns (address operator);
+
+    /**
      * @dev Returns if the `operator` is allowed to manage all of the assets of `owner`.
      *
      * See {setApprovalForAll}
      */
     function isApprovedForAll(address owner, address operator) external view returns (bool);
-
-    /**
-     * @dev Safely transfers `tokenId` token from `from` to `to`.
-     *
-     * Requirements:
-     *
-     * - `from` cannot be the zero address.
-     * - `to` cannot be the zero address.
-     * - `tokenId` token must exist and be owned by `from`.
-     * - If the caller is not `from`, it must be approved to move this token by either {approve} or {setApprovalForAll}.
-     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
-     *
-     * Emits a {Transfer} event.
-     */
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes calldata data
-    ) external;
 }
 
 
-// File @openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (token/ERC721/IERC721Receiver.sol)
-
-pragma solidity ^0.8.0;
+// File @openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol@v4.7.0
 
 /**
  * @title ERC721 token receiver interface
@@ -1708,7 +1732,7 @@ interface IERC721ReceiverUpgradeable {
      * It must return its Solidity selector to confirm the token transfer.
      * If any other value is returned or the interface is not implemented by the recipient, the transfer will be reverted.
      *
-     * The selector can be obtained in Solidity with `IERC721.onERC721Received.selector`.
+     * The selector can be obtained in Solidity with `IERC721Receiver.onERC721Received.selector`.
      */
     function onERC721Received(
         address operator,
@@ -1719,12 +1743,7 @@ interface IERC721ReceiverUpgradeable {
 }
 
 
-// File @openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (token/ERC721/extensions/IERC721Metadata.sol)
-
-pragma solidity ^0.8.0;
+// File @openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol@v4.7.0
 
 /**
  * @title ERC-721 Non-Fungible Token Standard, optional metadata extension
@@ -1748,18 +1767,14 @@ interface IERC721MetadataUpgradeable is IERC721Upgradeable {
 }
 
 
-// File @openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (utils/Strings.sol)
-
-pragma solidity ^0.8.0;
+// File @openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol@v4.7.0
 
 /**
  * @dev String operations.
  */
 library StringsUpgradeable {
     bytes16 private constant _HEX_SYMBOLS = "0123456789abcdef";
+    uint8 private constant _ADDRESS_LENGTH = 20;
 
     /**
      * @dev Converts a `uint256` to its ASCII `string` decimal representation.
@@ -1816,16 +1831,17 @@ library StringsUpgradeable {
         require(value == 0, "Strings: hex length insufficient");
         return string(buffer);
     }
+
+    /**
+     * @dev Converts an `address` with fixed length of 20 bytes to its not checksummed ASCII `string` hexadecimal representation.
+     */
+    function toHexString(address addr) internal pure returns (string memory) {
+        return toHexString(uint256(uint160(addr)), _ADDRESS_LENGTH);
+    }
 }
 
 
-// File @openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (utils/introspection/ERC165.sol)
-
-pragma solidity ^0.8.0;
-
+// File @openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol@v4.7.0
 
 /**
  * @dev Implementation of the {IERC165} interface.
@@ -1842,11 +1858,10 @@ pragma solidity ^0.8.0;
  * Alternatively, {ERC165Storage} provides an easier to use but more expensive implementation.
  */
 abstract contract ERC165Upgradeable is Initializable, IERC165Upgradeable {
-    function __ERC165_init() internal initializer {
-        __ERC165_init_unchained();
+    function __ERC165_init() internal onlyInitializing {
     }
 
-    function __ERC165_init_unchained() internal initializer {
+    function __ERC165_init_unchained() internal onlyInitializing {
     }
     /**
      * @dev See {IERC165-supportsInterface}.
@@ -1854,23 +1869,17 @@ abstract contract ERC165Upgradeable is Initializable, IERC165Upgradeable {
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return interfaceId == type(IERC165Upgradeable).interfaceId;
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
     uint256[50] private __gap;
 }
 
 
-// File @openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (token/ERC721/ERC721.sol)
-
-pragma solidity ^0.8.0;
-
-
-
-
-
-
-
+// File @openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol@v4.7.0
 
 /**
  * @dev Implementation of https://eips.ethereum.org/EIPS/eip-721[ERC721] Non-Fungible Token Standard, including
@@ -1902,13 +1911,11 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
-    function __ERC721_init(string memory name_, string memory symbol_) internal initializer {
-        __Context_init_unchained();
-        __ERC165_init_unchained();
+    function __ERC721_init(string memory name_, string memory symbol_) internal onlyInitializing {
         __ERC721_init_unchained(name_, symbol_);
     }
 
-    function __ERC721_init_unchained(string memory name_, string memory symbol_) internal initializer {
+    function __ERC721_init_unchained(string memory name_, string memory symbol_) internal onlyInitializing {
         _name = name_;
         _symbol = symbol_;
     }
@@ -1927,7 +1934,7 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
      * @dev See {IERC721-balanceOf}.
      */
     function balanceOf(address owner) public view virtual override returns (uint256) {
-        require(owner != address(0), "ERC721: balance query for the zero address");
+        require(owner != address(0), "ERC721: address zero is not a valid owner");
         return _balances[owner];
     }
 
@@ -1936,7 +1943,7 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
      */
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
         address owner = _owners[tokenId];
-        require(owner != address(0), "ERC721: owner query for nonexistent token");
+        require(owner != address(0), "ERC721: invalid token ID");
         return owner;
     }
 
@@ -1958,7 +1965,7 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
      * @dev See {IERC721Metadata-tokenURI}.
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        _requireMinted(tokenId);
 
         string memory baseURI = _baseURI();
         return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : "";
@@ -1967,7 +1974,7 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
     /**
      * @dev Base URI for computing {tokenURI}. If set, the resulting URI for each
      * token will be the concatenation of the `baseURI` and the `tokenId`. Empty
-     * by default, can be overriden in child contracts.
+     * by default, can be overridden in child contracts.
      */
     function _baseURI() internal view virtual returns (string memory) {
         return "";
@@ -1982,7 +1989,7 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
 
         require(
             _msgSender() == owner || isApprovedForAll(owner, _msgSender()),
-            "ERC721: approve caller is not owner nor approved for all"
+            "ERC721: approve caller is not token owner nor approved for all"
         );
 
         _approve(to, tokenId);
@@ -1992,7 +1999,7 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
      * @dev See {IERC721-getApproved}.
      */
     function getApproved(uint256 tokenId) public view virtual override returns (address) {
-        require(_exists(tokenId), "ERC721: approved query for nonexistent token");
+        _requireMinted(tokenId);
 
         return _tokenApprovals[tokenId];
     }
@@ -2020,7 +2027,7 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
         uint256 tokenId
     ) public virtual override {
         //solhint-disable-next-line max-line-length
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner nor approved");
 
         _transfer(from, to, tokenId);
     }
@@ -2043,17 +2050,17 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
         address from,
         address to,
         uint256 tokenId,
-        bytes memory _data
+        bytes memory data
     ) public virtual override {
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
-        _safeTransfer(from, to, tokenId, _data);
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner nor approved");
+        _safeTransfer(from, to, tokenId, data);
     }
 
     /**
      * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
      * are aware of the ERC721 protocol to prevent tokens from being forever locked.
      *
-     * `_data` is additional data, it has no specified format and it is sent in call to `to`.
+     * `data` is additional data, it has no specified format and it is sent in call to `to`.
      *
      * This internal function is equivalent to {safeTransferFrom}, and can be used to e.g.
      * implement alternative mechanisms to perform token transfer, such as signature-based.
@@ -2071,10 +2078,10 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
         address from,
         address to,
         uint256 tokenId,
-        bytes memory _data
+        bytes memory data
     ) internal virtual {
         _transfer(from, to, tokenId);
-        require(_checkOnERC721Received(from, to, tokenId, _data), "ERC721: transfer to non ERC721Receiver implementer");
+        require(_checkOnERC721Received(from, to, tokenId, data), "ERC721: transfer to non ERC721Receiver implementer");
     }
 
     /**
@@ -2097,9 +2104,8 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
      * - `tokenId` must exist.
      */
     function _isApprovedOrOwner(address spender, uint256 tokenId) internal view virtual returns (bool) {
-        require(_exists(tokenId), "ERC721: operator query for nonexistent token");
         address owner = ERC721Upgradeable.ownerOf(tokenId);
-        return (spender == owner || getApproved(tokenId) == spender || isApprovedForAll(owner, spender));
+        return (spender == owner || isApprovedForAll(owner, spender) || getApproved(tokenId) == spender);
     }
 
     /**
@@ -2123,11 +2129,11 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
     function _safeMint(
         address to,
         uint256 tokenId,
-        bytes memory _data
+        bytes memory data
     ) internal virtual {
         _mint(to, tokenId);
         require(
-            _checkOnERC721Received(address(0), to, tokenId, _data),
+            _checkOnERC721Received(address(0), to, tokenId, data),
             "ERC721: transfer to non ERC721Receiver implementer"
         );
     }
@@ -2154,6 +2160,8 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
         _owners[tokenId] = to;
 
         emit Transfer(address(0), to, tokenId);
+
+        _afterTokenTransfer(address(0), to, tokenId);
     }
 
     /**
@@ -2178,6 +2186,8 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
         delete _owners[tokenId];
 
         emit Transfer(owner, address(0), tokenId);
+
+        _afterTokenTransfer(owner, address(0), tokenId);
     }
 
     /**
@@ -2196,7 +2206,7 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
         address to,
         uint256 tokenId
     ) internal virtual {
-        require(ERC721Upgradeable.ownerOf(tokenId) == from, "ERC721: transfer of token that is not own");
+        require(ERC721Upgradeable.ownerOf(tokenId) == from, "ERC721: transfer from incorrect owner");
         require(to != address(0), "ERC721: transfer to the zero address");
 
         _beforeTokenTransfer(from, to, tokenId);
@@ -2209,12 +2219,14 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
         _owners[tokenId] = to;
 
         emit Transfer(from, to, tokenId);
+
+        _afterTokenTransfer(from, to, tokenId);
     }
 
     /**
      * @dev Approve `to` to operate on `tokenId`
      *
-     * Emits a {Approval} event.
+     * Emits an {Approval} event.
      */
     function _approve(address to, uint256 tokenId) internal virtual {
         _tokenApprovals[tokenId] = to;
@@ -2224,7 +2236,7 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
     /**
      * @dev Approve `operator` to operate on all of `owner` tokens
      *
-     * Emits a {ApprovalForAll} event.
+     * Emits an {ApprovalForAll} event.
      */
     function _setApprovalForAll(
         address owner,
@@ -2237,28 +2249,36 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
     }
 
     /**
+     * @dev Reverts if the `tokenId` has not been minted yet.
+     */
+    function _requireMinted(uint256 tokenId) internal view virtual {
+        require(_exists(tokenId), "ERC721: invalid token ID");
+    }
+
+    /**
      * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.
      * The call is not executed if the target address is not a contract.
      *
      * @param from address representing the previous owner of the given token ID
      * @param to target address that will receive the tokens
      * @param tokenId uint256 ID of the token to be transferred
-     * @param _data bytes optional data to send along with the call
+     * @param data bytes optional data to send along with the call
      * @return bool whether the call correctly returned the expected magic value
      */
     function _checkOnERC721Received(
         address from,
         address to,
         uint256 tokenId,
-        bytes memory _data
+        bytes memory data
     ) private returns (bool) {
         if (to.isContract()) {
-            try IERC721ReceiverUpgradeable(to).onERC721Received(_msgSender(), from, tokenId, _data) returns (bytes4 retval) {
+            try IERC721ReceiverUpgradeable(to).onERC721Received(_msgSender(), from, tokenId, data) returns (bytes4 retval) {
                 return retval == IERC721ReceiverUpgradeable.onERC721Received.selector;
             } catch (bytes memory reason) {
                 if (reason.length == 0) {
                     revert("ERC721: transfer to non ERC721Receiver implementer");
                 } else {
+                    /// @solidity memory-safe-assembly
                     assembly {
                         revert(add(32, reason), mload(reason))
                     }
@@ -2288,15 +2308,34 @@ contract ERC721Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradeab
         address to,
         uint256 tokenId
     ) internal virtual {}
+
+    /**
+     * @dev Hook that is called after any transfer of tokens. This includes
+     * minting and burning.
+     *
+     * Calling conditions:
+     *
+     * - when `from` and `to` are both non-zero.
+     * - `from` and `to` are never both zero.
+     *
+     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
+     */
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual {}
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
     uint256[44] private __gap;
 }
 
 
 // File contracts/components/staking/IStakeSubject.sol
-
-
-
-pragma solidity ^0.8.9;
 
 interface IStakeSubject {
     struct StakeThreshold {
@@ -2306,14 +2345,11 @@ interface IStakeSubject {
     }
     function getStakeThreshold(uint256 subject) external view returns (StakeThreshold memory);
     function isStakedOverMin(uint256 subject) external view returns (bool);
+    function isRegistered(uint256 subjectId) external view returns(bool);
 }
 
 
 // File contracts/components/staking/IStakeController.sol
-
-
-
-pragma solidity ^0.8.9;
 
 interface IStakeController {
     event StakeSubjectHandlerChanged(address newHandler, address oldHandler);
@@ -2321,15 +2357,13 @@ interface IStakeController {
     function activeStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
     function maxStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
     function minStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
+    function totalStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
+    function maxSlashableStakePercent() external view returns(uint256);
     function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns(bool);
 }
 
 
 // File contracts/components/staking/SubjectTypes.sol
-
-
-
-pragma solidity ^0.8.9;
 
 uint8 constant SCANNER_SUBJECT = 0;
 uint8 constant AGENT_SUBJECT = 1;
@@ -2354,14 +2388,6 @@ contract SubjectTypeValidator {
 
 
 // File contracts/components/staking/StakeSubject.sol
-
-
-
-pragma solidity ^0.8.9;
-
-
-
-
 
 abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSubject {
     IStakeController private _stakeController;
@@ -2410,465 +2436,192 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
 }
 
 
-// File contracts/tools/FrontRunningProtection.sol
+// File contracts/components/scanners/ScannerRegistryCore.sol
 
-
-
-pragma solidity ^0.8.9;
-
-/**
- *@dev FrontRunningProtection class usef for commit-reveal schemes with deadline.
- * We don't emit events to not broadcast the commits, devs will have to use the getter.
- */
-contract FrontRunningProtection {
-
-    mapping(bytes32 => uint256) private _commits;
-
-    error CommitNotReady();
-    error CommitAlreadyExists();
-
-    /**
-     * Use it to enforce the need of a previous commit within duration
-     * Will consume the commit if we are within deadline
-     * @param commit the commit ID
-     * @param duration duration in seconds
-     */
-    modifier frontrunProtected(bytes32 commit, uint256 duration) {
-        uint256 timestamp = _commits[commit];
-        if (!(duration == 0 || (timestamp != 0 && timestamp + duration <= block.timestamp))) revert CommitNotReady();
-        delete _commits[commit];
-        _;
-    }
-
-    /**
-     * Gets duration for a commit
-     * @param commit ID
-     * @return commit duration or zero if not found
-     */
-    function getCommitTimestamp(bytes32 commit) external view returns(uint256) {
-        return _commits[commit];
-    }
-
-    /**
-     * Saves commits deadline if commit does not exist
-     * @param commit id
-     */
-    function _frontrunCommit(bytes32 commit) internal {
-        if (_commits[commit] != 0) revert CommitAlreadyExists();
-        _commits[commit] = block.timestamp;
-    }
-
-}
-
-
-// File contracts/components/agents/AgentRegistryCore.sol
-
-
-
-pragma solidity ^0.8.9;
-
-
-
-
-abstract contract AgentRegistryCore is
+abstract contract ScannerRegistryCore is
     BaseComponentUpgradeable,
-    FrontRunningProtection,
     ERC721Upgradeable,
     StakeSubjectUpgradeable
 {
-    StakeThreshold private _stakeThreshold; // 3 storage slots
-    // Initially 0 because the frontrunning protection starts disabled.
-    uint256 public frontRunningDelay;
+    mapping(uint256 => StakeThreshold) internal _stakeThresholds;
     
-    event AgentCommitted(bytes32 indexed commit);
-    event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
-    event StakeThresholdChanged(uint256 min, uint256 max, bool activated);
-    event FrontRunningDelaySet(uint256 delay);
-
+    event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata);
+    event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
+    
+    error ScannerNotRegistered(address scanner);
+    error PublicRegistrationDisabled(uint256 chainId);
 
     /**
-     * @notice Checks sender (or metatx signer) is owner of the agent token.
-     * @param agentId ERC1155 token id of the agent.
+     * @notice Checks sender (or metatx signer) is owner of the scanner token.
+     * @param scannerId ERC721 token id of the scanner.
      */
-    modifier onlyOwnerOf(uint256 agentId) {
-        if (_msgSender() != ownerOf(agentId)) revert SenderNotOwner(_msgSender(), agentId);
+    modifier onlyOwnerOf(uint256 scannerId) {
+        if (_msgSender() != ownerOf(scannerId)) revert SenderNotOwner(_msgSender(), scannerId);
         _;
     }
 
     /**
-     * @notice Checks if array of uint256 is sorted from lower (index 0) to higher (array.length -1)
-     * @param array to check
+     * @notice Scanner registration via admin key.
+     * @dev restricted to SCANNER_ADMIN_ROLE. Scanner address will be converted to uin256 ERC721 token id.
+     * @param scanner address generated by scanner software.
+     * @param owner of the scanner. Will have admin privileges over the registering scanner.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
      */
-    modifier onlySorted(uint256[] memory array) {
-        if (array.length == 0 ) revert EmptyArray("chainIds");
-        for (uint256 i = 1; i < array.length; i++ ) {
-            if (array[i] <= array[i-1]) revert UnorderedArray("chainIds");
-        }
-        _;
+    function adminRegister(address scanner, address owner, uint256 chainId, string calldata metadata) public onlyRole(SCANNER_ADMIN_ROLE) {
+        _register(scanner, owner, chainId, metadata);
     }
 
     /**
-     * @notice Save commit representing an agent to prevent frontrunning of their creation
-     * @param commit keccak256 hash of the agent creation's parameters
+     * @notice Checks if scannerId has been registered (minted).
+     * @param scannerId ERC721 token id of the scanner.
+     * @return true if scannerId exists, false otherwise.
      */
-    function prepareAgent(bytes32 commit) public {
-        _frontrunCommit(commit);
+    function isRegistered(uint256 scannerId) public view override returns(bool) {
+        return _exists(scannerId);
     }
 
     /**
-     * @notice Agent creation method. Mints an ERC1155 token with the agent id for the owner and stores metadata.
-     * @dev fires _before and _after hooks within the inheritance tree.
-     * If front run protection is enabled (disabled by default), it will check if the keccak256 hash of the parameters
-     * has been committed in prepareAgent(bytes32).
-     * @param agentId ERC1155 token id of the agent to be created.
-     * @param owner address to have ownership privileges in the agent methods.
-     * @param metadata IPFS pointer to agent's metadata JSON.
-     * @param chainIds ordered list of chainIds where the agent wants to run.
+     * @notice Public method for scanners to self register in Forta and mint registration ERC721 token.
+     * @dev _msgSender() will be considered the Scanner Node address.
+     * @param owner of the scanner. Will have admin privileges over the registering scanner.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
      */
-    function createAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds)
-    public
-        onlySorted(chainIds)
-        frontrunProtected(keccak256(abi.encodePacked(agentId, owner, metadata, chainIds)), frontRunningDelay)
-    {
-        _mint(owner, agentId);
-        _beforeAgentUpdate(agentId, metadata, chainIds);
-        _agentUpdate(agentId, metadata, chainIds);
-        _afterAgentUpdate(agentId, metadata, chainIds);
+    function register(address owner, uint256 chainId, string calldata metadata) virtual public {
+        if (!(_stakeThresholds[chainId].activated)) revert PublicRegistrationDisabled(chainId);
+        _register(_msgSender(), owner, chainId, metadata);
     }
 
     /**
-     * @notice Checks if the agentId has been minted.
-     * @param agentId ERC1155 token id of the agent.
-     * @return true if agentId exists, false otherwise.
+     * @notice Internal method for scanners to self register in Forta and mint registration ERC721 token.
+     * Public staking must be activated in the target chainId.
+     * @dev Scanner address will be converted to uin256 ERC721 token id. Will trigger _before and _after hooks within
+     * the inheritance tree.
+     * @param owner of the scanner. Will have admin privileges over the registering scanner.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
      */
-    function isCreated(uint256 agentId) public view returns(bool) {
-        return _exists(agentId);
+    function _register(address scanner, address owner, uint256 chainId, string calldata metadata) internal {
+        uint256 scannerId = scannerAddressToId(scanner);
+        _mint(owner, scannerId);
+
+        _beforeScannerUpdate(scannerId, chainId, metadata);
+        _scannerUpdate(scannerId, chainId, metadata);
+        _afterScannerUpdate(scannerId, chainId, metadata);
     }
 
     /**
-     * @notice Updates parameters of an agentId (metadata, image, chain IDs...) if called by the agent owner.
-     * @dev fires _before and _after hooks within the inheritance tree.
-     * @param agentId ERC1155 token id of the agent to be updated.
-     * @param metadata IPFS pointer to agent's metadata JSON.
-     * @param chainIds ordered list of chainIds where the agent wants to run. 
+     * @notice Allows the admin to update chainId and metadata.
+     * @dev Restricted to SCANNER_ADMIN_ROLE. Will trigger _before and _after hooks within the inheritance tree.
+     * @param scanner address of the Scanner Node.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
      */
-    function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds)
-    public
-        onlyOwnerOf(agentId)
-        onlySorted(chainIds)
-    {
-        _beforeAgentUpdate(agentId, metadata, chainIds);
-        _agentUpdate(agentId, metadata, chainIds);
-        _afterAgentUpdate(agentId, metadata, chainIds);
+    function adminUpdate(address scanner, uint256 chainId, string calldata metadata) public onlyRole(SCANNER_ADMIN_ROLE) {
+        uint256 scannerId = scannerAddressToId(scanner);
+        if (!isRegistered(scannerId)) revert ScannerNotRegistered(scanner);
+        _beforeScannerUpdate(scannerId, chainId, metadata);
+        _scannerUpdate(scannerId, chainId, metadata);
+        _afterScannerUpdate(scannerId, chainId, metadata);
+    }
+
+    /// Converts scanner address to uint256 for ERC721 Token Id.
+    function scannerAddressToId(address scanner) public pure returns(uint256) {
+        return uint256(uint160(scanner));
     }
 
     /**
-     @dev StakeThreshold setter, common to all Agents. Restricted to AGENT_ADMIN_ROLE, emits StakeThresholdChanged
-    */
-    function setStakeThreshold(StakeThreshold memory newStakeThreshold) external onlyRole(AGENT_ADMIN_ROLE) {
+     * @notice Sets stake parameters (min, max, activated) for a `chainId`. Restricted to SCANNER_ADMIN_ROLE
+     * @param newStakeThreshold struct with stake parameters.
+     * @param chainId chain the parameters will affect.
+     */
+    function setStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(SCANNER_ADMIN_ROLE) {
         if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
-        _stakeThreshold = newStakeThreshold;
-        emit StakeThresholdChanged(newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
+        emit StakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
+        _stakeThresholds[chainId] = newStakeThreshold;
     }
 
     /**
-     @dev stake threshold common for all agents
-    */
-    function getStakeThreshold(uint256 /*subject*/) public override view returns (StakeThreshold memory) {
-        return _stakeThreshold;
+     * @dev internal getter for _getStakeThreshold, inheriting contracts may define logic to associate
+     * a scanner with a StakeThreshold
+     */
+    function _getStakeThreshold(uint256 subject) internal virtual view returns(StakeThreshold memory);
+
+    /**
+     * @notice Getter for StakeThreshold for the scanner with id `subject`
+     */
+    function getStakeThreshold(uint256 subject) external view returns(StakeThreshold memory) {
+        return _getStakeThreshold(subject);
     }
 
     /**
-     * Checks if agent is staked over minimum stake
-     * @param subject agentId
-     * @return true if agent is staked over the minimum threshold, or staking is not yet enabled (stakeController = 0).
+     * Checks if scanner is staked over minimum stake
+     * @param scannerId scanner
+     * @return true if scanner is staked over the minimum threshold for that chainId and is registered,
+     * or staking is not yet enabled (stakeController = 0).
      * false otherwise
      */
-    function _isStakedOverMin(uint256 subject) internal override view returns(bool) {
+    function _isStakedOverMin(uint256 scannerId) internal virtual override view returns(bool) {
         if (address(getStakeController()) == address(0)) {
             return true;
         }
-        return getStakeController().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min;
+        return getStakeController().activeStakeFor(SCANNER_SUBJECT, scannerId) >= _getStakeThreshold(scannerId).min && _exists(scannerId);
     }
 
     /**
-     * @dev allows AGENT_ADMIN_ROLE to activate frontrunning protection for agents
-     * @param delay in seconds
-     */
-    function setFrontRunningDelay(uint256 delay) external onlyRole(AGENT_ADMIN_ROLE) {
-        frontRunningDelay = delay;
-        emit FrontRunningDelaySet(delay);
-    }
-
-    /**
-     * @notice hook fired before agent creation or update.
-     * @dev does nothing in this contract.
-     * @param agentId ERC1155 token id of the agent to be created or updated.
-     * @param newMetadata IPFS pointer to agent's metadata JSON.
-     * @param newChainIds ordered list of chainIds where the agent wants to run.
+     * @notice _before hook triggered before scanner creation or update.
+     * @dev Does nothing in this base contract.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
     */
-    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
+    function _beforeScannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
     }
 
     /**
-     * @notice logic for agent update.
-     * @dev emits AgentUpdated, will be extended by child contracts.
-     * @param agentId ERC1155 token id of the agent to be created or updated.
-     * @param newMetadata IPFS pointer to agent's metadata JSON.
-     * @param newChainIds ordered list of chainIds where the agent wants to run.
+     * @notice Scanner update logic.
+     * @dev Emits ScannerUpdated(scannerId, chainId, metadata)
+     * @param scannerId ERC721 token id of the scanner.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
      */
-    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
-        emit AgentUpdated(agentId, _msgSender(), newMetadata, newChainIds);
+    function _scannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
+        emit ScannerUpdated(scannerId, chainId, metadata);
     }
 
     /**
-     * @notice hook fired after agent creation or update.
-     * @dev emits Router hook.
-     * @param agentId ERC1155 token id of the agent to be created or updated.
-     * @param newMetadata IPFS pointer to agent's metadata JSON.
-     * @param newChainIds ordered list of chainIds where the agent wants to run.
-     */
-    function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256,string,uint256[])", agentId, newMetadata, newChainIds));
-    }
-
-    /**
-     * Obligatory inheritance dismambiguation of ForwardedContext's _msgSender()
-     * @return sender msg.sender if not a meta transaction, signer of forwarder metatx if it is.
-     */
-    function _msgSender() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (address sender) {
-        return super._msgSender();
-    }
-
-    /**
-     * Obligatory inheritance dismambiguation of ForwardedContext's _msgSender()
-     * @return sender msg.data if not a meta transaction, forwarder data in metatx if it is.
-     */
-    function _msgData() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (bytes calldata) {
-        return super._msgData();
-    }
-
-    uint256[41] private __gap; // 50 - 1 (frontRunningDelay) - 3 (_stakeThreshold) - 5 StakeSubjectUpgradeable
-}
-
-
-// File @openzeppelin/contracts/utils/structs/BitMaps.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (utils/structs/BitMaps.sol)
-pragma solidity ^0.8.0;
-
-/**
- * @dev Library for managing uint256 to bool mapping in a compact and efficient way, providing the keys are sequential.
- * Largelly inspired by Uniswap's https://github.com/Uniswap/merkle-distributor/blob/master/contracts/MerkleDistributor.sol[merkle-distributor].
- */
-library BitMaps {
-    struct BitMap {
-        mapping(uint256 => uint256) _data;
-    }
-
-    /**
-     * @dev Returns whether the bit at `index` is set.
-     */
-    function get(BitMap storage bitmap, uint256 index) internal view returns (bool) {
-        uint256 bucket = index >> 8;
-        uint256 mask = 1 << (index & 0xff);
-        return bitmap._data[bucket] & mask != 0;
-    }
-
-    /**
-     * @dev Sets the bit at `index` to the boolean `value`.
-     */
-    function setTo(
-        BitMap storage bitmap,
-        uint256 index,
-        bool value
-    ) internal {
-        if (value) {
-            set(bitmap, index);
-        } else {
-            unset(bitmap, index);
-        }
-    }
-
-    /**
-     * @dev Sets the bit at `index`.
-     */
-    function set(BitMap storage bitmap, uint256 index) internal {
-        uint256 bucket = index >> 8;
-        uint256 mask = 1 << (index & 0xff);
-        bitmap._data[bucket] |= mask;
-    }
-
-    /**
-     * @dev Unsets the bit at `index`.
-     */
-    function unset(BitMap storage bitmap, uint256 index) internal {
-        uint256 bucket = index >> 8;
-        uint256 mask = 1 << (index & 0xff);
-        bitmap._data[bucket] &= ~mask;
-    }
-}
-
-
-// File contracts/components/agents/AgentRegistryEnable.sol
-
-
-
-pragma solidity ^0.8.9;
-
-
-/**
-* @dev AgentRegistry methods and state handling disabling and enabling agents, and
-* recognizing stake changes that might disable an agent.
-* NOTE: This contract was deployed before StakeAwareUpgradeable was created, so __StakeAwareUpgradeable_init
-* is not called.
-*/
-abstract contract AgentRegistryEnable is AgentRegistryCore {
-    using BitMaps for BitMaps.BitMap;
-
-    enum Permission {
-        ADMIN,
-        OWNER,
-        length
-    }
-
-    mapping(uint256 => BitMaps.BitMap) private _disabled;
-    
-    event AgentEnabled(uint256 indexed agentId, bool indexed enabled, Permission permission, bool value);
-
-    /**
-     * @notice Check if agent is enabled
-     * @param agentId ERC1155 token id of the agent.
-     * @return true if the agent exist, has not been disabled, and is staked over minimum
-     * Returns false if otherwise
-     */
-    function isEnabled(uint256 agentId) public view virtual returns (bool) {
-        return isCreated(agentId) &&
-            _getDisableFlags(agentId) == 0 &&
-            _isStakedOverMin(agentId); 
-    }
-
-    /**
-     * @notice Enable an agent if sender has correct permission and the agent is staked over minimum stake.
-     * @dev agents can be disabled by ADMIN or OWNER.
-     * @param agentId ERC1155 token id of the agent.
-     * @param permission the sender claims to have to enable the agent.
-     */
-    function enableAgent(uint256 agentId, Permission permission) public virtual {
-        if (!_isStakedOverMin(agentId)) revert StakedUnderMinimum(agentId);
-        if (!_hasPermission(agentId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), agentId);
-        _enable(agentId, permission, true);
-    }
-
-    /**
-     * @notice Disable an agent if sender has correct permission.
-     * @dev agents can be disabled by ADMIN or OWNER.
-     * @param agentId ERC1155 token id of the agent.
-     * @param permission the sender claims to have to enable the agent.
-     */
-    function disableAgent(uint256 agentId, Permission permission) public virtual {
-        if (!_hasPermission(agentId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), agentId);
-        _enable(agentId, permission, false);
-    }
-
-    /**
-     * @notice Permission check.
-     * @dev it does not uses AccessManager since it is agent specific
-     * @param agentId ERC1155 token id of the agent.
-     * @param permission the sender claims to have to enable the agent.
-     * @return true if: permission.ADMIN and _msgSender is ADMIN_ROLE, Permission.OWNER and owner of agentId,
-     * false otherwise.
-     */
-    function _hasPermission(uint256 agentId, Permission permission) internal view returns (bool) {
-        if (permission == Permission.ADMIN) { return hasRole(AGENT_ADMIN_ROLE, _msgSender()); }
-        if (permission == Permission.OWNER) { return _msgSender() == ownerOf(agentId); }
-        return false;
-    }
-
-    /**
-     * @notice Internal methods for enabling the agent.
-     * @dev fires hook _before and _after enable within the inheritance tree.
-     * @param agentId ERC1155 token id of the agent.
-     * @param permission the sender claims to have to enable the agent.
-     * @param enable true if enabling, false if disabling.
-     */
-    function _enable(uint256 agentId, Permission permission, bool enable) internal {
-        _beforeAgentEnable(agentId, permission, enable);
-        _agentEnable(agentId, permission, enable);
-        _afterAgentEnable(agentId, permission, enable);
-    }
-
-    /**
-     * @notice Get the disabled flags for an agentId.
-     * @dev Permission (uint8) is used for indexing, so we don't need to loop. 
-     * If not disabled, all flags will be 0.
-     * @param agentId ERC1155 token id of the agent.
-     * @return uint256 containing the byte flags.
-     */
-    function _getDisableFlags(uint256 agentId) internal view returns (uint256) {
-        return _disabled[agentId]._data[0];
-    }
-
-    /**
-     * @notice Hook _before agent enable
-     * @dev does nothing in this contract
-     * @param agentId ERC1155 token id of the agent.
-     * @param permission the sender claims to have to enable the agent.
-     * @param value true if enabling, false if disabling.
-     */
-    function _beforeAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
-    }
-
-    /**
-     * @notice Logic for enabling agents, sets flag corresponding to permission.
-     * @dev does nothing in this contract
-     * @param agentId ERC1155 token id of the agent.
-     * @param permission the sender claims to have to enable the agent.
-     * @param value true if enabling, false if disabling.
-     */
-    function _agentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
-        _disabled[agentId].setTo(uint8(permission), !value);
-        emit AgentEnabled(agentId, isEnabled(agentId), permission, value);
-    }
-
-    /**
-     * @notice Hook _after agent enable
+     * @notice _after hook triggered after scanner creation or update.
      * @dev emits Router hook
-     * @param agentId ERC1155 token id of the agent.
-     * @param permission the sender claims to have to enable the agent.
-     * @param value true if enabling, false if disabling.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param chainId that the scanner will monitor.
+     * @param metadata IPFS pointer to scanner's metadata JSON
      */
-    function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256,uint8,bool)", agentId, uint8(permission), value));
+    function _afterScannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
+        _emitHook(abi.encodeWithSignature("hook_afterScannerUpdate(uint256,uint256,string)", scannerId, chainId, metadata));
     }
-    
+
     /**
-     * Obligatory inheritance dismambiguation of ForwardedContext's _msgSender()
-     * @return sender msg.sender if not a meta transaction, signer of forwarder metatx if it is.
+     * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.
+     * @inheritdoc ForwardedContext
      */
-    function _msgSender() internal view virtual override(AgentRegistryCore) returns (address sender) {
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, ContextUpgradeable) returns (address sender) {
         return super._msgSender();
     }
 
     /**
-     * Obligatory inheritance dismambiguation of ForwardedContext's _msgSender()
-     * @return sender msg.data if not a meta transaction, forwarder data in metatx if it is.
+     * @notice Helper to get msg.data if not a meta transaction, forwarder data in metatx if it is.
+     * @inheritdoc ForwardedContext
      */
-    function _msgData() internal view virtual override(AgentRegistryCore) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, ContextUpgradeable) returns (bytes calldata) {
         return super._msgData();
     }
 
-    uint256[49] private __gap;
+    uint256[44] private __gap; // 50 - 1 (_stakeThresholds) - 5 (StakeSubjectUpgradeable)
 }
 
 
-// File @openzeppelin/contracts/utils/structs/EnumerableSet.sol@v4.4.0
-
-
-// OpenZeppelin Contracts v4.4.0 (utils/structs/EnumerableSet.sol)
-
-pragma solidity ^0.8.0;
+// File @openzeppelin/contracts/utils/structs/EnumerableSet.sol@v4.7.0
 
 /**
  * @dev Library for managing
@@ -2893,6 +2646,14 @@ pragma solidity ^0.8.0;
  *
  * As of v3.3.0, sets of type `bytes32` (`Bytes32Set`), `address` (`AddressSet`)
  * and `uint256` (`UintSet`) are supported.
+ *
+ * [WARNING]
+ * ====
+ *  Trying to delete such a structure from storage will likely result in data corruption, rendering the structure unusable.
+ *  See https://github.com/ethereum/solidity/pull/11843[ethereum/solidity#11843] for more info.
+ *
+ *  In order to clean an EnumerableSet, you can either remove all elements one by one or create a fresh instance using an array of EnumerableSet.
+ * ====
  */
 library EnumerableSet {
     // To implement this library for multiple types with as little code
@@ -2950,12 +2711,12 @@ library EnumerableSet {
             uint256 lastIndex = set._values.length - 1;
 
             if (lastIndex != toDeleteIndex) {
-                bytes32 lastvalue = set._values[lastIndex];
+                bytes32 lastValue = set._values[lastIndex];
 
                 // Move the last value to the index where the value to delete is
-                set._values[toDeleteIndex] = lastvalue;
+                set._values[toDeleteIndex] = lastValue;
                 // Update the index for the moved value
-                set._indexes[lastvalue] = valueIndex; // Replace lastvalue's index to valueIndex
+                set._indexes[lastValue] = valueIndex; // Replace lastValue's index to valueIndex
             }
 
             // Delete the slot where the moved value was stored
@@ -3142,6 +2903,7 @@ library EnumerableSet {
         bytes32[] memory store = _values(set._inner);
         address[] memory result;
 
+        /// @solidity memory-safe-assembly
         assembly {
             result := store
         }
@@ -3215,6 +2977,7 @@ library EnumerableSet {
         bytes32[] memory store = _values(set._inner);
         uint256[] memory result;
 
+        /// @solidity memory-safe-assembly
         assembly {
             result := store
         }
@@ -3224,174 +2987,351 @@ library EnumerableSet {
 }
 
 
-// File contracts/components/agents/AgentRegistryMetadata.sol
+// File contracts/components/scanners/ScannerRegistryManaged.sol
+abstract contract ScannerRegistryManaged is ScannerRegistryCore {
+    using EnumerableSet for EnumerableSet.AddressSet;
 
+    mapping(uint256 => EnumerableSet.AddressSet) private _managers;
 
+    event ManagerEnabled(uint256 indexed scannerId, address indexed manager, bool enabled);
 
-pragma solidity ^0.8.9;
-
-abstract contract AgentRegistryMetadata is AgentRegistryCore {
-    struct AgentMetadata {
-        uint256 version;
-        string metadata;
-        uint256[] chainIds;
-    }
-
-    mapping(uint256 => AgentMetadata) private _agentMetadata;
-    mapping(bytes32 => bool) private _agentMetadataUniqueness;
-
-    error MetadataNotUnique(bytes32 hash);
+    error SenderNotManager(address sender, uint256 scannerId);
 
     /**
-     * @notice Gets agent metadata, version and chain Ids.
-     * @param agentId ERC1155 token id of the agent.
-     * @return created if agent exists.
-     * @return owner address.
-     * @return agentVersion of the agent.
-     * @return metadata IPFS pointer.
-     * @return chainIds the agent wants to run in.
+     * @notice Checks sender (or metatx signer) is manager of the scanner token.
+     * @param scannerId ERC721 token id of the scanner.
      */
-    function getAgent(uint256 agentId)
-        public view
-        returns (bool created, address owner,uint256 agentVersion, string memory metadata, uint256[] memory chainIds) {
-        bool exists = _exists(agentId);
+    modifier onlyManagerOf(uint256 scannerId) {
+        if (!_managers[scannerId].contains(_msgSender())) revert SenderNotManager(_msgSender(), scannerId);
+        _;
+    }
+
+    /**
+     * @notice Checks if address is defined as a manager for a scanner.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param manager address to check.
+     * @return true if defined as manager for scanner, false otherwise.
+     */
+    function isManager(uint256 scannerId, address manager) public view virtual returns (bool) {
+        return _managers[scannerId].contains(manager);
+    }
+
+    /**
+     * @notice Gets total managers defined for a scanner.
+     * @dev helper for external iteration.
+     * @param scannerId ERC721 token id of the scanner.
+     * @return total managers defined for a scanner.
+     */
+    function getManagerCount(uint256 scannerId) public view virtual returns (uint256) {
+        return _managers[scannerId].length();
+    }
+
+    /**
+     * @notice Gets manager address at certain position of the scanner's manager set.
+     * @dev helper for external iteration.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param index position in the set.
+     * @return address of the manager at index.
+     */
+    function getManagerAt(uint256 scannerId, uint256 index) public view virtual returns (address) {
+        return _managers[scannerId].at(index);
+    }
+
+    /**
+     * @notice Adds or removes a manager to a certain scanner. Restricted to scanner owner.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param manager address to be added or removed fromm manager list for the scanner.
+     * @param enable true for adding, false for removing.
+     */
+    function setManager(uint256 scannerId, address manager, bool enable) public onlyOwnerOf(scannerId) {
+        if (enable) {
+            _managers[scannerId].add(manager);
+        } else {
+            _managers[scannerId].remove(manager);
+        }
+        emit ManagerEnabled(scannerId, manager, enable);
+    }
+
+    uint256[49] private __gap;
+}
+
+
+// File @openzeppelin/contracts/utils/structs/BitMaps.sol@v4.7.0
+
+/**
+ * @dev Library for managing uint256 to bool mapping in a compact and efficient way, providing the keys are sequential.
+ * Largelly inspired by Uniswap's https://github.com/Uniswap/merkle-distributor/blob/master/contracts/MerkleDistributor.sol[merkle-distributor].
+ */
+library BitMaps {
+    struct BitMap {
+        mapping(uint256 => uint256) _data;
+    }
+
+    /**
+     * @dev Returns whether the bit at `index` is set.
+     */
+    function get(BitMap storage bitmap, uint256 index) internal view returns (bool) {
+        uint256 bucket = index >> 8;
+        uint256 mask = 1 << (index & 0xff);
+        return bitmap._data[bucket] & mask != 0;
+    }
+
+    /**
+     * @dev Sets the bit at `index` to the boolean `value`.
+     */
+    function setTo(
+        BitMap storage bitmap,
+        uint256 index,
+        bool value
+    ) internal {
+        if (value) {
+            set(bitmap, index);
+        } else {
+            unset(bitmap, index);
+        }
+    }
+
+    /**
+     * @dev Sets the bit at `index`.
+     */
+    function set(BitMap storage bitmap, uint256 index) internal {
+        uint256 bucket = index >> 8;
+        uint256 mask = 1 << (index & 0xff);
+        bitmap._data[bucket] |= mask;
+    }
+
+    /**
+     * @dev Unsets the bit at `index`.
+     */
+    function unset(BitMap storage bitmap, uint256 index) internal {
+        uint256 bucket = index >> 8;
+        uint256 mask = 1 << (index & 0xff);
+        bitmap._data[bucket] &= ~mask;
+    }
+}
+
+
+// File contracts/components/scanners/ScannerRegistryEnable.sol
+
+/**
+* @dev ScannerRegistry methods and state handling disabling and enabling scanners, and
+* recognizing stake changes that might disable a scanner.
+* NOTE: This contract was deployed before StakeAwareUpgradeable was created, so __StakeAwareUpgradeable_init
+* is not called.
+*/
+abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
+    using BitMaps for BitMaps.BitMap;
+
+    enum Permission {
+        ADMIN,
+        SELF,
+        OWNER,
+        MANAGER,
+        length
+    }
+
+    mapping(uint256 => BitMaps.BitMap) private _disabled;
+
+    event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, Permission permission, bool value);
+
+    /**
+    * @notice Check if scanner is enabled
+    * @param scannerId ERC721 token id of the scanner.
+    * @return true if the scanner is registered, has not been disabled, and is staked over minimum value.
+    * Returns false if otherwise
+    */
+    function isEnabled(uint256 scannerId) public view virtual returns (bool) {
+        return isRegistered(scannerId) &&
+            getDisableFlags(scannerId) == 0 &&
+            _isStakedOverMin(scannerId); 
+    }
+
+    /**
+     * @notice Public method to enable a scanner, if caller has permission. Scanner must be staked over minimum defined
+     * for the scanner's chainId.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the caller claims to have.
+     */
+    function enableScanner(uint256 scannerId, Permission permission) public virtual {
+        if (!_isStakedOverMin(scannerId)) revert StakedUnderMinimum(scannerId);
+        if (!_hasPermission(scannerId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), scannerId);
+        _enable(scannerId, permission, true);
+    }
+
+    /**
+     * @notice Public method to disable a scanner, if caller has permission.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the caller claims to have.
+     */
+    function disableScanner(uint256 scannerId, Permission permission) public virtual {
+        if (!_hasPermission(scannerId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), scannerId);
+        _enable(scannerId, permission, false);
+    }
+
+    /**
+     * Get the disabled flags for an agentId. Permission (uint8) is used for indexing, so we don't
+     * need to loop. 
+     * If not disabled, all flags will be 0
+     * @param scannerId ERC721 token id of the scanner.
+     * @return uint256 containing the byte flags.
+     */
+    function getDisableFlags(uint256 scannerId) public view returns (uint256) {
+        return _disabled[scannerId]._data[0];
+    }
+
+    /**
+     * @notice Method that does permission checks.
+     * @dev AccessManager is not used since the permission is specific for scannerId
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the caller claims to have.
+     * @return true if (ADMIN and _msgSender() has SCANNER_ADMIN_ROLE), if _msgSender() is the scanner itself, its owner
+     * or manager for each respective permission, false otherwise.
+     */
+    function _hasPermission(uint256 scannerId, Permission permission) internal view returns (bool) {
+        if (permission == Permission.ADMIN)   { return hasRole(SCANNER_ADMIN_ROLE, _msgSender()); }
+        if (permission == Permission.SELF)    { return uint256(uint160(_msgSender())) == scannerId; }
+        if (permission == Permission.OWNER)   { return _msgSender() == ownerOf(scannerId); }
+        if (permission == Permission.MANAGER) { return isManager(scannerId, _msgSender()); }
+        return false;
+    }
+
+    /**
+     * @notice Internal method to enable a scanner.
+     * @dev will trigger _before and _after enable hooks within the inheritance tree.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the caller claims to have.
+     * @param enable true for enabling, false for disabling
+     */
+    function _enable(uint256 scannerId, Permission permission, bool enable) internal {
+        _beforeScannerEnable(scannerId, permission, enable);
+        _scannerEnable(scannerId, permission, enable);
+        _afterScannerEnable(scannerId, permission, enable);
+    }
+
+
+    /**
+     * @notice Hook _before scanner enable
+     * @dev does nothing in this contract
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the sender claims to have to enable the agent.
+     * @param value true if enabling, false if disabling.
+     */
+    function _beforeScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
+    }
+
+    /**
+     * @notice Logic for enabling or disabling the scanner.
+     * @dev sets the corresponding byte in _disabled bitmap for scannerId. Emits ScannerEnabled event.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the sender claims to have to enable the agent.
+     * @param value true if enabling, false if disabling.
+     */
+    function _scannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
+        _disabled[scannerId].setTo(uint8(permission), !value);
+        emit ScannerEnabled(scannerId, isEnabled(scannerId), permission, value);
+    }
+
+    /**
+     * @notice Hook _after scanner enable
+     * @dev emits Router hook.
+     * @param scannerId ERC721 token id of the scanner.
+     * @param permission the sender claims to have to enable the agent.
+     * @param value true if enabling, false if disabling.
+     */
+    function _afterScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
+        _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256,uint8,bool)", scannerId, uint8(permission), value));
+    }
+
+    /**
+     * Obligatory inheritance dismambiguation of ForwardedContext's _msgSender()
+     * @return sender msg.sender if not a meta transaction, signer of forwarder metatx if it is.
+     */
+    function _msgSender() internal view virtual override(ScannerRegistryCore) returns (address sender) {
+        return super._msgSender();
+    }
+    /**
+     * Obligatory inheritance dismambiguation of ForwardedContext's _msgSender()
+     * @return sender msg.data if not a meta transaction, forwarder data in metatx if it is.
+     */
+    function _msgData() internal view virtual override(ScannerRegistryCore) returns (bytes calldata) {
+        return super._msgData();
+    }
+
+    uint256[49] private __gap;
+}
+
+
+// File contracts/components/scanners/ScannerRegistryMetadata.sol
+
+abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
+    struct ScannerMetadata {
+        uint256 chainId;
+        string metadata;
+    }
+
+    mapping(uint256 => ScannerMetadata) private _scannerMetadata;
+
+    /**
+     * @notice Gets all scanner properties.
+     * @param scannerId ERC721 token id of the scanner.
+     * @return registered true if scanner exists.
+     * @return owner address.
+     * @return chainId the scanner is monitoring.
+     * @return metadata IPFS pointer for the scanner's JSON metadata.
+     */
+    function getScanner(uint256 scannerId) public view returns (bool registered, address owner, uint256 chainId, string memory metadata) {
+        bool exists = _exists(scannerId);
         return (
             exists,
-            exists ? ownerOf(agentId) : address(0),
-            _agentMetadata[agentId].version,
-            _agentMetadata[agentId].metadata,
-            _agentMetadata[agentId].chainIds
+            exists ? ownerOf(scannerId) : address(0),
+            _scannerMetadata[scannerId].chainId,
+            _scannerMetadata[scannerId].metadata
         );
     }
 
     /**
-     * @notice logic for agent update.
-     * @dev checks metadata uniqueness and updates agent metadata and version.
-     * @param agentId ERC1155 token id of the agent to be created or updated.
-     * @param newMetadata IPFS pointer to agent's metadata JSON.
-     * @param newChainIds ordered list of chainIds where the agent wants to run.
+     * @notice Gets scanner chain Ids.
+     * @param scannerId ERC721 token id of the scanner.
+     * @return chainId the scanner is monitoring.
      */
-    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
-        super._agentUpdate(agentId, newMetadata, newChainIds);
-
-        bytes32 oldHash = keccak256(bytes(_agentMetadata[agentId].metadata));
-        bytes32 newHash = keccak256(bytes(newMetadata));
-        if (_agentMetadataUniqueness[newHash]) revert MetadataNotUnique(newHash);
-        _agentMetadataUniqueness[newHash] = true;
-        _agentMetadataUniqueness[oldHash] = false;
-
-        uint256 version = _agentMetadata[agentId].version + 1;
-        _agentMetadata[agentId] = AgentMetadata({ version: version, metadata: newMetadata, chainIds: newChainIds });
+    function getScannerChainId(uint256 scannerId) public view returns (uint256) {
+        return _scannerMetadata[scannerId].chainId;
+    }
+    
+    
+    /**
+     * @dev checks the StakeThreshold for the chainId the scanner with id `subject` was registered to monitor.
+     * @param subject ERC721 token id of the scanner.
+     * @return StakeThreshold registered for `chainId`, or StakeThreshold(0,0,false) if `chainId` not found.
+     */
+    function _getStakeThreshold(uint256 subject) override virtual internal view returns(StakeThreshold memory) {
+        return _stakeThresholds[getScannerChainId(subject)];
     }
 
-    uint256[48] private __gap;
+    /**
+     * @notice internal logic for scanner update.
+     * @dev adds metadata and chainId for that scanner
+     * @param scannerId ERC721 token id of the scanner.
+     * @param chainId the scanner scans.
+     * @param metadata IPFS pointer for the scanner's JSON metadata.
+     */
+    function _scannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual override {
+        super._scannerUpdate(scannerId, chainId, metadata);
+        _scannerMetadata[scannerId] = ScannerMetadata({ chainId: chainId, metadata: metadata });
+    }
+
+    uint256[49] private __gap;
 }
 
 
-// File contracts/components/agents/AgentRegistryEnumerable.sol
+// File contracts/components/scanners/ScannerRegistry.sol
 
-
-
-pragma solidity ^0.8.9;
-
-
-abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
-    using EnumerableSet for EnumerableSet.UintSet;
-
-    EnumerableSet.UintSet private _allAgents;
-    mapping(uint256 => EnumerableSet.UintSet) private _chainAgents;
-
-    /**
-     * Agent count.
-     * @dev Helper for external iteration.
-     * @return total amount of registered agents.
-     */
-    function getAgentCount() public view returns (uint256) {
-        return _allAgents.length();
-    }
-
-    /**
-     * Agent id at index in _allAgents array.
-     * @dev Helper for external iteration.
-     * @param index of agent in _allAgents array.
-     * @return agentId at index.
-     */
-    function getAgentByIndex(uint256 index) public view returns (uint256) {
-        return _allAgents.at(index);
-    }
-
-    /**
-     * Registered agent count by chainId.
-     * @dev Helper for external iteration.
-     * @param chainId.
-     * @return agent total registered by chainId.
-     */
-    function getAgentCountByChain(uint256 chainId) public view returns (uint256) {
-        return _chainAgents[chainId].length();
-    }
-
-    /**
-     * Agent id at index, by chainId
-     * @dev Helper for external iteration.
-     * @param chainId where the agent was registered.
-     * @param index of agent in _chainAgents[chainId] array.
-     * @return agentId at index for that chainId.
-     */
-    function getAgentByChainAndIndex(uint256 chainId, uint256 index) public view returns (uint256) {
-        return _chainAgents[chainId].at(index);
-    }
-
-    /**
-     * @notice hook fired before agent creation or update.
-     * @dev stores agent in _allAgents if it wasn't there, manages agent arrays by chain.
-     * @param agentId ERC1155 token id of the agent to be created or updated.
-     * @param newMetadata IPFS pointer to agent's metadata JSON.
-     * @param newChainIds ordered list of chainIds where the agent wants to run.
-     */
-    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
-        super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
-
-        (,,uint256 version,, uint256[] memory oldChainIds) = getAgent(agentId);
-
-        if (version == 0) { _allAgents.add(agentId); } //NOTE: ignoring EnumerableSet.add() bool output; We don't care if already added.
-
-        uint256 i = 0;
-        uint256 j = 0;
-        while (i < oldChainIds.length || j < newChainIds.length) {
-            if (i == oldChainIds.length) { // no more old chains, just add the remaining new chains
-                _chainAgents[newChainIds[j++]].add(agentId);
-            } else if (j == newChainIds.length) { // no more new chain, just remove the remaining old chains
-                _chainAgents[oldChainIds[i++]].remove(agentId);
-            } else if (oldChainIds[i] < newChainIds[j]) { // old chain smaller, remove if
-                _chainAgents[oldChainIds[i++]].remove(agentId);
-            } else if (oldChainIds[i] > newChainIds[j]) { // new chain smaller, add it
-                _chainAgents[newChainIds[j++]].add(agentId);
-            } else { // chainIds are the same do nothing
-                i++;
-                j++;
-            }
-        }
-    }
-
-    uint256[48] private __gap;
-}
-
-
-// File contracts/components/agents/AgentRegistry.sol
-
-
-
-pragma solidity ^0.8.9;
-
-
-
-
-contract AgentRegistry_0_1_2 is
+contract ScannerRegistry_0_1_2 is
     BaseComponentUpgradeable,
-    AgentRegistryCore,
-    AgentRegistryEnable,
-    AgentRegistryMetadata,
-    AgentRegistryEnumerable
+    ScannerRegistryCore,
+    ScannerRegistryManaged,
+    ScannerRegistryEnable,
+    ScannerRegistryMetadata
 {
     string public constant version = "0.1.2";
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -3401,8 +3341,8 @@ contract AgentRegistry_0_1_2 is
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
      * @param __router address of Router.
-     * @param __name ERC1155 token name.
-     * @param __symbol ERC1155 token symbol.
+     * @param __name ERC721 token name.
+     * @param __symbol ERC721 token symbol.
      */
     function initialize(
         address __manager,
@@ -3417,46 +3357,65 @@ contract AgentRegistry_0_1_2 is
     }
 
     /**
-     * @notice Gets all Agent state.
-     * @param agentId ERC1155 token id of the agent.
-     * @return created if agent exists.
+     * @notice Gets all scanner properties and state
+     * @param scannerId ERC721 token id of the scanner.
+     * @return registered true if scanner exists.
      * @return owner address.
-     * @return agentVersion of the agent.
-     * @return metadata IPFS pointer.
-     * @return chainIds the agent wants to run in.
+     * @return chainId the scanner is monitoring.
+     * @return metadata IPFS pointer for the scanner's JSON metadata.
+     * @return enabled true if staked over minimum and not disabled.
+     * @return disabledFlags 0 if not disabled, Permission if disabled.
      */
-    function getAgentState(uint256 agentId)
-        public view
-        returns (bool created, address owner,uint256 agentVersion, string memory metadata, uint256[] memory chainIds, bool enabled) {
-        (created, owner, agentVersion, metadata, chainIds) = getAgent(agentId);
-        return (created, owner, agentVersion, metadata, chainIds, isEnabled(agentId));
+    function getScannerState(uint256 scannerId)
+        external
+        view
+        returns (
+            bool registered,
+            address owner,
+            uint256 chainId,
+            string memory metadata,
+            bool enabled,
+            uint256 disabledFlags
+         ) {
+        (registered, owner, chainId, metadata) = super.getScanner(scannerId);
+        return (
+            registered,
+            owner,
+            chainId,
+            metadata,
+            isEnabled(scannerId),
+            getDisableFlags(scannerId)
+        );
     }
 
     /**
-     * @notice Inheritance disambiguation for hook fired befire agent update (and creation).
-     * @param agentId id of the agent.
-     * @param newMetadata IPFS pointer to agent's metadata
-     * @param newChainIds chain ids that the agent wants to scan
+     * @notice Inheritance disambiguation for _scannerUpdate internal logic.
+     * @inheritdoc ScannerRegistryCore
      */
-    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryEnumerable) {
-        super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
+    function _scannerUpdate(
+        uint256 scannerId,
+        uint256 chainId,
+        string calldata metadata
+    ) internal virtual override(
+        ScannerRegistryCore,
+        ScannerRegistryMetadata
+    ) {
+        super._scannerUpdate(scannerId, chainId, metadata);
     }
 
     /**
-     * @notice Obligatory inheritance disambiguation for hook fired for agent update (and creation).
-     * @param agentId id of the agent.
-     * @param newMetadata IPFS pointer to agent's metadata
-     * @param newChainIds chain ids that the agent wants to scan
+     * @dev inheritance disambiguation for _getStakeThreshold
+     * see ScannerRegistryMetadata
      */
-    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
-        super._agentUpdate(agentId, newMetadata, newChainIds);
+    function _getStakeThreshold(uint256 subject) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) view returns(StakeThreshold memory) {
+        return super._getStakeThreshold(subject);
     }
 
     /**
      * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.
      * @inheritdoc ForwardedContext
      */
-    function _msgSender() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryEnable) returns (address sender) {
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (address sender) {
         return super._msgSender();
     }
 
@@ -3464,7 +3423,7 @@ contract AgentRegistry_0_1_2 is
      * @notice Helper to get msg.data if not a meta transaction, forwarder data in metatx if it is.
      * @inheritdoc ForwardedContext
      */
-    function _msgData() internal view virtual override(BaseComponentUpgradeable, AgentRegistryCore, AgentRegistryEnable) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (bytes calldata) {
         return super._msgData();
     }
 
