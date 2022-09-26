@@ -154,7 +154,7 @@ describe('Slashing Proposals', function () {
             expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(false);
         });
 
-        it.only('From CREATED to EXECUTED, modifying the proposal', async function () {
+        it('From CREATED to EXECUTED, modifying the proposal', async function () {
             const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
             const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
 
