@@ -10,13 +10,22 @@ import "../tools/ENSReverseRegistration.sol";
 import "../errors/GeneralErrors.sol";
 import "../components/utils/IVersioned.sol";
 
+/**
+ * Contract with the common functionality for both L1 FORT and L2 FortaBridgedPolygon.
+ * NOTE: Whitelisting functionality, used before the token was public, is deprecated.
+ * The whitelist was disabled setting whitelistDisabled = true, the current code keeps that storage
+ * layout for compatibility and removes whitelist code from _beforeTokenTransfer() to save gas.
+ * We are keeping the related roles to not break StakingEscrowFactory (already deployed), and the 
+ * _setRoleAdmin() in the initializer for historical context.
+ */
 abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable, IVersioned {
     bytes32 public constant ADMIN_ROLE       = keccak256("ADMIN_ROLE");
     bytes32 public constant WHITELISTER_ROLE = keccak256("WHITELISTER_ROLE");
     bytes32 public constant WHITELIST_ROLE   = keccak256("WHITELIST_ROLE");
     
-    bool public whitelistDisabled; // __gap[50] -> __gap[49]
-
+    /// @custom:oz-renamed-from whitelistDisabled
+    bool private deprecated_whitelistDisabled;
+    
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
