@@ -71,6 +71,11 @@ function updateStake(
     _subject,
     _staker
   );
+  stake.inactiveShares = fortaStaking.inactiveSharesOf(
+    _subjectType,
+    _subject,
+    _staker
+  );
   subject.save();
   stake.save();
   staker.save();

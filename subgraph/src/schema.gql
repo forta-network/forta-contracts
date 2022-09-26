@@ -192,6 +192,7 @@ type Stake @entity {
   staker: Staker!
   isActive: Boolean
   shares: BigInt
+  inactiveShares: BigInt
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
 }
 
