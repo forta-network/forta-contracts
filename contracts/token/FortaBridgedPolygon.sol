@@ -79,7 +79,7 @@ contract FortaBridgedPolygon is FortaCommon {
      * @return version of FORT deployed in L2
      */
     function version() external pure returns(string memory) {
-        return "0.1.2";
+        return "0.2.0";
     }
 
     uint256[49] private __gap; 
