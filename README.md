@@ -135,7 +135,7 @@ We follow good practices for [writing upgradeable contracts](https://docs.openze
 The process to develop, test and deploy new implementations are as follow:
 
 1. Ensure that the contract inherits from `IVersioned` (if it is `BaseControllerUpgradeable` it will).
-2. Bump the version accordingly.
+2. Bump the version accordingly. Contract versioning should follow semver and increment with each upgrade or deployment.
 3. Develop according to good practices, modify __gap length to accommodate new state, add comments with storage accounting in contract variables and __gap values.
 4. Write an upgradeability test in `test/components/upgrades.test.js`.
 4.1 Deploy an upgradeable proxy with the base implementation, found in `components/_old/<component_folder>/<ComponentName>_X_Y_Z`. 

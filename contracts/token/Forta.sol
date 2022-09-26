@@ -40,7 +40,7 @@ contract Forta is FortaCommon {
      * @return version of FORT deployed in L1
      */
     function version() external pure virtual override returns(string memory) {
-        return "0.1.1";
+        return "0.2.0";
     }
 
     uint256[50] private __gap; 
