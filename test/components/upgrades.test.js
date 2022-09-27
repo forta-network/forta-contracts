@@ -18,10 +18,8 @@ describe('Upgrades testing', function () {
                 unsafeAllow: ['delegatecall'],
             });
             await agents.deployed();
-            console.log(agents)
             //create agent
             const AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
-            console.log(AGENT_ID);
             const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
             await agents.prepareAgent(prepareCommit(...args));
             await network.provider.send('evm_increaseTime', [300]);
@@ -30,7 +28,6 @@ describe('Upgrades testing', function () {
             // Checks
             expect(await agents.name()).to.be.equal('Forta Agents');
             expect(await agents.symbol()).to.be.equal('FAgents');
-            console.log('lol');
             expect(await agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
             expect(
                 await agents.getAgent(AGENT_ID).then((agent) => [agent.version.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
@@ -54,7 +51,6 @@ describe('Upgrades testing', function () {
             expect(await agents.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
             expect(await agents.version()).to.be.equal('0.1.2');
             expect(await agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
-            console.log(await agents.getAgent(AGENT_ID));
             expect(
                 await agents.getAgent(AGENT_ID).then((agent) => [agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
             ).to.be.deep.equal([1, args[2], args[3]]);
