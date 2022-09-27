@@ -1,19 +1,21 @@
 const { ethers, upgrades, network } = require('hardhat');
 const { expect } = require('chai');
-const { prepare } = require('../fixture');
+const { prepare, deploy } = require('../fixture');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
 
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
 
-let originalScanners, agents;
+let originalScanners, agents, mockRouter;
 describe('Upgrades testing', function () {
     prepare();
+    before(async () => {
+        mockRouter = await deploy(await ethers.getContractFactory('MockRouter'));
+    });
 
     describe('Agent Registry', async function () {
         it(' 0.1.1 -> 0.1.5', async function () {
             const AgentRegistry_0_1_1 = await ethers.getContractFactory('AgentRegistry_0_1_1');
-            const MOCK_ROUTER = this.contracts.access.address;
-            agents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, MOCK_ROUTER, 'Forta Agents', 'FAgents'], {
+            agents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, mockRouter.address, 'Forta Agents', 'FAgents'], {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             });
@@ -94,7 +96,7 @@ describe('Upgrades testing', function () {
             this.accounts.getAccount('scanner');
             const ScannerRegistry_0_1_0 = await ethers.getContractFactory('ScannerRegistry_0_1_0');
             // Router is deprecated, just set an address
-            originalScanners = await upgrades.deployProxy(ScannerRegistry_0_1_0, [this.contracts.access.address, this.contracts.access.address, 'Forta Scanners', 'FScanners'], {
+            originalScanners = await upgrades.deployProxy(ScannerRegistry_0_1_0, [this.contracts.access.address, mockRouter.address, 'Forta Scanners', 'FScanners'], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
