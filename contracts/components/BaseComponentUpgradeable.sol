@@ -16,8 +16,8 @@ import "../tools/ENSReverseRegistration.sol";
  * @dev The Forta platform is composed of "component" smart contracts that are upgradeable, share a common access
  * control scheme and can send use routed hooks to signal one another. They also support the multicall pattern.
  *
- * This contract contains the base of Forta components. Contract  inheriting this will have to call
- * - __AccessManaged_init(address manager)
+ * This contract contains the base of Forta components. Contracts that inherit this component must call
+ * - __BaseComponentUpgradeable_init(address manager)
  * in their initialization process.
  */
 abstract contract BaseComponentUpgradeable is
