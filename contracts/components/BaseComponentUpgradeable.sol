@@ -29,7 +29,7 @@ abstract contract BaseComponentUpgradeable is
     IVersioned
 {
 
-    function __BaseComponentUpgradeable_init(address __manager)  internal initializer {
+    function __BaseComponentUpgradeable_init(address __manager) internal initializer {
         __AccessManaged_init(__manager);
         __UUPSUpgradeable_init();
     }
