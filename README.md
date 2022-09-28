@@ -134,7 +134,7 @@ The process to develop, test and deploy new implementations are as follow:
 4. Write an upgradeability test in `test/components/upgrades.test.js`.
     1 Deploy an upgradeable proxy with the base implementation, found in `components/_old/<component_folder>/<ComponentName>_X_Y_Z`. 
         If not there, either:
-        - Use `hardhat flattener` to generate a file with all the inheriting contracts.
+        - Use `hardhat flatten` to generate a file with all the inheriting contracts.
         - Remove duplicate licenses and pragma statements.
         - Rename main component in flattened file to `<ComponentName>_X_Y_Z`.
         - If the contracts is deployed and the repo is not tagged and you are not sure if the exact files are in the current commit, generate a flattened version obtained from verified contracts in relevant block explorer (Etherscan, Polyscan...) and add it.
