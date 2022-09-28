@@ -16,8 +16,11 @@ abstract contract RoutedUpgradeable is AccessManagedUpgradeable {
 
     event RouterUpdated(address indexed router);
 
-    /// Sets Router instance to address(0). Restricted to DEFAULT_ADMIN_ROLE.
-    function disableRouter() public onlyRole(DEFAULT_ADMIN_ROLE) {
+    /// Sets Router instance to address(0).
+    function disableRouter() public {
+        if (_deprecated_router == address(0)) {
+            revert ZeroAddress("_deprecated_router");
+        }
         _deprecated_router = address(0);
         emit RouterUpdated(address(0));
     }
