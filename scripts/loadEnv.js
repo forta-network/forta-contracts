@@ -49,8 +49,6 @@ async function loadEnv(config = {}) {
             DEFAULT_ADMIN: ethers.constants.HashZero,
             ADMIN: ethers.utils.id('ADMIN_ROLE'),
             MINTER: ethers.utils.id('MINTER_ROLE'),
-            WHITELISTER: ethers.utils.id('WHITELISTER_ROLE'),
-            WHITELIST: ethers.utils.id('WHITELIST_ROLE'),
             ROUTER_ADMIN: ethers.utils.id('ROUTER_ADMIN_ROLE'),
             ENS_MANAGER: ethers.utils.id('ENS_MANAGER_ROLE'),
             UPGRADER: ethers.utils.id('UPGRADER_ROLE'),

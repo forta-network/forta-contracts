@@ -23,8 +23,6 @@ describe('Forta Staking Parameters', function () {
     prepare();
 
     beforeEach(async function () {
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.minter.address);
         await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('1000'));
         await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
     });
@@ -172,15 +170,11 @@ describe('Forta Staking Parameters', function () {
 
         beforeEach(async function () {
             const FortaStakingParameters = await ethers.getContractFactory('FortaStakingParameters');
-            fortaStakingParameters = await upgrades.deployProxy(
-                FortaStakingParameters,
-                [this.contracts.access.address, this.contracts.router.address, this.contracts.staking.address],
-                {
-                    kind: 'uups',
-                    constructorArgs: [this.contracts.forwarder.address],
-                    unsafeAllow: ['delegatecall'],
-                }
-            );
+            fortaStakingParameters = await upgrades.deployProxy(FortaStakingParameters, [this.contracts.access.address, this.contracts.staking.address], {
+                kind: 'uups',
+                constructorArgs: [this.contracts.forwarder.address],
+                unsafeAllow: ['delegatecall'],
+            });
             await fortaStakingParameters.deployed();
         });
         it('admin methods must be called by admin', async function () {

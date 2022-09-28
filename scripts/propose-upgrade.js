@@ -111,7 +111,6 @@ async function main() {
         {
             constructorArgs: [ contracts.forwarder.address ],
             unsafeAllow: ['delegatecall'],
-            unsafeSkipStorageCheck: true
         },
         CACHE,
         'router'
@@ -130,7 +129,6 @@ async function main() {
             },
             constructorArgs: [ contracts.forwarder.address ],
             unsafeAllow: ['delegatecall'],
-            unsafeSkipStorageCheck: true
         },
         CACHE,
         'agents'
@@ -149,7 +147,6 @@ async function main() {
             },
             constructorArgs: [ contracts.forwarder.address ],
             unsafeAllow: ['delegatecall'],
-            unsafeSkipStorageCheck: true
         },
         CACHE,
         'scanners'

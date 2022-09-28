@@ -75,7 +75,6 @@ async function main() {
             {
                 constructorArgs: [childChainManagerProxy].filter(Boolean),
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'forta'
@@ -113,7 +112,6 @@ async function main() {
             {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'router'
@@ -133,7 +131,6 @@ async function main() {
                 },
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'agents'
@@ -153,7 +150,6 @@ async function main() {
                 },
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'scanners'
@@ -185,7 +181,6 @@ async function main() {
             {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'scanner-node-version'

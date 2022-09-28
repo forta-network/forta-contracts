@@ -11,7 +11,6 @@ function vestedAllocation(beneficiary, etherAmount, start, duration, deploymentF
 module.exports = {
     admins: [multisig],
     minters: [multisig],
-    whitelisters: [multisig],
     allocations: [
         vestedAllocation('0x13732239Cee1a2F3392C6BdCAa2865DC6D25093b', '200000.00'),
         vestedAllocation('0x8b29986f5Eb439196bf6b8bbC902c7ad6847e6F4', '200000.00'),

@@ -169,7 +169,7 @@ abstract contract ScannerRegistryCore is
      * @param metadata IPFS pointer to scanner's metadata JSON
      */
     function _afterScannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterScannerUpdate(uint256,uint256,string)", scannerId, chainId, metadata));
+        
     }
 
     /**

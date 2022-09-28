@@ -52,11 +52,6 @@ describe('Slashing Proposals', function () {
     prepare({ stake: { min: MIN_STAKE, max: MAX_STAKE, activated: true } });
 
     beforeEach(async function () {
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user2.address);
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user3.address);
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.minter.address);
-
         await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHING_ARBITER, this.accounts.user3.address);
         await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.admin.address);
 
@@ -168,7 +163,7 @@ describe('Slashing Proposals', function () {
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance.sub(STAKING_DEPOSIT));
 
-            this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
+            await this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
 
             expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance);
             expect(await this.token.balanceOf(this.slashing.address)).to.eq(BigNumber.from('0'));
@@ -410,7 +405,6 @@ describe('Slashing Proposals', function () {
         });
     });
     describe('State configuration', function () {
-
         it('should not have incorrect state transtions', async function () {
             await this.slashing
                 .connect(this.accounts.user2)

@@ -1,32 +1,33 @@
 const { ethers, upgrades, network } = require('hardhat');
 const { expect } = require('chai');
-const { prepare } = require('../fixture');
+const { prepare, deploy } = require('../fixture');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
 
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
 
-let originalScanners, agents;
-describe('Upgrades testing', function () {
+let originalScanners, agents, mockRouter;
+describe.only('Upgrades testing', function () {
     prepare();
+    before(async () => {
+        mockRouter = await deploy(await ethers.getContractFactory('MockRouter'));
+    });
 
     describe('Agent Registry', async function () {
         it(' 0.1.1 -> 0.1.5', async function () {
             const AgentRegistry_0_1_1 = await ethers.getContractFactory('AgentRegistry_0_1_1');
-            agents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, this.contracts.router.address, 'Forta Agents', 'FAgents'], {
+            agents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, mockRouter.address, 'Forta Agents', 'FAgents'], {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             });
             await agents.deployed();
-
             //create agent
             const AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
             const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
             await agents.prepareAgent(prepareCommit(...args));
             await network.provider.send('evm_increaseTime', [300]);
-            await expect(agents.connect(this.accounts.other).createAgent(...args));
+            await agents.connect(this.accounts.user1).createAgent(...args);
 
             // Checks
-            //expect(await this.agents.isCreated(AGENT_ID)).to.be.equal(true); //Does not exist in 0.1.1
             expect(await agents.name()).to.be.equal('Forta Agents');
             expect(await agents.symbol()).to.be.equal('FAgents');
             expect(await agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
@@ -51,6 +52,10 @@ describe('Upgrades testing', function () {
             await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
             expect(await agents.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
             expect(await agents.version()).to.be.equal('0.1.2');
+            expect(await agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
+            expect(
+                await agents.getAgent(AGENT_ID).then((agent) => [agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
+            ).to.be.deep.equal([1, args[2], args[3]]);
             expect(await agents.isCreated(AGENT_ID)).to.be.equal(true);
             expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
             await agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1);
@@ -73,6 +78,10 @@ describe('Upgrades testing', function () {
             expect(await agents.version()).to.be.equal('0.1.4');
             expect(await agents.isRegistered(AGENT_ID)).to.be.equal(true);
             expect(await agents.getDisableFlags(AGENT_ID)).to.be.equal([2]);
+            expect(await agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
+            expect(
+                await agents.getAgent(AGENT_ID).then((agent) => [agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
+            ).to.be.deep.equal([1, args[2], args[3]]);
             expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
             await agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1);
             expect(await agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
@@ -86,7 +95,8 @@ describe('Upgrades testing', function () {
         it(' 0.1.0 -> 0.1.3', async function () {
             this.accounts.getAccount('scanner');
             const ScannerRegistry_0_1_0 = await ethers.getContractFactory('ScannerRegistry_0_1_0');
-            originalScanners = await upgrades.deployProxy(ScannerRegistry_0_1_0, [this.contracts.access.address, this.contracts.router.address, 'Forta Scanners', 'FScanners'], {
+            // Router is deprecated, just set an address
+            originalScanners = await upgrades.deployProxy(ScannerRegistry_0_1_0, [this.contracts.access.address, mockRouter.address, 'Forta Scanners', 'FScanners'], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
@@ -131,9 +141,9 @@ describe('Upgrades testing', function () {
             await this.contracts.access.grantRole(this.roles.SCANNER_ADMIN, this.accounts.admin.address);
             expect(await scannerRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
             expect(await scannerRegistry.version()).to.be.equal('0.1.2');
+            expect(await scannerRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
             for (const scanner of SCANNERS) {
                 const scannerId = scanner.address;
-
                 expect(await scannerRegistry.isEnabled(scannerId)).to.be.equal(false);
                 expect(await scannerRegistry.isManager(scannerId, this.accounts.user2.address)).to.be.equal(true);
                 expect(await scannerRegistry.getManagerCount(scannerId)).to.be.equal(1);
@@ -191,6 +201,7 @@ describe('Upgrades testing', function () {
             }
         });
     });
+
     describe('FortaStaking', async function () {
         it('0.1.0 -> 0.1.1', async function () {
             this.accounts.getAccount('scanner');
@@ -199,7 +210,7 @@ describe('Upgrades testing', function () {
             const DELAY = 123123;
             const TREASURY = await ethers.Wallet.createRandom().address;
             const FortaStaking_0_1_0 = await ethers.getContractFactory('FortaStaking_0_1_0');
-            this.staking = await upgrades.deployProxy(FortaStaking_0_1_0, [this.access.address, this.router.address, this.token.address, DELAY, TREASURY], {
+            this.staking = await upgrades.deployProxy(FortaStaking_0_1_0, [this.access.address, mockRouter.address, this.token.address, DELAY, TREASURY], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
@@ -207,7 +218,7 @@ describe('Upgrades testing', function () {
             await this.staking.deployed();
 
             const FortaStakingParameters_0_1_0 = await ethers.getContractFactory('FortaStakingParameters_0_1_0');
-            this.stakingParameters = await upgrades.deployProxy(FortaStakingParameters_0_1_0, [this.access.address, this.router.address, this.staking.address], {
+            this.stakingParameters = await upgrades.deployProxy(FortaStakingParameters_0_1_0, [this.access.address, mockRouter.address, this.staking.address], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
@@ -218,14 +229,8 @@ describe('Upgrades testing', function () {
             await this.agents.connect(this.accounts.manager).setStakeThreshold(STAKING_PARAMS);
             await this.scanners.connect(this.accounts.manager).setStakeThreshold(STAKING_PARAMS, 1);
 
-            await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.admin.address),
-                await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
-            await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user2.address);
-            await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.admin.address);
-            await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address);
-            await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, TREASURY);
-
-            await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, '100000000');
+            this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.admin.address),
+                await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, '100000000');
             await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, '100000000');
             await this.token.connect(this.accounts.minter).mint(this.accounts.admin.address, '100000000');
 
@@ -250,9 +255,6 @@ describe('Upgrades testing', function () {
             await this.staking.connect(this.accounts.admin).slash(1, AGENT_ID, '50');
             await this.staking.connect(this.accounts.user1).initiateWithdrawal(1, AGENT_ID, '50');
             await this.staking.connect(this.accounts.admin).reward(1, AGENT_ID, '200');
-
-            expect(await this.staking.stakedToken()).to.be.equal(this.token.address);
-
             expect(await this.staking.activeStakeFor(0, this.accounts.scanner.address)).to.be.equal('50');
             expect(await this.staking.inactiveStakeFor(0, this.accounts.scanner.address)).to.be.equal('50');
 
@@ -275,22 +277,11 @@ describe('Upgrades testing', function () {
             expect(await this.staking.totalActiveStake()).to.be.equal('75');
             expect(await this.staking.totalInactiveStake()).to.be.equal('75');
 
-            const FortaStakingParameters_0_1_1 = await ethers.getContractFactory('FortaStakingParameters_0_1_1');
-            this.stakingParameters = await upgrades.upgradeProxy(this.stakingParameters.address, FortaStakingParameters_0_1_1, {
-                constructorArgs: [this.contracts.forwarder.address],
-                unsafeAllow: ['delegatecall'],
-                //unsafeSkipStorageCheck: true,
-            });
-
-
-            const FortaStaking_0_1_1 = await ethers.getContractFactory('FortaStaking');
+            const FortaStaking_0_1_1 = await ethers.getContractFactory('FortaStaking_0_1_1');
             this.staking = await upgrades.upgradeProxy(this.staking.address, FortaStaking_0_1_1, {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             });
-
-            expect(await this.staking.stakedToken()).to.be.equal(this.token.address);
 
             expect(await this.staking.activeStakeFor(0, this.accounts.scanner.address)).to.be.equal('50');
             expect(await this.staking.inactiveStakeFor(0, this.accounts.scanner.address)).to.be.equal('50');

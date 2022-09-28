@@ -8,7 +8,7 @@ function prepare(config = {}) {
         // list signers
         this.accounts = await ethers.getSigners();
         this.accounts.getAccount = (name) => this.accounts[name] || (this.accounts[name] = this.accounts.shift());
-        ['admin', 'manager', 'minter', 'whitelister', 'whitelist', 'nonwhitelist', 'treasure', 'user1', 'user2', 'user3', 'other'].map((name) => this.accounts.getAccount(name));
+        ['admin', 'manager', 'minter', 'treasure', 'user1', 'user2', 'user3', 'other'].map((name) => this.accounts.getAccount(name));
 
         // migrate
         await migrate(
@@ -45,30 +45,14 @@ function prepare(config = {}) {
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.contracts.slashing.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.STAKING_ADMIN, this.accounts.admin.address),
                 this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
-                this.token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address),
                 this.otherToken.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
-                this.otherToken.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.accounts.whitelister.address),
             ].map((txPromise) => txPromise.then((tx) => tx.wait()).catch(() => {}))
         );
 
         DEBUG('Fixture: setup roles');
-        await Promise.all(
-            [
-                this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
-                this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
-                this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address),
-                this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.slashing.address),
-                this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.whitelist.address),
-                this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.treasure.address),
-                this.otherToken.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.staking.address),
-            ].map((txPromise) => txPromise.then((tx) => tx.wait()).catch(() => {}))
-        );
-
-        DEBUG('Fixture: setup whitelist');
 
         // Prep for tests that need minimum stake
         if (config.stake) {
-            await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
             if (!config.adminAsChildChainManagerProxy) {
                 //Bridged FORT does not have mint()
                 await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));

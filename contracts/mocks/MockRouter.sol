@@ -3,6 +3,7 @@
 
 pragma solidity ^0.8.9;
 
-interface IRouter {
-    function hookHandler(bytes calldata) external;
+// mock mock!
+contract MockRouter {
+
 }
