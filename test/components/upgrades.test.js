@@ -209,8 +209,7 @@ describe('Upgrades testing', function () {
             const DELAY = 123123;
             const TREASURY = await ethers.Wallet.createRandom().address;
             const FortaStaking_0_1_0 = await ethers.getContractFactory('FortaStaking_0_1_0');
-            const routerMock = this.token.address;
-            this.staking = await upgrades.deployProxy(FortaStaking_0_1_0, [this.access.address, routerMock, this.token.address, DELAY, TREASURY], {
+            this.staking = await upgrades.deployProxy(FortaStaking_0_1_0, [this.access.address, mockRouter, this.token.address, DELAY, TREASURY], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
