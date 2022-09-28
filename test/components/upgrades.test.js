@@ -47,7 +47,6 @@ describe('Upgrades testing', function () {
                 },
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             });
             await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
             expect(await agents.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
@@ -71,7 +70,6 @@ describe('Upgrades testing', function () {
                 },
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             });
             await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
             expect(await agents.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
@@ -133,7 +131,6 @@ describe('Upgrades testing', function () {
                 },
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             });
             await this.contracts.stakingParameters.setStakeSubjectHandler(0, scannerRegistry.address);
             await scannerRegistry.connect(this.accounts.manager).setStakeThreshold({ max: '100', min: '0', activated: true }, 1);
@@ -171,7 +168,6 @@ describe('Upgrades testing', function () {
             scannerRegistry = await upgrades.upgradeProxy(originalScanners.address, NewImplementation, {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             });
             await this.contracts.stakingParameters.setStakeSubjectHandler(0, scannerRegistry.address);
             await scannerRegistry.connect(this.accounts.manager).setStakeThreshold({ max: '100', min: '0', activated: true }, 1);
@@ -229,8 +225,7 @@ describe('Upgrades testing', function () {
             await this.scanners.connect(this.accounts.manager).setStakeThreshold(STAKING_PARAMS, 1);
 
             await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.admin.address),
-
-            await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, '100000000');
+                await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, '100000000');
             await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, '100000000');
             await this.token.connect(this.accounts.minter).mint(this.accounts.admin.address, '100000000');
 
@@ -284,15 +279,13 @@ describe('Upgrades testing', function () {
             this.stakingParameters = await upgrades.upgradeProxy(this.stakingParameters.address, FortaStakingParameters_0_1_1, {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                //unsafeSkipStorageCheck: true,
+                //
             });
-
 
             const FortaStaking_0_1_1 = await ethers.getContractFactory('FortaStaking');
             this.staking = await upgrades.upgradeProxy(this.staking.address, FortaStaking_0_1_1, {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             });
 
             expect(await this.staking.stakedToken()).to.be.equal(this.token.address);
@@ -358,8 +351,7 @@ describe('Upgrades testing', function () {
             await this.scanners.connect(this.accounts.manager).setStakeThreshold(STAKING_PARAMS, 1);
 
             this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.admin.address),
-
-            await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, '100000000');
+                await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, '100000000');
             await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, '100000000');
             await this.token.connect(this.accounts.minter).mint(this.accounts.admin.address, '100000000');
 
@@ -410,7 +402,6 @@ describe('Upgrades testing', function () {
             this.staking = await upgrades.upgradeProxy(this.staking.address, FortaStaking_0_1_1, {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             });
 
             expect(await this.staking.activeStakeFor(0, this.accounts.scanner.address)).to.be.equal('50');

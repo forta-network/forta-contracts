@@ -61,7 +61,7 @@ describe('Scanner Node Software Version', function () {
             const newScannerVersion = await upgrades.upgradeProxy(originalScannerVersion.address, NewImplementation, {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
+                
             });
             await newScannerVersion.connect(this.accounts.admin).setScannerNodeBetaVersion(VERSION_2);
             expect(await newScannerVersion.scannerNodeVersion()).to.equal(VERSION_1);
