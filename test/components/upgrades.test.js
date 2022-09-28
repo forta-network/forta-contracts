@@ -347,7 +347,7 @@ describe('Upgrades testing', function () {
             await this.staking.deployed();
 
             const FortaStakingParameters_0_1_0 = await ethers.getContractFactory('FortaStakingParameters_0_1_0');
-            this.stakingParameters = await upgrades.deployProxy(FortaStakingParameters_0_1_0, [this.access.address, fakeRouter, this.staking.address], {
+            this.stakingParameters = await upgrades.deployProxy(FortaStakingParameters_0_1_0, [this.access.address, mockRouter, this.staking.address], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
