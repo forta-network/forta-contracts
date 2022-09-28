@@ -117,11 +117,9 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
-     * @param __router address of Router.
      */
     function initialize(
         address __manager,
-        address __router,
         ISlashingExecutor __executor,
         FortaStakingParameters __stakingParameters,
         uint256 __depositAmount,
@@ -129,9 +127,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         bytes32[] calldata __slashPenaltyIds,
         SlashPenalty[] calldata __slashPenalties
     ) public initializer {
-        __AccessManaged_init(__manager);
-        __Routed_init(__router);
-        __UUPSUpgradeable_init();
+        __BaseComponentUpgradeable_init(__manager);
 
         _setSlashingExecutor(__executor);
         _setStakingParametersManager(__stakingParameters);

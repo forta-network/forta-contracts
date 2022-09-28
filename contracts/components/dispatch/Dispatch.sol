@@ -32,18 +32,15 @@ contract Dispatch is BaseComponentUpgradeable {
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
-     * @param __router address of Router.
      * @param __agents address of AgentRegistry.
      * @param __scanners address of ScannerRegistry.
      */
     function initialize(
         address __manager,
-        address __router,
         address __agents,
         address __scanners
     ) public initializer {
-        __AccessManaged_init(__manager);
-        __Routed_init(__router);
+        __BaseComponentUpgradeable_init(__manager);
         _agents   = AgentRegistry(__agents);
         _scanners = ScannerRegistry(__scanners);
     }

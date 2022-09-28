@@ -16,9 +16,8 @@ import "../tools/ENSReverseRegistration.sol";
  * @dev The Forta platform is composed of "component" smart contracts that are upgradeable, share a common access
  * control scheme and can send use routed hooks to signal one another. They also support the multicall pattern.
  *
- * This contract contains the base of Forta components. Contract  inheriting this will have to call
- * - __AccessManaged_init(address manager)
- * - __Routed_init(address router)
+ * This contract contains the base of Forta components. Contracts that inherit this component must call
+ * - __BaseComponentUpgradeable_init(address manager)
  * in their initialization process.
  */
 abstract contract BaseComponentUpgradeable is
@@ -29,6 +28,11 @@ abstract contract BaseComponentUpgradeable is
     UUPSUpgradeable,
     IVersioned
 {
+
+    function __BaseComponentUpgradeable_init(address __manager) internal initializer {
+        __AccessManaged_init(__manager);
+        __UUPSUpgradeable_init();
+    }
     
     // Access control for the upgrade process
     function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(UPGRADER_ROLE) {

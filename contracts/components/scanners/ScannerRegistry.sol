@@ -9,33 +9,24 @@ import "./ScannerRegistryManaged.sol";
 import "./ScannerRegistryEnable.sol";
 import "./ScannerRegistryMetadata.sol";
 
-contract ScannerRegistry is
-    BaseComponentUpgradeable,
-    ScannerRegistryCore,
-    ScannerRegistryManaged,
-    ScannerRegistryEnable,
-    ScannerRegistryMetadata
-{
+contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryManaged, ScannerRegistryEnable, ScannerRegistryMetadata {
     string public constant version = "0.1.3";
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
-     * @param __router address of Router.
      * @param __name ERC721 token name.
      * @param __symbol ERC721 token symbol.
      */
     function initialize(
         address __manager,
-        address __router,
         string calldata __name,
         string calldata __symbol
     ) public initializer {
-        __AccessManaged_init(__manager);
-        __Routed_init(__router);
-        __UUPSUpgradeable_init();
+        __BaseComponentUpgradeable_init(__manager);
         __ERC721_init(__name, __symbol);
     }
 
@@ -59,16 +50,10 @@ contract ScannerRegistry is
             string memory metadata,
             bool enabled,
             uint256 disabledFlags
-         ) {
+        )
+    {
         (registered, owner, chainId, metadata) = super.getScanner(scannerId);
-        return (
-            registered,
-            owner,
-            chainId,
-            metadata,
-            isEnabled(scannerId),
-            getDisableFlags(scannerId)
-        );
+        return (registered, owner, chainId, metadata, isEnabled(scannerId), getDisableFlags(scannerId));
     }
 
     /**
@@ -79,10 +64,7 @@ contract ScannerRegistry is
         uint256 scannerId,
         uint256 chainId,
         string calldata metadata
-    ) internal virtual override(
-        ScannerRegistryCore,
-        ScannerRegistryMetadata
-    ) {
+    ) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) {
         super._scannerUpdate(scannerId, chainId, metadata);
     }
 
@@ -90,7 +72,7 @@ contract ScannerRegistry is
      * @dev inheritance disambiguation for _getStakeThreshold
      * see ScannerRegistryMetadata
      */
-    function _getStakeThreshold(uint256 subject) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) view returns(StakeThreshold memory) {
+    function _getStakeThreshold(uint256 subject) internal view virtual override(ScannerRegistryCore, ScannerRegistryMetadata) returns (StakeThreshold memory) {
         return super._getStakeThreshold(subject);
     }
 

@@ -170,15 +170,11 @@ describe('Forta Staking Parameters', function () {
 
         beforeEach(async function () {
             const FortaStakingParameters = await ethers.getContractFactory('FortaStakingParameters');
-            fortaStakingParameters = await upgrades.deployProxy(
-                FortaStakingParameters,
-                [this.contracts.access.address, this.contracts.router.address, this.contracts.staking.address],
-                {
-                    kind: 'uups',
-                    constructorArgs: [this.contracts.forwarder.address],
-                    unsafeAllow: ['delegatecall'],
-                }
-            );
+            fortaStakingParameters = await upgrades.deployProxy(FortaStakingParameters, [this.contracts.access.address, this.contracts.staking.address], {
+                kind: 'uups',
+                constructorArgs: [this.contracts.forwarder.address],
+                unsafeAllow: ['delegatecall'],
+            });
             await fortaStakingParameters.deployed();
         });
         it('admin methods must be called by admin', async function () {

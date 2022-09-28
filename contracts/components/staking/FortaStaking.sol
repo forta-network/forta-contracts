@@ -126,22 +126,19 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
-     * @param __router address of Router.
+     * @param __stakedToken ERC20 to be staked (FORT).
      * @param __withdrawalDelay cooldown period between withdrawal init and withdrawal (in seconds).
      * @param __treasury address where the slashed tokens go to.
      */
     function initialize(
         address __manager,
-        address __router,
+        IERC20 __stakedToken,
         uint64 __withdrawalDelay,
-        address __treasury,
-        address __stakedToken
+        address __treasury
     ) public initializer {
         if (__treasury == address(0)) revert ZeroAddress("__treasury");
-        if (__stakedToken == address(0)) revert ZeroAddress("__stakedToken");
-        __AccessManaged_init(__manager);
-        __Routed_init(__router);
-        __UUPSUpgradeable_init();
+        if (address(__stakedToken) == address(0)) revert ZeroAddress("__stakedToken");
+        __BaseComponentUpgradeable_init(__manager);
         __ERC1155_init("");
         __ERC1155Supply_init();
         _withdrawalDelay = __withdrawalDelay;
@@ -299,9 +296,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _activeStake.mint(activeSharesId, stakeValue);
         _mint(staker, activeSharesId, sharesValue, new bytes(0));
         emit StakeDeposited(subjectType, subject, staker, stakeValue);
-        // NOTE: hooks will be reintroduced (with more info) when first use case is implemented. For now they are removed
-        // to reduce attack surface.
-        // _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
+
         return sharesValue;
     }
 
@@ -364,9 +359,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _mint(staker, FortaStakingUtils.activeToInactive(activeSharesId), inactiveShares, new bytes(0));
 
         emit WithdrawalInitiated(subjectType, subject, staker, deadline);
-        // NOTE: hooks will be reintroduced (with more info) when first use case is implemented. For now they are removed
-        // to reduce attack surface.
-        // _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
+
         return deadline;
     }
 
@@ -396,9 +389,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _inactiveStake.burn(inactiveSharesId, stakeValue);
         _burn(staker, inactiveSharesId, inactiveShares);
         SafeERC20.safeTransfer(stakedToken, staker, stakeValue);
-        // NOTE: hooks will be reintroduced (with more info) when first use case is implemented. For now they are removed
-        // to reduce attack surface.
-        // _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
 
         return stakeValue;
     }
