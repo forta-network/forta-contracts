@@ -33,6 +33,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     error NodeRunnerNotRegistered(uint256 nodeRunnerId);
     error ScannerExists(address scanner);
     error ScannerNotRegistered(address scanner);
+    error ScannerAlreadyRegisteredTo(address scanner, uint256 nodeRunnerId);
+    error ScannerNotRegisteredTo(address scanner, uint256 nodeRunnerId);
     error PublicRegistrationDisabled(uint256 chainId);
 
     /**
@@ -41,6 +43,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      */
     modifier onlyOwnerOf(uint256 nodeRunnerId) {
         if (_msgSender() != ownerOf(nodeRunnerId)) revert SenderNotOwner(_msgSender(), nodeRunnerId);
+        _;
+    }
+
+    modifier onlyScannerRegisteredTo(address scanner, uint256 nodeRunnerId) {
+        if(!isScannerRegisteredTo(scanner, nodeRunnerId)) revert ScannerNotRegisteredTo(scanner, nodeRunnerId);
         _;
     }
 
@@ -77,6 +84,10 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         return _scannerNodes[scanner].registered;
     }
 
+    function isScannerRegisteredTo(address scanner, uint256 nodeRunnerId) public view returns(bool) {
+        return _scannerNodeOwnership[nodeRunnerId].contains(scanner);
+    }   
+
     function registerScannerNode(
         uint256 nodeRunnerId,
         address scanner,
@@ -84,17 +95,19 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         string calldata metadata
     ) external onlyOwnerOf(nodeRunnerId) {
         if (isScannerRegistered(scanner)) revert ScannerExists(scanner);
-        _updateScannerNode(nodeRunnerId, scanner, chainId, metadata);
+        _scannerNodes[scanner] = ScannerNode(true, _msgSender(), chainId, metadata);
+        if(!_scannerNodeOwnership[nodeRunnerId].add(scanner)) revert ScannerAlreadyRegisteredTo(scanner, nodeRunnerId);
+        emit ScannerUpdated(scannerAddressToId(scanner), chainId, metadata, nodeRunnerId);
     }
 
-    function updateScannerNode(
+    function updateScannerMetadata(
         uint256 nodeRunnerId,
         address scanner,
-        uint256 chainId,
         string calldata metadata
-    ) external onlyOwnerOf(nodeRunnerId) {
+    ) external onlyOwnerOf(nodeRunnerId) onlyScannerRegisteredTo(scanner, nodeRunnerId) {
         if (!isScannerRegistered(scanner)) revert ScannerNotRegistered(scanner);
-        _updateScannerNode(nodeRunnerId, scanner, chainId, metadata);
+        _scannerNodes[scanner].metadata = metadata;
+        emit ScannerUpdated(scannerAddressToId(scanner), _scannerNodes[scanner].chainId, metadata, nodeRunnerId);
     }
 
     function _updateScannerNode(
@@ -103,7 +116,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         uint256 chainId,
         string calldata metadata
     ) internal {
-        _scannerNodes[scanner] = ScannerNode(true, _msgSender(), chainId, metadata);
+        if (chainId!= 0) {
+            _scannerNodes[scanner] = ScannerNode(true, _msgSender(), chainId, metadata);
+        } else {
+            _scannerNodes[scanner] = ScannerNode(true, _msgSender(), _scannerNodes[scanner].chainId, metadata);
+        }
         _scannerNodeOwnership[nodeRunnerId].add(scanner);
         emit ScannerUpdated(scannerAddressToId(scanner), chainId, metadata, nodeRunnerId);
     }

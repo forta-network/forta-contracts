@@ -77,11 +77,11 @@ describe.only('Node Runner Registry', function () {
         await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(1, SCANNER_ID, 1, 'metadata'))
             .to.emit(this.nodeRunners, 'ScannerUpdated')
             .withArgs(SCANNER_ID, 1, 'metadata', 1);
-        await expect(this.nodeRunners.connect(this.accounts.user1).updateScannerNode(1, SCANNER_ID, 33, '333'))
+        await expect(this.nodeRunners.connect(this.accounts.user1).updateScannerMetadata(1, SCANNER_ID, '333'))
             .to.emit(this.nodeRunners, 'ScannerUpdated')
-            .withArgs(SCANNER_ID, 33, '333', 1);
+            .withArgs(SCANNER_ID, 1, '333', 1);
 
-        expect(await this.nodeRunners.getScanner(SCANNER_ID)).to.be.deep.equal([true, this.accounts.user1.address, BigNumber.from(33), '333']);
+        expect(await this.nodeRunners.getScanner(SCANNER_ID)).to.be.deep.equal([true, this.accounts.user1.address, BigNumber.from(1), '333']);
         expect(await this.nodeRunners.isScannerRegistered(SCANNER_ID)).to.be.equal(true);
         expect(await this.nodeRunners.ownerOfScanner(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.nodeRunners.ownedScannerAddressAtIndex(1, 0)).to.be.equal(SCANNER_ID);
@@ -95,15 +95,14 @@ describe.only('Node Runner Registry', function () {
         await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(1, SCANNER_ID, 1, 'metadata'))
             .to.emit(this.nodeRunners, 'ScannerUpdated')
             .withArgs(SCANNER_ID, 1, 'metadata', 1);
-        await expect(this.nodeRunners.connect(this.accounts.user1).updateScannerNode(1, WRONG_SCANNER_ID, 33, '333')).to.be.revertedWith(
-            `ScannerNotRegistered("${WRONG_SCANNER_ID}")`
+        await expect(this.nodeRunners.connect(this.accounts.user1).updateScannerMetadata(1, WRONG_SCANNER_ID, '333')).to.be.revertedWith(
+            `ScannerNotRegisteredTo("${WRONG_SCANNER_ID}", 1)`
         );
     });
 
     describe('managers', function () {
         beforeEach(async function () {
             await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
-
         });
 
         it('add manager', async function () {
