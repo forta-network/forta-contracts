@@ -21,12 +21,15 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryManag
     function initialize(
         address __manager,
         string calldata __name,
-        string calldata __symbol
+        string calldata __symbol,
+        uint256 __registrationDelay
     ) public initializer {
         __BaseComponentUpgradeable_init(__manager);
         __ERC721_init(__name, __symbol);
         __ERC721Enumerable_init();
         __EIP712_init("NodeRunnerRegistry", "1");
+
+        _setRegistrationDelay(__registrationDelay);
     }
 
     /**

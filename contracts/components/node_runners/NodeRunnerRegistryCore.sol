@@ -108,7 +108,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     }
 
     function registerScannerNode(ScannerNodeRegistration calldata req, bytes calldata signature) external onlyOwnerOf(req.nodeRunnerId) {
-        if (req.timestamp + registrationDelay > block.timestamp) revert RegisteringTooLate();
+        if (req.timestamp + registrationDelay < block.timestamp) revert RegisteringTooLate();
+        if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
         if (
             !SignatureCheckerUpgradeable.isValidSignatureNow(
                 req.scanner,
@@ -120,7 +121,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
                 signature
             )
         ) revert SignatureDoesNotMatch();
-        if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
         _scannerNodes[req.scanner] = ScannerNode(true, _msgSender(), req.chainId, req.metadata);
         if (!_scannerNodeOwnership[req.nodeRunnerId].add(req.scanner)) revert ScannerAlreadyRegisteredTo(req.scanner, req.nodeRunnerId);
         emit ScannerUpdated(scannerAddressToId(req.scanner), req.chainId, req.metadata, req.nodeRunnerId);

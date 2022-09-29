@@ -110,6 +110,17 @@ const SLASHING_DEPOSIT_AMOUNT = (chainId) => {
     }
 };
 
+const SCANNER_REGISTRATION_DELAY = (chainId) => {
+    switch (chainId) {
+        case 5:
+        case 80001:
+        case 31337:
+            return 1000;
+        default:
+            throw new Error('NODE_RUNNER_DELAY not configured for chainId: ', chainId);
+    }
+};
+
 /*********************************************************************************************************************
  *                                                Migration workflow                                                 *
  *********************************************************************************************************************/
@@ -330,7 +341,7 @@ async function migrate(config = {}) {
         DEBUG(`[11] Deploying node runner registry...`);
 
         contracts.nodeRunners = await ethers.getContractFactory('NodeRunnerRegistry', deployer).then((factory) =>
-            utils.tryFetchProxy(CACHE, 'node-runners', factory, 'uups', [contracts.access.address, 'Forta Node Runners', 'FNodeRunners'], {
+            utils.tryFetchProxy(CACHE, 'node-runners', factory, 'uups', [contracts.access.address, 'Forta Node Runners', 'FNodeRunners', SCANNER_REGISTRATION_DELAY(chainId)], {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: 'delegatecall',
             })
