@@ -2,12 +2,40 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { BigNumber } = require('@ethersproject/bignumber');
+const { before } = require('lodash');
 
+let domain, types, SCANNER_ID_1, scanner1Registration, scanner1Signature;
 describe.only('Node Runner Registry', function () {
     prepare({ stake: { min: '100', max: '500', activated: true } });
 
     beforeEach(async function () {
+        const { chainId } = await ethers.provider.getNetwork();
         this.accounts.getAccount('scanner');
+
+        domain = {
+            name: 'NodeRunnerRegistry',
+            version: '1',
+            chainId: chainId,
+            verifyingContract: this.contracts.nodeRunners.address,
+        };
+        types = {
+            ScannerNodeRegistration: [
+                { name: 'scanner', type: 'address' },
+                { name: 'nodeRunnerId', type: 'uint256' },
+                { name: 'chainId', type: 'uint256' },
+                { name: 'metadata', type: 'string' },
+                { name: 'timestamp', type: 'uint256' },
+            ],
+        };
+        SCANNER_ID_1 = this.accounts.scanner.address;
+        scanner1Registration = {
+            scanner: SCANNER_ID_1,
+            nodeRunnerId: 1,
+            chainId: 1,
+            metadata: 'metadata',
+            timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+        };
+        scanner1Signature = await this.accounts.scanner._signTypedData(domain, types, scanner1Registration);
     });
 
     it.skip('isStakedOverMin false if scanner non existant', async function () {
@@ -28,15 +56,25 @@ describe.only('Node Runner Registry', function () {
         expect(await this.nodeRunners.ownerOf(2)).to.be.equal(this.accounts.user2.address);
     });
 
-    it('register scanner', async function () {
+    it.only('register scanner', async function () {
         const SCANNER_ID = this.accounts.scanner.address;
         const SCANNER_ID_2 = this.accounts.user2.address;
 
         await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
-        await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(1, SCANNER_ID, 1, 'metadata'))
+        console.log(scanner1Registration);
+        console.log(scanner1Signature);
+        await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
             .to.emit(this.nodeRunners, 'ScannerUpdated')
             .withArgs(SCANNER_ID, 1, 'metadata', 1);
-        await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(1, SCANNER_ID_2, 2, 'metadata2'))
+        const scanner2Registration = {
+            scanner: this.accounts.user2.address,
+            nodeRunnerId: 1,
+            chainId: 2,
+            metadata: 'metadata2',
+            timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+        };
+        const scanner2Signature = await this.accounts.user2._signTypedData(domain, types, scanner2Registration);
+        await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
             .to.emit(this.nodeRunners, 'ScannerUpdated')
             .withArgs(SCANNER_ID_2, 2, 'metadata2', 1);
 

@@ -11,24 +11,41 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
 
-abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, StakeSubjectUpgradeable {
+import "hardhat/console.sol";
+
+abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, StakeSubjectUpgradeable, EIP712Upgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    CountersUpgradeable.Counter private _nodeRunnerIdCounter;
     struct ScannerNode {
         bool registered;
         address owner;
         uint256 chainId;
         string metadata;
     }
+    struct ScannerNodeRegistration {
+        address scanner;
+        uint256 nodeRunnerId;
+        uint256 chainId;
+        string metadata;
+        uint256 timestamp;
+    }
+
+    bytes32 private constant _SCANNERNODEREGISTRATION_TYPEHASH =
+        keccak256("ScannerNodeRegistration(address scanner,uint256 nodeRunnerId,uint256 chainId,string metadata,uint256 timestamp)");
+
+    CountersUpgradeable.Counter private _nodeRunnerIdCounter;
     mapping(address => ScannerNode) _scannerNodes;
     mapping(uint256 => EnumerableSet.AddressSet) internal _scannerNodeOwnership;
     mapping(uint256 => StakeThreshold) internal _stakeThresholds;
+    uint256 public registrationDelay;
 
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata, uint256 nodeRunner);
     event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
+    event RegistrationDelaySet(uint256 delay);
 
     error NodeRunnerNotRegistered(uint256 nodeRunnerId);
     error ScannerExists(address scanner);
@@ -36,6 +53,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     error ScannerAlreadyRegisteredTo(address scanner, uint256 nodeRunnerId);
     error ScannerNotRegisteredTo(address scanner, uint256 nodeRunnerId);
     error PublicRegistrationDisabled(uint256 chainId);
+    error RegisteringTooLate();
+    error SignatureDoesNotMatch();
 
     /**
      * @notice Checks sender (or metatx signer) is owner of the scanner token.
@@ -47,7 +66,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     }
 
     modifier onlyScannerRegisteredTo(address scanner, uint256 nodeRunnerId) {
-        if(!isScannerRegisteredTo(scanner, nodeRunnerId)) revert ScannerNotRegisteredTo(scanner, nodeRunnerId);
+        if (!isScannerRegisteredTo(scanner, nodeRunnerId)) revert ScannerNotRegisteredTo(scanner, nodeRunnerId);
         _;
     }
 
@@ -84,20 +103,27 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         return _scannerNodes[scanner].registered;
     }
 
-    function isScannerRegisteredTo(address scanner, uint256 nodeRunnerId) public view returns(bool) {
+    function isScannerRegisteredTo(address scanner, uint256 nodeRunnerId) public view returns (bool) {
         return _scannerNodeOwnership[nodeRunnerId].contains(scanner);
-    }   
+    }
 
-    function registerScannerNode(
-        uint256 nodeRunnerId,
-        address scanner,
-        uint256 chainId,
-        string calldata metadata
-    ) external onlyOwnerOf(nodeRunnerId) {
-        if (isScannerRegistered(scanner)) revert ScannerExists(scanner);
-        _scannerNodes[scanner] = ScannerNode(true, _msgSender(), chainId, metadata);
-        if(!_scannerNodeOwnership[nodeRunnerId].add(scanner)) revert ScannerAlreadyRegisteredTo(scanner, nodeRunnerId);
-        emit ScannerUpdated(scannerAddressToId(scanner), chainId, metadata, nodeRunnerId);
+    function registerScannerNode(ScannerNodeRegistration calldata req, bytes calldata signature) external onlyOwnerOf(req.nodeRunnerId) {
+        if (req.timestamp + registrationDelay > block.timestamp) revert RegisteringTooLate();
+        if (
+            !SignatureCheckerUpgradeable.isValidSignatureNow(
+                req.scanner,
+                _hashTypedDataV4(
+                    keccak256(
+                        abi.encode(_SCANNERNODEREGISTRATION_TYPEHASH, req.scanner, req.nodeRunnerId, req.chainId, keccak256(abi.encodePacked(req.metadata)), req.timestamp)
+                    )
+                ),
+                signature
+            )
+        ) revert SignatureDoesNotMatch();
+        if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
+        _scannerNodes[req.scanner] = ScannerNode(true, _msgSender(), req.chainId, req.metadata);
+        if (!_scannerNodeOwnership[req.nodeRunnerId].add(req.scanner)) revert ScannerAlreadyRegisteredTo(req.scanner, req.nodeRunnerId);
+        emit ScannerUpdated(scannerAddressToId(req.scanner), req.chainId, req.metadata, req.nodeRunnerId);
     }
 
     function updateScannerMetadata(
@@ -116,7 +142,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         uint256 chainId,
         string calldata metadata
     ) internal {
-        if (chainId!= 0) {
+        if (chainId != 0) {
             _scannerNodes[scanner] = ScannerNode(true, _msgSender(), chainId, metadata);
         } else {
             _scannerNodes[scanner] = ScannerNode(true, _msgSender(), _scannerNodes[scanner].chainId, metadata);
@@ -211,6 +237,18 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             return true;
         }
         return getStakeController().activeStakeFor(SCANNER_SUBJECT, scannerId) >= getStakeThreshold(scannerId).min && _exists(scannerId);
+    }
+
+    // ************* Priviledge setters ***************
+
+    function setRegistrationDelay(uint256 delay) external onlyRole(SCANNER_ADMIN_ROLE) {
+        _setRegistrationDelay(delay);
+    }
+
+    function _setRegistrationDelay(uint256 delay) internal {
+        if (delay == 0) revert ZeroAmount("delay");
+        registrationDelay = delay;
+        emit RegistrationDelaySet(delay);
     }
 
     // ************* Inheritance Overrides *************

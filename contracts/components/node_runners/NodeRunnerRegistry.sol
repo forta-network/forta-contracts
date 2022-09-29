@@ -26,6 +26,7 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryManag
         __BaseComponentUpgradeable_init(__manager);
         __ERC721_init(__name, __symbol);
         __ERC721Enumerable_init();
+        __EIP712_init("NodeRunnerRegistry", "1");
     }
 
     /**

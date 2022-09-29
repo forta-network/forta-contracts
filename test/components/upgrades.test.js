@@ -6,7 +6,7 @@ const { subjectToActive, subjectToInactive } = require('../../scripts/utils/stak
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
 
 let originalScanners, agents, mockRouter;
-describe.only('Upgrades testing', function () {
+describe('Upgrades testing', function () {
     prepare();
     before(async () => {
         mockRouter = await deploy(await ethers.getContractFactory('MockRouter'));
