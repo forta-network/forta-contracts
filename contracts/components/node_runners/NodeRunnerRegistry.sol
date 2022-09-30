@@ -8,8 +8,8 @@ import "./NodeRunnerRegistryCore.sol";
 import "./NodeRunnerRegistryManaged.sol";
 
 /**
- * Registry of Node Runners. Each node runner controls a number of Scanner Nodes, represented by their EOA address.
- * NodeRunner must register themselves, then register node addresses to be controlled by their NodeRunner ID (incremental uintt). Registered NodeRunners can also assign managers to manage the nodes.
+ * ERC721 Registry of Node Runners. Each node runner controls a number of Scanner Nodes, represented by their EOA address.
+ * NodeRunner must register themselves, then register node addresses to be controlled by their NodeRunner ID (incremental uint). Registered NodeRunners can also assign managers to manage the nodes.
  * Each scanner has a single "chainId" and metadata (string that can point to a URL, IPFS…). Node runners and managers can update said metadata.
  * Scanner Nodes can be enabled or disabled by:
  * - the Scanner itself,
