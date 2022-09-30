@@ -4,9 +4,22 @@
 pragma solidity ^0.8.9;
 
 import "../BaseComponentUpgradeable.sol";
+import "./NodeRunnerRegistryCore.sol";
 import "./NodeRunnerRegistryManaged.sol";
 
-contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryManaged {
+/**
+ * Registry of Node Runners. Each node runner controls a number of Scanner Nodes, represented by their EOA address.
+ * NodeRunner must register themselves, then register node addresses to be controlled by their NodeRunner ID (incremental uintt). Registered NodeRunners can also assign managers to manage the nodes.
+ * Each scanner has a single "chainId" and metadata (string that can point to a URL, IPFS…). Node runners and managers can update said metadata.
+ * Scanner Nodes can be enabled or disabled by:
+ * - the Scanner itself,
+ * - the NodeRunner
+ * - any of the scanner managers
+ * If the scannerId is staked under the minimum stake, it can’t be `enabled()` and `isEnabled()` will return false, regardless of the disabled flag.
+ * If the scanner is not registered, `isEnabled()` will return false.
+ * A Scanner Node that is not enabled will not receive work (bot assignments)
+ */
+contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore, NodeRunnerRegistryManaged {
     string public constant version = "0.1.0";
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -17,6 +30,8 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryManag
      * @param __manager address of AccessManager.
      * @param __name ERC721 token name.
      * @param __symbol ERC721 token symbol.
+     * @param __stakeSubjectManager address of StakeSubjectManager
+     * @param __registrationDelay amount of time allowed from scanner signing a ScannerNodeRegistration and it's execution by NodeRunner
      */
     function initialize(
         address __manager,
@@ -34,30 +49,13 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryManag
     }
 
     /**
-     * @notice Gets all NodeRunner properties and state
-     * @param scannerId ERC721 token id of the NodeRunner.
-     * @return registered true if NodeRunner exists.
-     * @return owner address.
-     * @return chainId the NodeRunner is monitoring.
-     * @return metadata IPFS pointer for the NodeRunner's JSON metadata.
-     * @return enabled true if staked over minimum and not disabled.
-     * @return disabledFlags 0 if not disabled, Permission if disabled.
-     */
-    /*function getScannerState(uint256 scannerId)
-        external
-        view
-        returns (
-            bool registered,
-            address owner,
-            uint256 chainId,
-            string memory metadata,
-            bool enabled,
-            uint256 disabledFlags
-        )
-    {
-        (registered, owner, chainId, metadata) = super.getScanner(scannerId);
-        return (registered, owner, chainId, metadata, isEnabled(scannerId), getDisableFlags(scannerId));
-    }*/
+     * @notice disambiguation of _canSetEnableState
+     * @inheritdoc NodeRunnerRegistryManaged
+     */ 
+    function _canSetEnableState(address scanner) internal override(NodeRunnerRegistryCore, NodeRunnerRegistryManaged) view returns (bool) {
+        return super._canSetEnableState(scanner);
+    }
+
 
     /**
      * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.

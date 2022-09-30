@@ -18,7 +18,7 @@ abstract contract NodeRunnerRegistryManaged is NodeRunnerRegistryCore {
 
     /**
      * @notice Checks sender (or metatx signer) is manager of the scanner token.
-     * @param nodeRunnerId ERC721 token id of the scanner.
+     * @param nodeRunnerId ERC721 token id of the Node Runner
      */
     modifier onlyManagerOf(uint256 nodeRunnerId) {
         if (!_managers[nodeRunnerId].contains(_msgSender())) revert SenderNotManager(_msgSender(), nodeRunnerId);
@@ -26,29 +26,29 @@ abstract contract NodeRunnerRegistryManaged is NodeRunnerRegistryCore {
     }
 
     /**
-     * @notice Checks if address is defined as a manager for a scanner.
-     * @param nodeRunnerId ERC721 token id of the scanner.
+     * @notice Checks if address is defined as a manager for a Node Runner's registered Scanner Nodes.
+     * @param nodeRunnerId ERC721 token id of the Node Runner
      * @param manager address to check.
-     * @return true if defined as manager for scanner, false otherwise.
+     * @return true if defined as manager for Node Runner, false otherwise.
      */
     function isManager(uint256 nodeRunnerId, address manager) public view virtual returns (bool) {
         return _managers[nodeRunnerId].contains(manager);
     }
 
     /**
-     * @notice Gets total managers defined for a scanner.
+     * @notice Gets total managers defined for a Node Runner's registered Scanner Nodes.
      * @dev helper for external iteration.
-     * @param nodeRunnerId ERC721 token id of the scanner.
-     * @return total managers defined for a scanner.
+     * @param nodeRunnerId ERC721 token id of the Node Runner
+     * @return total managers defined for a Node Runner.
      */
     function getManagerCount(uint256 nodeRunnerId) public view virtual returns (uint256) {
         return _managers[nodeRunnerId].length();
     }
 
     /**
-     * @notice Gets manager address at certain position of the scanner's manager set.
+     * @notice Gets manager address at certain position of the Node Runner's registered Scanner Nodes.
      * @dev helper for external iteration.
-     * @param nodeRunnerId ERC721 token id of the scanner.
+     * @param nodeRunnerId ERC721 token id of the Node Runner
      * @param index position in the set.
      * @return address of the manager at index.
      */
@@ -57,9 +57,9 @@ abstract contract NodeRunnerRegistryManaged is NodeRunnerRegistryCore {
     }
 
     /**
-     * @notice Adds or removes a manager to a certain scanner. Restricted to scanner owner.
-     * @param nodeRunnerId ERC721 token id of the scanner.
-     * @param manager address to be added or removed fromm manager list for the scanner.
+     * @notice Adds or removes a manager to a certain Node Runner's registered Scanner Nodes. Restricted to NodeRunerRegistry owner.
+     * @param nodeRunnerId ERC721 token id of the Node Runner
+     * @param manager address to be added or removed fromm manager list for the Node Runner.
      * @param enable true for adding, false for removing.
      */
     function setManager(uint256 nodeRunnerId, address manager, bool enable) public onlyOwnerOf(nodeRunnerId) {
@@ -70,6 +70,11 @@ abstract contract NodeRunnerRegistryManaged is NodeRunnerRegistryCore {
         }
         emit ManagerEnabled(nodeRunnerId, manager, enable);
     }
+
+    function _canSetEnableState(address scanner) internal virtual override view returns (bool) {
+        return super._canSetEnableState(scanner) || isManager(_scannerNodes[scanner].nodeRunnerId, _msgSender());
+    }
+
 
     uint256[49] private __gap;
 }
