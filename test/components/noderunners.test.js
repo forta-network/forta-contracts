@@ -5,7 +5,7 @@ const { prepare } = require('../fixture');
 const { BigNumber } = require('@ethersproject/bignumber');
 
 let domain, types, SCANNER_ADDRESS_1, scanner1Registration, scanner1Signature;
-describe.only('Node Runner Registry', function () {
+describe('Node Runner Registry', function () {
     // TODO Stake related stuff
     prepare({ stake: { min: '0', max: '500', activated: true } });
 
