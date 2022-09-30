@@ -21,26 +21,26 @@ const config = {
 };*/
 
 const config = {
-    network: 'matic',
+    network: 'goerli',
     contractName: 'ScannerRegistry',
     contractTag: 'scanners',
     methodName: 'setStakeThreshold',
     params: [
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 1], // Ethereum
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 137], // Polygon
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 56], // BSC
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 43114], // Avalanche
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 10], // Optimism
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 250], // Fantom
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 42161], // Arbitrum
+        [{ min: ethers.utils.parseEther('2500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 1], // Ethereum
+        [{ min: ethers.utils.parseEther('2500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 137], // Polygon
+        [{ min: ethers.utils.parseEther('2500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 56], // BSC
+        [{ min: ethers.utils.parseEther('2500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 43114], // Avalanche
+        [{ min: ethers.utils.parseEther('2500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 10], // Optimism
+        [{ min: ethers.utils.parseEther('2500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 250], // Fantom
+        [{ min: ethers.utils.parseEther('2500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 42161], // Arbitrum
     ],
     title: 'Set Scanner staking params',
     description: `
     For every supported chain (Ethereum, Polygon, BSC, Avalanche, Optimism, Fantom, Arbitrum)
-    - min: 500 FORT
+    - min: 2500 FORT
     - max: 3000 FORT
     `,
-    multisig: process.env.POLYGON_MULTISIG,
+    multisig: process.env.GOERLI_MULTISIG,
 };
 
 const MULTICALL_ABI = {

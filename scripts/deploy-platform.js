@@ -341,14 +341,20 @@ async function migrate(config = {}) {
         DEBUG(`[11] Deploying node runner registry...`);
 
         contracts.nodeRunners = await ethers.getContractFactory('NodeRunnerRegistry', deployer).then((factory) =>
-            utils.tryFetchProxy(CACHE, 'node-runners', factory, 'uups', [contracts.access.address, 'Forta Node Runners', 'FNodeRunners', SCANNER_REGISTRATION_DELAY(chainId)], {
-                constructorArgs: [contracts.forwarder.address],
-                unsafeAllow: 'delegatecall',
-            })
+            utils.tryFetchProxy(
+                CACHE,
+                'node-runners',
+                factory,
+                'uups',
+                [contracts.access.address, 'Forta Node Runners', 'FNodeRunners', contracts.stakingParameters.address, SCANNER_REGISTRATION_DELAY(chainId)],
+                {
+                    constructorArgs: [contracts.forwarder.address],
+                    unsafeAllow: 'delegatecall',
+                }
+            )
         );
 
         DEBUG(`[11] nodeRunners: ${contracts.nodeRunners.address}`);
-
     }
 
     // Roles dictionary

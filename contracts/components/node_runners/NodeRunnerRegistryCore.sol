@@ -22,7 +22,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     struct ScannerNode {
         bool registered;
-        address owner;
+        bool disabled;
         uint256 chainId;
         string metadata;
     }
@@ -46,6 +46,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata, uint256 nodeRunner);
     event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
     event RegistrationDelaySet(uint256 delay);
+    event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, address sender, bool value);
 
     error NodeRunnerNotRegistered(uint256 nodeRunnerId);
     error ScannerExists(address scanner);
@@ -55,6 +56,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     error PublicRegistrationDisabled(uint256 chainId);
     error RegisteringTooLate();
     error SignatureDoesNotMatch();
+    error CannotSetScannerActivation();
 
     /**
      * @notice Checks sender (or metatx signer) is owner of the scanner token.
@@ -121,7 +123,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
                 signature
             )
         ) revert SignatureDoesNotMatch();
-        _scannerNodes[req.scanner] = ScannerNode(true, _msgSender(), req.chainId, req.metadata);
+        _scannerNodes[req.scanner] = ScannerNode(true, false, req.chainId, req.metadata);
         if (!_scannerNodeOwnership[req.nodeRunnerId].add(req.scanner)) revert ScannerAlreadyRegisteredTo(req.scanner, req.nodeRunnerId);
         emit ScannerUpdated(scannerAddressToId(req.scanner), req.chainId, req.metadata, req.nodeRunnerId);
     }
@@ -134,21 +136,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         if (!isScannerRegistered(scanner)) revert ScannerNotRegistered(scanner);
         _scannerNodes[scanner].metadata = metadata;
         emit ScannerUpdated(scannerAddressToId(scanner), _scannerNodes[scanner].chainId, metadata, nodeRunnerId);
-    }
-
-    function _updateScannerNode(
-        uint256 nodeRunnerId,
-        address scanner,
-        uint256 chainId,
-        string calldata metadata
-    ) internal {
-        if (chainId != 0) {
-            _scannerNodes[scanner] = ScannerNode(true, _msgSender(), chainId, metadata);
-        } else {
-            _scannerNodes[scanner] = ScannerNode(true, _msgSender(), _scannerNodes[scanner].chainId, metadata);
-        }
-        _scannerNodeOwnership[nodeRunnerId].add(scanner);
-        emit ScannerUpdated(scannerAddressToId(scanner), chainId, metadata, nodeRunnerId);
     }
 
     function ownerOfScanner(address scanner) external view returns (address) {
@@ -165,17 +152,54 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     // ************* Converters *************
 
-    /// Converts scanner address to uint256 for ERC721 Token Id.
+    /// Converts scanner address to uint256 for FortaStaking Token Id.
     function scannerAddressToId(address scanner) public pure returns (uint256) {
         return uint256(uint160(scanner));
     }
 
-    /// Converts scanner address to uint256 for ERC721 Token Id.
+    /// Converts scanner address to uint256 for FortaStaking Token Id.
     function scannerIdToAddress(uint256 scannerId) public pure returns (address) {
         return address(uint160(scannerId));
     }
 
+    // ************* Scanner Disabling *************
+
+    function isDisabled(address scanner) public view returns (bool) {
+        return _scannerNodes[scanner].disabled;
+    }
+
+    function isEnabled(address scanner) public view returns (bool) {
+        return _scannerNodes[scanner].registered &&
+            !_scannerNodes[scanner].disabled &&
+            _isStakedOverMin(scannerAddressToId(scanner)); 
+    }
+
+    function _canSetEnableState(address scanner) internal view returns (bool) {
+        return _msgSender() == scanner || _msgSender() == _scannerNodes[scanner].owner;
+    }
+
+
+    function enableScanner(address scanner) public {
+        if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
+        uint256 scannerId = scannerAddressToId(scanner);
+        if (!_isStakedOverMin(scannerId)) revert StakedUnderMinimum(scannerId);
+        _setScannerActivation(scanner, true);
+    }
+
+    function disableScanner(address scanner) public {
+        if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
+        _setScannerActivation(scanner, false);
+    }
+
+    function _setScannerActivation(address scanner, bool value) private {
+        _scannerNodes[scanner].disabled = value;
+        emit ScannerEnabled(scannerAddressToId(scanner), isEnabled(scanner), _msgSender(), value);
+    }
+
+    
+
     // ************* Scanner Getters *************
+
 
     function getScanner(address scanner) public view returns (ScannerNode memory) {
         return _scannerNodes[scanner];
@@ -190,7 +214,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             uint256 chainId,
             string memory metadata,
             bool enabled,
-            uint256 disabledFlags
+            bool disabled
         )
     {
         ScannerNode memory scanner = getScanner(scannerIdToAddress(scannerId));
@@ -200,8 +224,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             scanner.owner,
             scanner.chainId,
             scanner.metadata,
-            true, //isEnabled(scannerId),
-            2 //getDisableFlags(scannerId)
+            scanner.disabled,
+            scanner.disabled
         );
     }
 

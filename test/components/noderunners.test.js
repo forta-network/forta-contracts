@@ -80,12 +80,10 @@ describe.only('Node Runner Registry', function () {
 
         expect(await this.nodeRunners.getScanner(SCANNER_ID)).to.be.deep.equal([true, this.accounts.user1.address, BigNumber.from(1), 'metadata']);
         expect(await this.nodeRunners.isScannerRegistered(SCANNER_ID)).to.be.equal(true);
-        expect(await this.nodeRunners.ownerOfScanner(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.nodeRunners.ownedScannerAddressAtIndex(1, 0)).to.be.equal(SCANNER_ID);
 
         expect(await this.nodeRunners.getScanner(SCANNER_ID_2)).to.be.deep.equal([true, this.accounts.user1.address, BigNumber.from(2), 'metadata2']);
         expect(await this.nodeRunners.isScannerRegistered(SCANNER_ID_2)).to.be.equal(true);
-        expect(await this.nodeRunners.ownerOfScanner(SCANNER_ID_2)).to.be.equal(this.accounts.user1.address);
         expect(await this.nodeRunners.ownedScannerAddressAtIndex(1, 1)).to.be.equal(SCANNER_ID_2);
 
         expect(await this.nodeRunners.isScannerRegistered(this.accounts.user3.address)).to.be.equal(false);
@@ -162,7 +160,7 @@ describe.only('Node Runner Registry', function () {
         await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1, 'metadata')).to.be.revertedWith('PublicRegistrationDisabled(1)');
     });
 
-    it('scanner update', async function () {
+    it('scanner metadata update', async function () {
         const SCANNER_ID = this.accounts.scanner.address;
 
         await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
@@ -175,11 +173,10 @@ describe.only('Node Runner Registry', function () {
 
         expect(await this.nodeRunners.getScanner(SCANNER_ID)).to.be.deep.equal([true, this.accounts.user1.address, BigNumber.from(1), '333']);
         expect(await this.nodeRunners.isScannerRegistered(SCANNER_ID)).to.be.equal(true);
-        expect(await this.nodeRunners.ownerOfScanner(SCANNER_ID)).to.be.equal(this.accounts.user1.address);
         expect(await this.nodeRunners.ownedScannerAddressAtIndex(1, 0)).to.be.equal(SCANNER_ID);
     });
 
-    it('scanner update - non registered scanner', async function () {
+    it('scanner metadata update - non registered scanner', async function () {
         const SCANNER_ID = this.accounts.scanner.address;
         const WRONG_SCANNER_ID = this.accounts.admin.address;
 
