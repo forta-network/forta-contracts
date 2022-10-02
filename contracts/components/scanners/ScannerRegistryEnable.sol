@@ -23,7 +23,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
         length
     }
 
-    mapping(uint256 => BitMaps.BitMap) private _disabled;
+    mapping(uint256 => BitMaps.BitMap) internal _disabled;
 
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, Permission permission, bool value);
 
@@ -96,43 +96,9 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
      * @param enable true for enabling, false for disabling
      */
     function _enable(uint256 scannerId, Permission permission, bool enable) internal {
-        _beforeScannerEnable(scannerId, permission, enable);
-        _scannerEnable(scannerId, permission, enable);
-        _afterScannerEnable(scannerId, permission, enable);
-    }
-
-
-    /**
-     * @notice Hook _before scanner enable
-     * @dev does nothing in this contract
-     * @param scannerId ERC721 token id of the scanner.
-     * @param permission the sender claims to have to enable the agent.
-     * @param value true if enabling, false if disabling.
-     */
-    function _beforeScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
-    }
-
-    /**
-     * @notice Logic for enabling or disabling the scanner.
-     * @dev sets the corresponding byte in _disabled bitmap for scannerId. Emits ScannerEnabled event.
-     * @param scannerId ERC721 token id of the scanner.
-     * @param permission the sender claims to have to enable the agent.
-     * @param value true if enabling, false if disabling.
-     */
-    function _scannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
-        _disabled[scannerId].setTo(uint8(permission), !value);
-        emit ScannerEnabled(scannerId, isEnabled(scannerId), permission, value);
-    }
-
-    /**
-     * @notice Hook _after scanner enable
-     * @dev emits Router hook.
-     * @param scannerId ERC721 token id of the scanner.
-     * @param permission the sender claims to have to enable the agent.
-     * @param value true if enabling, false if disabling.
-     */
-    function _afterScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
-        
+        if (!isRegistered(scannerId)) revert ScannerNotRegistered(scannerId);
+        _disabled[scannerId].setTo(uint8(permission), !enable);
+        emit ScannerEnabled(scannerId, isEnabled(scannerId), permission, enable);
     }
 
     /**

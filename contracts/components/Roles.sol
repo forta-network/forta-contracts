@@ -16,6 +16,7 @@ bytes32 constant UPGRADER_ROLE      = keccak256("UPGRADER_ROLE");
 // Registries
 bytes32 constant AGENT_ADMIN_ROLE   = keccak256("AGENT_ADMIN_ROLE");
 bytes32 constant SCANNER_ADMIN_ROLE = keccak256("SCANNER_ADMIN_ROLE");
+bytes32 constant NODE_RUNNER_MIGRATOR_ROLE = keccak256("NODE_RUNNER_MIGRATOR_ROLE"); 
 bytes32 constant DISPATCHER_ROLE    = keccak256("DISPATCHER_ROLE");
 // Staking
 bytes32 constant SLASHER_ROLE       = keccak256("SLASHER_ROLE");

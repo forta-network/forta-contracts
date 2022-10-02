@@ -44,6 +44,14 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
         __NodeRunnerRegistryCore_init(__name, __symbol, __stakeSubjectManager, __registrationDelay);
     }
 
+    function migrateToNodeRunner(address nodeRunnerAddress) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) returns(uint256 nodeRunnerId) {
+        return _registerNodeRunner(nodeRunnerAddress);
+    }
+
+    function migrateScannerNode(ScannerNodeRegistration calldata req) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) {
+        _registerScannerNode(req); 
+    }
+
     /**
      * @notice disambiguation of _canSetEnableState
      * @inheritdoc NodeRunnerRegistryManaged
@@ -51,7 +59,6 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
     function _canSetEnableState(address scanner) internal override(NodeRunnerRegistryCore, NodeRunnerRegistryManaged) view returns (bool) {
         return super._canSetEnableState(scanner);
     }
-
 
     /**
      * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.

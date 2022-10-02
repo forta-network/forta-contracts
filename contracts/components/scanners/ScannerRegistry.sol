@@ -10,7 +10,10 @@ import "./ScannerRegistryEnable.sol";
 import "./ScannerRegistryMetadata.sol";
 
 contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryManaged, ScannerRegistryEnable, ScannerRegistryMetadata {
-    string public constant version = "0.1.3";
+    
+    string public constant version = "0.1.4";
+
+    event DeregisteredScanner(uint256 scannerId);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -56,17 +59,14 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         return (registered, owner, chainId, metadata, isEnabled(scannerId), getDisableFlags(scannerId));
     }
 
-    /**
-     * @notice Inheritance disambiguation for _scannerUpdate internal logic.
-     * @inheritdoc ScannerRegistryCore
-     */
-    function _scannerUpdate(
-        uint256 scannerId,
-        uint256 chainId,
-        string calldata metadata
-    ) internal virtual override(ScannerRegistryCore, ScannerRegistryMetadata) {
-        super._scannerUpdate(scannerId, chainId, metadata);
+    function deregisterScannerNode(uint256 scannerId) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) {
+        _burn(scannerId);
+        delete _disabled[scannerId];
+        delete _managers[scannerId];
+        delete _scannerMetadata[scannerId];
+        emit DeregisteredScanner(scannerId);
     }
+
 
     /**
      * @dev inheritance disambiguation for _getStakeThreshold

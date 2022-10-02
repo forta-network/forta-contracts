@@ -39,7 +39,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     /// nodeRunnerIds is a sequential autoincremented uint
     CountersUpgradeable.Counter private _nodeRunnerIdCounter;
     /// ScannerNode data for each scanner address;
-    mapping(address => ScannerNode) _scannerNodes;
+    mapping(address => ScannerNode) internal _scannerNodes;
     /// Set of Scanner Node addresses each nodeRunnerId owns;
     mapping(uint256 => EnumerableSet.AddressSet) internal _scannerNodeOwnership;
     /// StakeThreshold of each chainId;
@@ -115,13 +115,18 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * @return nodeRunnerId (autoincremented uint)
      */
     function registerNodeRunner() external returns (uint256 nodeRunnerId) {
+        return _registerNodeRunner(_msgSender());
+    }
+
+    function _registerNodeRunner(address nodeRunnerAddress) internal returns(uint256 nodeRunnerId) {
+        if (nodeRunnerAddress == address(0)) revert ZeroAddress("nodeRunnerAddress");
         _nodeRunnerIdCounter.increment();
         nodeRunnerId = _nodeRunnerIdCounter.current();
-        _safeMint(_msgSender(), nodeRunnerId);
+        _safeMint(nodeRunnerAddress, nodeRunnerId);
         return nodeRunnerId;
     }
 
-    // ************* Scanner ownership *************
+    // ************* Scanner Ownership *************
 
     /**
      * @notice Checks if scanner address has been registered
@@ -142,6 +147,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         return _scannerNodeOwnership[nodeRunnerId].contains(scanner);
     }
 
+
     /**
      * @notice Method to register a Scanner Node and associate it with a nodeRunnerId. Before executing this method,
      * register a scanner with Forta Scan Node CLI and obtain the parameters for this methods by executing forta auth.
@@ -153,7 +159,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      */
     function registerScannerNode(ScannerNodeRegistration calldata req, bytes calldata signature) external onlyNodeRunner(req.nodeRunnerId) {
         if (req.timestamp + registrationDelay < block.timestamp) revert RegisteringTooLate();
-        if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
         if (
             !SignatureCheckerUpgradeable.isValidSignatureNow(
                 req.scanner,
@@ -174,6 +179,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
                 signature
             )
         ) revert SignatureDoesNotMatch();
+        _registerScannerNode(req);
+    }
+
+    function _registerScannerNode(ScannerNodeRegistration calldata req) internal {
+        if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
         _scannerNodes[req.scanner] = ScannerNode({
             registered: true,
             disabled: false,
