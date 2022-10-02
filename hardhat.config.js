@@ -7,7 +7,9 @@ require('solidity-docgen');
 require('hardhat-gas-reporter');
 require('@openzeppelin/hardhat-upgrades');
 require('@openzeppelin/hardhat-defender');
-const { task } = require('hardhat/config')
+require('hardhat-log-remover');
+
+const { task } = require('hardhat/config');
 const { relative } = require('path');
 
 const argv = require('yargs/yargs')().env('').argv;
