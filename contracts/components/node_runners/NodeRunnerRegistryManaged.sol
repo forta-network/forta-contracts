@@ -31,7 +31,7 @@ abstract contract NodeRunnerRegistryManaged is NodeRunnerRegistryCore {
      * @param manager address to check.
      * @return true if defined as manager for Node Runner, false otherwise.
      */
-    function isManager(uint256 nodeRunnerId, address manager) public view virtual returns (bool) {
+    function isManager(uint256 nodeRunnerId, address manager) public view returns (bool) {
         return _managers[nodeRunnerId].contains(manager);
     }
 
