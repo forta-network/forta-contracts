@@ -62,7 +62,7 @@ abstract contract NodeRunnerRegistryManaged is NodeRunnerRegistryCore {
      * @param manager address to be added or removed from manager list for the Node Runner.
      * @param enable true for adding, false for removing.
      */
-    function setManager(uint256 nodeRunnerId, address manager, bool enable) public onlyOwnerOf(nodeRunnerId) {
+    function setManager(uint256 nodeRunnerId, address manager, bool enable) public onlyNodeRunner(nodeRunnerId) {
         if (enable) {
             _managers[nodeRunnerId].add(manager);
         } else {

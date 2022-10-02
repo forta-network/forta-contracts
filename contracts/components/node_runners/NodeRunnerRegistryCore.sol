@@ -59,13 +59,14 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     error RegisteringTooLate();
     error SignatureDoesNotMatch();
     error CannotSetScannerActivation();
+    error SenderNotNodeRunner(address sender, uint256 nodeRunnerId);
 
     /**
-     * @notice Checks sender (or metatx signer) is owner of the runner token.
+     * @notice Checks sender (or metatx signer) is owner of the NodeRunnerRegistry ERC721 with ID nodeRunnerId.
      * @param nodeRunnerId ERC721 token id of the Node Runner.
      */
-    modifier onlyOwnerOf(uint256 nodeRunnerId) {
-        if (_msgSender() != ownerOf(nodeRunnerId)) revert SenderNotOwner(_msgSender(), nodeRunnerId);
+    modifier onlyNodeRunner(uint256 nodeRunnerId) {
+        if (_msgSender() != ownerOf(nodeRunnerId)) revert SenderNotNodeRunner(_msgSender(), nodeRunnerId);
         _;
     }
 
@@ -149,7 +150,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * @param req ScannerNodeRegistration struct with the Scanner Node data.
      * @param signature ERC712 signature, result from signed req by the scanner.
      */
-    function registerScannerNode(ScannerNodeRegistration calldata req, bytes calldata signature) external onlyOwnerOf(req.nodeRunnerId) {
+    function registerScannerNode(ScannerNodeRegistration calldata req, bytes calldata signature) external onlyNodeRunner(req.nodeRunnerId) {
         if (req.timestamp + registrationDelay < block.timestamp) revert RegisteringTooLate();
         if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
         if (
@@ -191,10 +192,10 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      */
     function updateScannerMetadata(address scanner, string calldata metadata) external {
         if (!isScannerRegistered(scanner)) revert ScannerNotRegistered(scanner);
-        // Not using onlyOwnerOf(_scannerNodes[scanner].nodeRunnerId) to improve error readability.
+        // Not using onlyNodeRunner(_scannerNodes[scanner].nodeRunnerId) to improve error readability.
         // If the scanner is not registered, onlyOwner would be first and emit "ERC721: invalid token ID", which is too cryptic.
         if (_msgSender() != ownerOf(_scannerNodes[scanner].nodeRunnerId)) {
-            revert SenderNotOwner(_msgSender(), _scannerNodes[scanner].nodeRunnerId);
+            revert SenderNotNodeRunner(_msgSender(), _scannerNodes[scanner].nodeRunnerId);
         }        
         _scannerNodes[scanner].metadata = metadata;
         emit ScannerUpdated(scannerAddressToId(scanner), _scannerNodes[scanner].chainId, metadata, _scannerNodes[scanner].nodeRunnerId);

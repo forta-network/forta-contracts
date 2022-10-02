@@ -133,7 +133,7 @@ describe.only('Node Runner Registry', function () {
         };
         const scanner2Signature = await this.accounts.user2._signTypedData(domain, types, scanner2Registration);
         await expect(this.nodeRunners.connect(this.accounts.user2).registerScannerNode(scanner2Registration, scanner2Signature)).to.be.revertedWith(
-            `SenderNotOwner("${this.accounts.user2.address}", 1)`
+            `SenderNotNodeRunner("${this.accounts.user2.address}", 1)`
         );
     });
 
