@@ -86,6 +86,27 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         _;
     }
 
+    /**
+     * @notice Initializer method
+     * @param __name ERC721 token name.
+     * @param __symbol ERC721 token symbol.
+     * @param __stakeSubjectManager address of StakeSubjectManager
+     * @param __registrationDelay amount of time allowed from scanner signing a ScannerNodeRegistration and it's execution by NodeRunner
+     */
+    function __NodeRunnerRegistryCore_init(
+        string calldata __name,
+        string calldata __symbol,
+        address __stakeSubjectManager,
+        uint256 __registrationDelay
+    ) internal initializer {
+        __ERC721_init(__name, __symbol);
+        __ERC721Enumerable_init();
+        __EIP712_init("NodeRunnerRegistry", "1");
+        __StakeSubjectUpgradeable_init(__stakeSubjectManager);
+
+        _setRegistrationDelay(__registrationDelay);
+    }
+
     // ************* Node Runner Ownership *************
 
     /**
@@ -109,7 +130,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         _safeMint(_msgSender(), nodeRunnerId);
         return nodeRunnerId;
     }
-
 
     // ************* Scanner ownership *************
 
@@ -238,18 +258,18 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * @notice Checks if sender or meta-tx sender is allowed to set disabled flag for a Scanner Node
      * @param scanner address
      * @return true if _msgSender() is the NodeRunner owning the Scanner or the Scanner Node itself
-     */ 
+     */
     function _canSetEnableState(address scanner) internal view virtual returns (bool) {
         return _msgSender() == scanner || ownerOf(_scannerNodes[scanner].nodeRunnerId) == _msgSender();
     }
 
     /**
      * @notice Sets Scanner Node disabled flag to false. It's not possible to re-enable a Scanner Node
-     * if the active stake allocated to it is below minimum for the scanned chainId. 
+     * if the active stake allocated to it is below minimum for the scanned chainId.
      * If that happens, allocate more stake to it, then try enableScanner again.
      * @param scanner address
      */
-    function enableScanner(address scanner) onlyRegisteredScanner(scanner) public {
+    function enableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
         uint256 scannerId = scannerAddressToId(scanner);
         if (!_isStakedOverMin(scannerId)) revert StakedUnderMinimum(scannerId);
@@ -261,7 +281,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * in Assigner software) and not being able to be linked to any bot until re-enabled.
      * @param scanner address
      */
-    function disableScanner(address scanner) onlyRegisteredScanner(scanner) public {
+    function disableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
         _setScannerDisableFlag(scanner, true);
     }
