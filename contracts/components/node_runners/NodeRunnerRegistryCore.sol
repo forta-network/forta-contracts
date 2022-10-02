@@ -46,7 +46,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     mapping(uint256 => EnumerableSet.AddressSet) internal _scannerNodeOwnership;
     /// StakeThreshold of each chainId;
     mapping(uint256 => StakeThreshold) internal _stakeThresholds;
-    /// amount of time allowed from scanner signing a ScannerNodeRegistration and it's execution by NodeRunner
+    /// Maximum amount of time allowed from scanner signing a ScannerNodeRegistration and its execution by NodeRunner
     uint256 public registrationDelay;
 
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata, uint256 nodeRunner);
