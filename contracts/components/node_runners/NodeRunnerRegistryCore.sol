@@ -168,7 +168,18 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             !SignatureCheckerUpgradeable.isValidSignatureNow(
                 req.scanner,
                 _hashTypedDataV4(
-                    keccak256(abi.encode(_SCANNERNODEREGISTRATION_TYPEHASH, req.scanner, req.nodeRunnerId, req.chainId, keccak256(abi.encodePacked(req.metadata)), req.timestamp))
+                    keccak256(
+                        abi.encode(
+                            _SCANNERNODEREGISTRATION_TYPEHASH,
+                            req.scanner,
+                            req.nodeRunnerId,
+                            req.chainId,
+                            keccak256(
+                                abi.encodePacked(req.metadata)
+                            ),
+                            req.timestamp
+                        )
+                    )
                 ),
                 signature
             )
@@ -313,7 +324,12 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     {
         ScannerNode memory scanner = getScanner(scannerIdToAddress(scannerId));
 
-        return (scanner.registered, ownerOf(scanner.nodeRunnerId), scanner.chainId, scanner.metadata, isEnabled(scannerIdToAddress(scannerId)), scanner.disabled);
+        return (
+            scanner.registered,
+            ownerOf(scanner.nodeRunnerId),
+            scanner.chainId, scanner.metadata,
+            isEnabled(scannerIdToAddress(scannerId)),
+            scanner.disabled);
     }
 
     // ************* Stake Threshold *************
@@ -347,7 +363,10 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         if (address(getStakeController()) == address(0)) {
             return true;
         }
-        return getStakeController().activeStakeFor(SCANNER_SUBJECT, scannerId) >= getStakeThreshold(scannerId).min && isScannerRegistered(scannerIdToAddress(scannerId));
+        return
+            getStakeController().activeStakeFor(SCANNER_SUBJECT, scannerId) >=
+            getStakeThreshold(scannerId).min &&
+            isScannerRegistered(scannerIdToAddress(scannerId));
     }
 
     // ************* Priviledge setters ***************
