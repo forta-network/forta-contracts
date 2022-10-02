@@ -50,6 +50,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata, uint256 nodeRunner);
     event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
     event RegistrationDelaySet(uint256 delay);
+    // TODO: discuss with the dev team if it breaks compatibility to change 'enabled' too 'operational'
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, address sender, bool disableFlag);
 
     error NodeRunnerNotRegistered(uint256 nodeRunnerId);
@@ -250,14 +251,14 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     }
 
     /**
-     * @notice Checks if the Scanner Node is considered enabled by the Forta Network, and is thus eligible for bot (Agent) assignment.
+     * @notice Checks if the Scanner Node is considered operational by the Forta Network, and is thus eligible for bot (Agent) assignment.
      * @param scanner address
      * @return true if:
      * - Scanner Node is registered AND
      * - Scanner Node's disabled flag is not set (is false) AND
-     * - (Scanner Node has more than minimum stake allocated to it OR staking is not enabled for the Scanner Node's chain)
+     * - (Scanner Node has more than minimum stake allocated to it OR staking is not activated for the Scanner Node's chain)
      */
-    function isEnabled(address scanner) public view returns (bool) {
+    function isOperational(address scanner) public view returns (bool) {
         return !_scannerNodes[scanner].disabled && _isStakedOverMin(scannerAddressToId(scanner));
     }
 
@@ -295,7 +296,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     function _setScannerDisableFlag(address scanner, bool value) private {
         _scannerNodes[scanner].disabled = value;
-        emit ScannerEnabled(scannerAddressToId(scanner), isEnabled(scanner), _msgSender(), value);
+        emit ScannerEnabled(scannerAddressToId(scanner), isOperational(scanner), _msgSender(), value);
     }
 
     // ************* Scanner Getters *************
@@ -314,7 +315,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             address owner,
             uint256 chainId,
             string memory metadata,
-            bool enabled,
+            bool operational,
             bool disabled
         )
     {
@@ -324,7 +325,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             scanner.registered,
             ownerOf(scanner.nodeRunnerId),
             scanner.chainId, scanner.metadata,
-            isEnabled(scannerIdToAddress(scannerId)),
+            isOperational(scannerIdToAddress(scannerId)),
             scanner.disabled);
     }
 

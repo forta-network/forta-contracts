@@ -5,7 +5,7 @@ const { prepare } = require('../fixture');
 const { BigNumber } = require('@ethersproject/bignumber');
 
 let domain, types, SCANNER_ADDRESS_1, scanner1Registration, scanner1Signature;
-describe.only('Node Runner Registry', function () {
+describe('Node Runner Registry', function () {
     // TODO Stake related stuff
     prepare({ stake: { min: '0', max: '500', activated: true } });
 
@@ -259,7 +259,7 @@ describe.only('Node Runner Registry', function () {
                     .to.emit(this.nodeRunners, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, false, this.accounts.manager.address, true);
 
-                expect(await this.nodeRunners.isEnabled(SCANNER_ADDRESS)).to.be.equal(false);
+                expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(false);
             });
 
             it('re-enable', async function () {
@@ -273,7 +273,7 @@ describe.only('Node Runner Registry', function () {
                     .to.emit(this.nodeRunners, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, true, this.accounts.manager.address, false);
 
-                expect(await this.nodeRunners.isEnabled(SCANNER_ADDRESS)).to.be.equal(true);
+                expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(true);
             });
 
             it('restricted', async function () {
@@ -291,7 +291,7 @@ describe.only('Node Runner Registry', function () {
                     .to.emit(this.nodeRunners, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, false, SCANNER_ADDRESS, true);
 
-                expect(await this.nodeRunners.isEnabled(SCANNER_ADDRESS)).to.be.equal(false);
+                expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(false);
             });
 
             it('re-enable', async function () {
@@ -305,7 +305,7 @@ describe.only('Node Runner Registry', function () {
                     .to.emit(this.nodeRunners, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, true, SCANNER_ADDRESS, false);
 
-                expect(await this.nodeRunners.isEnabled(SCANNER_ADDRESS)).to.be.equal(true);
+                expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(true);
             });
 
             it('restricted', async function () {
@@ -323,7 +323,7 @@ describe.only('Node Runner Registry', function () {
                     .to.emit(this.nodeRunners, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, false, this.accounts.user1.address, true);
 
-                expect(await this.nodeRunners.isEnabled(SCANNER_ADDRESS)).to.be.equal(false);
+                expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(false);
             });
 
             it('re-enable', async function () {
@@ -337,7 +337,7 @@ describe.only('Node Runner Registry', function () {
                     .to.emit(this.nodeRunners, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, true, this.accounts.user1.address, false);
 
-                expect(await this.nodeRunners.isEnabled(SCANNER_ADDRESS)).to.be.equal(true);
+                expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(true);
             });
 
             it('restricted', async function () {
@@ -359,7 +359,7 @@ describe.only('Node Runner Registry', function () {
                     .to.emit(this.nodeRunners, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, true, 1, false);
 
-                expect(await this.nodeRunners.isEnabled(SCANNER_ADDRESS)).to.be.equal(true);
+                expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(true);
             });
 
             it.skip('cannot enable if staked under minimum', async function () {
@@ -376,17 +376,17 @@ describe.only('Node Runner Registry', function () {
                 await expect(this.nodeRunners.connect(this.accounts.scanner).enableScanner(SCANNER_ADDRESS))
                     .to.emit(this.nodeRunners, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, true, 1, false);
-                expect(await this.nodeRunners.isEnabled(SCANNER_ADDRESS)).to.be.equal(true);
+                expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(true);
             });
 
-            it.skip('isEnabled reacts to stake changes', async function () {
+            it.skip('isOperational reacts to stake changes', async function () {
                 const SCANNER_ADDRESS = this.accounts.scanner.address;
                 const SCANNER_SUBJECT_ID = ethers.BigNumber.from(SCANNER_ADDRESS);
-                expect(await this.nodeRunners.isEnabled(SCANNER_ADDRESS)).to.be.equal(true);
+                expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(true);
                 await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
-                expect(await this.nodeRunners.isEnabled(SCANNER_ADDRESS)).to.be.equal(false);
+                expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(false);
                 await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_SUBJECT_ID, '10000');
-                expect(await this.nodeRunners.isEnabled(SCANNER_ADDRESS)).to.be.equal(true);
+                expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(true);
             });
         });
     });
