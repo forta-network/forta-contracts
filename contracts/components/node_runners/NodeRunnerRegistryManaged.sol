@@ -59,7 +59,7 @@ abstract contract NodeRunnerRegistryManaged is NodeRunnerRegistryCore {
     /**
      * @notice Adds or removes a manager to a certain Node Runner's registered Scanner Nodes. Restricted to NodeRunerRegistry owner.
      * @param nodeRunnerId ERC721 token id of the Node Runner
-     * @param manager address to be added or removed fromm manager list for the Node Runner.
+     * @param manager address to be added or removed from manager list for the Node Runner.
      * @param enable true for adding, false for removing.
      */
     function setManager(uint256 nodeRunnerId, address manager, bool enable) public onlyOwnerOf(nodeRunnerId) {
