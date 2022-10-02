@@ -21,7 +21,7 @@ abstract contract NodeRunnerRegistryManaged is NodeRunnerRegistryCore {
      * @param nodeRunnerId ERC721 token id of the Node Runner
      */
     modifier onlyManagerOf(uint256 nodeRunnerId) {
-        if (!_managers[nodeRunnerId].contains(_msgSender())) revert SenderNotManager(_msgSender(), nodeRunnerId);
+        if (!isManager(nodeRunnerId, _msgSender())) revert SenderNotManager(_msgSender(), nodeRunnerId);
         _;
     }
 
