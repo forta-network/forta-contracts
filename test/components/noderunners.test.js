@@ -5,7 +5,7 @@ const { prepare } = require('../fixture');
 const { BigNumber } = require('@ethersproject/bignumber');
 
 let domain, types, SCANNER_ADDRESS_1, scanner1Registration, scanner1Signature;
-describe('Node Runner Registry', function () {
+describe.only('Node Runner Registry', function () {
     // TODO Stake related stuff
     prepare({ stake: { min: '0', max: '500', activated: true } });
 
@@ -165,7 +165,7 @@ describe('Node Runner Registry', function () {
 
         await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
         await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
-        await expect(this.nodeRunners.connect(this.accounts.user1).updateScannerMetadata(1, SCANNER_ADDRESS, '333'))
+        await expect(this.nodeRunners.connect(this.accounts.user1).updateScannerMetadata(SCANNER_ADDRESS, '333'))
             .to.emit(this.nodeRunners, 'ScannerUpdated')
             .withArgs(SCANNER_ADDRESS, 1, '333', 1);
         expect(await this.nodeRunners.getScanner(SCANNER_ADDRESS)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), '333']);
@@ -179,8 +179,8 @@ describe('Node Runner Registry', function () {
         await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
         await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
 
-        await expect(this.nodeRunners.connect(this.accounts.user1).updateScannerMetadata(1, WRONG_SCANNER_ADDRESS, '333')).to.be.revertedWith(
-            `ScannerNotRegisteredTo("${WRONG_SCANNER_ADDRESS}", 1)`
+        await expect(this.nodeRunners.connect(this.accounts.user1).updateScannerMetadata(WRONG_SCANNER_ADDRESS, '333')).to.be.revertedWith(
+            `ScannerNotRegistered("${WRONG_SCANNER_ADDRESS}")`
         );
     });
 
