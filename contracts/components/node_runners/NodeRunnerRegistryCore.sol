@@ -63,7 +63,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     error CannotSetScannerActivation();
 
     /**
-     * @notice Checks sender (or metatx signer) is owner of the scanner token.
+     * @notice Checks sender (or metatx signer) is owner of the runner token.
      * @param nodeRunnerId ERC721 token id of the Node Runner.
      */
     modifier onlyOwnerOf(uint256 nodeRunnerId) {
