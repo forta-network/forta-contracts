@@ -352,7 +352,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     // ************* Priviledge setters ***************
 
-    /// Sets delay between execution of forta auth in Scan Node CLI and execution of registerScanner() in this contract
+    /// Sets maximum delay between execution of forta auth in Scan Node CLI and execution of registerScanner() in this contract
     function setRegistrationDelay(uint256 delay) external onlyRole(SCANNER_ADMIN_ROLE) {
         _setRegistrationDelay(delay);
     }
