@@ -55,7 +55,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     error NodeRunnerNotRegistered(uint256 nodeRunnerId);
     error ScannerExists(address scanner);
     error ScannerNotRegistered(address scanner);
-    error ScannerAlreadyRegisteredTo(address scanner, uint256 nodeRunnerId);
     error ScannerNotRegisteredTo(address scanner, uint256 nodeRunnerId);
     error PublicRegistrationDisabled(uint256 chainId);
     error RegisteringTooLate();
@@ -191,7 +190,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             chainId: req.chainId,
             metadata: req.metadata
         });
-        if (!_scannerNodeOwnership[req.nodeRunnerId].add(req.scanner)) revert ScannerAlreadyRegisteredTo(req.scanner, req.nodeRunnerId);
+        // It is safe to ignore add()'s returned bool, since isScannerRegistered() already checks for duplicates.
+        !_scannerNodeOwnership[req.nodeRunnerId].add(req.scanner);
         emit ScannerUpdated(scannerAddressToId(req.scanner), req.chainId, req.metadata, req.nodeRunnerId);
     }
 
