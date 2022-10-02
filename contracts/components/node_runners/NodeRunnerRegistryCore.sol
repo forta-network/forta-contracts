@@ -184,7 +184,13 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
                 signature
             )
         ) revert SignatureDoesNotMatch();
-        _scannerNodes[req.scanner] = ScannerNode(true, false, req.nodeRunnerId, req.chainId, req.metadata);
+        _scannerNodes[req.scanner] = ScannerNode({
+            registered: true,
+            disabled: false,
+            nodeRunnerId: req.nodeRunnerId,
+            chainId: req.chainId,
+            metadata: req.metadata
+        });
         if (!_scannerNodeOwnership[req.nodeRunnerId].add(req.scanner)) revert ScannerAlreadyRegisteredTo(req.scanner, req.nodeRunnerId);
         emit ScannerUpdated(scannerAddressToId(req.scanner), req.chainId, req.metadata, req.nodeRunnerId);
     }
