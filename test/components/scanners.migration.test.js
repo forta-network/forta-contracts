@@ -1,9 +1,8 @@
 const { ethers, upgrades } = require('hardhat');
 const { expect } = require('chai');
-const { prepare, deploy } = require('../fixture');
-const { BigNumber } = require('ethers');
+const { prepare } = require('../fixture');
 
-describe.only('Scanner Registry (Deprecation and migration)', function () {
+describe('Scanner Registry (Deprecation and migration)', function () {
     prepare({ stake: { min: '0', max: '500', activated: true } });
     let SCANNERS;
     const chainId = 1;
@@ -101,6 +100,17 @@ describe.only('Scanner Registry (Deprecation and migration)', function () {
 
             await this.registryMigration.connect(this.accounts.admin).setScannerNodeRegistry(this.scanners.address);
         });
+
+        it.only('should not burn ScannerNodeRegistry without NODE_RUNNER_MIGRATOR_ROLE', async function () {
+            await expect(this.scanners.connect(this.accounts.user1).deregisterScannerNode(SCANNERS[0].address)).to.be.revertedWith(
+                `MissingRole("${this.roles.NODE_RUNNER_MIGRATOR_ROLE}", "${this.accounts.user1.address}")`
+            );
+        });
+
+        it.only('should not burn ScannerNodeRegistry if it doesnt exist', async function () {
+            await expect(this.scanners.connect(this.accounts.manager).deregisterScannerNode(this.accounts.admin.address)).to.be.revertedWith('lol');
+        });
+
         describe('migrate scanners - priviledge path', function () {
             it('non-registered node runner - 1 disabled scanenr', async function () {
                 const inputNodeRunnerId = await this.registryMigration.NODE_RUNNER_NOT_MIGRATED();
@@ -242,7 +252,7 @@ describe.only('Scanner Registry (Deprecation and migration)', function () {
             });
         });
 
-        describe.only('migrate scanners - self migration path', function () {
+        describe('migrate scanners - self migration path', function () {
             it('non-registered node runner - 1 disabled scanenr', async function () {
                 const inputNodeRunnerId = await this.registryMigration.NODE_RUNNER_NOT_MIGRATED();
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);

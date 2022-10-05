@@ -62,8 +62,6 @@ describe('Node Runner Registry', function () {
         const SCANNER_ADDRESS_2 = this.accounts.user2.address;
 
         await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
-        console.log(scanner1Registration);
-        console.log(scanner1Signature);
         await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
             .to.emit(this.nodeRunners, 'ScannerUpdated')
             .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
@@ -91,6 +89,43 @@ describe('Node Runner Registry', function () {
         expect(await this.nodeRunners.isScannerRegistered(this.accounts.user3.address)).to.be.equal(false);
 
         expect(await this.nodeRunners.totalScannersRegistered(1)).to.be.equal(2);
+    });
+
+    describe.only('migration', function () {
+        beforeEach(async function () {
+            await this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_MIGRATOR, this.accounts.manager.address);
+        });
+
+        it('migrate node runner', async function () {
+            await expect(this.nodeRunners.connect(this.accounts.manager).migrateToNodeRunner(this.accounts.user1.address))
+                .to.emit(this.nodeRunners, 'Transfer')
+                .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, '1');
+            expect(await this.nodeRunners.isRegistered(1)).to.be.equal(true);
+            expect(await this.nodeRunners.ownerOf(1)).to.be.equal(this.accounts.user1.address);
+        });
+
+        it('should not migrate node runner if not NODE_RUNNER_MIGRATOR_ROLE ', async function () {
+            await expect(this.nodeRunners.connect(this.accounts.user1).migrateToNodeRunner(this.accounts.user1.address)).to.be.revertedWith('lel');
+        });
+
+        it('migrate scanner', async function () {
+            const SCANNER_ADDRESS = this.accounts.scanner.address;
+            await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+            await expect(this.nodeRunners.connect(this.accounts.manager).migrateScannerNode(scanner1Registration))
+                .to.emit(this.nodeRunners, 'ScannerUpdated')
+                .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
+            expect(await this.nodeRunners.getScanner(SCANNER_ADDRESS)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), 'metadata']);
+            expect(await this.nodeRunners.isScannerRegistered(SCANNER_ADDRESS)).to.be.equal(true);
+            expect(await this.nodeRunners.registeredScannerAddressAtIndex(1, 0)).to.be.equal(SCANNER_ADDRESS);
+            expect(await this.nodeRunners.totalScannersRegistered(1)).to.be.equal(1);
+        });
+
+        it('should not migrate scanner if not NODE_RUNNER_MIGRATOR_ROLE', async function () {
+            await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+            await expect(this.nodeRunners.connect(this.accounts.user1).migrateScannerNode(scanner1Registration)).to.be.revertedWith(
+                `MissingRole("${this.roles.NODE_RUNNER_MIGRATOR_ROLE}", "${this.accounts.user1.address}")`
+            );
+        });
     });
 
     it('should not register scanner after delay', async function () {

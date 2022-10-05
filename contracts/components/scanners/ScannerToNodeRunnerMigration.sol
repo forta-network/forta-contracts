@@ -114,6 +114,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
             }
         }
         emit MigrationExecuted(scannersMigrated, total - scannersMigrated, nodeRunnerId, inputNodeRunnerId == NODE_RUNNER_NOT_MIGRATED);
+        return nodeRunnerId;
     }
 
     /*********** Admin methods ***********/
