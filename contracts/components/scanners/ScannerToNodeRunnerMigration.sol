@@ -15,6 +15,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     /** Contract version */
     string public constant version = "0.1.0";
     uint256 public constant NODE_RUNNER_NOT_MIGRATED = 0;
+    uint256 public constant MAX_SCANNERS = 100;
 
     ScannerRegistry public scannerNodeRegistry;
     NodeRunnerRegistry public nodeRunnerRegistry;
@@ -24,6 +25,8 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     event SetNodeRunnerRegistry(address registry);
     event SetMigrationEndtime(uint256 migrationEndTime);
     event MigrationExecuted(uint256 scannersMigrated, uint256 ignoredScanners, uint256 nodeRunnerId, bool mintedNodeRunner);
+
+    error NotOwnerOfNodeRunner(address pretender, uint256 nodeRunnerId);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -48,13 +51,36 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
         _setMigrationEndTime(__migrationEndTime);
     }
 
+    /**
+     * @notice Method to self migrate from the old ScannerRegistry NFTs to a single NodeRunnerRegistry NFT.
+     * WARNING: ScannerNodeRegistry's manager addresses will not be migrated, please user NodeRunnerRegistry's methods to set them again.
+     * @param scanners array of scanner addresses to be migrated. Have to be less than MAX_SCANNERS.
+     * All the enabled (disabled flags set to 0) ScannerRegistry ERC721 identified by the uint256(address) in the input array will be:
+     * - Registered in NodeRunnerRegistry to the nodeRunnerId either indicated or generated, with the same chainId and metadata.
+     * - Deleted in ScannerNodeRegistry. The ERC721 will be burned, disabled flags and managers deleted from storage.
+     * Scanners with disabled flags != 0 will be ignored (opted out), and will stay disabled in ScannerNodeRegistry.
+     * @param nodeRunnerId If the set as 0, the NodeRunnerRegistry ERC721 will be minted to the sender (address must not own any),
+     * set as a valid NodeRunnerRegistry ERC721 id owned by sender address otherwise.
+     * @return NodeRunnerRegistry ERC721 id the scanners are migrated to.
+     */
     function selfMigrate(address[] calldata scanners, uint256 nodeRunnerId) external returns (uint256) {
-        if (nodeRunnerId != NODE_RUNNER_NOT_MIGRATED && nodeRunnerRegistry.ownerOf(nodeRunnerId) != _msgSender()) {
-            revert SenderNotOwner(_msgSender(), nodeRunnerId);
-        }
         return _migrate(scanners, nodeRunnerId, _msgSender());
     }
 
+    /**
+     * @notice Method to migrate from the old ScannerRegistry NFTs to a single NodeRunnerRegistry NFT, executed by an address with the role
+     * MIGRATION_EXECUTOR_ROLE.
+     * WARNING: ScannerNodeRegistry's manager addresses will not be migrated, please user NodeRunnerRegistry's methods to set them again.
+     * @param scanners array of scanner addresses to be migrated. Have to be less than MAX_SCANNERS.
+     * All the enabled (disabled flags set to 0) ScannerRegistry ERC721 identified by the uint256(address) in the input array will be:
+     * - Registered in NodeRunnerRegistry to the nodeRunnerId either indicated or generated, with the same chainId and metadata.
+     * - Deleted in ScannerNodeRegistry. The ERC721 will be burned, disabled flags and managers deleted from storage.
+     * Scanners with disabled flags != 0 will be ignored (opted out), and will stay disabled in ScannerNodeRegistry.
+     * @param nodeRunnerId If the set as 0, the NodeRunnerRegistry ERC721 will be minted to nodeRunner (address must not own any),
+     * set as a valid NodeRunnerRegistry ERC721 id owned by nodeRunner address otherwise.
+     * @param nodeRunner address that owns the scanners and will own the NodeRunnerRegistry ERC721
+     * @return NodeRunnerRegistry ERC721 id the scanners are migrated to.
+     */
     function migrate(address[] calldata scanners, uint256 nodeRunnerId, address nodeRunner) external onlyRole(MIGRATION_EXECUTOR_ROLE) returns (uint256) {
         return _migrate(scanners, nodeRunnerId, nodeRunner);
     }
@@ -63,6 +89,8 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
         uint256 nodeRunnerId = inputNodeRunnerId;
         if (nodeRunnerRegistry.balanceOf(nodeRunner) == 0 && nodeRunnerId == NODE_RUNNER_NOT_MIGRATED) {
             nodeRunnerId = nodeRunnerRegistry.migrateToNodeRunner(nodeRunner);
+        } else if (nodeRunnerRegistry.ownerOf(nodeRunnerId) != nodeRunner) {
+            revert NotOwnerOfNodeRunner(nodeRunner, nodeRunnerId);
         }
         uint256 total = scanners.length;
         uint256 scannersMigrated;
@@ -88,6 +116,9 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
         emit MigrationExecuted(scannersMigrated, total - scannersMigrated, nodeRunnerId, inputNodeRunnerId == NODE_RUNNER_NOT_MIGRATED);
     }
 
+    /*********** Admin methods ***********/
+
+    /// Sets ScannerNodeRegistry address
     function setScannerNodeRegistry(address _scannerNodeRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setScannerNodeRegistry(_scannerNodeRegistry);
     }
@@ -98,6 +129,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
         emit SetScannerNodeRegistry(_scannerNodeRegistry);
     }
 
+    /// Sets NodeRunnerRegistry address
     function setNodeRunnerRegistry(address _nodeRunnerRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setNodeRunnerRegistry(_nodeRunnerRegistry);
     }
@@ -108,6 +140,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
         emit SetScannerNodeRegistry(_nodeRunnerRegistry);
     }
 
+    /// Sets timestamp marking the end of the migration process
     function setMigrationEndTime(uint256 _migrationEndTime) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setMigrationEndTime(_migrationEndTime);
     }
