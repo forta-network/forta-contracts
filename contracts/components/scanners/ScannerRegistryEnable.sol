@@ -96,7 +96,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
      * @param enable true for enabling, false for disabling
      */
     function _enable(uint256 scannerId, Permission permission, bool enable) internal {
-        if (!isRegistered(scannerId)) revert ScannerNotRegistered(scannerId);
+        if (!isRegistered(scannerId)) revert ScannerNotRegistered(address(uint160(scannerId)));
         _disabled[scannerId].setTo(uint8(permission), !enable);
         emit ScannerEnabled(scannerId, isEnabled(scannerId), permission, enable);
     }

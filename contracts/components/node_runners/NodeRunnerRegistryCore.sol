@@ -269,7 +269,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * - (Scanner Node has more than minimum stake allocated to it OR staking is not activated for the Scanner Node's chain)
      */
     function isOperational(address scanner) public view returns (bool) {
-        return !_scannerNodes[scanner].disabled && _isStakedOverMin(scannerAddressToId(scanner));
+        // _isStakedOverMin already checks for disabled, but returns true in every case if stakeController is not set.
+        // since isStakedOverMin() is external, we need to keep this duplicate check.
+        return !_scannerNodes[scanner].disabled &&
+            !_scannerNodes[scanner].disabled &&
+            _isStakedOverMin(scannerAddressToId(scanner));
     }
 
     /**
@@ -330,11 +334,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         )
     {
         ScannerNode memory scanner = getScanner(scannerIdToAddress(scannerId));
-
         return (
             scanner.registered,
-            ownerOf(scanner.nodeRunnerId),
-            scanner.chainId, scanner.metadata,
+            scanner.registered ? ownerOf(scanner.nodeRunnerId) : address(0),
+            scanner.chainId,
+            scanner.metadata,
             isOperational(scannerIdToAddress(scannerId)),
             scanner.disabled);
     }

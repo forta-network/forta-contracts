@@ -5,6 +5,7 @@ const utils = require('./utils');
 const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
 const semver = require('semver');
+const { DELAY, TREASURY, SLASH_PERCENT_TO_PROPOSER, SLASHING_DEPOSIT_AMOUNT, SCANNER_REGISTRATION_DELAY, CHILD_CHAIN_MANAGER_PROXY, MIGRATION_DURATION } = require('./loadEnv');
 
 upgrades.silenceWarnings();
 
@@ -64,60 +65,6 @@ const reverseRegister = async (contract, name) => {
             .setName(contract.provider.network.ensAddress, name)
             .then((tx) => tx.wait())
             .catch((e) => DEBUG(e));
-    }
-};
-
-const CHILD_CHAIN_MANAGER_PROXY = {
-    137: '0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa',
-    80001: '0xb5505a6d998549090530911180f38aC5130101c6',
-};
-
-const DELAY = {
-    137: utils.durationToSeconds('10 days'),
-    8001: utils.durationToSeconds('10 minutes'),
-};
-
-const TREASURY = (chainId, deployer) => {
-    switch (chainId) {
-        case 5:
-        case 80001:
-        case 31337:
-            return deployer.address;
-        default:
-            throw new Error('Treasury not configured for chainId: ', chainId);
-    }
-};
-
-const SLASH_PERCENT_TO_PROPOSER = (chainId) => {
-    switch (chainId) {
-        case 5:
-        case 80001:
-        case 31337:
-            return '10';
-        default:
-            throw new Error('SLASH_PERCENT_TO_PROPOSER not configured for chainId: ', chainId);
-    }
-};
-
-const SLASHING_DEPOSIT_AMOUNT = (chainId) => {
-    switch (chainId) {
-        case 5:
-        case 80001:
-        case 31337:
-            return ethers.utils.parseEther('1000');
-        default:
-            throw new Error('SLASHING_DEPOSIT_AMOUNT not configured for chainId: ', chainId);
-    }
-};
-
-const SCANNER_REGISTRATION_DELAY = (chainId) => {
-    switch (chainId) {
-        case 5:
-        case 80001:
-        case 31337:
-            return 1000;
-        default:
-            throw new Error('NODE_RUNNER_DELAY not configured for chainId: ', chainId);
     }
 };
 
@@ -355,6 +302,24 @@ async function migrate(config = {}) {
         );
 
         DEBUG(`[11] nodeRunners: ${contracts.nodeRunners.address}`);
+
+        DEBUG(`[12] Deploying ScannerToNodeRunnerMigration...`);
+
+        contracts.registryMigration = await ethers.getContractFactory('ScannerToNodeRunnerMigration', deployer).then((factory) =>
+            utils.tryFetchProxy(
+                CACHE,
+                'node-runner-migration',
+                factory,
+                'uups',
+                [contracts.access.address, contracts.scanners.address, contracts.nodeRunners.address, MIGRATION_DURATION(chainId)],
+                {
+                    constructorArgs: [contracts.forwarder.address],
+                    unsafeAllow: 'delegatecall',
+                }
+            )
+        );
+
+        DEBUG(`[12] scannerToNodeRunnerMigration: ${contracts.registryMigration.address}`);
     }
 
     // Roles dictionary
@@ -375,10 +340,12 @@ async function migrate(config = {}) {
             REWARDS_ADMIN: ethers.utils.id('REWARDS_ADMIN_ROLE'),
             SCANNER_VERSION: ethers.utils.id('SCANNER_VERSION_ROLE'),
             SCANNER_BETA_VERSION: ethers.utils.id('SCANNER_BETA_VERSION_ROLE'),
+            NODE_RUNNER_MIGRATOR: ethers.utils.id('NODE_RUNNER_MIGRATOR_ROLE'),
+            MIGRATION_EXECUTOR: ethers.utils.id('MIGRATION_EXECUTOR_ROLE'),
         }).map((entry) => Promise.all(entry))
     ).then(Object.fromEntries);
 
-    DEBUG('[10] roles fetched');
+    DEBUG('[13] roles fetched');
     if (config.childChain && contracts.access && chainId !== 1 && chainId !== 137) {
         await contracts.access
             .hasRole(roles.ENS_MANAGER, deployer.address)
@@ -391,19 +358,19 @@ async function migrate(config = {}) {
 
             contracts.ens.registry = await ethers.getContractFactory('ENSRegistry', deployer).then((factory) => utils.tryFetchContract(CACHE, 'ens-registry', factory, []));
 
-            DEBUG(`[11.1] registry: ${contracts.ens.registry.address}`);
+            DEBUG(`[14.1] registry: ${contracts.ens.registry.address}`);
 
             contracts.ens.resolver = await ethers
                 .getContractFactory('PublicResolver', deployer)
                 .then((factory) => utils.tryFetchContract(CACHE, 'ens-resolver', factory, [contracts.ens.registry.address, ethers.constants.AddressZero]));
 
-            DEBUG(`[11.2] resolver: ${contracts.ens.resolver.address}`);
+            DEBUG(`[14.2] resolver: ${contracts.ens.resolver.address}`);
 
             contracts.ens.reverse = await ethers
                 .getContractFactory('ReverseRegistrar', deployer)
                 .then((factory) => utils.tryFetchContract(CACHE, 'ens-reverse', factory, [contracts.ens.registry.address, contracts.ens.resolver.address]));
 
-            DEBUG(`[11.3] reverse: ${contracts.ens.reverse.address}`);
+            DEBUG(`[14.3] reverse: ${contracts.ens.reverse.address}`);
 
             // link provider to registry
             provider.network.ensAddress = contracts.ens.registry.address;
@@ -424,12 +391,13 @@ async function migrate(config = {}) {
                     registerNode('staking-params.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.stakingParameters.address, chainId: chainId }),
                     registerNode('agents.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.agents.address, chainId: chainId }),
                     registerNode('scanners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scanners.address, chainId: chainId }),
+                    registerNode('node-runners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.nodeRunners.address, chainId: chainId }),
                     registerNode('scanner-node-version.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scannerNodeVersion.address, chainId: chainId }),
                     registerNode('escrow.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.escrowFactory.address, chainId: chainId }),
                 ]);
             }
 
-            DEBUG('[11.4] ens configuration');
+            DEBUG('[14.4] ens configuration');
         } else {
             contracts.ens = {};
             const ensRegistryAddress = await CACHE.get('ens-registry');
@@ -448,13 +416,14 @@ async function migrate(config = {}) {
                 reverseRegister(contracts.stakingParameters, 'staking-params.forta.eth'),
                 reverseRegister(contracts.agents, 'agents.registries.forta.eth'),
                 reverseRegister(contracts.scanners, 'scanners.registries.forta.eth'),
+                reverseRegister(contracts.nodeRunners, 'node-runners.registries.forta.eth'),
                 reverseRegister(contracts.scannerNodeVersion, 'scanner-node-version.forta.eth'),
                 // contract.escrow doesn't support reverse registration (not a component)
             ]);
         }
         await Promise.all(reverseRegisters);
 
-        DEBUG('[11.5] reverse registration');
+        DEBUG('[14.5] reverse registration');
     }
 
     await CACHE.set('contracts', Object.keys(contracts).map(utils.kebabize));

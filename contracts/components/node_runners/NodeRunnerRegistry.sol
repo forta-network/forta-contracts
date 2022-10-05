@@ -53,12 +53,13 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
     }
 
     /**
-     * @notice disambiguation of _canSetEnableState
+     * @notice disambiguation of _canSetEnableState, adding NODE_RUNNER_MIGRATOR_ROLE to the allowed setters.
      * @inheritdoc NodeRunnerRegistryManaged
      */ 
-    function _canSetEnableState(address scanner) internal override(NodeRunnerRegistryCore, NodeRunnerRegistryManaged) view returns (bool) {
-        return super._canSetEnableState(scanner);
+    function _canSetEnableState(address scanner) internal virtual override(NodeRunnerRegistryCore, NodeRunnerRegistryManaged) view returns (bool) {
+        return super._canSetEnableState(scanner) || hasRole(NODE_RUNNER_MIGRATOR_ROLE, _msgSender());
     }
+
 
     /**
      * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.

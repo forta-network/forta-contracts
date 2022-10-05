@@ -23,6 +23,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     event SetScannerNodeRegistry(address registry);
     event SetNodeRunnerRegistry(address registry);
     event SetMigrationEndtime(uint256 migrationEndTime);
+    event MigrationExecuted(uint256 scannersMigrated, uint256 ignoredScanners, uint256 nodeRunnerId, bool mintedNodeRunner);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -48,37 +49,43 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     }
 
     function selfMigrate(address[] calldata scanners, uint256 nodeRunnerId) external returns (uint256) {
+        if (nodeRunnerId != NODE_RUNNER_NOT_MIGRATED && nodeRunnerRegistry.ownerOf(nodeRunnerId) != _msgSender()) {
+            revert SenderNotOwner(_msgSender(), nodeRunnerId);
+        }
         return _migrate(scanners, nodeRunnerId, _msgSender());
     }
 
-    function migrate(address[] calldata scanners, uint256 nodeRunnerId, address nodeRunner) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) returns (uint256) {
+    function migrate(address[] calldata scanners, uint256 nodeRunnerId, address nodeRunner) external onlyRole(MIGRATION_EXECUTOR_ROLE) returns (uint256) {
         return _migrate(scanners, nodeRunnerId, nodeRunner);
     }
 
-    function _migrate(address[] calldata scanners, uint256 nodeRunnerId, address nodeRunner) private returns (uint256) {
+    function _migrate(address[] calldata scanners, uint256 inputNodeRunnerId, address nodeRunner) private returns (uint256) {
+        uint256 nodeRunnerId = inputNodeRunnerId;
         if (nodeRunnerRegistry.balanceOf(nodeRunner) == 0 && nodeRunnerId == NODE_RUNNER_NOT_MIGRATED) {
             nodeRunnerId = nodeRunnerRegistry.migrateToNodeRunner(nodeRunner);
-        } else {
-            if (nodeRunnerRegistry.ownerOf(nodeRunnerId) != nodeRunner) revert SenderNotOwner(nodeRunner, nodeRunnerId);
         }
         uint256 total = scanners.length;
+        uint256 scannersMigrated;
         for (uint256 i = 0; i < total; i++) {
             address scanner = scanners[i];
             uint256 scannerId = scannerNodeRegistry.scannerAddressToId(scanner);
             if (scannerNodeRegistry.ownerOf(scannerId) != nodeRunner) revert SenderNotOwner(nodeRunner, scannerId);
-            (, , uint256 chainId, string memory metadata) = scannerNodeRegistry.getScanner(scannerId);
-
-            nodeRunnerRegistry.migrateScannerNode(
-                NodeRunnerRegistryCore.ScannerNodeRegistration({
-                    scanner: scanner,
-                    nodeRunnerId: nodeRunnerId,
-                    chainId: chainId,
-                    metadata: metadata,
-                    timestamp: block.timestamp
-                })
-            );
-            scannerNodeRegistry.deregisterScannerNode(scannerId);
+            (, , uint256 chainId, string memory metadata, , uint256 disabledFlags) = scannerNodeRegistry.getScannerState(scannerId);
+            if (disabledFlags == 0) {
+                nodeRunnerRegistry.migrateScannerNode(
+                    NodeRunnerRegistryCore.ScannerNodeRegistration({
+                        scanner: scanner,
+                        nodeRunnerId: nodeRunnerId,
+                        chainId: chainId,
+                        metadata: metadata,
+                        timestamp: block.timestamp
+                    })
+                );
+                scannerNodeRegistry.deregisterScannerNode(scannerId);
+                scannersMigrated++;
+            }
         }
+        emit MigrationExecuted(scannersMigrated, total - scannersMigrated, nodeRunnerId, inputNodeRunnerId == NODE_RUNNER_NOT_MIGRATED);
     }
 
     function setScannerNodeRegistry(address _scannerNodeRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
