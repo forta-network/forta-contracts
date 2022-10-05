@@ -147,7 +147,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         return _scannerNodeOwnership[nodeRunnerId].contains(scanner);
     }
 
-
     /**
      * @notice Method to register a Scanner Node and associate it with a nodeRunnerId. Before executing this method,
      * register a scanner with Forta Scan Node CLI and obtain the parameters for this methods by executing forta auth.
@@ -293,8 +292,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      */
     function enableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
-        uint256 scannerId = scannerAddressToId(scanner);
-        if (!_isStakedOverMin(scannerId)) revert StakedUnderMinimum(scannerId);
         _setScannerDisableFlag(scanner, false);
     }
 
