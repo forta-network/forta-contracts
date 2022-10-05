@@ -110,6 +110,17 @@ const SLASHING_DEPOSIT_AMOUNT = (chainId) => {
     }
 };
 
+const SCANNER_REGISTRATION_DELAY = (chainId) => {
+    switch (chainId) {
+        case 5:
+        case 80001:
+        case 31337:
+            return 1000;
+        default:
+            throw new Error('NODE_RUNNER_DELAY not configured for chainId: ', chainId);
+    }
+};
+
 /*********************************************************************************************************************
  *                                                Migration workflow                                                 *
  *********************************************************************************************************************/
@@ -325,7 +336,25 @@ async function migrate(config = {}) {
         slashParams.penaltyModes = penaltyModes;
         slashParams.reasons = reasons;
         slashParams.penalties = penalties;
-        DEBUG(`[9] slashing proposal: ${contracts.slashing.address}`);
+        DEBUG(`[10] slashing proposal: ${contracts.slashing.address}`);
+
+        DEBUG(`[11] Deploying node runner registry...`);
+
+        contracts.nodeRunners = await ethers.getContractFactory('NodeRunnerRegistry', deployer).then((factory) =>
+            utils.tryFetchProxy(
+                CACHE,
+                'node-runners',
+                factory,
+                'uups',
+                [contracts.access.address, 'Forta Node Runners', 'FNodeRunners', contracts.stakingParameters.address, SCANNER_REGISTRATION_DELAY(chainId)],
+                {
+                    constructorArgs: [contracts.forwarder.address],
+                    unsafeAllow: 'delegatecall',
+                }
+            )
+        );
+
+        DEBUG(`[11] nodeRunners: ${contracts.nodeRunners.address}`);
     }
 
     // Roles dictionary

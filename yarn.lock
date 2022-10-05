@@ -1565,6 +1565,13 @@
     table "^6.8.0"
     undici "^5.4.0"
 
+"@nomiclabs/hardhat-solhint@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@nomiclabs/hardhat-solhint/-/hardhat-solhint-2.0.1.tgz#62896569d10c95a17cefab0229701cfffd19246f"
+  integrity sha512-SrTLufY21t78KLpJL5fS6gHIsCwVv0yWsHp1aQOPL1qwRWpe0Mnh5wb2YzBHd3Dbr/KzUYys+j2ui0PsSVU9pg==
+  dependencies:
+    solhint "^2.0.0"
+
 "@nomiclabs/hardhat-truffle5@^2.0.0":
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/@nomiclabs/hardhat-truffle5/-/hardhat-truffle5-2.0.6.tgz#641a9c07bb0d4c08c1015f6793fa07d52d31f35d"
@@ -2562,11 +2569,6 @@ assign-symbols@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/assign-symbols/-/assign-symbols-1.0.0.tgz#59667f41fadd4f20ccbc2bb96b8d4f7f78ec0367"
   integrity sha512-Q+JC7Whu8HhmTdBph/Tq59IoRtoy6KAm5zzPv00WdujX82lbAL8K7WVjne7vdCsAmbF4AYaDOPyO3k0kl8qIrw==
-
-ast-parents@0.0.1:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/ast-parents/-/ast-parents-0.0.1.tgz#508fd0f05d0c48775d9eccda2e174423261e8dd3"
-  integrity sha512-XHusKxKz3zoYk1ic8Un640joHbFMhbqneyoZfoKnEGtf2ey9Uh/IdpcQplODdO/kENaMIWsD0nJm4+wX3UNLHA==
 
 astral-regex@^1.0.0:
   version "1.0.0"
@@ -6647,6 +6649,11 @@ hardhat-gas-reporter@^1.0.4:
     eth-gas-reporter "^0.2.24"
     sha1 "^1.1.1"
 
+hardhat-log-remover@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/hardhat-log-remover/-/hardhat-log-remover-2.0.2.tgz#6014fe2c515ced1e0eaa7a4d854e37695aaac61a"
+  integrity sha512-TvEWOisQmZUZ7Mlb7s4XYS/MxgZzjFJSjDI8v3uTcrD6aaXy1QtomW6D6WNsISEWtwwRlSntOGpHQwFjrz2MCw==
+
 hardhat@^2.0.4, hardhat@^2.6.2:
   version "2.9.9"
   resolved "https://registry.yarnpkg.com/hardhat/-/hardhat-2.9.9.tgz#05c1015eb73e0230309534b00deeb080724aace0"
@@ -10611,22 +10618,20 @@ solc@^0.6.3:
     semver "^5.5.0"
     tmp "0.0.33"
 
-solhint-plugin-prettier@0.0.5:
+solhint-plugin-prettier@^0.0.5:
   version "0.0.5"
   resolved "https://registry.yarnpkg.com/solhint-plugin-prettier/-/solhint-plugin-prettier-0.0.5.tgz#e3b22800ba435cd640a9eca805a7f8bc3e3e6a6b"
   integrity sha512-7jmWcnVshIrO2FFinIvDQmhQpfpS2rRRn3RejiYgnjIE68xO2bvrYvjqVNfrio4xH9ghOqn83tKuTzLjEbmGIA==
   dependencies:
     prettier-linter-helpers "^1.0.0"
 
-solhint@^3.3.6:
-  version "3.3.7"
-  resolved "https://registry.yarnpkg.com/solhint/-/solhint-3.3.7.tgz#b5da4fedf7a0fee954cb613b6c55a5a2b0063aa7"
-  integrity sha512-NjjjVmXI3ehKkb3aNtRJWw55SUVJ8HMKKodwe0HnejA+k0d2kmhw7jvpa+MCTbcEgt8IWSwx0Hu6aCo/iYOZzQ==
+solhint@^2.0.0:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/solhint/-/solhint-2.3.1.tgz#6fee8fc2635112bf5812f7cba8359c14e9d9a491"
+  integrity sha512-wP/G+Dqj8LNWlCI9Mt6XiQRWQfZwv1rkZe/V+HKtip5SAZJVvp144PdH28KE45ZvR99Hhrp/Mujt74fSmXsFiw==
   dependencies:
-    "@solidity-parser/parser" "^0.14.1"
     ajv "^6.6.1"
     antlr4 "4.7.1"
-    ast-parents "0.0.1"
     chalk "^2.4.2"
     commander "2.18.0"
     cosmiconfig "^5.0.7"

@@ -22,7 +22,7 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
     * Use setStakeController(stakeController) when upgrading instead.
     * @param stakeController address.
     */
-    function __StakeAwareUpgradeable_init(address stakeController) internal initializer {
+    function __StakeSubjectUpgradeable_init(address stakeController) internal initializer {
         _setStakeController(stakeController);
     }
 

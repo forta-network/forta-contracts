@@ -24,7 +24,7 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
     string public scannerNodeBetaVersion;
 
     /** Contract version */
-    string public constant version = "0.1.2";
+    string public constant version = "0.1.1";
 
     event ScannerNodeVersionUpdated(string newVersion, string oldVersion);
     event ScannerNodeBetaVersionUpdated(string newVersion, string oldVersion);
