@@ -279,8 +279,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      */
     function enableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
-        uint256 scannerId = scannerAddressToId(scanner);
-        if (!_isStakedOverMin(scannerId)) revert StakedUnderMinimum(scannerId);
         _setScannerDisableFlag(scanner, false);
     }
 
