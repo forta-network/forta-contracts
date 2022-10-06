@@ -19,7 +19,7 @@ const subject3Address = '0xfA73331f4C0E5db9706040968BfA16f2FDFd1b76'; // ethers.
 const subject3 = ethers.BigNumber.from(subject3Address);
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
 
-describe('Forta Staking Parameters', function () {
+describe.skip('Forta Staking Parameters', function () {
     prepare();
 
     beforeEach(async function () {

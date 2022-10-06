@@ -178,7 +178,7 @@ describe('Upgrades testing', function () {
 
             await this.contracts.access.grantRole(this.roles.SCANNER_ADMIN, this.accounts.admin.address);
             expect(await scannerRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
-            expect(await scannerRegistry.version()).to.be.equal('0.1.3');
+            expect(await scannerRegistry.version()).to.be.equal('0.1.4');
             for (const scanner of SCANNERS) {
                 const scannerId = scanner.address;
 
@@ -224,6 +224,14 @@ describe('Upgrades testing', function () {
                 unsafeAllow: ['delegatecall'],
             });
             await this.stakingParameters.deployed();
+            const ScannerRegistry_0_1_3 = await ethers.getContractFactory('ScannerRegistry_0_1_3');
+            // Router is deprecated, just set an address
+            this.scanners = await upgrades.deployProxy(ScannerRegistry_0_1_3, [this.contracts.access.address, 'Forta Scanners', 'FScanners'], {
+                kind: 'uups',
+                constructorArgs: [this.contracts.forwarder.address],
+                unsafeAllow: ['delegatecall'],
+            });
+            await originalScanners.deployed();
             await this.stakingParameters.setStakeSubjectHandler(0, this.scanners.address);
             await this.stakingParameters.setStakeSubjectHandler(1, this.agents.address);
             await this.agents.connect(this.accounts.manager).setStakeThreshold(STAKING_PARAMS);

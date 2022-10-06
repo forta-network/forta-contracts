@@ -91,7 +91,7 @@ describe('Node Runner Registry', function () {
         expect(await this.nodeRunners.totalScannersRegistered(1)).to.be.equal(2);
     });
 
-    describe.only('migration', function () {
+    describe('migration', function () {
         beforeEach(async function () {
             await this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_MIGRATOR, this.accounts.manager.address);
         });
@@ -105,7 +105,9 @@ describe('Node Runner Registry', function () {
         });
 
         it('should not migrate node runner if not NODE_RUNNER_MIGRATOR_ROLE ', async function () {
-            await expect(this.nodeRunners.connect(this.accounts.user1).migrateToNodeRunner(this.accounts.user1.address)).to.be.revertedWith('lel');
+            await expect(this.nodeRunners.connect(this.accounts.user1).migrateToNodeRunner(this.accounts.user1.address)).to.be.revertedWith(
+                `MissingRole("${this.roles.NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
+            );
         });
 
         it('migrate scanner', async function () {
@@ -123,7 +125,7 @@ describe('Node Runner Registry', function () {
         it('should not migrate scanner if not NODE_RUNNER_MIGRATOR_ROLE', async function () {
             await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
             await expect(this.nodeRunners.connect(this.accounts.user1).migrateScannerNode(scanner1Registration)).to.be.revertedWith(
-                `MissingRole("${this.roles.NODE_RUNNER_MIGRATOR_ROLE}", "${this.accounts.user1.address}")`
+                `MissingRole("${this.roles.NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
             );
         });
     });

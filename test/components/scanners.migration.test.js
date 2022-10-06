@@ -101,17 +101,13 @@ describe('Scanner Registry (Deprecation and migration)', function () {
             await this.registryMigration.connect(this.accounts.admin).setScannerNodeRegistry(this.scanners.address);
         });
 
-        it.only('should not burn ScannerNodeRegistry without NODE_RUNNER_MIGRATOR_ROLE', async function () {
+        it('should not burn ScannerNodeRegistry without NODE_RUNNER_MIGRATOR_ROLE', async function () {
             await expect(this.scanners.connect(this.accounts.user1).deregisterScannerNode(SCANNERS[0].address)).to.be.revertedWith(
-                `MissingRole("${this.roles.NODE_RUNNER_MIGRATOR_ROLE}", "${this.accounts.user1.address}")`
+                `MissingRole("${this.roles.NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
             );
         });
 
-        it.only('should not burn ScannerNodeRegistry if it doesnt exist', async function () {
-            await expect(this.scanners.connect(this.accounts.manager).deregisterScannerNode(this.accounts.admin.address)).to.be.revertedWith('lol');
-        });
-
-        describe('migrate scanners - priviledge path', function () {
+        describe('migrate scanners - priviledged path', function () {
             it('non-registered node runner - 1 disabled scanenr', async function () {
                 const inputNodeRunnerId = await this.registryMigration.NODE_RUNNER_NOT_MIGRATED();
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
@@ -174,7 +170,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                     )
                 )
                     .to.emit(this.registryMigration, 'MigrationExecuted')
-                    .withArgs(4, 1, 1, true);
+                    .withArgs(4, 1, 1, false);
                 let nodeRunnerId = 1;
                 expect(await this.nodeRunners.balanceOf(this.accounts.user1.address)).to.eq(1);
                 expect(await this.nodeRunners.isRegistered(nodeRunnerId)).to.eq(true);
@@ -227,7 +223,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
 
             it('should not migrate if not owner of the scanners', async function () {
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
-                await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+                await this.nodeRunners.connect(this.accounts.user2).registerNodeRunner();
                 const inputNodeRunnerId = 1;
                 await expect(
                     this.registryMigration.connect(this.accounts.manager).migrate(
@@ -373,185 +369,6 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                         inputNodeRunnerId
                     )
                 ).to.be.revertedWith(`NotOwnerOfNodeRunner("${this.accounts.user1.address}", ${inputNodeRunnerId})`);
-            });
-        });
-    });
-
-    describe.skip('enable and disable', async function () {
-        beforeEach(async function () {
-            const SCANNER_ID = this.accounts.scanner.address;
-            await expect(this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1, 'metadata')).to.be.not.reverted;
-            await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_ID, '100');
-        });
-
-        describe('manager', async function () {
-            it('disable', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.manager).disableScanner(SCANNER_ID, 0))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, false, 0, false);
-
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(false);
-            });
-
-            it('re-enable', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.manager).disableScanner(SCANNER_ID, 0))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, false, 0, false);
-
-                await expect(this.scanners.connect(this.accounts.manager).enableScanner(SCANNER_ID, 0))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, true, 0, true);
-
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
-            });
-
-            it('restricted', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.other).disableScanner(SCANNER_ID, 0)).to.be.reverted;
-            });
-        });
-
-        describe('self', async function () {
-            it('disable', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.scanner).disableScanner(SCANNER_ID, 1))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, false, 1, false);
-
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(false);
-            });
-
-            it('re-enable', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.scanner).disableScanner(SCANNER_ID, 1))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, false, 1, false);
-
-                await expect(this.scanners.connect(this.accounts.scanner).enableScanner(SCANNER_ID, 1))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, true, 1, true);
-
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
-            });
-
-            it('restricted', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.other).disableScanner(SCANNER_ID, 1)).to.be.reverted;
-            });
-        });
-
-        describe('owner', async function () {
-            it('disable', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.user1).disableScanner(SCANNER_ID, 2))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, false, 2, false);
-
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(false);
-            });
-
-            it('re-enable', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.user1).disableScanner(SCANNER_ID, 2))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, false, 2, false);
-
-                await expect(this.scanners.connect(this.accounts.user1).enableScanner(SCANNER_ID, 2)).to.emit(this.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, true, 2, true);
-
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
-            });
-
-            it('restricted', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.other).disableScanner(SCANNER_ID, 2)).to.be.reverted;
-            });
-        });
-
-        describe('manager', async function () {
-            beforeEach(async function () {
-                await expect(this.scanners.connect(this.accounts.user1).setManager(this.accounts.scanner.address, this.accounts.user2.address, true)).to.be.not.reverted;
-            });
-
-            it('disable', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.user2).disableScanner(SCANNER_ID, 3))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, false, 3, false);
-
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(false);
-            });
-
-            it('re-enable', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.user2).disableScanner(SCANNER_ID, 3))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, false, 3, false);
-
-                await expect(this.scanners.connect(this.accounts.user2).enableScanner(SCANNER_ID, 3)).to.emit(this.scanners, 'ScannerEnabled').withArgs(SCANNER_ID, true, 3, true);
-
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
-            });
-
-            it('restricted', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.other).disableScanner(SCANNER_ID, 3)).to.be.reverted;
-            });
-        });
-
-        describe('stake', async function () {
-            it('re-enable', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-
-                await expect(this.scanners.connect(this.accounts.scanner).disableScanner(SCANNER_ID, 1))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, false, 1, false);
-
-                await expect(this.scanners.connect(this.accounts.scanner).enableScanner(SCANNER_ID, 1))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, true, 1, true);
-
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
-            });
-
-            it('cannot enable if staked under minimum', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-                const SCANNER_SUBJECT_ID = ethers.BigNumber.from(SCANNER_ID);
-                await expect(this.scanners.connect(this.accounts.scanner).disableScanner(SCANNER_ID, 1))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, false, 1, false);
-                await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
-                await expect(this.scanners.connect(this.accounts.scanner).enableScanner(SCANNER_ID, 1)).to.be.revertedWith(
-                    `StakedUnderMinimum(${ethers.BigNumber.from(SCANNER_ID).toString()})`
-                );
-                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_SUBJECT_ID, '10000');
-                await expect(this.scanners.connect(this.accounts.scanner).enableScanner(SCANNER_ID, 1))
-                    .to.emit(this.scanners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ID, true, 1, true);
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
-            });
-
-            it('isEnabled reacts to stake changes', async function () {
-                const SCANNER_ID = this.accounts.scanner.address;
-                const SCANNER_SUBJECT_ID = ethers.BigNumber.from(SCANNER_ID);
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
-                await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(false);
-                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_SUBJECT_ID, '10000');
-                expect(await this.scanners.isEnabled(SCANNER_ID)).to.be.equal(true);
             });
         });
     });
