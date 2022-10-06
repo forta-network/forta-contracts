@@ -16,7 +16,6 @@ abstract contract ScannerRegistryCore is
     StakeSubjectUpgradeable
 {
     mapping(uint256 => StakeThreshold) internal _stakeThresholds;
-    NodeRunnerRegistry internal _newRegistry;
     
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata);
     event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
@@ -103,5 +102,5 @@ abstract contract ScannerRegistryCore is
         return super._msgData();
     }
 
-    uint256[43] private __gap; // 50 - 1 (_stakeThresholds) - 5 (StakeSubjectUpgradeable) - 1 (_newRegistry)
+    uint256[44] private __gap; // 50 - 1 (_stakeThresholds) - 5 (StakeSubjectUpgradeable)
 }
