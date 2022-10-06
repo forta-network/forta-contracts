@@ -398,24 +398,6 @@ describe('Node Runner Registry', function () {
 
                 expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(true);
             });
-
-            it.skip('cannot enable if staked under minimum', async function () {
-                const SCANNER_ADDRESS = this.accounts.scanner.address;
-                const SCANNER_SUBJECT_ID = ethers.BigNumber.from(SCANNER_ADDRESS);
-                await expect(this.nodeRunners.connect(this.accounts.scanner).disableScanner(SCANNER_ADDRESS))
-                    .to.emit(this.nodeRunners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ADDRESS, false, 1, true);
-                await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
-                await expect(this.nodeRunners.connect(this.accounts.scanner).enableScanner(SCANNER_ADDRESS)).to.be.revertedWith(
-                    `StakedUnderMinimum(${ethers.BigNumber.from(SCANNER_ADDRESS).toString()})`
-                );
-                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_SUBJECT_ID, '10000');
-                await expect(this.nodeRunners.connect(this.accounts.scanner).enableScanner(SCANNER_ADDRESS))
-                    .to.emit(this.nodeRunners, 'ScannerEnabled')
-                    .withArgs(SCANNER_ADDRESS, true, 1, false);
-                expect(await this.nodeRunners.isOperational(SCANNER_ADDRESS)).to.be.equal(true);
-            });
-
             it.skip('isOperational reacts to stake changes', async function () {
                 const SCANNER_ADDRESS = this.accounts.scanner.address;
                 const SCANNER_SUBJECT_ID = ethers.BigNumber.from(SCANNER_ADDRESS);

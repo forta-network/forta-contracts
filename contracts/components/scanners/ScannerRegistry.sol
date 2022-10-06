@@ -8,12 +8,15 @@ import "./ScannerRegistryCore.sol";
 import "./ScannerRegistryManaged.sol";
 import "./ScannerRegistryEnable.sol";
 import "./ScannerRegistryMetadata.sol";
+import "./IScannerMigration.sol";
 
 contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryManaged, ScannerRegistryEnable, ScannerRegistryMetadata {
-    
     string public constant version = "0.1.4";
 
+    IScannerMigration private _migration;
+
     event DeregisteredScanner(uint256 scannerId);
+    event SetMigrationController(address controller);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -55,8 +58,75 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
             uint256 disabledFlags
         )
     {
+        // If migration has started, and scanner has migrated, return NodeRunnerRegistry values
+        if (_hasMigrationStarted() && _migration.isScannerInNewRegistry(scannerId)) {
+            return _migration.getScannerState(scannerId);
+        } else {
+            return _getScannerState(scannerId);
+        }
+    }
+
+    function _getScannerState(uint256 scannerId)
+        private
+        view
+        returns (
+            bool registered,
+            address owner,
+            uint256 chainId,
+            string memory metadata,
+            bool enabled,
+            uint256 disabledFlags
+        )
+    {
         (registered, owner, chainId, metadata) = super.getScanner(scannerId);
-        return (registered, owner, chainId, metadata, isEnabled(scannerId), getDisableFlags(scannerId));
+        return (registered, owner, chainId, metadata, isEnabled(scannerId), _getDisableFlags(scannerId));
+    }
+
+    function getScanner(uint256 scannerId)
+        public
+        view
+        virtual
+        override
+        returns (
+            bool registered,
+            address owner,
+            uint256 chainId,
+            string memory metadata
+        )
+    {
+        // If migration has started, and scanner has migrated, return NodeRunnerRegistry values
+        if (_hasMigrationStarted() && _migration.isScannerInNewRegistry(scannerId)) {
+            return _migration.getScanner(scannerId);
+        } else {
+            return super.getScanner(scannerId);
+        }
+    }
+
+    function isEnabled(uint256 scannerId) public view virtual override returns (bool) {
+        // after migration, return false
+        if (_hasMigrationStarted() && _hasMigrationEnded()) {
+            return false;
+        // During migration, return NodeRunnerRegistry value if scannerId is migrated
+        } else if (_hasMigrationStarted() && _migration.isScannerInNewRegistry(scannerId)) {
+            return _migration.isOperational(scannerId);
+        // Return ScannerRegistry value if migration has not started or if is not yet migrated
+        } else {
+            return super.isEnabled(scannerId);
+        }
+    }
+
+    function _hasMigrationStarted() private view returns (bool) {
+        return address(_migration) != address(0);
+    }
+
+    function _hasMigrationEnded() private view returns(bool) {
+        return _migration.migrationEndTime() < block.timestamp;
+    }
+
+    function setMigrationController(address _migrationController) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_migrationController == address(0)) revert ZeroAddress("_migrationController");
+        _migration = IScannerMigration(_migrationController);
+        emit SetMigrationController(_migrationController);
     }
 
     function deregisterScannerNode(uint256 scannerId) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) {
@@ -67,12 +137,17 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         emit DeregisteredScanner(scannerId);
     }
 
-
     /**
      * @dev inheritance disambiguation for _getStakeThreshold
      * see ScannerRegistryMetadata
      */
-    function _getStakeThreshold(uint256 subject) internal view virtual override(ScannerRegistryCore, ScannerRegistryMetadata) returns (StakeThreshold memory) {
+    function _getStakeThreshold(uint256 subject)
+        internal
+        view
+        virtual
+        override(ScannerRegistryCore, ScannerRegistryMetadata)
+        returns (StakeThreshold memory)
+    {
         return super._getStakeThreshold(subject);
     }
 
@@ -80,7 +155,13 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
      * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.
      * @inheritdoc ForwardedContext
      */
-    function _msgSender() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (address sender) {
+    function _msgSender()
+        internal
+        view
+        virtual
+        override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable)
+        returns (address sender)
+    {
         return super._msgSender();
     }
 
@@ -88,9 +169,15 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
      * @notice Helper to get msg.data if not a meta transaction, forwarder data in metatx if it is.
      * @inheritdoc ForwardedContext
      */
-    function _msgData() internal view virtual override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable) returns (bytes calldata) {
+    function _msgData()
+        internal
+        view
+        virtual
+        override(BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryEnable)
+        returns (bytes calldata)
+    {
         return super._msgData();
     }
 
-    uint256[50] private __gap;
+    uint256[49] private __gap;
 }

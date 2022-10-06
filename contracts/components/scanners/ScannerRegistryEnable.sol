@@ -35,7 +35,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
     */
     function isEnabled(uint256 scannerId) public view virtual returns (bool) {
         return isRegistered(scannerId) &&
-            getDisableFlags(scannerId) == 0 &&
+            _getDisableFlags(scannerId) == 0 &&
             _isStakedOverMin(scannerId); 
     }
 
@@ -46,7 +46,6 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
      * @param permission the caller claims to have.
      */
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
-        if (!_isStakedOverMin(scannerId)) revert StakedUnderMinimum(scannerId);
         if (!_hasPermission(scannerId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), scannerId);
         _enable(scannerId, permission, true);
     }
@@ -68,7 +67,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
      * @param scannerId ERC721 token id of the scanner.
      * @return uint256 containing the byte flags.
      */
-    function getDisableFlags(uint256 scannerId) public view returns (uint256) {
+    function _getDisableFlags(uint256 scannerId) internal view returns (uint256) {
         return _disabled[scannerId]._data[0];
     }
 

@@ -1,5 +1,5 @@
 const { ethers, upgrades } = require('hardhat');
-const { expect } = require('chai');
+const { expect, assert } = require('chai');
 const { prepare } = require('../fixture');
 
 describe('Scanner Registry (Deprecation and migration)', function () {
@@ -369,6 +369,66 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                         inputNodeRunnerId
                     )
                 ).to.be.revertedWith(`NotOwnerOfNodeRunner("${this.accounts.user1.address}", ${inputNodeRunnerId})`);
+            });
+        });
+
+        describe.only('ScannerNodeRegistry migration data source', function () {
+            let nonMigrated, migrated;
+            beforeEach(async function () {
+                nonMigrated = SCANNERS[0].address;
+                migrated = SCANNERS[1].address;
+                await this.scanners.connect(this.accounts.admin).setMigrationController(this.registryMigration.address);
+                await this.registryMigration.connect(this.accounts.user1).selfMigrate([migrated], 0);
+                await this.nodeRunners.connect(this.accounts.user1).updateScannerMetadata(migrated, 'migrated');
+                await this.nodeRunners.connect(this.accounts.user1).disableScanner(migrated);
+            });
+
+            describe('should return correct data', function () {
+                it('during migration', async function () {
+                    expect(await this.scanners.isEnabled(nonMigrated)).to.equal(true);
+                    expect(await this.scanners.isEnabled(migrated)).to.equal(false);
+
+                    expect(
+                        await this.scanners.getScanner(nonMigrated).then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata])
+                    ).to.be.deep.equal([true, this.accounts.user1.address, chainId, `metadata-0`]);
+                    expect(
+                        await this.scanners
+                            .getScannerState(nonMigrated)
+                            .then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata, scanner.enabled, scanner.disabledFlags])
+                    ).to.be.deep.equal([true, this.accounts.user1.address, chainId, `metadata-0`, true, 0]);
+                    expect(
+                        await this.scanners.getScanner(migrated).then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata])
+                    ).to.be.deep.equal([true, this.accounts.user1.address, chainId, `migrated`]);
+                    expect(
+                        await this.scanners
+                            .getScannerState(migrated)
+                            .then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata, scanner.enabled, scanner.disabledFlags])
+                    ).to.be.deep.equal([true, this.accounts.user1.address, chainId, `migrated`, false, 10]);
+                });
+
+                it('after migration ends', async function () {
+                    await ethers.provider.send('evm_setNextBlockTimestamp', [(await this.registryMigration.migrationEndTime.toNumber()) + 1]);
+
+                    expect(await this.scanners.isEnabled(nonMigrated)).to.equal(false);
+                    expect(await this.scanners.isEnabled(migrated)).to.equal(false);
+
+                    expect(
+                        await this.scanners.getScanner(nonMigrated).then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata])
+                    ).to.be.deep.equal([true, this.accounts.user1.address, chainId, `metadata-0`]);
+                    expect(
+                        await this.scanners
+                            .getScannerState(nonMigrated)
+                            .then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata, scanner.enabled, scanner.disabledFlags])
+                    ).to.be.deep.equal([true, this.accounts.user1.address, chainId, `metadata-0`, true, 0]);
+                    expect(
+                        await this.scanners.getScanner(migrated).then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata])
+                    ).to.be.deep.equal([true, this.accounts.user1.address, chainId, `migrated`]);
+                    expect(
+                        await this.scanners
+                            .getScannerState(migrated)
+                            .then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata, scanner.enabled, scanner.disabledFlags])
+                    ).to.be.deep.equal([true, this.accounts.user1.address, chainId, `migrated`, false, 10]);
+                });
             });
         });
     });

@@ -36,7 +36,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
      * @param __manager address of AccessManager.
      * @param __scannerNodeRegistry address of ScannerNodeRegistry (being deprecated)
      * @param __nodeRunnerRegistry address of NodeRunnerRegistry (new registry)
-     * @param __migrationEndTime time when migration period ends 
+     * @param __migrationEndTime time when migration period ends
      */
     function initialize(
         address __manager,
@@ -81,11 +81,19 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
      * @param nodeRunner address that owns the scanners and will own the NodeRunnerRegistry ERC721
      * @return NodeRunnerRegistry ERC721 id the scanners are migrated to.
      */
-    function migrate(address[] calldata scanners, uint256 nodeRunnerId, address nodeRunner) external onlyRole(MIGRATION_EXECUTOR_ROLE) returns (uint256) {
+    function migrate(
+        address[] calldata scanners,
+        uint256 nodeRunnerId,
+        address nodeRunner
+    ) external onlyRole(MIGRATION_EXECUTOR_ROLE) returns (uint256) {
         return _migrate(scanners, nodeRunnerId, nodeRunner);
     }
 
-    function _migrate(address[] calldata scanners, uint256 inputNodeRunnerId, address nodeRunner) private returns (uint256) {
+    function _migrate(
+        address[] calldata scanners,
+        uint256 inputNodeRunnerId,
+        address nodeRunner
+    ) private returns (uint256) {
         uint256 nodeRunnerId = inputNodeRunnerId;
         if (nodeRunnerRegistry.balanceOf(nodeRunner) == 0 && nodeRunnerId == NODE_RUNNER_NOT_MIGRATED) {
             nodeRunnerId = nodeRunnerRegistry.migrateToNodeRunner(nodeRunner);
@@ -115,6 +123,52 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
         }
         emit MigrationExecuted(scannersMigrated, total - scannersMigrated, nodeRunnerId, inputNodeRunnerId == NODE_RUNNER_NOT_MIGRATED);
         return nodeRunnerId;
+    }
+
+    /*********** IScannerMigration ***********/
+
+    function isScannerInNewRegistry(uint256 scannerId) external view override returns (bool) {
+        return nodeRunnerRegistry.isScannerRegistered(address(uint160(scannerId)));
+    }
+
+    function getScannerState(uint256 scannerId)
+        external
+        view
+        override
+        returns (
+            bool registered,
+            address owner,
+            uint256 chainId,
+            string memory metadata,
+            bool enabled,
+            uint256 disabledFlags
+        )
+    {
+        bool disabled;
+        (registered, owner, chainId, metadata, enabled, disabled) =  nodeRunnerRegistry.getScannerState(scannerId);
+        if (disabled) {
+            disabledFlags = 1;
+        }
+        return (registered, owner, chainId, metadata, enabled, disabledFlags);
+    }
+
+    function getScanner(uint256 scannerId)
+        external
+        view
+        override
+        returns (
+            bool registered,
+            address owner,
+            uint256 chainId,
+            string memory metadata
+        )
+    {
+        (registered, owner, chainId, metadata, , ) =  nodeRunnerRegistry.getScannerState(scannerId);
+        return (registered, owner, chainId, metadata);
+    }
+
+    function isOperational(uint256 scannerId) external view override returns (bool) {
+        return nodeRunnerRegistry.isOperational(address(uint160(scannerId)));
     }
 
     /*********** Admin methods ***********/
@@ -153,4 +207,5 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     }
 
     uint256[47] private __gap;
+
 }

@@ -21,7 +21,7 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
      * @return chainId the scanner is monitoring.
      * @return metadata IPFS pointer for the scanner's JSON metadata.
      */
-    function getScanner(uint256 scannerId) public view returns (bool registered, address owner, uint256 chainId, string memory metadata) {
+    function getScanner(uint256 scannerId) public virtual view returns (bool registered, address owner, uint256 chainId, string memory metadata) {
         bool exists = _exists(scannerId);
         return (
             exists,
