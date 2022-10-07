@@ -5,7 +5,7 @@ const utils = require('./utils');
 const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
 const semver = require('semver');
-const { DELAY, TREASURY, SLASH_PERCENT_TO_PROPOSER, SLASHING_DEPOSIT_AMOUNT, SCANNER_REGISTRATION_DELAY, CHILD_CHAIN_MANAGER_PROXY, MIGRATION_DURATION } = require('./loadEnv');
+const deployEnv = require('./loadEnv');
 
 upgrades.silenceWarnings();
 
@@ -75,7 +75,7 @@ async function migrate(config = {}) {
     const provider = config?.provider ?? config?.deployer?.provider ?? (await utils.getDefaultProvider());
     const deployer = config?.deployer ?? (await utils.getDefaultDeployer(provider));
     const { name, chainId } = await provider.getNetwork();
-    const delay = DELAY[chainId] ?? 0;
+    const delay = deployEnv.DELAY[chainId] ?? 0;
 
     DEBUG(`Network:  ${name} (${chainId})`);
     DEBUG(`ENS:      ${provider.network.ensAddress ?? 'undetected'}`);
@@ -86,14 +86,14 @@ async function migrate(config = {}) {
 
     //const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
     const configName = `${chainId === 5 ? './_old/' : ''}.cache-${chainId}${chainId === 5 ? '-with-components' : ''}`;
-    console.log(configName);
+    console.log('configName:', configName);
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: configName });
 
     if (config?.force) {
         CACHE.clear();
     }
-    config.childChain = config.childChain ? config.childChain : !!CHILD_CHAIN_MANAGER_PROXY[chainId];
-    config.childChainManagerProxy = config.childChainManagerProxy ?? CHILD_CHAIN_MANAGER_PROXY[chainId];
+    config.childChain = config.childChain ? config.childChain : !!deployEnv.CHILD_CHAIN_MANAGER_PROXY[chainId];
+    config.childChainManagerProxy = config.childChainManagerProxy ?? deployEnv.CHILD_CHAIN_MANAGER_PROXY[chainId];
     config.chainsToDeploy = config.chainsToDeploy ?? ['L1', 'L2'];
     const contracts = {};
     const slashParams = {};
@@ -128,7 +128,7 @@ async function migrate(config = {}) {
         DEBUG(`[3] access: ${contracts.access.address}`);
 
         contracts.staking = await ethers.getContractFactory('FortaStaking', deployer).then((factory) =>
-            utils.tryFetchProxy(CACHE, 'staking', factory, 'uups', [contracts.access.address, contracts.token.address, delay, TREASURY(chainId, deployer)], {
+            utils.tryFetchProxy(CACHE, 'staking', factory, 'uups', [contracts.access.address, contracts.token.address, delay, deployEnv.TREASURY(chainId, deployer)], {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             })
@@ -269,8 +269,8 @@ async function migrate(config = {}) {
                     contracts.access.address,
                     contracts.staking.address,
                     contracts.stakingParameters.address,
-                    SLASHING_DEPOSIT_AMOUNT(chainId),
-                    SLASH_PERCENT_TO_PROPOSER(chainId),
+                    deployEnv.SLASHING_DEPOSIT_AMOUNT(chainId),
+                    deployEnv.SLASH_PERCENT_TO_PROPOSER(chainId),
                     reasonIds,
                     Object.keys(reasons).map((reason) => penalties[reasons[reason]]),
                 ],
@@ -293,7 +293,7 @@ async function migrate(config = {}) {
                 'node-runners',
                 factory,
                 'uups',
-                [contracts.access.address, 'Forta Node Runners', 'FNodeRunners', contracts.stakingParameters.address, SCANNER_REGISTRATION_DELAY(chainId)],
+                [contracts.access.address, 'Forta Node Runners', 'FNodeRunners', contracts.stakingParameters.address, deployEnv.SCANNER_REGISTRATION_DELAY(chainId)],
                 {
                     constructorArgs: [contracts.forwarder.address],
                     unsafeAllow: 'delegatecall',
@@ -304,14 +304,14 @@ async function migrate(config = {}) {
         DEBUG(`[11] nodeRunners: ${contracts.nodeRunners.address}`);
 
         DEBUG(`[12] Deploying ScannerToNodeRunnerMigration...`);
-
+        const now = await ethers.provider.getBlock('latest').then(({ timestamp }) => timestamp);
         contracts.registryMigration = await ethers.getContractFactory('ScannerToNodeRunnerMigration', deployer).then((factory) =>
             utils.tryFetchProxy(
                 CACHE,
                 'node-runner-migration',
                 factory,
                 'uups',
-                [contracts.access.address, contracts.scanners.address, contracts.nodeRunners.address, MIGRATION_DURATION(chainId)],
+                [contracts.access.address, contracts.scanners.address, contracts.nodeRunners.address, now + deployEnv.deployEnv.MIGRATION_DURATION(chainId)],
                 {
                     constructorArgs: [contracts.forwarder.address],
                     unsafeAllow: 'delegatecall',
