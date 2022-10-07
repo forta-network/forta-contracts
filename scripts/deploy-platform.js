@@ -4,6 +4,7 @@ const DEBUG = require('debug')('forta:migration');
 const utils = require('./utils');
 const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
+const NODE_RUNNER_SUBJECT = 3;
 const semver = require('semver');
 const deployEnv = require('./loadEnv');
 
@@ -293,7 +294,16 @@ async function migrate(config = {}) {
                 }
             )
         );
-        DEBUG(`[${Object.keys(contracts).length}] nodeRunners: ${contracts.slashing.address}`);
+        DEBUG(`[${Object.keys(contracts).length}] nodeRunners: ${contracts.nodeRunners.address}`);
+
+        DEBUG('Configuring stake controller...');
+
+        if ((await contracts.stakingParameters.getStakeSubjectHandler(NODE_RUNNER_SUBJECT)) !== contracts.nodeRunners.address) {
+            await contracts.stakingParameters.connect(deployer).setStakeSubjectHandler(NODE_RUNNER_SUBJECT, contracts.nodeRunners.address);
+            DEBUG('Configured stake controller');
+        } else {
+            DEBUG('Not needed');
+        }
 
         DEBUG(`Deploying Dispatch...`);
         contracts.dispatch = await ethers.getContractFactory('Dispatch', deployer).then((factory) =>
@@ -327,7 +337,6 @@ async function migrate(config = {}) {
             )
         );
         DEBUG(`[${Object.keys(contracts).length}] scannerToNodeRunnerMigration: ${contracts.registryMigration.address}`);
-
     }
 
     // Roles dictionary

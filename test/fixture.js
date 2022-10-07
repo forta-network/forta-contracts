@@ -64,12 +64,17 @@ function prepare(config = {}) {
             this.stakingSubjects = {};
             this.stakingSubjects.SCANNER_SUBJECT_TYPE = 0;
             this.stakingSubjects.AGENT_SUBJECT_TYPE = 1;
+            this.stakingSubjects.NODE_RUNNER_SUBJECT_TYPE = 3;
+
             await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated });
             await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated }, 1);
             await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated }, 1);
 
             DEBUG('Fixture: stake configured');
         }
+        // Start migration
+        await this.scanners.connect(this.accounts.admin).setMigrationController(this.registryMigration.address);
+
         // Increase time to after migration
         await ethers.provider.send('evm_setNextBlockTimestamp', [(await this.registryMigration.migrationEndTime()).toNumber() + 1]);
         await ethers.provider.send('evm_mine');
