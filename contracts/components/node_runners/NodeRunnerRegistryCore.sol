@@ -318,7 +318,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     }
 
     /// Gets ScannerNode data for address (compatibility method for off-chain components)
-    function getScannerState(uint256 scannerId)
+    function getScannerState(address scanner)
         external
         view
         returns (
@@ -330,14 +330,14 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             bool disabled
         )
     {
-        ScannerNode memory scanner = getScanner(scannerIdToAddress(scannerId));
+        ScannerNode memory scannerNode = getScanner(scanner);
         return (
-            scanner.registered,
-            scanner.registered ? ownerOf(scanner.nodeRunnerId) : address(0),
-            scanner.chainId,
-            scanner.metadata,
-            isOperational(scannerIdToAddress(scannerId)),
-            scanner.disabled);
+            scannerNode.registered,
+            scannerNode.registered ? ownerOf(scannerNode.nodeRunnerId) : address(0),
+            scannerNode.chainId,
+            scannerNode.metadata,
+            isOperational(scanner),
+            scannerNode.disabled);
     }
 
     // ************* Stake Threshold *************

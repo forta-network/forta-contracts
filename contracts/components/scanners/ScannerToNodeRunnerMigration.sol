@@ -145,7 +145,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
         )
     {
         bool disabled;
-        (registered, owner, chainId, metadata, enabled, disabled) =  nodeRunnerRegistry.getScannerState(scannerId);
+        (registered, owner, chainId, metadata, enabled, disabled) =  nodeRunnerRegistry.getScannerState(address(uint160(scannerId)));
         if (disabled) {
             disabledFlags = 1;
         }
@@ -163,7 +163,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
             string memory metadata
         )
     {
-        (registered, owner, chainId, metadata, , ) =  nodeRunnerRegistry.getScannerState(scannerId);
+        (registered, owner, chainId, metadata, , ) =  nodeRunnerRegistry.getScannerState(address(uint160(scannerId)));
         return (registered, owner, chainId, metadata);
     }
 
@@ -192,7 +192,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     function _setNodeRunnerRegistry(address _nodeRunnerRegistry) private {
         if (_nodeRunnerRegistry == address(0)) revert ZeroAddress("_nodeRunnerRegistry");
         nodeRunnerRegistry = NodeRunnerRegistry(_nodeRunnerRegistry);
-        emit SetScannerNodeRegistry(_nodeRunnerRegistry);
+        emit SetNodeRunnerRegistry(_nodeRunnerRegistry);
     }
 
     /// Sets timestamp marking the end of the migration process

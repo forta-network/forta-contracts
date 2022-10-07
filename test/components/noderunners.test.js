@@ -3,8 +3,9 @@ const { ethers } = hre;
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { BigNumber } = require('@ethersproject/bignumber');
+const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRegistration');
 
-let domain, types, SCANNER_ADDRESS_1, scanner1Registration, scanner1Signature;
+let SCANNER_ADDRESS_1, scanner1Registration, scanner1Signature, verifyingContractInfo;
 describe('Node Runner Registry', function () {
     // TODO Stake related stuff
     prepare({ stake: { min: '0', max: '500', activated: true } });
@@ -13,22 +14,11 @@ describe('Node Runner Registry', function () {
         const { chainId } = await ethers.provider.getNetwork();
         this.accounts.getAccount('scanner');
 
-        domain = {
-            name: 'NodeRunnerRegistry',
-            version: '1',
-            chainId: chainId,
-            verifyingContract: this.contracts.nodeRunners.address,
-        };
-        types = {
-            ScannerNodeRegistration: [
-                { name: 'scanner', type: 'address' },
-                { name: 'nodeRunnerId', type: 'uint256' },
-                { name: 'chainId', type: 'uint256' },
-                { name: 'metadata', type: 'string' },
-                { name: 'timestamp', type: 'uint256' },
-            ],
-        };
         SCANNER_ADDRESS_1 = this.accounts.scanner.address;
+        verifyingContractInfo = {
+            address: this.contracts.nodeRunners.address,
+            chainId: chainId,
+        };
         scanner1Registration = {
             scanner: SCANNER_ADDRESS_1,
             nodeRunnerId: 1,
@@ -36,7 +26,8 @@ describe('Node Runner Registry', function () {
             metadata: 'metadata',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
         };
-        scanner1Signature = await this.accounts.scanner._signTypedData(domain, types, scanner1Registration);
+
+        scanner1Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner1Registration, this.accounts.scanner);
     });
 
     it('isStakedOverMin false if scanner non existant', async function () {
@@ -66,13 +57,13 @@ describe('Node Runner Registry', function () {
             .to.emit(this.nodeRunners, 'ScannerUpdated')
             .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
         const scanner2Registration = {
-            scanner: this.accounts.user2.address,
+            scanner: SCANNER_ADDRESS_2,
             nodeRunnerId: 1,
             chainId: 2,
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
         };
-        const scanner2Signature = await this.accounts.user2._signTypedData(domain, types, scanner2Registration);
+        const scanner2Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner2Registration, this.accounts.user2);
         await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
             .to.emit(this.nodeRunners, 'ScannerUpdated')
             .withArgs(SCANNER_ADDRESS_2, 2, 'metadata2', 1);
@@ -139,7 +130,7 @@ describe('Node Runner Registry', function () {
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
         };
-        const scanner2Signature = await this.accounts.user2._signTypedData(domain, types, scanner2Registration);
+        const scanner2Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner2Registration, this.accounts.user2);
         const delay = (await this.contracts.nodeRunners.registrationDelay()).toNumber();
         console.log(delay);
         await hre.network.provider.send('evm_increaseTime', [delay + 1000]);
@@ -155,7 +146,7 @@ describe('Node Runner Registry', function () {
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
         };
-        const scanner2Signature = await this.accounts.user3._signTypedData(domain, types, scanner2Registration);
+        const scanner2Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner2Registration, this.accounts.user3);
         await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature)).to.be.revertedWith('SignatureDoesNotMatch');
     });
 
@@ -168,7 +159,7 @@ describe('Node Runner Registry', function () {
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
         };
-        const scanner2Signature = await this.accounts.user2._signTypedData(domain, types, scanner2Registration);
+        const scanner2Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner2Registration, this.accounts.user2);
         await expect(this.nodeRunners.connect(this.accounts.user2).registerScannerNode(scanner2Registration, scanner2Signature)).to.be.revertedWith(
             `SenderNotNodeRunner("${this.accounts.user2.address}", 1)`
         );
@@ -188,7 +179,7 @@ describe('Node Runner Registry', function () {
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
         };
-        const scanner2Signature = await this.accounts.scanner._signTypedData(domain, types, scanner2Registration);
+        const scanner2Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner2Registration, this.accounts.scanner);
         await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature)).to.be.revertedWith('ScannerExists');
     });
 

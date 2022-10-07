@@ -2,8 +2,10 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { BigNumber } = require('@ethersproject/bignumber');
+const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRegistration');
 
-describe.skip('Dispatcher', function () {
+let verifyingContractInfo
+describe.only('Dispatcher', function () {
     prepare({ stake: { min: '100', max: '500', activated: true } });
 
     beforeEach(async function () {
@@ -13,7 +15,24 @@ describe.skip('Dispatcher', function () {
         this.SCANNER_SUBJECT_ID = BigNumber.from(this.SCANNER_ID);
         // Create Agent and Scanner
         await this.agents.createAgent(this.AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]);
-        await this.scanners.connect(this.accounts.manager).adminRegister(this.SCANNER_ID, this.accounts.user1.address, 1, 'metadata');
+        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+        const { chainId } = await ethers.provider.getNetwork();
+        verifyingContractInfo = {
+            address: this.contracts.nodeRunners.address,
+            chainId: chainId,
+        };
+
+        const registration = {
+            scanner: this.SCANNER_ID,
+            nodeRunnerId: 1,
+            chainId: 1,
+            metadata: 'metadata',
+            timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+        };
+        const signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, this.accounts.scanner);
+
+        await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
+
         // Stake
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, this.SCANNER_SUBJECT_ID, '100');
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, this.AGENT_ID, '100');

@@ -104,7 +104,7 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
 
     function isEnabled(uint256 scannerId) public view virtual override returns (bool) {
         // after migration, return false
-        if (_hasMigrationStarted() && _hasMigrationEnded()) {
+        if (hasMigrationEnded()) {
             return false;
         // During migration, return NodeRunnerRegistry value if scannerId is migrated
         } else if (_hasMigrationStarted() && _migration.isScannerInNewRegistry(scannerId)) {
@@ -119,8 +119,8 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         return address(_migration) != address(0);
     }
 
-    function _hasMigrationEnded() private view returns(bool) {
-        return _migration.migrationEndTime() < block.timestamp;
+    function hasMigrationEnded() public view returns(bool) {
+        return _hasMigrationStarted() && _migration.migrationEndTime() < block.timestamp;
     }
 
     function setMigrationController(address _migrationController) external onlyRole(DEFAULT_ADMIN_ROLE) {
