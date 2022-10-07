@@ -69,10 +69,6 @@ describe('Scanner Registry (Deprecation and migration)', function () {
 
     describe('Migration', () => {
         beforeEach(async function () {
-            // Go back in time before migration end
-            await ethers.provider.send('evm_setNextBlockTimestamp', [(await this.registryMigration.migrationEndTime()).toNumber() - 5000]);
-            await ethers.provider.send('evm_mine');
-
             this.accounts.getAccount('scanner');
 
             const ScannerRegistry_0_1_3 = await ethers.getContractFactory('ScannerRegistry_0_1_3');
@@ -104,6 +100,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
             });
 
             await this.registryMigration.connect(this.accounts.admin).setScannerNodeRegistry(this.scanners.address);
+            await this.registryMigration.connect(this.accounts.admin).setMigrationEndTime((await this.registryMigration.migrationEndTime()).toNumber() + 5000);
         });
 
         it('should not burn ScannerNodeRegistry without NODE_RUNNER_MIGRATOR_ROLE', async function () {
