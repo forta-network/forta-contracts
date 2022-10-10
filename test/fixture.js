@@ -37,6 +37,7 @@ function prepare(config = {}) {
                 this.access.connect(this.accounts.admin).grantRole(this.roles.UPGRADER, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.AGENT_ADMIN, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN, this.accounts.manager.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_ADMIN, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.DISPATCHER, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.REWARDS_ADMIN, this.accounts.admin.address),
@@ -68,7 +69,7 @@ function prepare(config = {}) {
 
             await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated });
             await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated }, 1);
-            await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated }, 1);
+            await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated });
 
             DEBUG('Fixture: stake configured');
         }

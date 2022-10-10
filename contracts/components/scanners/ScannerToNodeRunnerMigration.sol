@@ -167,8 +167,8 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
         return (registered, owner, chainId, metadata);
     }
 
-    function isOperational(uint256 scannerId) external view override returns (bool) {
-        return nodeRunnerRegistry.isOperational(address(uint160(scannerId)));
+    function isScannerOperational(uint256 scannerId) external view override returns (bool) {
+        return nodeRunnerRegistry.isScannerOperational(address(uint160(scannerId)));
     }
 
     /*********** Admin methods ***********/

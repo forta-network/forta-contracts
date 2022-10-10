@@ -108,7 +108,7 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
             return false;
         // During migration, return NodeRunnerRegistry value if scannerId is migrated
         } else if (_hasMigrationStarted() && _migration.isScannerInNewRegistry(scannerId)) {
-            return _migration.isOperational(scannerId);
+            return _migration.isScannerOperational(scannerId);
         // Return ScannerRegistry value if migration has not started or if is not yet migrated
         } else {
             return super.isEnabled(scannerId);

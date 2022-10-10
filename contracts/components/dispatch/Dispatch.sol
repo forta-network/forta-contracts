@@ -307,7 +307,7 @@ contract Dispatch is BaseComponentUpgradeable {
 
     function _isScannerOperational(uint256 scannerId) internal view returns (bool) {
         if (_scanners_deprecated.hasMigrationEnded()) {
-            return _nodeRunners.isOperational(address(uint160(scannerId)));
+            return _nodeRunners.isScannerOperational(address(uint160(scannerId)));
         } else {
             return _scanners_deprecated.isEnabled(scannerId);
         }

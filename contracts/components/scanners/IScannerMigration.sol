@@ -15,5 +15,5 @@ interface IScannerMigration {
             uint256 disabledFlags
         );
     function getScanner(uint256 scannerId) external view returns (bool registered, address owner, uint256 chainId, string memory metadata);
-    function isOperational(uint256 scannerId) external view returns(bool);
+    function isScannerOperational(uint256 scannerId) external view returns(bool);
 }

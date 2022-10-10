@@ -349,6 +349,7 @@ async function migrate(config = {}) {
             UPGRADER: ethers.utils.id('UPGRADER_ROLE'),
             AGENT_ADMIN: ethers.utils.id('AGENT_ADMIN_ROLE'),
             SCANNER_ADMIN: ethers.utils.id('SCANNER_ADMIN_ROLE'),
+            NODE_RUNNER_ADMIN: ethers.utils.id('NODE_RUNNER_ADMIN_ROLE'),
             DISPATCHER: ethers.utils.id('DISPATCHER_ROLE'),
             SLASHER: ethers.utils.id('SLASHER_ROLE'),
             SLASHING_ARBITER: ethers.utils.id('SLASHING_ARBITER_ROLE'),

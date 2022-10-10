@@ -5,7 +5,7 @@ const { BigNumber } = require('@ethersproject/bignumber');
 const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRegistration');
 
 let verifyingContractInfo;
-describe('Dispatcher', function () {
+describe.skip('Dispatcher', function () {
     prepare({ stake: { min: '100', max: '500', activated: true } });
 
     beforeEach(async function () {

@@ -21,7 +21,6 @@ abstract contract ScannerRegistryCore is
     event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
     
     error ScannerNotRegistered(address scanner);
-    error PublicRegistrationDisabled(uint256 chainId);
 
     /**
      * @notice Checks sender (or metatx signer) is owner of the scanner token.

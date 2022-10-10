@@ -3,7 +3,7 @@ const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { BigNumber } = require('ethers');
 
-describe('Scanner Registry (Deprecation and migration)', function () {
+describe.skip('Scanner Registry (Deprecation and migration)', function () {
     prepare({ stake: { min: '0', max: '500', activated: true } });
     let SCANNERS;
     const chainId = 1;
