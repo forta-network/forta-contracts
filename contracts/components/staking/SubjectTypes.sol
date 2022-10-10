@@ -9,6 +9,13 @@ uint8 constant NODE_RUNNER_SUBJECT = 3;
 
 contract SubjectTypeValidator {
 
+    enum SubjectStakeAgency {
+        UNDEFINED,
+        MANAGED,
+        DIRECT,
+        DELEGATED
+    }
+
     error InvalidSubjectType(uint8 subjectType);
 
     /**
@@ -24,4 +31,17 @@ contract SubjectTypeValidator {
         ) revert InvalidSubjectType(subjectType);
         _;
     }
+
+    function getSubjectTypeAgency(uint8 subjectType) public pure returns(SubjectStakeAgency) {
+        if (subjectType == SCANNER_SUBJECT) {
+            return SubjectStakeAgency.MANAGED;
+        } else if (subjectType == AGENT_SUBJECT || subjectType == NODE_RUNNER_SUBJECT) {
+            return SubjectStakeAgency.DIRECT;
+        }
+        return SubjectStakeAgency.UNDEFINED;
+    }
+
+
+
+
 }

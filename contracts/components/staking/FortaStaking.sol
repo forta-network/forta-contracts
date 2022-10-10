@@ -88,8 +88,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     uint256 private constant HUNDRED_PERCENT = 100;
 
-
     IStakeController private _stakingParameters;
+
     uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
     uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
 
