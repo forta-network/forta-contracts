@@ -280,7 +280,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint8 subjectType,
         uint256 subject,
         uint256 stakeValue
-    ) public onlyValidSubjectType(subjectType) returns (uint256) {
+    ) public onlyValidSubjectType(subjectType) notManagedType(subjectType) returns (uint256) {
         if (address(_stakingParameters) == address(0)) revert ZeroAddress("_stakingParameters");
         if (!_stakingParameters.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
         address staker = _msgSender();

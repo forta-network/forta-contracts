@@ -7,6 +7,7 @@ const SUBJECT_1_ADDRESS = '0x727E5FCcb9e2367555373e90E637500BCa5Da40c';
 const subjects = [
     [ethers.BigNumber.from(SUBJECT_1_ADDRESS), 0], // Scanner id, scanner type
     [ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), 1], // Agent id, agent type
+    [ethers.BigNumber.from('1'), 2], // Node Runner id, Node Runner Type
 ];
 const [[subject1, subjectType1, active1, inactive1], [subject2, subjectType2, active2, inactive2]] = subjects.map((items) => [
     items[0],
@@ -22,7 +23,7 @@ const txTimestamp = (tx) =>
 
 const MAX_STAKE = '10000';
 
-describe.skip('Forta Staking', function () {
+describe.only('Forta Staking', function () {
     prepare({ stake: { min: '1', max: MAX_STAKE, activated: true } });
 
     beforeEach(async function () {
@@ -34,11 +35,15 @@ describe.skip('Forta Staking', function () {
         await this.token.connect(this.accounts.user2).approve(this.staking.address, ethers.constants.MaxUint256);
         await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
 
-        await this.scanners.connect(this.accounts.manager).adminRegister(SUBJECT_1_ADDRESS, this.accounts.user1.address, 1, 'metadata');
+        // await this.scanners.connect(this.accounts.manager).adminRegister(SUBJECT_1_ADDRESS, this.accounts.user1.address, 1, 'metadata');
     });
 
     describe('Deposit / Withdraw', function () {
-        describe('no delay', function () {
+        it.only('Should not direct deposit on managed stake', async function () {
+            await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100')).to.be.revertedWith('ForbiddenForManagedType(0)');
+        });
+
+        describe('Direct Subject - no delay', function () {
             it('happy path 1 subject', async function () {
                 expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.be.equal('0');
                 expect(await this.staking.totalActiveStake()).to.be.equal('0');
@@ -311,7 +316,7 @@ describe.skip('Forta Staking', function () {
             });
         });
 
-        describe('with delay', function () {
+        describe('Direct Subject - with delay', function () {
             const DELAY = 86400;
             beforeEach(async function () {
                 await expect(this.staking.setDelay(DELAY)).to.emit(this.staking, 'DelaySet').withArgs(DELAY);
@@ -429,7 +434,7 @@ describe.skip('Forta Staking', function () {
         });
     });
 
-    describe('Rewards', function () {
+    describe.skip('Rewards', function () {
         it('cannot reward to invalid subjectType', async function () {
             await expect(this.staking.connect(this.accounts.user1).reward(9, subject1, '10')).to.be.revertedWith('InvalidSubjectType(9)');
         });
@@ -586,7 +591,7 @@ describe.skip('Forta Staking', function () {
         });
     });
 
-    describe('Freezing', function () {
+    describe.skip('Freezing', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
             await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
@@ -621,7 +626,7 @@ describe.skip('Forta Staking', function () {
         });
     });
 
-    describe('Slashing', function () {
+    describe.skip('Slashing', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
             await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);

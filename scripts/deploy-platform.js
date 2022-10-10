@@ -4,7 +4,7 @@ const DEBUG = require('debug')('forta:migration');
 const utils = require('./utils');
 const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
-const NODE_RUNNER_SUBJECT = 3;
+const NODE_RUNNER_SUBJECT = 2;
 const semver = require('semver');
 const deployEnv = require('./loadEnv');
 

@@ -65,7 +65,7 @@ function prepare(config = {}) {
             this.stakingSubjects = {};
             this.stakingSubjects.SCANNER_SUBJECT_TYPE = 0;
             this.stakingSubjects.AGENT_SUBJECT_TYPE = 1;
-            this.stakingSubjects.NODE_RUNNER_SUBJECT_TYPE = 3;
+            this.stakingSubjects.NODE_RUNNER_SUBJECT_TYPE = 2;
 
             await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated });
             await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated }, 1);
