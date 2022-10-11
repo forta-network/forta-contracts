@@ -816,14 +816,14 @@ describe.only('Forta Staking', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
             this.accounts.getAccount('sweeper');
-            await expect(this.access.connect(this.accounts.admin).grantRole(this.roles.SWEEPER, this.accounts.sweeper.address)).to.be.not.reverted;
+            await this.access.connect(this.accounts.admin).grantRole(this.roles.SWEEPER, this.accounts.sweeper.address);
             await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
 
-            await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100')).to.be.not.reverted;
-            await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType1, subject1, '50')).to.be.not.reverted;
-            await expect(this.staking.connect(this.accounts.user2).deposit(subjectType1, subject1, '100')).to.be.not.reverted;
-            await expect(this.staking.connect(this.accounts.user3).reward(subjectType1, subject1, '100'));
-            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType1, subject1, '120', ethers.constants.AddressZero, '0')).to.be.not.reverted;
+            this.staking.connect(this.accounts.user1).deposit(subjectType2, subject2, '100');
+            this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType2, subject2, '50');
+            this.staking.connect(this.accounts.user2).deposit(subjectType2, subject2, '100');
+            this.staking.connect(this.accounts.user3).reward(subjectType2, subject2, '100');
+            this.staking.connect(this.accounts.slasher).slash(subjectType2, subject2, '120', ethers.constants.AddressZero, '0');
         });
 
         it('sweep unrelated token', async function () {
@@ -865,7 +865,7 @@ describe.only('Forta Staking', function () {
 
     describe('attack scenario', function () {
         it('dusting', async function () {
-            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: ethers.utils.parseEther('5000'), min: '1', activated: true }, 1);
+            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: ethers.utils.parseEther('5000'), min: '1', activated: true });
 
             const legitimate = this.accounts.user1;
             const attacker = this.accounts.user2;
