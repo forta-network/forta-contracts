@@ -1,46 +1,23 @@
-const { ethers } = require('hardhat');
+const hre = require('hardhat');
+const { ethers } = hre;
 const DEBUG = require('debug')('forta:propose');
 const utils = require('./utils');
 
 const { AdminClient } = require('defender-admin-client');
 const client = new AdminClient({ apiKey: process.env.DEFENDER_API_KEY, apiSecret: process.env.DEFENDER_API_SECRET });
 
-/*
 const config = {
-    network: 'goerli',
     contractName: 'AgentRegistry',
     contractTag: 'agents',
     methodName: 'setStakeThreshold',
-    params: [[{ min: '0', max: ethers.utils.parseEther('100').toString(), activated: true }]],
-    title: 'Set Bot staking params',
+    params: [[{ min: ethers.utils.parseEther('100').toString(), max: ethers.utils.parseEther('10000').toString(), activated: true }]],
+    title: 'Set Detection Bot staking threshold',
     description: `
-    - min: 0 FORT
-    - max: 100 FORT
+    - min: 100 FORT
+    - max: 10000 FORT
     `,
-    multisig: process.env.GOERLI_MULTISIG,
-};*/
-
-const config = {
-    network: 'matic',
-    contractName: 'ScannerRegistry',
-    contractTag: 'scanners',
-    methodName: 'setStakeThreshold',
-    params: [
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 1], // Ethereum
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 137], // Polygon
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 56], // BSC
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 43114], // Avalanche
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 10], // Optimism
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 250], // Fantom
-        [{ min: ethers.utils.parseEther('500').toString(), max: ethers.utils.parseEther('3000').toString(), activated: true }, 42161], // Arbitrum
-    ],
-    title: 'Set Scanner staking params',
-    description: `
-    For every supported chain (Ethereum, Polygon, BSC, Avalanche, Optimism, Fantom, Arbitrum)
-    - min: 500 FORT
-    - max: 3000 FORT
-    `,
-    multisig: process.env.POLYGON_MULTISIG,
+    network: null,
+    multisig: null,
 };
 
 const MULTICALL_ABI = {
@@ -78,19 +55,19 @@ async function main() {
 
     const { name, chainId } = await provider.getNetwork();
 
-    const deployment = require(`./.cache-${chainId}.json`);
+    const deployment = require(`./.cache-${chainId}${chainId === 5 ? '-components' : ''}.json`);
 
     console.log(`Network:  ${name} (${chainId})`);
     console.log(`Deployer: ${deployer.address}`);
     console.log('----------------------------------------------------');
-
+    config.network = hre.network.name === 'polygon' ? 'matic' : hre.network.name;
+    config.multisig = process.env[`${hre.network.name.toUpperCase()}_MULTISIG`];
     const contract = await utils.attach(config.contractName, await deployment[config.contractTag].address).then((contract) => contract.connect(deployer));
 
     console.log('Config');
     console.log(config);
     const multicall = config.params.length > 1;
-    console.log('multicall: ', multicall);
-    let functionInterface, functionInputs;
+    let functionInterface, functionInputs, forceMulticall;
     //console.log(contract.interface.functions)
     if (!multicall) {
         const fragment = contract.interface.fragments.find((fragment) => fragment.name === config.methodName);
@@ -99,8 +76,14 @@ async function main() {
         DEBUG(functionInterface.inputs[0]);
 
         functionInputs = config.params[0];
-    } else {
-        DEBUG('multicall')
+        console.log(functionInputs);
+        forceMulticall = functionInterface.inputs[0].type === 'tuple';
+    }
+    console.log('multicall: ', multicall);
+    console.log('forceMulticall: ', forceMulticall);
+
+    if (multicall || forceMulticall) {
+        DEBUG('multicall');
         if (!contract.interface.fragments.find((fragment) => fragment.name === 'multicall')) {
             throw new Error('Asumed multicall due to number of arguments, contract does not support multicall');
         }
