@@ -44,6 +44,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     mapping(uint256 => EnumerableSet.AddressSet) internal _scannerNodeOwnership;
     /// StakeThreshold of node runners
     StakeThreshold private _stakeThreshold; // 3 storage slots
+    /// nodeRunnerId => chainId. Limitation necessary to calculate stake allocations.
+    mapping(uint256 => uint256) internal _nodeRunnerChainId;
     /// Maximum amount of time allowed from scanner signing a ScannerNodeRegistration and its execution by NodeRunner
     uint256 public registrationDelay;
 
@@ -53,6 +55,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     event RegistrationDelaySet(uint256 delay);
     // TODO: discuss with the dev team if it breaks compatibility to change 'enabled' too 'operational'
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, address sender, bool disableFlag);
+    event NodeRunnerRegistered(uint256 indexed nodeRunnerId, uint256 indexed chainId);
 
     error NodeRunnerNotRegistered(uint256 nodeRunnerId);
     error ScannerExists(address scanner);
@@ -62,6 +65,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     error SignatureDoesNotMatch();
     error CannotSetScannerActivation();
     error SenderNotNodeRunner(address sender, uint256 nodeRunnerId);
+    error ChainIdMismatch(uint256 expected, uint256 provided);
 
     /**
      * @notice Checks sender (or metatx signer) is owner of the NodeRunnerRegistry ERC721 with ID nodeRunnerId.
@@ -115,15 +119,18 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * Scanner Node addresses
      * @return nodeRunnerId (autoincremented uint)
      */
-    function registerNodeRunner() external returns (uint256 nodeRunnerId) {
-        return _registerNodeRunner(_msgSender());
+    function registerNodeRunner(uint256 chainId) external returns (uint256 nodeRunnerId) {
+        return _registerNodeRunner(_msgSender(), chainId);
     }
 
-    function _registerNodeRunner(address nodeRunnerAddress) internal returns(uint256 nodeRunnerId) {
+    function _registerNodeRunner(address nodeRunnerAddress, uint256 chainId) internal returns(uint256 nodeRunnerId) {
         if (nodeRunnerAddress == address(0)) revert ZeroAddress("nodeRunnerAddress");
+        if (chainId == 0) revert ZeroAmount("chainId");
         _nodeRunnerIdCounter.increment();
         nodeRunnerId = _nodeRunnerIdCounter.current();
         _safeMint(nodeRunnerAddress, nodeRunnerId);
+        _nodeRunnerChainId[nodeRunnerId] = chainId;
+        emit NodeRunnerRegistered(nodeRunnerId, chainId);
         return nodeRunnerId;
     }
 
@@ -195,6 +202,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     function _registerScannerNode(ScannerNodeRegistration calldata req) internal {
         if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
+        if (_nodeRunnerChainId[req.nodeRunnerId] != req.chainId) revert ChainIdMismatch(_nodeRunnerChainId[req.nodeRunnerId], req.chainId);
         _scannerNodes[req.scanner] = ScannerNode({
             registered: true,
             disabled: false,
@@ -228,7 +236,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * Useful for external iteration.
      * @param nodeRunnerId ERC721 token id of the Node Runner.
      */
-    function totalScannersRegistered(uint256 nodeRunnerId) external view returns (uint256) {
+    function totalScannersRegistered(uint256 nodeRunnerId) public view returns (uint256) {
         return _scannerNodeOwnership[nodeRunnerId].length();
     }
 
@@ -371,6 +379,10 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         return _stakeThreshold;
     }
 
+    function getManagedStakeThreshold() {
+
+    }
+
     /**
      * Checks if scanner is staked over minimum stake
      * @param nodeRunnerId scanner
@@ -386,6 +398,10 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             getStakeController().activeStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) >=
             _stakeThreshold.min &&
             _exists(nodeRunnerId);
+    }
+
+    function getTotalManagedSubjects(uint256 subject) external virtual override view returns(uint256) {
+        return totalScannersRegistered(subject);
     }
 
     // ************* Priviledge setters ***************

@@ -18,7 +18,8 @@ contract SubjectTypeValidator {
     }
 
     error InvalidSubjectType(uint8 subjectType);
-    error ForbiddenForManagedType(uint8 subjectType);
+    error ForbiddenForType(uint8 subjectType, SubjectStakeAgency provided, SubjectStakeAgency expected);
+    error NotManagedType(uint8 subjectType);
 
     /**
      * @dev check if `subjectType` belongs to the defined SUBJECT_TYPES
@@ -34,8 +35,8 @@ contract SubjectTypeValidator {
         _;
     }
 
-    modifier notManagedType(uint8 subjectType) {
-        if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.MANAGED) revert ForbiddenForManagedType(subjectType);
+    modifier onlyAgencyType(uint8 subjectType, SubjectStakeAgency expected) {
+        if (getSubjectTypeAgency(subjectType) != expected) revert ForbiddenForType(subjectType, getSubjectTypeAgency(subjectType), expected);
         _;
     }
 
@@ -50,7 +51,12 @@ contract SubjectTypeValidator {
         return SubjectStakeAgency.UNDEFINED;
     }
 
-
-
+    function getManagedTypeFor(uint8 subjectType) onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) public pure returns(uint8) {
+        if (subjectType == NODE_RUNNER_SUBJECT) {
+            return SCANNER_SUBJECT;
+        } else {
+            revert InvalidSubjectType(subjectType);
+        }
+    }
 
 }

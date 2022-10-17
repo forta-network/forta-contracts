@@ -85,14 +85,16 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     // treasury for slashing
     address private _treasury;
-
-    uint256 private constant HUNDRED_PERCENT = 100;
-
     IStakeController private _stakingParameters;
 
     uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
     uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
+    uint256 private constant HUNDRED_PERCENT = 100;
 
+     // subject => active stake
+    Distributions.Balances private _allocatedStake;
+    // subject => inactive stake
+    Distributions.Balances private _unallocatedStake;
 
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
     event WithdrawalInitiated(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint64 deadline);
@@ -298,6 +300,24 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         emit StakeDeposited(subjectType, subject, staker, stakeValue);
 
         return sharesValue;
+    }
+
+    function _allocateStake(uint256 activeSharesId, uint8 subjectType, uint256 subject) private {
+        uint256 agency = getSubjectTypeAgency(subjectType);
+        if (agency == SubjectStakeAgency.DELEGATED) {
+            uint256 stakePerManaged = _allocatedStakePerManagedSubject(activeSharesId, subjectType, subject);
+            uint256 max = _stakingParameters.maxStakeFor(subjectType, subject);
+            uint256 max = _stakingParameters.getStakeSubjectHandler().
+            if (stakePerManaged >= ) {
+                
+            }
+        }
+        return 0;
+    }
+
+    function _allocatedStakePerManagedSubject(uint256 activeSharesId, uint8 subjectType, uint256 subject) public view returns(uint256) {
+        uint256 subjects = _stakingParameters.getStakeSubjectHandler(subjectType).getTotalManagedSubjects(subject);
+        return subjects == 0 ? 0 : _allocatedStake[activeSharesId] / subjects; 
     }
 
     /**
