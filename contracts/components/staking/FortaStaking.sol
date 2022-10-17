@@ -307,7 +307,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         if (agency == SubjectStakeAgency.DELEGATED) {
             uint256 stakePerManaged = _allocatedStakePerManagedSubject(activeSharesId, subjectType, subject);
             uint256 max = _stakingParameters.maxStakeFor(subjectType, subject);
-            uint256 max = _stakingParameters.getStakeSubjectHandler().
             if (stakePerManaged >= ) {
                 
             }

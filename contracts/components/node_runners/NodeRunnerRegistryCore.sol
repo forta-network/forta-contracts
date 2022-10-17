@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
 
-abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, StakeSubjectUpgradeable, EIP712Upgradeable {
+abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, StakeSubjectUpgradeable, IDelegatedStakeSubject, EIP712Upgradeable  {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -44,6 +44,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     mapping(uint256 => EnumerableSet.AddressSet) internal _scannerNodeOwnership;
     /// StakeThreshold of node runners
     StakeThreshold private _stakeThreshold; // 3 storage slots
+    mapping(uint256 => StakeThreshold) internal _scannerStakeThresholds;
     /// nodeRunnerId => chainId. Limitation necessary to calculate stake allocations.
     mapping(uint256 => uint256) internal _nodeRunnerChainId;
     /// Maximum amount of time allowed from scanner signing a ScannerNodeRegistration and its execution by NodeRunner
@@ -52,6 +53,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata, uint256 nodeRunner);
     event StakeThresholdChanged(uint256 min, uint256 max, bool activated);
+    event ManagedStakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
     event RegistrationDelaySet(uint256 delay);
     // TODO: discuss with the dev team if it breaks compatibility to change 'enabled' too 'operational'
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, address sender, bool disableFlag);
@@ -360,7 +362,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             scannerNode.disabled);
     }
 
-    // ************* Stake Threshold *************
+    // ************* StakeSubjectUpgradeable *************
 
     /**
      * @notice Sets stake parameters (min, max, activated) for node runners. Restricted to NODE_RUNNER_ADMIN_ROLE
@@ -377,10 +379,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      */
     function getStakeThreshold(uint256 subject) public view returns (StakeThreshold memory) {
         return _stakeThreshold;
-    }
-
-    function getManagedStakeThreshold() {
-
     }
 
     /**
@@ -400,9 +398,30 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             _exists(nodeRunnerId);
     }
 
+    // ************* IDelegatedStakeSubject *************
+
+    /**
+     * @notice Sets stake parameters (min, max, activated) for node runners. Restricted to NODE_RUNNER_ADMIN_ROLE
+     * @param newStakeThreshold struct with stake parameters.
+     */
+    function setManagedStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(NODE_RUNNER_ADMIN_ROLE) {
+        if (chainId == 0) revert ZeroAmount("chainId");
+        if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
+        emit ManagedStakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
+        _scannerStakeThresholds[chainId] = newStakeThreshold;
+    }
+
+    /**
+     * @notice Getter for StakeThreshold for the scanner with id `subject`
+     */
+    function getManagedStakeThreshold(uint256 managedId) public view returns (StakeThreshold memory) {
+        return _scannerStakeThresholds[managedId];
+    }
+
     function getTotalManagedSubjects(uint256 subject) external virtual override view returns(uint256) {
         return totalScannersRegistered(subject);
     }
+
 
     // ************* Priviledge setters ***************
 
@@ -447,5 +466,5 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         return super._msgData();
     }
 
-    uint256[42] private __gap;
+    uint256[41] private __gap;
 }

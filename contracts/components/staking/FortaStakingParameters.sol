@@ -52,12 +52,18 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
         _stakeSubjectHandlers[subjectType] = subjectHandler;
     }
 
+    function unsetStakeSubjectHandler(uint8 subjectType) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
+        emit StakeSubjectHandlerChanged(address(0), address(_stakeSubjectHandlers[subjectType]));
+        _stakeSubjectHandlers[subjectType] = address(0);
+    }
+
     function getStakeSubjectHandler(uint8 subjectType) external view returns (IStakeSubject) {
         return _stakeSubjectHandlers[subjectType];
     }
 
     /// Get max stake for that `subjectType` and `subject`. If not set, will return 0.
     function maxStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
+        
         return _stakeSubjectHandlers[subjectType].getStakeThreshold(subject).max;
     }
 

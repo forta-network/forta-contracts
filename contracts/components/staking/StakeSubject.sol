@@ -51,10 +51,5 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
 
     function _isStakedOverMin(uint256 subject) internal virtual view returns(bool);
 
-    function getTotalManagedSubjects(uint256 subject) external virtual override view returns(uint256) {
-        return 0;
-    }
-
-
     uint256[4] private __gap;
 }
