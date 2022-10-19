@@ -1,4 +1,4 @@
-import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum, crypto, ByteArray, Bytes, log } from "@graphprotocol/graph-ts";
 import { newMockEvent } from "matchstick-as";
 import {
   StakeDeposited as StakeDepositedEvent,
@@ -8,9 +8,11 @@ import {
   FortaStaking as FortaStakingContract,
   WithdrawalInitiated,
   WithdrawalExecuted,
+  TransferSingle as TransferSingleEvent,
 } from "../../generated/FortaStaking/FortaStaking";
 import {
   Reward,
+  SharesID,
   Slash,
   Stake,
   StakeDepositEvent,
@@ -20,6 +22,39 @@ import {
 import { fetchAccount } from "../fetch/account";
 
 import { events, transactions } from "@amxx/graphprotocol-utils/";
+
+function hexToDec(s: string): string {
+  var i: i32, j: i32, digits: i32[] = [0], carry: i32;
+  for (i = 0; i < s.length; i += 1) {
+      carry = parseInt(s.charAt(i), 16) as i32;
+      for (j = 0; j < digits.length; j += 1) {
+          digits[j] = digits[j] * 16 + carry;
+          carry = Math.trunc(digits[j] / 10) as i32;
+          digits[j] %= 10;
+      }
+      while (carry > 0) {
+          digits.push(carry % 10);
+          carry = Math.trunc(carry / 10) as i32;
+      }
+  }
+  return digits.reverse().join('');
+}
+
+function getActiveSharesId(_subjectType: i32, _subject: BigInt): string {
+  const tupleArray: Array<ethereum.Value> = [
+    ethereum.Value.fromUnsignedBigInt(_subject),
+  ]
+  const tuple = changetype<ethereum.Tuple>(tupleArray);
+  const encoded = ethereum.encode(ethereum.Value.fromTuple(tuple))!
+  const subjectHex = encoded.toHex();
+  const subjectPack = (_subjectType ? '0x01' : '0x00') + subjectHex.slice(2);
+  const _subjectPackHash = crypto.keccak256(ByteArray.fromHexString(subjectPack));
+  const subjectPackHash = BigInt.fromString(hexToDec(_subjectPackHash.toHex().slice(2)));
+  let mask256 = BigInt.zero();
+  for (let i=0; i<256; i++) mask256 = mask256.leftShift(1).bitOr(BigInt.fromI32(1));
+  const activeSharesId = subjectPackHash.leftShift(9).bitAnd(mask256).bitOr(BigInt.fromI32(256)).bitOr(BigInt.fromI32(_subjectType))
+  return activeSharesId.toString();
+}
 
 function updateStake(
   _stakingContractAddress: Address,
@@ -34,9 +69,16 @@ function updateStake(
   const fortaStaking = FortaStakingContract.bind(_stakingContractAddress);
 
   if (subject == null) {
+    const activeSharesId = getActiveSharesId(_subjectType, _subject);
     subject = new Subject(_subjectId);
     subject.isFrozen = false;
     subject.slashedTotal = 0;
+    subject.activeSharesId = activeSharesId;
+    subject.subjectType = _subjectType;
+    subject.subjectId = _subject;
+    let sharesId = new SharesID(activeSharesId);
+    sharesId.subject = _subjectId;
+    sharesId.save();
   }
   subject.activeStake = fortaStaking.activeStakeFor(
     _subjectType,
@@ -54,7 +96,6 @@ function updateStake(
     _subjectType,
     _subject
   );
-  subject.subjectType = _subjectType;
 
   if (staker == null) {
     staker = new Staker(_stakerId);
@@ -162,6 +203,36 @@ export function handleFroze(event: FrozeEvent): void {
   }
   subject.isFrozen = event.params.isFrozen;
   subject.save();
+}
+
+export function handleTransferSingle(event: TransferSingleEvent): void {
+  const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+  let sharesId = SharesID.load(event.params.id.toString());
+  if (sharesId) {
+    let subject = Subject.load(sharesId.subject);
+    if(subject && subject.subjectId) {
+      const _subjectId: BigInt | null = subject.subjectId;
+      const subjectId: BigInt = _subjectId ? _subjectId : BigInt.zero(); 
+      if (
+        !subjectId.isZero() &&
+        event.params.from.toHex() != ZERO_ADDRESS &&
+        event.params.to.toHex() != ZERO_ADDRESS
+      ) {
+        updateStake(
+          event.address,
+          subject.subjectType,
+          subjectId,
+          event.params.from,
+        );
+        updateStake(
+          event.address,
+          subject.subjectType,
+          subjectId,
+          event.params.to,
+        );  
+      }
+    }
+  }
 }
 
 export function createStakeDepositedEvent(
