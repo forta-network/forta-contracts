@@ -41,12 +41,12 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     /// ScannerNode data for each scanner address;
     mapping(address => ScannerNode) internal _scannerNodes;
     /// Set of Scanner Node addresses each nodeRunnerId owns;
-    mapping(uint256 => EnumerableSet.AddressSet) internal _scannerNodeOwnership;
+    mapping(uint256 => EnumerableSet.AddressSet) private _scannerNodeOwnership;
     /// StakeThreshold of node runners
     StakeThreshold private _stakeThreshold; // 3 storage slots
-    mapping(uint256 => StakeThreshold) internal _scannerStakeThresholds;
+    mapping(uint256 => StakeThreshold) private _scannerStakeThresholds;
     /// nodeRunnerId => chainId. Limitation necessary to calculate stake allocations.
-    mapping(uint256 => uint256) internal _nodeRunnerChainId;
+    mapping(uint256 => uint256) private _nodeRunnerChainId;
     /// Maximum amount of time allowed from scanner signing a ScannerNodeRegistration and its execution by NodeRunner
     uint256 public registrationDelay;
 
@@ -145,6 +145,10 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         // _isStakedOverMin already checks for disabled, but returns true in every case if stakeController is not set.
         // since isStakedOverMin() is external, we need to keep this duplicate check.
         return _exists(nodeRunnerId) && _isStakedOverMin(nodeRunnerId);
+    }
+
+    function monitoredChainId(uint256 nodeRunnerId) public view returns(uint256) {
+        return _nodeRunnerChainId[nodeRunnerId];
     }
 
     // ************* Scanner Ownership *************
@@ -294,7 +298,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         // since isStakedOverMin() is external, we need to keep this duplicate check.
         return _scannerNodes[scanner].registered &&
             !_scannerNodes[scanner].disabled &&
-            getStakeController().getStakeSubjectHandler(SCANNER_SUBJECT).isStakedOverMin(scannerAddressToId(scanner));
+            getSubjectHandler().getStakeSubject(SCANNER_SUBJECT).isStakedOverMin(scannerAddressToId(scanner));
     }
 
     /**
@@ -389,11 +393,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * false otherwise
      */
     function _isStakedOverMin(uint256 nodeRunnerId) internal view virtual override returns (bool) {
-        if (address(getStakeController()) == address(0)) {
+        if (address(getSubjectHandler()) == address(0)) {
             return true;
         }
         return
-            getStakeController().activeStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) >=
+            getSubjectHandler().activeStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) >=
             _stakeThreshold.min &&
             _exists(nodeRunnerId);
     }

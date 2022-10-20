@@ -20,6 +20,8 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     ScannerRegistry public scannerNodeRegistry;
     NodeRunnerRegistry public nodeRunnerRegistry;
     uint256 public migrationEndTime;
+    /// chainId => nodeRunnerAddress => nodeRunnerId
+    mapping(uint256 => mapping(address => uint256)) private _migratedNodeRunners;
 
     event SetScannerNodeRegistry(address registry);
     event SetNodeRunnerRegistry(address registry);
@@ -27,6 +29,9 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     event MigrationExecuted(uint256 scannersMigrated, uint256 ignoredScanners, uint256 nodeRunnerId, bool mintedNodeRunner);
 
     error NotOwnerOfNodeRunner(address pretender, uint256 nodeRunnerId);
+    error WrongScannerChainId(uint256 expected, uint256 provided, address scanner);
+    error WrongNodeRunnerChainId(uint256 expected, uint256 provided, uint256 nodeRunnerId);
+    error NodeRunnerAlreadyMigrated(uint256 nodeRunnerId);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -52,7 +57,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     }
 
     /**
-     * @notice Method to self migrate from the old ScannerRegistry NFTs to a single NodeRunnerRegistry NFT.
+     * @notice Method to self migrate from the old ScannerRegistry NFTs to a single NodeRunnerRegistry NFT, per chain.
      * WARNING: ScannerNodeRegistry's manager addresses will not be migrated, please user NodeRunnerRegistry's methods to set them again.
      * @param scanners array of scanner addresses to be migrated. Have to be less than MAX_SCANNERS.
      * All the enabled (disabled flags set to 0) ScannerRegistry ERC721 identified by the uint256(address) in the input array will be:
@@ -61,10 +66,11 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
      * Scanners with disabled flags != 0 will be ignored (opted out), and will stay disabled in ScannerNodeRegistry.
      * @param nodeRunnerId If the set as 0, the NodeRunnerRegistry ERC721 will be minted to the sender (address must not own any),
      * set as a valid NodeRunnerRegistry ERC721 id owned by sender address otherwise.
+     * @param chainId the chainId for the NodeRunnerRegistry ERC721. If the scanners scan other chains, the tx will fail.
      * @return NodeRunnerRegistry ERC721 id the scanners are migrated to.
      */
-    function selfMigrate(address[] calldata scanners, uint256 nodeRunnerId) external returns (uint256) {
-        return _migrate(scanners, nodeRunnerId, _msgSender());
+    function selfMigrate(address[] calldata scanners, uint256 nodeRunnerId, uint256 chainId) external returns (uint256) {
+        return _migrate(scanners, nodeRunnerId, _msgSender(), chainId);
     }
 
     /**
@@ -78,35 +84,35 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
      * Scanners with disabled flags != 0 will be ignored (opted out), and will stay disabled in ScannerNodeRegistry.
      * @param nodeRunnerId If the set as 0, the NodeRunnerRegistry ERC721 will be minted to nodeRunner (address must not own any),
      * set as a valid NodeRunnerRegistry ERC721 id owned by nodeRunner address otherwise.
-     * @param nodeRunner address that owns the scanners and will own the NodeRunnerRegistry ERC721
+     * @param nodeRunner address that owns the scanners and will own the NodeRunnerRegistry ERC721.
+     * @param chainId the chainId for the NodeRunnerRegistry ERC721. If the scanners scan other chains, the tx will fail.
      * @return NodeRunnerRegistry ERC721 id the scanners are migrated to.
      */
     function migrate(
         address[] calldata scanners,
         uint256 nodeRunnerId,
-        address nodeRunner
+        address nodeRunner,
+        uint256 chainId
     ) external onlyRole(MIGRATION_EXECUTOR_ROLE) returns (uint256) {
-        return _migrate(scanners, nodeRunnerId, nodeRunner);
+        return _migrate(scanners, nodeRunnerId, nodeRunner, chainId);
     }
 
     function _migrate(
         address[] calldata scanners,
         uint256 inputNodeRunnerId,
-        address nodeRunner
+        address nodeRunner,
+        uint256 chainId
     ) private returns (uint256) {
-        uint256 nodeRunnerId = inputNodeRunnerId;
-        if (nodeRunnerRegistry.balanceOf(nodeRunner) == 0 && nodeRunnerId == NODE_RUNNER_NOT_MIGRATED) {
-            nodeRunnerId = nodeRunnerRegistry.migrateToNodeRunner(nodeRunner);
-        } else if (nodeRunnerRegistry.ownerOf(nodeRunnerId) != nodeRunner) {
-            revert NotOwnerOfNodeRunner(nodeRunner, nodeRunnerId);
-        }
+        uint256 nodeRunnerId = _getNodeRunnerIdOrMint(nodeRunner, inputNodeRunnerId, chainId);
         uint256 total = scanners.length;
         uint256 scannersMigrated;
         for (uint256 i = 0; i < total; i++) {
             address scanner = scanners[i];
             uint256 scannerId = scannerNodeRegistry.scannerAddressToId(scanner);
             if (scannerNodeRegistry.ownerOf(scannerId) != nodeRunner) revert SenderNotOwner(nodeRunner, scannerId);
-            (, , uint256 chainId, string memory metadata, , uint256 disabledFlags) = scannerNodeRegistry.getScannerState(scannerId);
+            (, , uint256 scannerChainId, string memory metadata, , uint256 disabledFlags) = scannerNodeRegistry.getScannerState(scannerId);
+            if (scannerChainId != chainId) revert WrongScannerChainId(chainId, scannerChainId, scanner);
+
             if (disabledFlags == 0) {
                 nodeRunnerRegistry.migrateScannerNode(
                     NodeRunnerRegistryCore.ScannerNodeRegistration({
@@ -122,6 +128,23 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
             }
         }
         emit MigrationExecuted(scannersMigrated, total - scannersMigrated, nodeRunnerId, inputNodeRunnerId == NODE_RUNNER_NOT_MIGRATED);
+        return nodeRunnerId;
+    }
+
+    function _getNodeRunnerIdOrMint(address nodeRunner, uint256 nodeRunnerId, uint256 chainId) private returns(uint256) {
+        if (nodeRunnerId == NODE_RUNNER_NOT_MIGRATED) {
+            if (_migratedNodeRunners[chainId][nodeRunner] != 0) {
+                revert NodeRunnerAlreadyMigrated(_migratedNodeRunners[chainId][nodeRunner]);
+            } else {
+                uint256 newNodeRunnerId = nodeRunnerRegistry.migrateToNodeRunner(nodeRunner, chainId);
+                _migratedNodeRunners[chainId][nodeRunner] = newNodeRunnerId;
+                return newNodeRunnerId;
+            }
+        } else if (nodeRunnerRegistry.ownerOf(nodeRunnerId) != nodeRunner) {
+            revert NotOwnerOfNodeRunner(nodeRunner, nodeRunnerId);
+        } else if (nodeRunnerRegistry.monitoredChainId(nodeRunnerId) != chainId) {
+            revert WrongNodeRunnerChainId(chainId, nodeRunnerRegistry.monitoredChainId(nodeRunnerId), nodeRunnerId);
+        }
         return nodeRunnerId;
     }
 

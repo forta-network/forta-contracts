@@ -13,7 +13,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Supp
 
 import "./FortaStakingUtils.sol";
 import "./SubjectTypes.sol";
-import "./IStakeController.sol";
+import "./IStakeSubjectHandler.sol";
 import "./ISlashingExecutor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
@@ -85,7 +85,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     // treasury for slashing
     address private _treasury;
-    IStakeController private _stakingParameters;
+    IStakeSubjectHandler private _subjectHandler;
 
     uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
     uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
@@ -282,9 +282,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint8 subjectType,
         uint256 subject,
         uint256 stakeValue
-    ) public onlyValidSubjectType(subjectType) notManagedType(subjectType) returns (uint256) {
-        if (address(_stakingParameters) == address(0)) revert ZeroAddress("_stakingParameters");
-        if (!_stakingParameters.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
+    ) public onlyValidSubjectType(subjectType) notAgencyType(subjectType, SubjectStakeAgency.MANAGED) returns (uint256) {
+        if (address(_subjectHandler) == address(0)) revert ZeroAddress("_subjectHandler");
+        if (!_subjectHandler.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         bool reachedMax;
@@ -302,22 +302,21 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         return sharesValue;
     }
 
-    function _allocateStake(uint256 activeSharesId, uint8 subjectType, uint256 subject) private {
-        uint256 agency = getSubjectTypeAgency(subjectType);
+    function _allocateStake(uint256 activeSharesId, uint8 subjectType, uint256 subject, uint256 amount) private {
+        SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
         if (agency == SubjectStakeAgency.DELEGATED) {
-            uint256 stakePerManaged = _allocatedStakePerManagedSubject(activeSharesId, subjectType, subject);
-            uint256 max = _stakingParameters.maxStakeFor(subjectType, subject);
-            if (stakePerManaged >= ) {
-                
+            uint256 subjects = _subjectHandler.totalManagedSubjectsFor(subjectType, subject);
+            uint256 maxPerManaged = _subjectHandler.maxManagedStakeFor(subjectType, subject);
+            int256 extraStake = int256(_allocatedStake.balanceOf(activeSharesId) + amount) - int256(maxPerManaged * subjects);
+            if (extraStake > 0) {
+                _allocatedStake.mint(activeSharesId, amount - uint256(extraStake));
+                _unallocatedStake.mint(activeSharesId, uint256(extraStake));
+            } else {
+                _allocatedStake.mint(activeSharesId, amount);
             }
         }
-        return 0;
     }
 
-    function _allocatedStakePerManagedSubject(uint256 activeSharesId, uint8 subjectType, uint256 subject) public view returns(uint256) {
-        uint256 subjects = _stakingParameters.getStakeSubjectHandler(subjectType).getTotalManagedSubjects(subject);
-        return subjects == 0 ? 0 : _allocatedStake[activeSharesId] / subjects; 
-    }
 
     /**
      * Calculates how much of the incoming stake fits for subject.
@@ -332,7 +331,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 subject,
         uint256 stakeValue
     ) private view returns (uint256, bool) {
-        uint256 max = _stakingParameters.maxStakeFor(subjectType, subject);
+        uint256 max = _subjectHandler.maxStakeFor(subjectType, subject);
         if (activeStakeFor(subjectType, subject) >= max) {
             return (0, true);
         } else {
@@ -438,7 +437,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         // an amounts of shares so big that they might cause overflows.
         // New shares = pool shares * new staked amount / pool stake
         // See deposit and stakeToActiveShares methods.
-        uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, _stakingParameters.maxSlashableStakePercent(), HUNDRED_PERCENT);
+        uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, _subjectHandler.maxSlashableStakePercent(), HUNDRED_PERCENT);
         if (stakeValue > maxSlashableStake) revert SlashingOver90Percent();
 
         uint256 slashFromActive = Math.mulDiv(activeStake, stakeValue, activeStake + inactiveStake);
@@ -716,10 +715,10 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     // Admin: change staking parameters manager
-    function setStakingParametersManager(IStakeController newStakingParameters) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (address(newStakingParameters) == address(0)) revert ZeroAddress("newStakingParameters");
-        emit StakeParamsManagerSet(address(newStakingParameters));
-        _stakingParameters = newStakingParameters;
+    function setSubjectHandler(IStakeSubjectHandler subjectHandler) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (address(subjectHandler) == address(0)) revert ZeroAddress("subjectHandler");
+        emit StakeParamsManagerSet(address(subjectHandler));
+        _subjectHandler = subjectHandler;
     }
 
     // Overrides

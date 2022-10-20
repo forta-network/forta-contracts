@@ -308,7 +308,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         _setSlashingExecutor(_executor);
     }
 
-    function setStakingParametersManager(FortaStakingParameters _stakingParameters) external onlyRole(STAKING_ADMIN_ROLE) {
+    function setSubjectHandler(FortaStakingParameters _stakingParameters) external onlyRole(STAKING_ADMIN_ROLE) {
         _setStakingParametersManager(_stakingParameters);
     }
 

@@ -23,7 +23,7 @@ const txTimestamp = (tx) =>
 
 const MAX_STAKE = '10000';
 
-describe.only('Forta Staking', function () {
+describe.skip('Forta Staking', function () {
     prepare({ stake: { min: '1', max: MAX_STAKE, activated: true } });
 
     beforeEach(async function () {
@@ -42,7 +42,7 @@ describe.only('Forta Staking', function () {
 
     describe('Deposit / Withdraw', function () {
         it('Should not direct deposit on managed stake', async function () {
-            await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100')).to.be.revertedWith('ForbiddenForManagedType(0)');
+            await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '100')).to.be.revertedWith('ForbiddenForType(0, 1, 1)');
         });
 
         describe('Direct Subject - no delay', function () {

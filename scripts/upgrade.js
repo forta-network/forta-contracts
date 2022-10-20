@@ -126,7 +126,7 @@ async function main() {
             AgentRegistry.connect(deployer),
             {
                 call: {
-                    fn: 'setStakeController(address)',
+                    fn: 'setSubjectHandler(address)',
                     args: [contracts.staking.address],
                 },
                 constructorArgs: [contracts.forwarder.address],
@@ -145,7 +145,7 @@ async function main() {
             ScannerRegistry.connect(deployer),
             {
                 call: {
-                    fn: 'setStakeController(address)',
+                    fn: 'setSubjectHandler(address)',
                     args: [contracts.staking.address],
                 },
                 constructorArgs: [contracts.forwarder.address],

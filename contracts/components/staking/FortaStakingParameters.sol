@@ -5,10 +5,10 @@ pragma solidity ^0.8.9;
 
 import "./FortaStaking.sol";
 
-contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidator, IStakeController {
+contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidator, IStakeSubjectHandler {
     FortaStaking private _fortaStaking;
     // stake subject parameters for each subject
-    mapping(uint8 => IStakeSubject) private _stakeSubjectHandlers;
+    mapping(uint8 => IStakeSubject) private _stakeSubjects;
 
     event FortaStakingChanged(address staking);
 
@@ -46,35 +46,46 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
     /**
      * Sets stake subject handler stake for subject type.
      */
-    function setStakeSubjectHandler(uint8 subjectType, IStakeSubject subjectHandler) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
-        if (address(subjectHandler) == address(0)) revert ZeroAddress("subjectHandler");
-        emit StakeSubjectHandlerChanged(address(subjectHandler), address(_stakeSubjectHandlers[subjectType]));
-        _stakeSubjectHandlers[subjectType] = subjectHandler;
+    function setStakeSubject(uint8 subjectType, IStakeSubject subject) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
+        if (address(subject) == address(0)) revert ZeroAddress("subject");
+        emit StakeSubjectChanged(address(subject), address(_stakeSubjects[subjectType]));
+        _stakeSubjects[subjectType] = subject;
     }
 
-    function unsetStakeSubjectHandler(uint8 subjectType) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
-        emit StakeSubjectHandlerChanged(address(0), address(_stakeSubjectHandlers[subjectType]));
-        _stakeSubjectHandlers[subjectType] = address(0);
+    function unsetStakeSubject(uint8 subjectType) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
+        emit StakeSubjectChanged(address(0), address(_stakeSubjects[subjectType]));
+        delete _stakeSubjects[subjectType];
     }
 
-    function getStakeSubjectHandler(uint8 subjectType) external view returns (IStakeSubject) {
-        return _stakeSubjectHandlers[subjectType];
+    function getStakeSubject(uint8 subjectType) external view returns (IStakeSubject) {
+        return _stakeSubjects[subjectType];
     }
 
     /// Get max stake for that `subjectType` and `subject`. If not set, will return 0.
     function maxStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
-        
-        return _stakeSubjectHandlers[subjectType].getStakeThreshold(subject).max;
+        return _stakeSubjects[subjectType].getStakeThreshold(subject).max;
     }
 
     /// Get min stake for that `subjectType` and `subject`. If not set, will return 0.
     function minStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
-        return _stakeSubjectHandlers[subjectType].getStakeThreshold(subject).min;
+        return _stakeSubjects[subjectType].getStakeThreshold(subject).min;
+    }
+
+    function maxManagedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
+        return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getManagedStakeThreshold(subject).max;
+    }
+
+    function minManagedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
+        return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getManagedStakeThreshold(subject).min;
+    }
+    
+    function totalManagedSubjectsFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
+        return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getTotalManagedSubjects(subject);
     }
 
     /// Get if staking is activated for that `subjectType` and `subject`. If not set, will return false.
     function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns (bool) {
-        return _stakeSubjectHandlers[subjectType].getStakeThreshold(subject).activated;
+        return _stakeSubjects[subjectType].getStakeThreshold(subject).activated;
     }
 
     /// Gets active stake (amount of staked tokens) on `subject` id for `subjectType`
@@ -89,7 +100,7 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
 
     /// Checks if subject, subjectType is registered
     function isRegistered(uint8 subjectType, uint256 subject) external view returns (bool) {
-        return _stakeSubjectHandlers[subjectType].isRegistered(subject);
+        return _stakeSubjects[subjectType].isRegistered(subject);
     }
 
 }

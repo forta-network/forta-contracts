@@ -125,10 +125,10 @@ abstract contract AgentRegistryCore is
      * false otherwise
      */
     function _isStakedOverMin(uint256 subject) internal override view returns(bool) {
-        if (address(getStakeController()) == address(0)) {
+        if (address(getSubjectHandler()) == address(0)) {
             return true;
         }
-        return getStakeController().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min && _exists(subject);
+        return getSubjectHandler().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min && _exists(subject);
     }
 
     /**

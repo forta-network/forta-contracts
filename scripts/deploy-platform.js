@@ -155,11 +155,11 @@ async function migrate(config = {}) {
         }
 
         const paramsUpdatedLogs = await utils.getEventsFromContractCreation(CACHE, 'staking', 'StakeParamsManagerSet', contracts.staking);
-        DEBUG('setStakingParametersManager?');
+        DEBUG('setSubjectHandler?');
 
         if (paramsUpdatedLogs[paramsUpdatedLogs.length - 1]?.args[0] !== contracts.stakingParameters.address) {
-            await contracts.staking.connect(deployer).setStakingParametersManager(contracts.stakingParameters.address);
-            DEBUG('setStakingParametersManager');
+            await contracts.staking.connect(deployer).setSubjectHandler(contracts.stakingParameters.address);
+            DEBUG('setSubjectHandler');
         } else {
             DEBUG('Not neededed');
         }
@@ -192,9 +192,9 @@ async function migrate(config = {}) {
         if (semver.gte(agentVersion, '0.1.2')) {
             DEBUG('Configuring stake controller...');
 
-            if ((await contracts.agents.getStakeController()) !== contracts.stakingParameters.address) {
-                await contracts.agents.connect(deployer).setStakeController(contracts.stakingParameters.address);
-                await contracts.stakingParameters.connect(deployer).setStakeSubjectHandler(AGENT_SUBJECT, contracts.agents.address);
+            if ((await contracts.agents.getSubjectHandler()) !== contracts.stakingParameters.address) {
+                await contracts.agents.connect(deployer).setSubjectHandler(contracts.stakingParameters.address);
+                await contracts.stakingParameters.connect(deployer).setStakeSubject(AGENT_SUBJECT, contracts.agents.address);
                 DEBUG('Configured stake controller');
             } else {
                 DEBUG('Not needed');
@@ -219,9 +219,9 @@ async function migrate(config = {}) {
 
         if (semver.gte(scannersVersion, '0.1.1')) {
             DEBUG('Configuring stake controller...');
-            if ((await contracts.scanners.getStakeController()) !== contracts.stakingParameters.address) {
-                await contracts.scanners.connect(deployer).setStakeController(contracts.stakingParameters.address);
-                await contracts.stakingParameters.connect(deployer).setStakeSubjectHandler(SCANNER_SUBJECT, contracts.scanners.address);
+            if ((await contracts.scanners.getSubjectHandler()) !== contracts.stakingParameters.address) {
+                await contracts.scanners.connect(deployer).setSubjectHandler(contracts.stakingParameters.address);
+                await contracts.stakingParameters.connect(deployer).setStakeSubject(SCANNER_SUBJECT, contracts.scanners.address);
                 DEBUG('Configured stake controller');
             } else {
                 DEBUG('Not needed');
@@ -298,8 +298,8 @@ async function migrate(config = {}) {
 
         DEBUG('Configuring stake controller...');
 
-        if ((await contracts.stakingParameters.getStakeSubjectHandler(NODE_RUNNER_SUBJECT)) !== contracts.nodeRunners.address) {
-            await contracts.stakingParameters.connect(deployer).setStakeSubjectHandler(NODE_RUNNER_SUBJECT, contracts.nodeRunners.address);
+        if ((await contracts.stakingParameters.getStakeSubject(NODE_RUNNER_SUBJECT)) !== contracts.nodeRunners.address) {
+            await contracts.stakingParameters.connect(deployer).setStakeSubject(NODE_RUNNER_SUBJECT, contracts.nodeRunners.address);
             DEBUG('Configured stake controller');
         } else {
             DEBUG('Not needed');

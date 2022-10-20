@@ -3,6 +3,7 @@
 
 pragma solidity ^0.8.9;
 
+uint8 constant UNDEFINED_SUBJECT = 255;
 uint8 constant SCANNER_SUBJECT = 0;
 uint8 constant AGENT_SUBJECT = 1;
 uint8 constant NODE_RUNNER_SUBJECT = 2;
@@ -40,6 +41,11 @@ contract SubjectTypeValidator {
         _;
     }
 
+    modifier notAgencyType(uint8 subjectType, SubjectStakeAgency forbidden) {
+        if (getSubjectTypeAgency(subjectType) == forbidden) revert ForbiddenForType(subjectType, getSubjectTypeAgency(subjectType), forbidden);
+        _;
+    }
+
     function getSubjectTypeAgency(uint8 subjectType) public pure returns(SubjectStakeAgency) {
         if (subjectType == SCANNER_SUBJECT) {
             return SubjectStakeAgency.MANAGED;
@@ -51,11 +57,19 @@ contract SubjectTypeValidator {
         return SubjectStakeAgency.UNDEFINED;
     }
 
-    function getManagedTypeFor(uint8 subjectType) onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) public pure returns(uint8) {
+    function getManagedTypeFor(uint8 subjectType) public pure returns(uint8) {
         if (subjectType == NODE_RUNNER_SUBJECT) {
             return SCANNER_SUBJECT;
         } else {
-            revert InvalidSubjectType(subjectType);
+            return UNDEFINED_SUBJECT;
+        }
+    }
+
+    function getManagerTypeFor(uint8 subjectType) public pure returns(uint8) {
+        if (subjectType == SCANNER_SUBJECT) {
+            return NODE_RUNNER_SUBJECT;
+        } else {
+            return UNDEFINED_SUBJECT;
         }
     }
 

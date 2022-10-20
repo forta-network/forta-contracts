@@ -181,20 +181,20 @@ describe.skip('Forta Staking Parameters', function () {
             await expect(fortaStakingParameters.connect(this.accounts.user1).setFortaStaking(this.contracts.staking.address)).to.be.revertedWith(
                 `MissingRole("${this.roles.DEFAULT_ADMIN}", "${this.accounts.user1.address}")`
             );
-            await expect(fortaStakingParameters.connect(this.accounts.user1).setStakeSubjectHandler(0, this.contracts.staking.address)).to.be.revertedWith(
+            await expect(fortaStakingParameters.connect(this.accounts.user1).setStakeSubject(0, this.contracts.staking.address)).to.be.revertedWith(
                 `MissingRole("${this.roles.DEFAULT_ADMIN}", "${this.accounts.user1.address}")`
             );
         });
 
         it('admin methods cannot be called with address 0', async function () {
             await expect(fortaStakingParameters.connect(this.accounts.admin).setFortaStaking(ethers.constants.AddressZero)).to.be.revertedWith('ZeroAddress("newFortaStaking")');
-            await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubjectHandler(0, ethers.constants.AddressZero)).to.be.revertedWith(
-                'ZeroAddress("subjectHandler")'
+            await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubject(0, ethers.constants.AddressZero)).to.be.revertedWith(
+                'ZeroAddress("subject")'
             );
         });
 
         it('subject type must be valid', async function () {
-            await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubjectHandler(4, this.contracts.staking.address)).to.be.revertedWith('InvalidSubjectType(4)');
+            await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubject(4, this.contracts.staking.address)).to.be.revertedWith('InvalidSubjectType(4)');
         });
     });
 });

@@ -42,7 +42,7 @@ describe('Upgrades testing', function () {
             const AgentRegistry_0_1_2 = await ethers.getContractFactory('AgentRegistry_0_1_2');
             agents = await upgrades.upgradeProxy(agents.address, AgentRegistry_0_1_2, {
                 call: {
-                    fn: 'setStakeController(address)',
+                    fn: 'setSubjectHandler(address)',
                     args: [this.contracts.stakingParameters.address],
                 },
                 constructorArgs: [this.contracts.forwarder.address],
@@ -50,7 +50,7 @@ describe('Upgrades testing', function () {
                 unsafeSkipStorageCheck: true,
             });
             await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
-            expect(await agents.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
+            expect(await agents.getSubjectHandler()).to.be.equal(this.contracts.stakingParameters.address);
             expect(await agents.version()).to.be.equal('0.1.2');
             expect(await agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
             expect(
@@ -66,7 +66,7 @@ describe('Upgrades testing', function () {
             const AgentRegistry_0_1_4 = await ethers.getContractFactory('AgentRegistry_0_1_4');
             agents = await upgrades.upgradeProxy(agents.address, AgentRegistry_0_1_4, {
                 call: {
-                    fn: 'setStakeController(address)',
+                    fn: 'setSubjectHandler(address)',
                     args: [this.contracts.stakingParameters.address],
                 },
                 constructorArgs: [this.contracts.forwarder.address],
@@ -74,7 +74,7 @@ describe('Upgrades testing', function () {
                 unsafeSkipStorageCheck: true,
             });
             await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
-            expect(await agents.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
+            expect(await agents.getSubjectHandler()).to.be.equal(this.contracts.stakingParameters.address);
             expect(await agents.version()).to.be.equal('0.1.4');
             expect(await agents.isRegistered(AGENT_ID)).to.be.equal(true);
             expect(await agents.getDisableFlags(AGENT_ID)).to.be.equal([2]);
@@ -128,20 +128,20 @@ describe('Upgrades testing', function () {
             const ScannerRegistry_0_1_2 = await ethers.getContractFactory('ScannerRegistry_0_1_2');
             let scannerRegistry = await upgrades.upgradeProxy(originalScanners.address, ScannerRegistry_0_1_2, {
                 call: {
-                    fn: 'setStakeController(address)',
+                    fn: 'setSubjectHandler(address)',
                     args: [this.contracts.stakingParameters.address],
                 },
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
                 unsafeSkipStorageCheck: true,
             });
-            await this.contracts.stakingParameters.setStakeSubjectHandler(0, scannerRegistry.address);
+            await this.contracts.stakingParameters.setStakeSubject(0, scannerRegistry.address);
             await scannerRegistry.connect(this.accounts.manager).setStakeThreshold({ max: '100', min: '0', activated: true }, 1);
 
             await this.contracts.access.grantRole(this.roles.SCANNER_ADMIN, this.accounts.admin.address);
-            expect(await scannerRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
+            expect(await scannerRegistry.getSubjectHandler()).to.be.equal(this.contracts.stakingParameters.address);
             expect(await scannerRegistry.version()).to.be.equal('0.1.2');
-            expect(await scannerRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
+            expect(await scannerRegistry.getSubjectHandler()).to.be.equal(this.contracts.stakingParameters.address);
             for (const scanner of SCANNERS) {
                 const scannerId = scanner.address;
                 expect(await scannerRegistry.isEnabled(scannerId)).to.be.equal(false);
@@ -173,11 +173,11 @@ describe('Upgrades testing', function () {
                 unsafeAllow: ['delegatecall'],
                 unsafeSkipStorageCheck: true,
             });
-            await this.contracts.stakingParameters.setStakeSubjectHandler(0, scannerRegistry.address);
+            await this.contracts.stakingParameters.setStakeSubject(0, scannerRegistry.address);
             await scannerRegistry.connect(this.accounts.manager).setStakeThreshold({ max: '100', min: '0', activated: true }, 1);
 
             await this.contracts.access.grantRole(this.roles.SCANNER_ADMIN, this.accounts.admin.address);
-            expect(await scannerRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
+            expect(await scannerRegistry.getSubjectHandler()).to.be.equal(this.contracts.stakingParameters.address);
             expect(await scannerRegistry.version()).to.be.equal('0.1.4');
             for (const scanner of SCANNERS) {
                 const scannerId = scanner.address;
@@ -232,8 +232,8 @@ describe('Upgrades testing', function () {
                 unsafeAllow: ['delegatecall'],
             });
             await originalScanners.deployed();
-            await this.stakingParameters.setStakeSubjectHandler(0, this.scanners.address);
-            await this.stakingParameters.setStakeSubjectHandler(1, this.agents.address);
+            await this.stakingParameters.setStakeSubject(0, this.scanners.address);
+            await this.stakingParameters.setStakeSubject(1, this.agents.address);
             await this.agents.connect(this.accounts.manager).setStakeThreshold(STAKING_PARAMS);
             await this.scanners.connect(this.accounts.manager).setStakeThreshold(STAKING_PARAMS, 1);
 
@@ -251,7 +251,7 @@ describe('Upgrades testing', function () {
             const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
             await this.agents.createAgent(...args);
 
-            await this.staking.setStakingParametersManager(this.stakingParameters.address);
+            await this.staking.setSubjectHandler(this.stakingParameters.address);
             await this.staking.connect(this.accounts.user1).deposit(0, this.accounts.scanner.address, '100');
 
             await this.staking.connect(this.accounts.user1).initiateWithdrawal(0, this.accounts.scanner.address, '50');
