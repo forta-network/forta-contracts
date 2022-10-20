@@ -17,6 +17,4 @@ interface IStakeSubject {
 interface IDelegatedStakeSubject is IStakeSubject {
     function getTotalManagedSubjects(uint256 subject) external view returns(uint256);
     function getManagedStakeThreshold(uint256 managedId) external view returns(StakeThreshold memory);
-    function getManagerIdFor(uint256 managedSubjectId) external view returns(uint256);
-
 }

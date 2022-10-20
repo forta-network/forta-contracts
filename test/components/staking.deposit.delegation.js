@@ -88,25 +88,63 @@ describe.only('Staking - Delegated and Delegators', function () {
                     expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq('100');
                     expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('0');
 
+                    expect(await this.nodeRunners.allocatedStakeInScanners(1)).to.eq('33');
                     for (const scanner of SCANNERS) {
                         console.log(scanner.address);
-                        expect(await this.staking.allocatedStakeIn(this.stakingSubjects.SCANNER, scanner.address)).to.eq('33');
+                        expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('33');
                         expect(await this.staking.allocatedStakeFor(this.stakingSubjects.SCANNER, scanner.address)).to.eq('0');
                         expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
-                        //expect(await this.nodeRunners.getScannerState(scanner.address)).to.eq(false);
                     }
                     await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '200'))
                         .to.emit(this.staking, 'AllocatedStake')
-                        .withArgs(subjectType1, subject1, '100', '300');
+                        .withArgs(subjectType1, subject1, '200', '300');
                     expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq('300');
                     expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq('300');
                     expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('0');
+                    expect(await this.nodeRunners.allocatedStakeInScanners(1)).to.eq('100');
+                    for (const scanner of SCANNERS) {
+                        expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('100');
+                        expect(await this.staking.allocatedStakeFor(this.stakingSubjects.SCANNER, scanner.address)).to.eq('0');
+                        expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(true);
+                    }
                 });
-                it.skip('allocation should be sensitive to managed subject disabling', async function () {});
+                it('allocation should be sensitive to managed subject disabling', async function () {
+                    await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '200'))
+                        .to.emit(this.staking, 'AllocatedStake')
+                        .withArgs(subjectType1, subject1, '200', '200');
+                    expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq('200');
+                    expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq('200');
+                    expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('0');
+                    expect(await this.nodeRunners.allocatedStakeInScanners(1)).to.eq('66');
+                    for (const scanner of SCANNERS) {
+                        expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('66');
+                        expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
+                    }
+                    await this.nodeRunners.connect(this.accounts.user1).disableScanner(SCANNERS[0].address);
+                    expect(await this.nodeRunners.allocatedStakeInScanners(1)).to.eq('100');
+                    for (const scanner of SCANNERS) {
+                        if (scanner === SCANNERS[0]) {
+                            expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('0');
+                            expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
+                        } else {
+                            expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('100');
+                            expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(true);
+                        }
+                    }
+                    await this.nodeRunners.connect(this.accounts.user1).enableScanner(SCANNERS[0].address);
+                    expect(await this.nodeRunners.allocatedStakeInScanners(1)).to.eq('66');
+                    for (const scanner of SCANNERS) {
+                        expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('66');
+                        expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
+                    }
+
+                });
                 it.skip('should allocate up to max for manager', async function () {});
                 it.skip('should have unallocated stake if more than max managed', async function () {});
 
                 it.skip('should top allocated and unallocated stake if more than max managed and up to max manager', async function () {});
+                it.skip('scanners should be disabled if scanner threshold rises over current stake', async function () {});
+                it.skip('scanners should be disabled if scanner threshold rises over nodeRunners stake', async function () {});
             });
 
             describe.skip('Manual Allocation', function () {

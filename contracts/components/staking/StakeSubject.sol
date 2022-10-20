@@ -18,10 +18,10 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
     error StakedUnderMinimum(uint256 subject);
 
     /*
-    * @dev: For contracts made StakeAwareUpgradeable via upgrade, initializer call is not available.
-    * Use setSubjectHandler(subjectHandler) when upgrading instead.
-    * @param subjectHandler address.
-    */
+     * @dev: For contracts made StakeAwareUpgradeable via upgrade, initializer call is not available.
+     * Use setSubjectHandler(subjectHandler) when upgrading instead.
+     * @param subjectHandler address.
+     */
     function __StakeSubjectUpgradeable_init(address subjectHandler) internal initializer {
         _setSubjectHandler(subjectHandler);
     }
@@ -32,7 +32,7 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
     }
 
     /// Getter for subjectHandler
-    function getSubjectHandler() public view returns(IStakeSubjectHandler) {
+    function getSubjectHandler() public view returns (IStakeSubjectHandler) {
         return _subjectHandler;
     }
 
@@ -45,11 +45,11 @@ abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSub
 
     /// Returns true if `subject` amount of staked tokens is bigger or equal the minimum stake set
     /// for it. It's for contracts implementing `StakeSubjectUpgradeable` to decide what that means.
-    function isStakedOverMin(uint256 subject) external virtual override view returns(bool) {
+    function isStakedOverMin(uint256 subject) external view virtual override returns (bool) {
         return _isStakedOverMin(subject);
     }
 
-    function _isStakedOverMin(uint256 subject) internal virtual view returns(bool);
+    function _isStakedOverMin(uint256 subject) internal view virtual returns (bool);
 
     uint256[4] private __gap;
 }

@@ -188,9 +188,11 @@ describe.skip('Forta Staking Parameters', function () {
 
         it('admin methods cannot be called with address 0', async function () {
             await expect(fortaStakingParameters.connect(this.accounts.admin).setFortaStaking(ethers.constants.AddressZero)).to.be.revertedWith('ZeroAddress("newFortaStaking")');
-            await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubject(0, ethers.constants.AddressZero)).to.be.revertedWith(
-                'ZeroAddress("subject")'
-            );
+            await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubject(0, ethers.constants.AddressZero)).to.be.revertedWith('ZeroAddress("subject")');
+        });
+
+        it('setStakeSubject for a Delegated type should fail if not IDelegatedSubject', async function () {
+            await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubject(2, this.contracts.agents.address)).to.be.revertedWith('TODO');
         });
 
         it('subject type must be valid', async function () {

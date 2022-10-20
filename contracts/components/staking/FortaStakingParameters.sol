@@ -81,11 +81,6 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
         return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getTotalManagedSubjects(subject);
     }
 
-    function managerIdFor(uint8 managerSubjectType, uint256 managedSubject) external view override returns (uint256) {
-        return IDelegatedStakeSubject(address(_stakeSubjects[managerSubjectType])).getManagerIdFor(managedSubject);
-    }
-
-
     /// Get if staking is activated for that `subjectType` and `subject`. If not set, will return false.
     function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns (bool) {
         return _stakeSubjects[subjectType].getStakeThreshold(subject).activated;
@@ -101,9 +96,12 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
         return _fortaStaking.activeStakeFor(subjectType, subject) + _fortaStaking.inactiveStakeFor(subjectType, subject);
     }
 
+    function allocatedStakeFor(uint8 subjectType, uint256 subject) external view override returns (uint256) {
+        return _fortaStaking.allocatedStakeFor(subjectType, subject);
+    }
+
     /// Checks if subject, subjectType is registered
     function isRegistered(uint8 subjectType, uint256 subject) external view returns (bool) {
         return _stakeSubjects[subjectType].isRegistered(subject);
     }
-
 }

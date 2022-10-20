@@ -87,14 +87,14 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     address private _treasury;
     IStakeSubjectHandler private _subjectHandler;
 
-    uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
-    uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
-    uint256 private constant HUNDRED_PERCENT = 100;
-
     // subject => active stake
     Distributions.Balances private _allocatedStake;
     // subject => inactive stake
     Distributions.Balances private _unallocatedStake;
+
+    uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
+    uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
+    uint256 private constant HUNDRED_PERCENT = 100;
 
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
     event WithdrawalInitiated(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint64 deadline);
@@ -193,15 +193,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     function allocatedStakeFor(uint8 subjectType, uint256 subject) public view returns (uint256) {
         return _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject));
-    }
-
-    function allocatedStakeIn(uint8 subjectType, uint256 subject) public view returns (uint256) {
-        uint8 managerType = getManagerTypeFor(subjectType);
-        if (managerType == UNDEFINED_SUBJECT) {
-            return 0;
-        }
-        uint256 managerId = _subjectHandler.managerIdFor(managerType, subject);
-        return _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(managerType, managerId)) / _subjectHandler.totalManagedSubjectsFor(managerType, managerId);
     }
 
     function unallocatedStakeFor(uint8 subjectType, uint256 subject) public view returns (uint256) {
@@ -446,6 +437,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @param proposerPercent percentage of stakeValue sent to the proposer. From 0 to FortaStakingParameters.maxSlashableStakePercent()
      * @return stakeValue
      */
+
     function slash(
         uint8 subjectType,
         uint256 subject,
@@ -511,6 +503,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @param subject id identifying subject (external to FortaStaking).
      * @param value amount of reward tokens.
      */
+    /*
     function reward(
         uint8 subjectType,
         uint256 subject,
@@ -519,7 +512,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         SafeERC20.safeTransferFrom(stakedToken, _msgSender(), address(this), value);
         _rewards.mint(FortaStakingUtils.subjectToActive(subjectType, subject), value);
         emit Rewarded(subjectType, subject, _msgSender(), value);
-    }
+    }*/
 
     /**
      * @notice Sweep all token that might be mistakenly sent to the contract. This covers both unrelated tokens and staked
@@ -554,6 +547,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @param account that staked on the subject.
      * @return available reward transferred.
      */
+    /*
     function releaseReward(
         uint8 subjectType,
         uint256 subject,
@@ -573,7 +567,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         }
 
         return value;
-    }
+    }*/
 
     /**
      * @notice Amount of reward tokens owed by given `account` for its current or past share for a given `subject`.
@@ -581,13 +575,14 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @param account address of the staker
      * @return rewards available for staker on that subject.
      */
+    /*
     function _availableReward(uint256 activeSharesId, address account) internal view returns (uint256) {
         return
             SafeCast.toUint256(
                 SafeCast.toInt256(_historicalRewardFraction(activeSharesId, balanceOf(account, activeSharesId), Math.Rounding.Down)) -
                     _released[activeSharesId].balanceOf(account)
             );
-    }
+    }*/
 
     /**
      * @dev Amount of reward tokens owed by given `account` for its current or past share for a given `subject`.
@@ -596,6 +591,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @param account address of the staker
      * @return rewards available for staker on that subject.
      */
+    /*
     function availableReward(
         uint8 subjectType,
         uint256 subject,
@@ -603,7 +599,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     ) external view returns (uint256) {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         return _availableReward(activeSharesId, account);
-    }
+    }*/
 
     /**
      * @dev Relay a ERC2612 permit signature to the staked token. This cal be bundled with a {deposit} or a {reward}
@@ -625,6 +621,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     // Internal helpers
+    /*
     function _totalHistoricalReward(uint256 activeSharesId) internal view returns (uint256) {
         return SafeCast.toUint256(SafeCast.toInt256(_rewards.balanceOf(activeSharesId)) + _released[activeSharesId].totalSupply());
     }
@@ -636,7 +633,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     ) internal view returns (uint256) {
         uint256 supply = totalSupply(activeSharesId);
         return amount > 0 && supply > 0 ? Math.mulDiv(_totalHistoricalReward(activeSharesId), amount, supply, rounding) : 0;
-    }
+    }*/
 
     function _beforeTokenTransfer(
         address operator,
@@ -653,6 +650,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
                 // Mint, burn, or transfer of subject shares would by default affect the distribution of the
                 // currently available reward for the subject. We create a "virtual release" that should preserve
                 // reward distribution as it was prior to the transfer.
+                /*
                 int256 virtualRelease = SafeCast.toInt256(_historicalRewardFraction(ids[i], amounts[i], Math.Rounding.Up));
 
                 if (from == address(0)) {
@@ -661,7 +659,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
                     _released[ids[i]].burn(from, virtualRelease);
                 } else {
                     _released[ids[i]].transfer(from, to, virtualRelease);
-                }
+                }*/
             } else {
                 if (!(from == address(0) || to == address(0))) revert WithdrawalSharesNotTransferible();
             }

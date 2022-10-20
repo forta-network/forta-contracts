@@ -14,7 +14,14 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
 
-abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, StakeSubjectUpgradeable, IDelegatedStakeSubject, EIP712Upgradeable  {
+abstract contract NodeRunnerRegistryCore is
+    BaseComponentUpgradeable,
+    ERC721Upgradeable,
+    ERC721EnumerableUpgradeable,
+    StakeSubjectUpgradeable,
+    IDelegatedStakeSubject,
+    EIP712Upgradeable
+{
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -42,6 +49,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     mapping(address => ScannerNode) internal _scannerNodes;
     /// Set of Scanner Node addresses each nodeRunnerId owns;
     mapping(uint256 => EnumerableSet.AddressSet) private _scannerNodeOwnership;
+    /// Count of enabled scanners per nodeRunnerId (nodeRunnerId => total Enabled Scanners)
+    mapping(uint256 => uint256) private _enabledScanners;
     /// StakeThreshold of node runners
     StakeThreshold private _stakeThreshold; // 3 storage slots
     mapping(uint256 => StakeThreshold) private _scannerStakeThresholds;
@@ -50,13 +59,13 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     /// Maximum amount of time allowed from scanner signing a ScannerNodeRegistration and its execution by NodeRunner
     uint256 public registrationDelay;
 
-
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata, uint256 nodeRunner);
     event StakeThresholdChanged(uint256 min, uint256 max, bool activated);
     event ManagedStakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
     event RegistrationDelaySet(uint256 delay);
     // TODO: discuss with the dev team if it breaks compatibility to change 'enabled' too 'operational'
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, address sender, bool disableFlag);
+    event EnabledScannersChanged(uint256 indexed nodeRunnerId, uint256 enabledScanners);
     event NodeRunnerRegistered(uint256 indexed nodeRunnerId, uint256 indexed chainId);
 
     error NodeRunnerNotRegistered(uint256 nodeRunnerId);
@@ -125,7 +134,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         return _registerNodeRunner(_msgSender(), chainId);
     }
 
-    function _registerNodeRunner(address nodeRunnerAddress, uint256 chainId) internal returns(uint256 nodeRunnerId) {
+    function _registerNodeRunner(address nodeRunnerAddress, uint256 chainId) internal returns (uint256 nodeRunnerId) {
         if (nodeRunnerAddress == address(0)) revert ZeroAddress("nodeRunnerAddress");
         if (chainId == 0) revert ZeroAmount("chainId");
         _nodeRunnerIdCounter.increment();
@@ -147,7 +156,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         return _exists(nodeRunnerId) && _isStakedOverMin(nodeRunnerId);
     }
 
-    function monitoredChainId(uint256 nodeRunnerId) public view returns(uint256) {
+    function monitoredChainId(uint256 nodeRunnerId) public view returns (uint256) {
         return _nodeRunnerChainId[nodeRunnerId];
     }
 
@@ -193,9 +202,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
                             req.scanner,
                             req.nodeRunnerId,
                             req.chainId,
-                            keccak256(
-                                abi.encodePacked(req.metadata)
-                            ),
+                            keccak256(abi.encodePacked(req.metadata)),
                             req.timestamp
                         )
                     )
@@ -219,6 +226,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         // It is safe to ignore add()'s returned bool, since isScannerRegistered() already checks for duplicates.
         !_scannerNodeOwnership[req.nodeRunnerId].add(req.scanner);
         emit ScannerUpdated(scannerAddressToId(req.scanner), req.chainId, req.metadata, req.nodeRunnerId);
+        _addEnabledScanner(req.nodeRunnerId);
     }
 
     /**
@@ -232,7 +240,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         // If the scanner is not registered, onlyOwner would be first and emit "ERC721: invalid token ID", which is too cryptic.
         if (_msgSender() != ownerOf(_scannerNodes[scanner].nodeRunnerId)) {
             revert SenderNotNodeRunner(_msgSender(), _scannerNodes[scanner].nodeRunnerId);
-        }        
+        }
         _scannerNodes[scanner].metadata = metadata;
         emit ScannerUpdated(scannerAddressToId(scanner), _scannerNodes[scanner].chainId, metadata, _scannerNodes[scanner].nodeRunnerId);
     }
@@ -296,9 +304,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     function isScannerOperational(address scanner) public view returns (bool) {
         // _isStakedOverMin already checks for disabled, but returns true in every case if stakeController is not set.
         // since isStakedOverMin() is external, we need to keep this duplicate check.
-        return _scannerNodes[scanner].registered &&
+        return
+            _isStakedOverMin(_scannerNodes[scanner].nodeRunnerId) &&
+            _scannerNodes[scanner].registered &&
             !_scannerNodes[scanner].disabled &&
-            getSubjectHandler().getStakeSubject(SCANNER_SUBJECT).isStakedOverMin(scannerAddressToId(scanner));
+            allocatedStakeInScanners(_scannerNodes[scanner].nodeRunnerId) >= _scannerStakeThresholds[_scannerNodes[scanner].chainId].min;
     }
 
     /**
@@ -319,6 +329,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     function enableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
         _setScannerDisableFlag(scanner, false);
+        _addEnabledScanner(_scannerNodes[scanner].nodeRunnerId);
     }
 
     /**
@@ -329,11 +340,22 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     function disableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
         _setScannerDisableFlag(scanner, true);
+        _removeEnabledScanner(_scannerNodes[scanner].nodeRunnerId);
     }
 
     function _setScannerDisableFlag(address scanner, bool value) private {
         _scannerNodes[scanner].disabled = value;
         emit ScannerEnabled(scannerAddressToId(scanner), isScannerOperational(scanner), _msgSender(), value);
+    }
+
+    function _addEnabledScanner(uint256 nodeRunnerId) private {
+        _enabledScanners[nodeRunnerId] += 1;
+        emit EnabledScannersChanged(nodeRunnerId, _enabledScanners[nodeRunnerId]);
+    }
+
+    function _removeEnabledScanner(uint256 nodeRunnerId) private {
+        _enabledScanners[nodeRunnerId] -= 1;
+        emit EnabledScannersChanged(nodeRunnerId, _enabledScanners[nodeRunnerId]);
     }
 
     // ************* Scanner Getters *************
@@ -363,7 +385,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             scannerNode.chainId,
             scannerNode.metadata,
             isScannerOperational(scanner),
-            scannerNode.disabled);
+            scannerNode.disabled
+        );
     }
 
     // ************* StakeSubjectUpgradeable *************
@@ -396,10 +419,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         if (address(getSubjectHandler()) == address(0)) {
             return true;
         }
-        return
-            getSubjectHandler().activeStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) >=
-            _stakeThreshold.min &&
-            _exists(nodeRunnerId);
+        return getSubjectHandler().activeStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) >= _stakeThreshold.min && _exists(nodeRunnerId);
     }
 
     // ************* IDelegatedStakeSubject *************
@@ -422,15 +442,20 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         return _scannerStakeThresholds[managedId];
     }
 
-    function getTotalManagedSubjects(uint256 subject) external virtual override view returns(uint256) {
-        return totalScannersRegistered(subject);
+    function getTotalManagedSubjects(uint256 subject) public view virtual override returns (uint256) {
+        return _enabledScanners[subject];
     }
 
-    function getManagerIdFor(uint256 managedSubjectId) external virtual override view returns (uint256) {
-        return _scannerNodes[scannerIdToAddress(managedSubjectId)].nodeRunnerId;
+    function allocatedStakeInScanners(uint256 nodeRunnerId) public view returns (uint256) {
+        return getSubjectHandler().allocatedStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) / getTotalManagedSubjects(nodeRunnerId);
     }
 
-
+    function allocatedStakeOfScanner(address scanner) public view returns (uint256) {
+        if (_scannerNodes[scanner].disabled) {
+            return 0;
+        }
+        return allocatedStakeInScanners(_scannerNodes[scanner].nodeRunnerId);
+    }
 
     // ************* Priviledge setters ***************
 

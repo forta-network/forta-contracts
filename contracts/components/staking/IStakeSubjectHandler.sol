@@ -18,5 +18,5 @@ interface IStakeSubjectHandler {
     function maxManagedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
     function minManagedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
     function totalManagedSubjectsFor(uint8 subjectType, uint256 subject) external view returns (uint256);
-    function managerIdFor(uint8 managerSubjectType, uint256 managedSubject) external view returns (uint256);
+    function allocatedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
 }
