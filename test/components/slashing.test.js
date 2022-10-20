@@ -49,7 +49,13 @@ const EVIDENCE_FOR_STATE = (state) => {
 const PROPOSAL_ID = BigNumber.from('1');
 
 describe.skip('Slashing Proposals', function () {
-    prepare({ stake: { min: MIN_STAKE, max: MAX_STAKE, activated: true } });
+    prepare({
+        stake: {
+            agents: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
+            scanners: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
+            nodeRunners: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
+        },
+    });
 
     beforeEach(async function () {
         await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHING_ARBITER, this.accounts.user3.address);

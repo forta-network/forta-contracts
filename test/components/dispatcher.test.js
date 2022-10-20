@@ -6,7 +6,7 @@ const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRe
 
 let verifyingContractInfo;
 describe.skip('Dispatcher', function () {
-    prepare({ stake: { min: '100', max: '500', activated: true } });
+    prepare({ stake: { agents: { min: '100', max: '500', activated: true }, scanners: { min: '100', max: '500', activated: true } } });
 
     beforeEach(async function () {
         this.accounts.getAccount('scanner');
@@ -34,8 +34,8 @@ describe.skip('Dispatcher', function () {
         await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
 
         // Stake
-        await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.NODE_RUNNER_SUBJECT_TYPE, this.SCANNER_SUBJECT_ID, '100');
-        await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, this.AGENT_ID, '100');
+        await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.NODE_RUNNER, this.SCANNER_SUBJECT_ID, '100');
+        await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, this.AGENT_ID, '100');
     });
 
     it('protected', async function () {

@@ -91,7 +91,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
     uint256 private constant HUNDRED_PERCENT = 100;
 
-     // subject => active stake
+    // subject => active stake
     Distributions.Balances private _allocatedStake;
     // subject => inactive stake
     Distributions.Balances private _unallocatedStake;
@@ -109,6 +109,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     event StakeParamsManagerSet(address indexed newManager);
     event MaxStakeReached(uint8 indexed subjectType, uint256 indexed subject);
     event TokensSwept(address indexed token, address to, uint256 amount);
+    event AllocatedStake(uint8 indexed subjectType, uint256 indexed subject, uint256 amount, uint256 totalAllocated);
+    event UnallocatedStake(uint8 indexed subjectType, uint256 indexed subject, uint256 amount, uint256 totalAllocated);
 
     error WithdrawalNotReady();
     error SlashingOver90Percent();
@@ -121,9 +123,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     string public constant version = "0.1.1";
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address _forwarder) initializer ForwardedContext(_forwarder) {
-        
-    }
+    constructor(address _forwarder) initializer ForwardedContext(_forwarder) {}
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
@@ -189,6 +189,23 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      */
     function totalInactiveStake() public view returns (uint256) {
         return _inactiveStake.totalSupply();
+    }
+
+    function allocatedStakeFor(uint8 subjectType, uint256 subject) public view returns (uint256) {
+        return _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject));
+    }
+
+    function allocatedStakeIn(uint8 subjectType, uint256 subject) public view returns (uint256) {
+        uint8 managerType = getManagerTypeFor(subjectType);
+        if (managerType == UNDEFINED_SUBJECT) {
+            return 0;
+        }
+        uint256 managerId = _subjectHandler.managerIdFor(managerType, subject);
+        return _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(managerType, managerId)) / _subjectHandler.totalManagedSubjectsFor(managerType, managerId);
+    }
+
+    function unallocatedStakeFor(uint8 subjectType, uint256 subject) public view returns (uint256) {
+        return _unallocatedStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject));
     }
 
     /**
@@ -298,11 +315,16 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _activeStake.mint(activeSharesId, stakeValue);
         _mint(staker, activeSharesId, sharesValue, new bytes(0));
         emit StakeDeposited(subjectType, subject, staker, stakeValue);
-
+        _allocateStakeFor(activeSharesId, subjectType, subject, stakeValue);
         return sharesValue;
     }
 
-    function _allocateStake(uint256 activeSharesId, uint8 subjectType, uint256 subject, uint256 amount) private {
+    function _allocateStakeFor(
+        uint256 activeSharesId,
+        uint8 subjectType,
+        uint256 subject,
+        uint256 amount
+    ) private {
         SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
         if (agency == SubjectStakeAgency.DELEGATED) {
             uint256 subjects = _subjectHandler.totalManagedSubjectsFor(subjectType, subject);
@@ -310,13 +332,15 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
             int256 extraStake = int256(_allocatedStake.balanceOf(activeSharesId) + amount) - int256(maxPerManaged * subjects);
             if (extraStake > 0) {
                 _allocatedStake.mint(activeSharesId, amount - uint256(extraStake));
+                emit AllocatedStake(subjectType, subject, amount - uint256(extraStake), _allocatedStake.balanceOf(activeSharesId));
                 _unallocatedStake.mint(activeSharesId, uint256(extraStake));
+                emit UnallocatedStake(subjectType, subject, uint256(extraStake), _unallocatedStake.balanceOf(activeSharesId));
             } else {
                 _allocatedStake.mint(activeSharesId, amount);
+                emit AllocatedStake(subjectType, subject, amount, _allocatedStake.balanceOf(activeSharesId));
             }
         }
     }
-
 
     /**
      * Calculates how much of the incoming stake fits for subject.
@@ -560,7 +584,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     function _availableReward(uint256 activeSharesId, address account) internal view returns (uint256) {
         return
             SafeCast.toUint256(
-                SafeCast.toInt256(_historicalRewardFraction(activeSharesId, balanceOf(account, activeSharesId), Math.Rounding.Down)) - _released[activeSharesId].balanceOf(account)
+                SafeCast.toInt256(_historicalRewardFraction(activeSharesId, balanceOf(account, activeSharesId), Math.Rounding.Down)) -
+                    _released[activeSharesId].balanceOf(account)
             );
     }
 

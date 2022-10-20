@@ -23,12 +23,9 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
      * @param __manager address of AccessManager.
      * @param __fortaStaking address of FortaStaking.
      */
-    function initialize(
-        address __manager,
-        address __fortaStaking
-    ) public initializer {
+    function initialize(address __manager, address __fortaStaking) public initializer {
         __BaseComponentUpgradeable_init(__manager);
-        
+
         _setFortaStaking(__fortaStaking);
     }
 
@@ -47,6 +44,7 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
      * Sets stake subject handler stake for subject type.
      */
     function setStakeSubject(uint8 subjectType, IStakeSubject subject) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
+        // TODO if subjectType is Delegated, (Address.isContract(account) && account.supportsInterface(type(IDelegatedSubject).interfaceId)) {
         if (address(subject) == address(0)) revert ZeroAddress("subject");
         emit StakeSubjectChanged(address(subject), address(_stakeSubjects[subjectType]));
         _stakeSubjects[subjectType] = subject;
@@ -78,10 +76,15 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
     function minManagedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
         return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getManagedStakeThreshold(subject).min;
     }
-    
+
     function totalManagedSubjectsFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
         return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getTotalManagedSubjects(subject);
     }
+
+    function managerIdFor(uint8 managerSubjectType, uint256 managedSubject) external view override returns (uint256) {
+        return IDelegatedStakeSubject(address(_stakeSubjects[managerSubjectType])).getManagerIdFor(managedSubject);
+    }
+
 
     /// Get if staking is activated for that `subjectType` and `subject`. If not set, will return false.
     function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns (bool) {

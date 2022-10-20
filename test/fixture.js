@@ -63,13 +63,35 @@ function prepare(config = {}) {
             this.accounts.staker = this.accounts.user1;
             await this.token.connect(this.accounts.staker).approve(this.staking.address, ethers.constants.MaxUint256);
             this.stakingSubjects = {};
-            this.stakingSubjects.SCANNER_SUBJECT_TYPE = 0;
-            this.stakingSubjects.AGENT_SUBJECT_TYPE = 1;
-            this.stakingSubjects.NODE_RUNNER_SUBJECT_TYPE = 2;
+            this.stakingSubjects.SCANNER = 0;
+            this.stakingSubjects.AGENT = 1;
+            this.stakingSubjects.NODE_RUNNER = 2;
+            this.stakingSubjects.UNDEFINED = 255;
+            this.subjectAgency = {};
+            this.subjectAgency.UNDEFINED = 0;
+            this.subjectAgency.MANAGED = 1;
+            this.subjectAgency.DIRECT = 2;
+            this.subjectAgency.DELEGATED = 3;
+            this.subjectAgency.DELEGATOR = 4;
 
-            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated });
-            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated }, 1);
-            await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated });
+            if (config.stake.agents) {
+                await this.agents
+                    .connect(this.accounts.manager)
+                    .setStakeThreshold({ max: config.stake.agents.max, min: config.stake.agents.min, activated: config.stake.agents.activated });
+            }
+            if (config.stake.scanners) {
+                await this.scanners
+                    .connect(this.accounts.manager)
+                    .setStakeThreshold({ max: config.stake.scanners.max, min: config.stake.scanners.min, activated: config.stake.scanners.activated }, 1);
+            }
+            if (config.stake.nodeRunners) {
+                await this.nodeRunners
+                    .connect(this.accounts.manager)
+                    .setStakeThreshold({ max: config.stake.nodeRunners.max, min: config.stake.nodeRunners.min, activated: config.stake.nodeRunners.activated });
+                await this.nodeRunners
+                    .connect(this.accounts.manager)
+                    .setManagedStakeThreshold({ max: config.stake.scanners.max, min: config.stake.scanners.min, activated: config.stake.scanners.activated }, 1);
+            }
 
             DEBUG('Fixture: stake configured');
         }

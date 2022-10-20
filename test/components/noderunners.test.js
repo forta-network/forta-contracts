@@ -8,16 +8,16 @@ const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRe
 let SCANNER_ADDRESS_1, scanner1Registration, scanner1Signature, verifyingContractInfo;
 describe('Node Runner Registry', function () {
     // TODO Stake related stuff
-    prepare({ stake: { min: '0', max: '500', activated: true } });
+    prepare({ stake: { nodeRunners: { min: '100', max: '500', activated: true }, scanners: { min: '100', max: '500', activated: true } } });
 
     beforeEach(async function () {
-        const { chainId } = await ethers.provider.getNetwork();
+        const network = await ethers.provider.getNetwork();
         this.accounts.getAccount('scanner');
 
         SCANNER_ADDRESS_1 = this.accounts.scanner.address;
         verifyingContractInfo = {
             address: this.contracts.nodeRunners.address,
-            chainId: chainId,
+            chainId: network.chainId,
         };
         scanner1Registration = {
             scanner: SCANNER_ADDRESS_1,
@@ -291,7 +291,7 @@ describe('Node Runner Registry', function () {
         beforeEach(async function () {
             await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
             await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
-            // await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_ADDRESS, '100');
+            // await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER, SCANNER_ADDRESS, '100');
         });
 
         describe('manager', async function () {
@@ -414,7 +414,7 @@ describe('Node Runner Registry', function () {
                 expect(await this.nodeRunners.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);
                 await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
                 expect(await this.nodeRunners.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
-                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_SUBJECT_ID, '10000');
+                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER, SCANNER_SUBJECT_ID, '10000');
                 expect(await this.nodeRunners.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);
             });
         });

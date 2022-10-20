@@ -426,6 +426,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         return totalScannersRegistered(subject);
     }
 
+    function getManagerIdFor(uint256 managedSubjectId) external virtual override view returns (uint256) {
+        return _scannerNodes[scannerIdToAddress(managedSubjectId)].nodeRunnerId;
+    }
+
+
 
     // ************* Priviledge setters ***************
 

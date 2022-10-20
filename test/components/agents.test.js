@@ -7,7 +7,7 @@ const AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
 
 describe('Agent Registry', function () {
-    prepare({ stake: { min: '100', max: '500', activated: true } });
+    prepare({ stake: { agents: { min: '100', max: '500', activated: true } } });
 
     describe('create and update', function () {
         it('missing prepare if delay set', async function () {
@@ -189,12 +189,12 @@ describe('Agent Registry', function () {
             await expect(this.agents.prepareAgent(prepareCommit(...args))).to.be.not.reverted;
             await network.provider.send('evm_increaseTime', [300]);
             await expect(this.agents.createAgent(...args)).to.be.not.reverted;
-            await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, AGENT_ID, '100');
+            await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
         });
 
         it('isEnabled is false for non registered agents, even if staked', async function () {
             const randomAgent = '123456789';
-            await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, randomAgent, '100');
+            await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, randomAgent, '100');
             expect(await this.agents.isEnabled(randomAgent)).to.be.equal(false);
         });
 
@@ -269,7 +269,7 @@ describe('Agent Registry', function () {
                 await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0)).to.be.revertedWith(
                     `StakedUnderMinimum(${ethers.BigNumber.from(AGENT_ID).toString()})`
                 );
-                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, AGENT_ID, '10000');
+                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '10000');
                 await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 0, true);
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
             });
@@ -278,7 +278,7 @@ describe('Agent Registry', function () {
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
                 await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true });
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
-                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, AGENT_ID, '10000');
+                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '10000');
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
             });
         });
@@ -290,12 +290,12 @@ describe('Agent Registry', function () {
             await expect(this.agents.prepareAgent(prepareCommit(...args))).to.be.not.reverted;
             await network.provider.send('evm_increaseTime', [300]);
             await expect(this.agents.createAgent(...args)).to.be.not.reverted;
-            await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, AGENT_ID, '100');
+            await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
         });
 
         it('isEnabled is false for non registered agents, even if staked', async function () {
             const randomAgent = '123456789';
-            await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, randomAgent, '100');
+            await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, randomAgent, '100');
             expect(await this.agents.isEnabled(randomAgent)).to.be.equal(false);
         });
 
@@ -375,7 +375,7 @@ describe('Agent Registry', function () {
                 await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0)).to.be.revertedWith(
                     `StakedUnderMinimum(${ethers.BigNumber.from(AGENT_ID).toString()})`
                 );
-                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, AGENT_ID, '10000');
+                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '10000');
                 await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 0, true);
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
             });
@@ -384,7 +384,7 @@ describe('Agent Registry', function () {
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
                 await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true });
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
-                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT_SUBJECT_TYPE, AGENT_ID, '10000');
+                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '10000');
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
             });
         });
