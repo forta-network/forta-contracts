@@ -185,7 +185,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     }
 
     /**
-     * @notice Arbiter rejects a slash proposal, slashing the deposit of the proposer (the proposal is deemed as spam, malicious, or similar)
+     * @notice Arbiter rejects a slash proposal, slashing the deposit of the proposer (the proposal is deemed as spam, misconduct, or similar)
      * and unfreezing the subject's stake.
      * @param _proposalId the proposal identifier.
      * @param _evidence IPFS hashes of the evidence files, justification for slashing the proposer's deposit.

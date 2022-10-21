@@ -79,6 +79,8 @@ const DELAY = {
 
 const TREASURY = (chainId, deployer) => {
     switch (chainId) {
+        case 137:
+            return process.env.POLYGON_MULTISIG;
         case 5:
         case 80001:
         case 31337:
@@ -90,6 +92,8 @@ const TREASURY = (chainId, deployer) => {
 
 const SLASH_PERCENT_TO_PROPOSER = (chainId) => {
     switch (chainId) {
+        case 137:
+            return '80';
         case 5:
         case 80001:
         case 31337:
@@ -101,6 +105,8 @@ const SLASH_PERCENT_TO_PROPOSER = (chainId) => {
 
 const SLASHING_DEPOSIT_AMOUNT = (chainId) => {
     switch (chainId) {
+        case 137:
+            return ethers.utils.parseEther('1000');
         case 5:
         case 80001:
         case 31337:
@@ -314,11 +320,11 @@ async function migrate(config = {}) {
         penaltyModes.CURRENT_STAKE = 2;
         const reasons = {};
         reasons.OPERATIONAL_SLASH = ethers.utils.id('OPERATIONAL_SLASH');
-        reasons.MALICIOUS_SUBJECT_SLASH = ethers.utils.id('MALICIOUS_SUBJECT_SLASH');
+        reasons.MISCONDUCT_SUBJECT_SLASH = ethers.utils.id('MISCONDUCT_SUBJECT_SLASH');
 
         const penalties = {};
         penalties[reasons.OPERATIONAL_SLASH] = { mode: penaltyModes.MIN_STAKE, percentSlashed: '15' };
-        penalties[reasons.MALICIOUS_SUBJECT_SLASH] = { mode: penaltyModes.CURRENT_STAKE, percentSlashed: '90' };
+        penalties[reasons.MISCONDUCT_SUBJECT_SLASH] = { mode: penaltyModes.CURRENT_STAKE, percentSlashed: '90' };
         const reasonIds = Object.keys(reasons).map((reason) => reasons[reason]);
 
         contracts.slashing = await ethers.getContractFactory('SlashingController', deployer).then((factory) =>

@@ -7,4 +7,4 @@ pragma solidity ^0.8.9;
 // better reference.
 
 bytes32 constant OPERATIONAL_SLASH = keccak256("OPERATIONAL_SLASH");
-bytes32 constant MALICIOUS_SUBJECT_SLASH = keccak256("MALICIOUS_SUBJECT_SLASH");
+bytes32 constant MISCONDUCT_SUBJECT_SLASH = keccak256("MISCONDUCT_SUBJECT_SLASH");
