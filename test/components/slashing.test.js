@@ -212,7 +212,7 @@ describe('Slashing Proposals', function () {
             await expect(
                 this.slashing
                     .connect(this.accounts.user3)
-                    .reviewSlashProposalParameters(PROPOSAL_ID, subjects[1].type, subjects[1].id, this.slashParams.reasons.MISCONDUCT_SUBJECT_SLASH, EVIDENCE_CHANGE_SUBJECT2)
+                    .reviewSlashProposalParameters(PROPOSAL_ID, subjects[1].type, subjects[1].id, this.slashParams.reasons.MISCONDUCT_SLASH, EVIDENCE_CHANGE_SUBJECT2)
             )
                 .to.emit(this.slashing, 'EvidenceSubmitted')
                 .withArgs(PROPOSAL_ID, STATES.IN_REVIEW, EVIDENCE_CHANGE_SUBJECT2)
@@ -224,11 +224,11 @@ describe('Slashing Proposals', function () {
                     this.accounts.user2.address,
                     subjects[1].id,
                     subjects[1].type,
-                    this.slashParams.reasons.MISCONDUCT_SUBJECT_SLASH
+                    this.slashParams.reasons.MISCONDUCT_SLASH
                 );
 
             const newProposal = await this.slashing.proposals(PROPOSAL_ID);
-            expect(newProposal.penaltyId).to.eq(this.slashParams.reasons.MISCONDUCT_SUBJECT_SLASH);
+            expect(newProposal.penaltyId).to.eq(this.slashParams.reasons.MISCONDUCT_SLASH);
 
             // Continue
             await expect(this.slashing.connect(this.accounts.user3).markAsReviewedSlashProposal(PROPOSAL_ID))
@@ -410,7 +410,6 @@ describe('Slashing Proposals', function () {
         });
     });
     describe('State configuration', function () {
-
         it('should not have incorrect state transtions', async function () {
             await this.slashing
                 .connect(this.accounts.user2)
