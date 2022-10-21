@@ -1,5 +1,5 @@
 const hre = require('hardhat');
-const { ethers, defender } = hre;
+const { ethers, defender, upgrades } = hre;
 const DEBUG = require('debug')('forta');
 const utils = require('./utils');
 
@@ -15,7 +15,7 @@ async function main() {
         provider.network.ensAddress = await CACHE.get('ens-registry');
     }
     const MULTISIG_ADDRESS = process.env[`${hre.network.name.toUpperCase()}_MULTISIG`];
-
+    console.log(MULTISIG_ADDRESS);
     DEBUG(`Network:  ${name} (${chainId})`);
     DEBUG(`ENS:      ${provider.network.ensAddress ?? 'undetected'}`);
     DEBUG(`Deployer: ${deployer.address}`);
@@ -36,17 +36,18 @@ async function main() {
     };
 
     const proposals = [];
-    /*
+
     console.log('upgrading ScannerNodeVersion...');
     proposals.push(
-        await defender.proposeUpgrade(contracts.scannerNodeVersion.address, await ethers.getContractFactory('ScannerNodeVersion', deployer), {
+        await upgrades.prepareUpgrade(contracts.scannerNodeVersion.address, await ethers.getContractFactory('ScannerNodeVersion', deployer), {
             unsafeAllow: ['delegatecall'],
             multisig: MULTISIG_ADDRESS,
             constructorArgs: [contracts.forwarder.address],
         })
     );
+    console.log(proposals);
     console.log('ScannerNodeVersion proposed!');
-    
+
     console.log('upgrading AgentRegistry...');
 
     proposals.push(
@@ -69,6 +70,7 @@ async function main() {
         })
     );
     console.log('ScannerRegistry proposed!');
+
     console.log('upgrading Dispatch...');
 
     proposals.push(
@@ -80,6 +82,7 @@ async function main() {
         })
     );
     console.log('Dispatch proposed!');
+
     console.log('upgrading FortaStaking...');
 
     proposals.push(
@@ -91,7 +94,7 @@ async function main() {
         })
     );
     console.log('FortaStaking proposed!');
-    */
+
     console.log('upgrading FortaStakingParameters...');
 
     proposals.push(
