@@ -139,8 +139,26 @@ describe.only('Staking - Delegated and Delegators', function () {
                     }
 
                 });
-                it.skip('should allocate up to max for manager', async function () {});
-                it.skip('should have unallocated stake if more than max managed', async function () {});
+                it('should allocate up to max for manager', async function () {
+                    const maxPlusOne = `${Number(MAX_STAKE_MANAGER) + 1}`;
+                    await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, maxPlusOne))
+                        .to.emit(this.staking, 'AllocatedStake')
+                        .withArgs(subjectType1, subject1, MAX_STAKE_MANAGER, MAX_STAKE_MANAGER);
+                    expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq(MAX_STAKE_MANAGER);
+                });
+                it('should have unallocated stake if more than max managed', async function () {
+                    const staked = Number(MAX_STAKE_MANAGER) - 1;
+
+                    await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, staked))
+                        .to.emit(this.staking, 'AllocatedStake')
+                        .withArgs(subjectType1, subject1, staked, staked);
+                    expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq(staked);
+                    const maxAllocated = Number(MAX_STAKE_MANAGED) * SCANNERS.length;
+                    expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq(`${maxAllocated}`);
+                    const unallocated = staked - maxAllocated;
+                    expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq(`${unallocated}`);
+                    expect(await this.nodeRunners.allocatedStakeInScanners(1)).to.eq('66');
+                });
 
                 it.skip('should top allocated and unallocated stake if more than max managed and up to max manager', async function () {});
                 it.skip('scanners should be disabled if scanner threshold rises over current stake', async function () {});
