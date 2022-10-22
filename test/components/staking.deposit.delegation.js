@@ -1,5 +1,5 @@
 const { ethers, network } = require('hardhat');
-const { expect, assert } = require('chai');
+const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
 const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRegistration');
@@ -88,9 +88,8 @@ describe.only('Staking - Delegated and Delegators', function () {
                     expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq('100');
                     expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('0');
 
-                    expect(await this.nodeRunners.allocatedStakeInScanners(1)).to.eq('33');
+                    expect(await this.nodeRunners.allocatedStakePerScanner(1)).to.eq('33');
                     for (const scanner of SCANNERS) {
-                        console.log(scanner.address);
                         expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('33');
                         expect(await this.staking.allocatedStakeFor(this.stakingSubjects.SCANNER, scanner.address)).to.eq('0');
                         expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
@@ -101,7 +100,7 @@ describe.only('Staking - Delegated and Delegators', function () {
                     expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq('300');
                     expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq('300');
                     expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('0');
-                    expect(await this.nodeRunners.allocatedStakeInScanners(1)).to.eq('100');
+                    expect(await this.nodeRunners.allocatedStakePerScanner(1)).to.eq('100');
                     for (const scanner of SCANNERS) {
                         expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('100');
                         expect(await this.staking.allocatedStakeFor(this.stakingSubjects.SCANNER, scanner.address)).to.eq('0');
@@ -115,13 +114,13 @@ describe.only('Staking - Delegated and Delegators', function () {
                     expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq('200');
                     expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq('200');
                     expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('0');
-                    expect(await this.nodeRunners.allocatedStakeInScanners(1)).to.eq('66');
+                    expect(await this.nodeRunners.allocatedStakePerScanner(1)).to.eq('66');
                     for (const scanner of SCANNERS) {
                         expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('66');
                         expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
                     }
                     await this.nodeRunners.connect(this.accounts.user1).disableScanner(SCANNERS[0].address);
-                    expect(await this.nodeRunners.allocatedStakeInScanners(1)).to.eq('100');
+                    expect(await this.nodeRunners.allocatedStakePerScanner(1)).to.eq('100');
                     for (const scanner of SCANNERS) {
                         if (scanner === SCANNERS[0]) {
                             expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('0');
@@ -132,40 +131,82 @@ describe.only('Staking - Delegated and Delegators', function () {
                         }
                     }
                     await this.nodeRunners.connect(this.accounts.user1).enableScanner(SCANNERS[0].address);
-                    expect(await this.nodeRunners.allocatedStakeInScanners(1)).to.eq('66');
+                    expect(await this.nodeRunners.allocatedStakePerScanner(1)).to.eq('66');
                     for (const scanner of SCANNERS) {
                         expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('66');
                         expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
                     }
-
                 });
                 it('should allocate up to max for manager', async function () {
                     const maxPlusOne = `${Number(MAX_STAKE_MANAGER) + 1}`;
                     await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, maxPlusOne))
                         .to.emit(this.staking, 'AllocatedStake')
-                        .withArgs(subjectType1, subject1, MAX_STAKE_MANAGER, MAX_STAKE_MANAGER);
+                        .withArgs(subjectType1, subject1, `${Number(MAX_STAKE_MANAGED) * 3}`, `${Number(MAX_STAKE_MANAGED) * 3}`)
+                        .to.emit(this.staking, 'StakeDeposited')
+                        .withArgs(subjectType1, subject1, this.accounts.user1.address, MAX_STAKE_MANAGER);
+                    const maxAllocated = Number(MAX_STAKE_MANAGED) * SCANNERS.length;
+                    expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq(`${maxAllocated}`);
+                    expect(await this.nodeRunners.allocatedStakePerScanner(1)).to.eq(MAX_STAKE_MANAGED);
                     expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq(MAX_STAKE_MANAGER);
                 });
-                it('should have unallocated stake if more than max managed', async function () {
+                it('active stake = allocated + unallocated', async function () {
                     const staked = Number(MAX_STAKE_MANAGER) - 1;
 
                     await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, staked))
+                        .to.emit(this.staking, 'StakeDeposited')
+                        .withArgs(subjectType1, subject1, this.accounts.user1.address, staked)
                         .to.emit(this.staking, 'AllocatedStake')
-                        .withArgs(subjectType1, subject1, staked, staked);
-                    expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq(staked);
+                        .withArgs(subjectType1, subject1, `${Number(MAX_STAKE_MANAGED) * 3}`, `${Number(MAX_STAKE_MANAGED) * 3}`);
+                    const active = await this.staking.activeStakeFor(subjectType1, subject1);
+                    expect(active).to.eq(staked);
                     const maxAllocated = Number(MAX_STAKE_MANAGED) * SCANNERS.length;
-                    expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq(`${maxAllocated}`);
-                    const unallocated = staked - maxAllocated;
-                    expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq(`${unallocated}`);
-                    expect(await this.nodeRunners.allocatedStakeInScanners(1)).to.eq('66');
+                    const allocated = await this.staking.allocatedStakeFor(subjectType1, subject1);
+                    expect(allocated).to.eq(`${maxAllocated}`);
+                    const unallocated = await this.staking.unallocatedStakeFor(subjectType1, subject1);
+                    const expectedUnallocated = staked - maxAllocated;
+                    expect(unallocated).to.eq(`${expectedUnallocated}`);
+                    expect(allocated.add(unallocated)).to.eq(active);
+                    expect(await this.nodeRunners.allocatedStakePerScanner(1)).to.eq(MAX_STAKE_MANAGED);
                 });
 
-                it.skip('should top allocated and unallocated stake if more than max managed and up to max manager', async function () {});
-                it.skip('scanners should be disabled if scanner threshold rises over current stake', async function () {});
-                it.skip('scanners should be disabled if scanner threshold rises over nodeRunners stake', async function () {});
+                it('scanners should be disabled if scanner threshold rises over current stake', async function () {
+                    const maxPlusOne = `${Number(MAX_STAKE_MANAGER) + 1}`;
+                    await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, maxPlusOne))
+                        .to.emit(this.staking, 'AllocatedStake')
+                        .withArgs(subjectType1, subject1, `${Number(MAX_STAKE_MANAGED) * 3}`, `${Number(MAX_STAKE_MANAGED) * 3}`)
+                        .to.emit(this.staking, 'StakeDeposited')
+                        .withArgs(subjectType1, subject1, this.accounts.user1.address, MAX_STAKE_MANAGER);
+                    for (const scanner of SCANNERS) {
+                        expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(true);
+                    }
+                    const newMin = `${Number(MAX_STAKE_MANAGED) + 1}`;
+                    await this.nodeRunners.connect(this.accounts.manager).setManagedStakeThreshold({ max: MAX_STAKE_MANAGER, min: newMin, activated: true }, 1);
+                    for (const scanner of SCANNERS) {
+                        expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
+                    }
+                });
+
+                it('scanners should be disabled if scanner threshold rises over nodeRunners stake', async function () {
+                    const staked = '2000';
+                    await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, staked))
+                        .to.emit(this.staking, 'AllocatedStake')
+                        .withArgs(subjectType1, subject1, staked, staked)
+                        .to.emit(this.staking, 'StakeDeposited')
+                        .withArgs(subjectType1, subject1, this.accounts.user1.address, staked);
+                    expect(await this.nodeRunners.isNodeRunnerOperational(1)).to.eq(true);
+                    for (const scanner of SCANNERS) {
+                        expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(true);
+                    }
+                    const newMin = `${Number(staked) + 1}`;
+                    await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: MAX_STAKE_MANAGER, min: newMin, activated: true });
+                    expect(await this.nodeRunners.isNodeRunnerOperational(1)).to.eq(false);
+                    for (const scanner of SCANNERS) {
+                        expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
+                    }
+                });
             });
 
-            describe.skip('Manual Allocation', function () {
+            describe('Manual Allocation', function () {
                 it('should allocate unallocated stake', async function () {});
                 it('should allocate unallocated stake up to max for managed', async function () {});
                 it('should have unallocated stake if disabling managed subject sends allocated over max managed', async function () {});

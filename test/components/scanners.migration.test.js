@@ -144,7 +144,7 @@ describe.skip('Scanner Registry (Deprecation and migration)', function () {
                     expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(true);
                     expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
                     expect(await this.nodeRunners.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
-                    expect(await this.nodeRunners.isDisabled(scannerId)).to.be.equal(false);
+                    expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(false);
                 }
                 const scannerId = SCANNERS[SCANNERS.length - 1].address;
                 expect(await this.scanners.isRegistered(scannerId)).to.be.equal(true);
@@ -158,7 +158,7 @@ describe.skip('Scanner Registry (Deprecation and migration)', function () {
 
                 expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(false);
                 expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, 1)).to.be.equal(false);
-                expect(await this.nodeRunners.isDisabled(scannerId)).to.be.equal(false);
+                expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(false);
             });
 
             it('registered node runner - 1 disabled scanner', async function () {
@@ -195,7 +195,7 @@ describe.skip('Scanner Registry (Deprecation and migration)', function () {
                     expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(true);
                     expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
                     expect(await this.nodeRunners.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
-                    expect(await this.nodeRunners.isDisabled(scannerId)).to.be.equal(false);
+                    expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(false);
                 }
                 const scannerId = SCANNERS[SCANNERS.length - 1].address;
                 expect(await this.scanners.isRegistered(scannerId)).to.be.equal(true);
@@ -209,7 +209,7 @@ describe.skip('Scanner Registry (Deprecation and migration)', function () {
 
                 expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(false);
                 expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, 1)).to.be.equal(false);
-                expect(await this.nodeRunners.isDisabled(scannerId)).to.be.equal(false);
+                expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(false);
             });
 
             it('should not migrate if not MIGRATION_EXECUTOR_ROLE', async function () {
@@ -289,7 +289,7 @@ describe.skip('Scanner Registry (Deprecation and migration)', function () {
                     expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(true);
                     expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
                     expect(await this.nodeRunners.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
-                    expect(await this.nodeRunners.isDisabled(scannerId)).to.be.equal(false);
+                    expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(false);
                 }
                 const scannerId = SCANNERS[SCANNERS.length - 1].address;
                 expect(await this.scanners.isRegistered(scannerId)).to.be.equal(true);
@@ -303,7 +303,7 @@ describe.skip('Scanner Registry (Deprecation and migration)', function () {
 
                 expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(false);
                 expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, 1)).to.be.equal(false);
-                expect(await this.nodeRunners.isDisabled(scannerId)).to.be.equal(false);
+                expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(false);
             });
 
             it('registered node runner - 1 disabled scanner', async function () {
@@ -339,7 +339,7 @@ describe.skip('Scanner Registry (Deprecation and migration)', function () {
                     expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(true);
                     expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
                     expect(await this.nodeRunners.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
-                    expect(await this.nodeRunners.isDisabled(scannerId)).to.be.equal(false);
+                    expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(false);
                 }
                 const scannerId = SCANNERS[SCANNERS.length - 1].address;
                 expect(await this.scanners.isRegistered(scannerId)).to.be.equal(true);
@@ -353,7 +353,7 @@ describe.skip('Scanner Registry (Deprecation and migration)', function () {
 
                 expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(false);
                 expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, 1)).to.be.equal(false);
-                expect(await this.nodeRunners.isDisabled(scannerId)).to.be.equal(false);
+                expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(false);
             });
 
             it('should not migrate if not owner of the scanners', async function () {

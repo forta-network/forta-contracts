@@ -14,6 +14,8 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
 
+import "hardhat/console.sol";
+
 abstract contract NodeRunnerRegistryCore is
     BaseComponentUpgradeable,
     ERC721Upgradeable,
@@ -289,7 +291,7 @@ abstract contract NodeRunnerRegistryCore is
     // ************* Scanner Disabling *************
 
     /// Gets if the disabled flag has been set for a Scanner Node Address
-    function isDisabled(address scanner) public view returns (bool) {
+    function isScannerDisabled(address scanner) public view returns (bool) {
         return _scannerNodes[scanner].disabled;
     }
 
@@ -308,7 +310,14 @@ abstract contract NodeRunnerRegistryCore is
             _isStakedOverMin(_scannerNodes[scanner].nodeRunnerId) &&
             _scannerNodes[scanner].registered &&
             !_scannerNodes[scanner].disabled &&
-            allocatedStakeInScanners(_scannerNodes[scanner].nodeRunnerId) >= _scannerStakeThresholds[_scannerNodes[scanner].chainId].min;
+            _isScannerStakedOverMin(scanner);
+    }
+
+    function _isScannerStakedOverMin(address scanner) internal view returns (bool) {
+        if (!_scannerStakeThresholds[_scannerNodes[scanner].chainId].activated) {
+            return true;
+        }
+        return allocatedStakePerScanner(_scannerNodes[scanner].nodeRunnerId) >= _scannerStakeThresholds[_scannerNodes[scanner].chainId].min;
     }
 
     /**
@@ -409,17 +418,17 @@ abstract contract NodeRunnerRegistryCore is
     }
 
     /**
-     * Checks if scanner is staked over minimum stake
-     * @param nodeRunnerId scanner
-     * @return true if scanner is staked over the minimum threshold for that chainId and is registered,
-     * or staking is not yet enabled (stakeController = 0).
+     * Checks if nodeRunner is staked over minimum stake
+     * @param nodeRunnerId nodeRunner
+     * @return true if nodeRunner is staked over the minimum threshold,
+     * or staking is not enabled (stakeController = address(0) or activated=false).
      * false otherwise
      */
     function _isStakedOverMin(uint256 nodeRunnerId) internal view virtual override returns (bool) {
-        if (address(getSubjectHandler()) == address(0)) {
+        if (address(getSubjectHandler()) == address(0) || ! _stakeThreshold.activated) {
             return true;
         }
-        return getSubjectHandler().activeStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) >= _stakeThreshold.min && _exists(nodeRunnerId);
+        return (getSubjectHandler().activeStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) >= _stakeThreshold.min && _exists(nodeRunnerId));
     }
 
     // ************* IDelegatedStakeSubject *************
@@ -430,6 +439,8 @@ abstract contract NodeRunnerRegistryCore is
      */
     function setManagedStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(NODE_RUNNER_ADMIN_ROLE) {
         if (chainId == 0) revert ZeroAmount("chainId");
+        console.log(newStakeThreshold.max);
+        console.log(newStakeThreshold.min);
         if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
         emit ManagedStakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
         _scannerStakeThresholds[chainId] = newStakeThreshold;
@@ -446,7 +457,7 @@ abstract contract NodeRunnerRegistryCore is
         return _enabledScanners[subject];
     }
 
-    function allocatedStakeInScanners(uint256 nodeRunnerId) public view returns (uint256) {
+    function allocatedStakePerScanner(uint256 nodeRunnerId) public view returns (uint256) {
         return getSubjectHandler().allocatedStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) / getTotalManagedSubjects(nodeRunnerId);
     }
 
@@ -454,7 +465,7 @@ abstract contract NodeRunnerRegistryCore is
         if (_scannerNodes[scanner].disabled) {
             return 0;
         }
-        return allocatedStakeInScanners(_scannerNodes[scanner].nodeRunnerId);
+        return allocatedStakePerScanner(_scannerNodes[scanner].nodeRunnerId);
     }
 
     // ************* Priviledge setters ***************

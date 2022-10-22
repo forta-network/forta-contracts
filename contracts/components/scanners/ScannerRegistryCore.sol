@@ -78,7 +78,7 @@ abstract contract ScannerRegistryCore is
      * false otherwise
      */
     function _isStakedOverMin(uint256 scannerId) internal virtual override view returns(bool) {
-        if (address(getSubjectHandler()) == address(0)) {
+        if (address(getSubjectHandler()) == address(0) || !_getStakeThreshold(scannerId).activated) {
             return true;
         }
         return getSubjectHandler().activeStakeFor(SCANNER_SUBJECT, scannerId) >= _getStakeThreshold(scannerId).min && _exists(scannerId);

@@ -306,11 +306,11 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _activeStake.mint(activeSharesId, stakeValue);
         _mint(staker, activeSharesId, sharesValue, new bytes(0));
         emit StakeDeposited(subjectType, subject, staker, stakeValue);
-        _allocateStakeFor(activeSharesId, subjectType, subject, stakeValue);
+        _allocateStake(activeSharesId, subjectType, subject, stakeValue);
         return sharesValue;
     }
 
-    function _allocateStakeFor(
+    function _allocateStake(
         uint256 activeSharesId,
         uint8 subjectType,
         uint256 subject,
