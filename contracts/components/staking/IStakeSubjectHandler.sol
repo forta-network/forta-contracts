@@ -8,15 +8,16 @@ import "./IStakeSubject.sol";
 interface IStakeSubjectHandler {
     event StakeSubjectChanged(address newHandler, address oldHandler);
     function setStakeSubject(uint8 subjectType, IStakeSubject subject) external;
-    function getStakeSubject(uint8 subjectType) external view returns(IStakeSubject);
-    function activeStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
-    function maxStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
-    function minStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
-    function totalStakeFor(uint8 subjectType, uint256 subject) external view returns(uint256);
-    function maxSlashableStakePercent() external view returns(uint256);
-    function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns(bool);
+    function getStakeSubject(uint8 subjectType) external view returns (IStakeSubject);
+    function activeStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
+    function maxStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
+    function minStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
+    function totalStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
+    function maxSlashableStakePercent() external view returns (uint256);
+    function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns (bool);
     function maxManagedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
     function minManagedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
     function totalManagedSubjectsFor(uint8 subjectType, uint256 subject) external view returns (uint256);
     function allocatedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
+    function canManageAllocation(uint8 subjectType, uint256 subject, address allocator) external view returns (bool);
 }

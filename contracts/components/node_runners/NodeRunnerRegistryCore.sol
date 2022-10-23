@@ -511,5 +511,9 @@ abstract contract NodeRunnerRegistryCore is
         return super._msgData();
     }
 
+    function ownerOf(uint256 subject) public view virtual override(IStakeSubject, StakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
+        return super.ownerOf(subject);
+    }
+
     uint256[41] private __gap;
 }

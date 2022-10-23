@@ -119,6 +119,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     error NoActiveShares();
     error NoInactiveShares();
     error StakeInactiveOrSubjectNotFound();
+    error SenderCannotAllocateFor(uint8 subjectType, uint256 subject);
+    error UnallocatingMoreThanAllocated(uint8 subjectType, uint256 subject, uint256 amount);
 
     string public constant version = "0.1.1";
 
@@ -306,8 +308,19 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _activeStake.mint(activeSharesId, stakeValue);
         _mint(staker, activeSharesId, sharesValue, new bytes(0));
         emit StakeDeposited(subjectType, subject, staker, stakeValue);
-        _allocateStake(activeSharesId, subjectType, subject, stakeValue);
+        SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
+        if (agency == SubjectStakeAgency.DELEGATED) {
+            _allocateStake(activeSharesId, subjectType, subject, stakeValue);
+        }
         return sharesValue;
+    }
+
+    function allocateStake(
+        uint8 subjectType,
+        uint256 subject,
+        uint256 amount
+    ) private {
+        _allocateStake(FortaStakingUtils.subjectToActive(subjectType, subject), subjectType, subject, amount);
     }
 
     function _allocateStake(
@@ -316,21 +329,28 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 subject,
         uint256 amount
     ) private {
-        SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
-        if (agency == SubjectStakeAgency.DELEGATED) {
-            uint256 subjects = _subjectHandler.totalManagedSubjectsFor(subjectType, subject);
-            uint256 maxPerManaged = _subjectHandler.maxManagedStakeFor(subjectType, subject);
-            int256 extraStake = int256(_allocatedStake.balanceOf(activeSharesId) + amount) - int256(maxPerManaged * subjects);
-            if (extraStake > 0) {
-                _allocatedStake.mint(activeSharesId, amount - uint256(extraStake));
-                emit AllocatedStake(subjectType, subject, amount - uint256(extraStake), _allocatedStake.balanceOf(activeSharesId));
-                _unallocatedStake.mint(activeSharesId, uint256(extraStake));
-                emit UnallocatedStake(subjectType, subject, uint256(extraStake), _unallocatedStake.balanceOf(activeSharesId));
-            } else {
-                _allocatedStake.mint(activeSharesId, amount);
-                emit AllocatedStake(subjectType, subject, amount, _allocatedStake.balanceOf(activeSharesId));
-            }
+        if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
+        uint256 subjects = _subjectHandler.totalManagedSubjectsFor(subjectType, subject);
+        uint256 maxPerManaged = _subjectHandler.maxManagedStakeFor(subjectType, subject);
+        int256 extraStake = int256(_allocatedStake.balanceOf(activeSharesId) + amount) - int256(maxPerManaged * subjects);
+        if (extraStake > 0) {
+            _allocatedStake.mint(activeSharesId, amount - uint256(extraStake));
+            emit AllocatedStake(subjectType, subject, amount - uint256(extraStake), _allocatedStake.balanceOf(activeSharesId));
+            _unallocatedStake.mint(activeSharesId, uint256(extraStake));
+            emit UnallocatedStake(subjectType, subject, uint256(extraStake), _unallocatedStake.balanceOf(activeSharesId));
+        } else {
+            _allocatedStake.mint(activeSharesId, amount);
+            emit AllocatedStake(subjectType, subject, amount, _allocatedStake.balanceOf(activeSharesId));
         }
+    }
+
+    function unallocateStake(uint8 subjectType, uint256 subject, uint256 amount) external {
+        if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
+        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        if (_allocatedStake.balanceOf(activeSharesId) < amount) revert UnallocatingMoreThanAllocated(subjectType, subject, amount);
+        _allocatedStake.burn(activeSharesId, amount);
+        _unallocatedStake.mint(activeSharesId, amount);
+        emit UnallocatedStake(subjectType, subject, amount, _unallocatedStake.balanceOf(activeSharesId));
     }
 
     /**

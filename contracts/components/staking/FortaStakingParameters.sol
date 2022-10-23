@@ -104,4 +104,8 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
     function isRegistered(uint8 subjectType, uint256 subject) external view returns (bool) {
         return _stakeSubjects[subjectType].isRegistered(subject);
     }
+
+    function canManageAllocation(uint8 subjectType, uint256 subject, address allocator) external view returns (bool) {
+        return _stakeSubjects[subjectType].ownerOf(subject) == allocator;
+    }
 }

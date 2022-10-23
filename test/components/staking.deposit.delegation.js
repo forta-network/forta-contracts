@@ -39,6 +39,7 @@ describe.only('Staking - Delegated and Delegators', function () {
         await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
 
         await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(chainId);
+        expect(await this.nodeRunners.ownerOf(1)).to.eq(this.accounts.user1.address);
         const network = await ethers.provider.getNetwork();
 
         const verifyingContractInfo = {
@@ -156,7 +157,14 @@ describe.only('Staking - Delegated and Delegators', function () {
                         .to.emit(this.staking, 'StakeDeposited')
                         .withArgs(subjectType1, subject1, this.accounts.user1.address, staked)
                         .to.emit(this.staking, 'AllocatedStake')
-                        .withArgs(subjectType1, subject1, `${Number(MAX_STAKE_MANAGED) * 3}`, `${Number(MAX_STAKE_MANAGED) * 3}`);
+                        .withArgs(subjectType1, subject1, `${Number(MAX_STAKE_MANAGED) * 3}`, `${Number(MAX_STAKE_MANAGED) * 3}`)
+                        .to.emit(this.staking, 'UnallocatedStake')
+                        .withArgs(
+                            subjectType1,
+                            subject1,
+                            `${Number(MAX_STAKE_MANAGER) - 1 - Number(MAX_STAKE_MANAGED) * 3}`,
+                            `${Number(MAX_STAKE_MANAGER) - 1 - Number(MAX_STAKE_MANAGED) * 3}`
+                        );
                     const active = await this.staking.activeStakeFor(subjectType1, subject1);
                     expect(active).to.eq(staked);
                     const maxAllocated = Number(MAX_STAKE_MANAGED) * SCANNERS.length;
@@ -204,18 +212,84 @@ describe.only('Staking - Delegated and Delegators', function () {
                         expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
                     }
                 });
+
+                it('should not deposit if not owner of delegated/manager subject', async function () {
+                    const staked = '2000';
+                    await expect(this.staking.connect(this.accounts.user2).deposit(subjectType1, subject1, staked)).to.be.revertedWith(
+                        `SenderCannotAllocateFor(${subjectType1}, ${subject1})`
+                    );
+                });
             });
 
-            describe('Manual Allocation', function () {
-                it('should allocate unallocated stake', async function () {});
-                it('should allocate unallocated stake up to max for managed', async function () {});
+            describe('Unallocation and Manual Allocation', function () {
+                it('should unallocate allocated stake', async function () {
+                    const staked = '3000';
+                    await this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, staked);
+                    expect(await this.nodeRunners.isNodeRunnerOperational(1)).to.eq(true);
+                    expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq('3000');
+                    expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq('3000');
+                    expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('0');
+                    for (const scanner of SCANNERS) {
+                        expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(true);
+                        expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('1000');
+                    }
+                    const unallocated = '100';
+                    await expect(this.staking.connect(this.accounts.user1).unallocateStake(subjectType1, subject1, unallocated))
+                        .to.emit(this.staking, 'UnallocatedStake')
+                        .withArgs(subjectType1, subject1, '100', '100');
+                    expect(await this.nodeRunners.isNodeRunnerOperational(1)).to.eq(true);
+                    expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq('3000');
+                    expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq('2900');
+                    expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('100');
+                    for (const scanner of SCANNERS) {
+                        expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(true);
+                        expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('966');
+                    }
+                });
+
+                it('should revert if unallocating more than allocated', async function () {
+                    const staked = '3000';
+                    await this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, staked);
+                    const unallocated = '4000';
+                    await expect(this.staking.connect(this.accounts.user1).unallocateStake(subjectType1, subject1, unallocated)).to.be.revertedWith(
+                        `UnallocatingMoreThanAllocated(${subjectType1}, ${subject1}, ${unallocated})`
+                    );
+                });
+
+                it('should disable managed subjects if unallocate under min managed', async function () {
+                    await this.nodeRunners.connect(this.accounts.manager).setManagedStakeThreshold({ max: '1000', min: '1000', activated: true }, 1);
+                    const staked = '3000';
+                    await this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, staked);
+                    expect(await this.nodeRunners.isNodeRunnerOperational(1)).to.eq(true);
+                    expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq('3000');
+                    expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq('3000');
+                    expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('0');
+                    for (const scanner of SCANNERS) {
+                        expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(true);
+                        expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('1000');
+                    }
+                    const unallocated = '1000';
+                    await expect(this.staking.connect(this.accounts.user1).unallocateStake(subjectType1, subject1, unallocated))
+                        .to.emit(this.staking, 'UnallocatedStake')
+                        .withArgs(subjectType1, subject1, '1000', '1000');
+                    expect(await this.nodeRunners.isNodeRunnerOperational(1)).to.eq(true);
+                    expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq('3000');
+                    expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq('2000');
+                    expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('1000');
+                    for (const scanner of SCANNERS) {
+                        expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
+                        expect(await this.nodeRunners.allocatedStakeOfScanner(scanner.address)).to.eq('666');
+                    }
+                });
+                it('should allocate unallocated stake, up to max for managed', async function () {});
+                it('should not allocate if not owner of delegated/manager subject', async function () {
+                    const staked = '2000';
+                    await expect(this.staking.connect(this.accounts.user2).unallocateStake(subjectType1, subject1, staked)).to.be.revertedWith(
+                        `SenderCannotAllocateFor(${subjectType1}, ${subject1})`
+                    );
+                });
+
                 it('should have unallocated stake if disabling managed subject sends allocated over max managed', async function () {});
-            });
-
-            describe.skip('Manual Unallocation', function () {
-                it('should unallocate allocated stake', async function () {});
-
-                it('should disable managed subjects if unallocate under min managed', async function () {});
             });
 
             describe.skip('On Init Withdraw', function () {

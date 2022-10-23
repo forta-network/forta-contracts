@@ -188,5 +188,9 @@ abstract contract AgentRegistryCore is
         return super._msgData();
     }
 
+    function ownerOf(uint256 subject) public view virtual override(StakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
+        return super.ownerOf(subject);
+    }
+
     uint256[41] private __gap; // 50 - 1 (frontRunningDelay) - 3 (_stakeThreshold) - 5 StakeSubjectUpgradeable
 }
