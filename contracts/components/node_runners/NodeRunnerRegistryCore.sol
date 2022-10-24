@@ -14,8 +14,6 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
 
-import "hardhat/console.sol";
-
 abstract contract NodeRunnerRegistryCore is
     BaseComponentUpgradeable,
     ERC721Upgradeable,
@@ -439,8 +437,6 @@ abstract contract NodeRunnerRegistryCore is
      */
     function setManagedStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(NODE_RUNNER_ADMIN_ROLE) {
         if (chainId == 0) revert ZeroAmount("chainId");
-        console.log(newStakeThreshold.max);
-        console.log(newStakeThreshold.min);
         if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
         emit ManagedStakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
         _scannerStakeThresholds[chainId] = newStakeThreshold;

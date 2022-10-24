@@ -120,7 +120,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     error NoInactiveShares();
     error StakeInactiveOrSubjectNotFound();
     error SenderCannotAllocateFor(uint8 subjectType, uint256 subject);
-    error UnallocatingMoreThanAllocated(uint8 subjectType, uint256 subject, uint256 amount);
 
     string public constant version = "0.1.1";
 
@@ -310,20 +309,14 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         emit StakeDeposited(subjectType, subject, staker, stakeValue);
         SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
         if (agency == SubjectStakeAgency.DELEGATED) {
-            _allocateStake(activeSharesId, subjectType, subject, stakeValue);
+            _depositAllocation(activeSharesId, subjectType, subject, stakeValue);
         }
         return sharesValue;
     }
 
-    function allocateStake(
-        uint8 subjectType,
-        uint256 subject,
-        uint256 amount
-    ) private {
-        _allocateStake(FortaStakingUtils.subjectToActive(subjectType, subject), subjectType, subject, amount);
-    }
+    
 
-    function _allocateStake(
+    function _depositAllocation(
         uint256 activeSharesId,
         uint8 subjectType,
         uint256 subject,
@@ -344,14 +337,37 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         }
     }
 
+    function allocateStake(uint8 subjectType, uint256 subject, uint256 amount) external {
+        if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
+        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        if (_unallocatedStake.balanceOf(activeSharesId) < amount) revert AmountTooLarge(amount, _unallocatedStake.balanceOf(activeSharesId));
+        _allocatedStake.mint(activeSharesId, amount);
+        _unallocatedStake.burn(activeSharesId, amount);
+        emit AllocatedStake(subjectType, subject, amount, _allocatedStake.balanceOf(activeSharesId));
+    }
+
+
     function unallocateStake(uint8 subjectType, uint256 subject, uint256 amount) external {
         if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
-        if (_allocatedStake.balanceOf(activeSharesId) < amount) revert UnallocatingMoreThanAllocated(subjectType, subject, amount);
+        if (_allocatedStake.balanceOf(activeSharesId) < amount) revert AmountTooLarge(amount, _allocatedStake.balanceOf(activeSharesId));
         _allocatedStake.burn(activeSharesId, amount);
         _unallocatedStake.mint(activeSharesId, amount);
         emit UnallocatedStake(subjectType, subject, amount, _unallocatedStake.balanceOf(activeSharesId));
     }
+
+
+    function _withdrawAllocation(uint256 activeSharesId, uint8 subjectType, uint256 subject, uint256 amount) private {
+        int256 fromAllocated = int256(_unallocatedStake.balanceOf(activeSharesId)) - int256(amount);
+        if (fromAllocated < 0) {
+            _allocatedStake.burn(activeSharesId, uint256(-fromAllocated));
+            _unallocatedStake.burn(activeSharesId, _unallocatedStake.balanceOf(activeSharesId));
+        } else {
+            _unallocatedStake.burn(activeSharesId, amount);
+        }
+        emit UnallocatedStake(subjectType, subject, amount, _unallocatedStake.balanceOf(activeSharesId));
+    }
+
 
     /**
      * Calculates how much of the incoming stake fits for subject.
@@ -361,11 +377,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @return stakeValue - excess
      * @return true if reached max
      */
-    function _getInboundStake(
-        uint8 subjectType,
-        uint256 subject,
-        uint256 stakeValue
-    ) private view returns (uint256, bool) {
+    function _getInboundStake(uint8 subjectType, uint256 subject, uint256 stakeValue) private view returns (uint256, bool) {
         uint256 max = _subjectHandler.maxStakeFor(subjectType, subject);
         if (activeStakeFor(subjectType, subject) >= max) {
             return (0, true);
@@ -390,11 +402,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @param sharesValue amount of shares token.
      * @return amount of time until withdrawal is valid.
      */
-    function initiateWithdrawal(
-        uint8 subjectType,
-        uint256 subject,
-        uint256 sharesValue
-    ) public onlyValidSubjectType(subjectType) returns (uint64) {
+    function initiateWithdrawal(uint8 subjectType, uint256 subject, uint256 sharesValue) public onlyValidSubjectType(subjectType) returns (uint64) {
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         if (balanceOf(staker, activeSharesId) == 0) revert NoActiveShares();
@@ -406,6 +414,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 stakeValue = activeSharesToStake(activeSharesId, activeShares);
         uint256 inactiveShares = stakeToInactiveShares(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
 
+        _withdrawAllocation(activeSharesId, subjectType, subject, stakeValue);
         _activeStake.burn(activeSharesId, stakeValue);
         _inactiveStake.mint(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
         _burn(staker, activeSharesId, activeShares);
