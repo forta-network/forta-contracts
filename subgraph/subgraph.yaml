@@ -103,4 +103,7 @@ dataSources:
           handler: handleSlashed
         - event: Froze(indexed uint8,indexed uint256,indexed address,bool)
           handler: handleFroze
+        - event: TransferSingle(indexed address,indexed address,indexed
+            address,uint256,uint256)
+          handler: handleTransferSingle
       file: ./src/datasources/FortaStaking.ts

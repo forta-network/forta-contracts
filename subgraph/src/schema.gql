@@ -151,17 +151,23 @@ type StakeThreshold @entity {
 
 type Subject @entity {
   id: ID!
+  subjectId: BigInt
   subjectType: Int
-  activeSharesId: Int
+  activeSharesId: String
   activeShares: BigInt
   activeStake: BigInt
-  inactiveSharesId: Int
+  inactiveSharesId: String
   inactiveShares: BigInt
   inactiveStake: BigInt
   isFrozen: Boolean
   slashedTotal: Int
   stakes: [Stake!]! @derivedFrom(field: "subject")
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "subject")
+}
+
+type SharesID @entity {
+  id: ID!
+  subject: Subject!
 }
 
 type Slash @entity {
@@ -174,7 +180,7 @@ type Slash @entity {
 
 type Reward @entity {
   id: ID!
-  activeSharesId: Int
+  activeSharesId: String
   subjectType: Int
   subjectId: String
   staker: Staker!
