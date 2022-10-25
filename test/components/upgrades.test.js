@@ -95,7 +95,6 @@ describe('Upgrades testing', function () {
         it(' 0.1.0 -> 0.1.3', async function () {
             this.accounts.getAccount('scanner');
             const ScannerRegistry_0_1_0 = await ethers.getContractFactory('ScannerRegistry_0_1_0');
-            // Router is deprecated, just set an address
             originalScanners = await upgrades.deployProxy(ScannerRegistry_0_1_0, [this.contracts.access.address, mockRouter.address, 'Forta Scanners', 'FScanners'], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],

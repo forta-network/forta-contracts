@@ -11,7 +11,6 @@ describe('Scanner Registry (Deprecation and migration)', function () {
         this.accounts.getAccount('scanner');
 
         const ScannerRegistry_0_1_3 = await ethers.getContractFactory('ScannerRegistry_0_1_3');
-        // Router is deprecated, just set an address
         this.scanners = await upgrades.deployProxy(ScannerRegistry_0_1_3, [this.contracts.access.address, 'Forta Scanners', 'FScanners'], {
             kind: 'uups',
             constructorArgs: [this.contracts.forwarder.address],
@@ -72,7 +71,6 @@ describe('Scanner Registry (Deprecation and migration)', function () {
             this.accounts.getAccount('scanner');
 
             const ScannerRegistry_0_1_3 = await ethers.getContractFactory('ScannerRegistry_0_1_3');
-            // Router is deprecated, just set an address
             this.scanners = await upgrades.deployProxy(ScannerRegistry_0_1_3, [this.contracts.access.address, 'Forta Scanners', 'FScanners'], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
