@@ -92,7 +92,7 @@ describe('Upgrades testing', function () {
     });
 
     describe('Scanner Registry', async function () {
-        it(' 0.1.0 -> 0.1.3', async function () {
+        it(' 0.1.0 -> 0.1.4', async function () {
             this.accounts.getAccount('scanner');
             const ScannerRegistry_0_1_0 = await ethers.getContractFactory('ScannerRegistry_0_1_0');
             originalScanners = await upgrades.deployProxy(ScannerRegistry_0_1_0, [this.contracts.access.address, mockRouter.address, 'Forta Scanners', 'FScanners'], {
