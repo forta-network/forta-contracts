@@ -13,8 +13,6 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
     
     string public constant version = "0.1.4";
 
-    event DeregisteredScanner(uint256 scannerId);
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 
@@ -64,7 +62,6 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         delete _disabled[scannerId];
         delete _managers[scannerId];
         delete _scannerMetadata[scannerId];
-        emit DeregisteredScanner(scannerId);
     }
 
 
