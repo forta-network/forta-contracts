@@ -5,7 +5,7 @@ const utils = require('./utils');
 const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
 const semver = require('semver');
-const { DELAY, TREASURY, SLASH_PERCENT_TO_PROPOSER, SLASHING_DEPOSIT_AMOUNT, SCANNER_REGISTRATION_DELAY, CHILD_CHAIN_MANAGER_PROXY, MIGRATION_DURATION } = require('./loadEnv');
+const { DELAY, TREASURY, SLASH_PERCENT_TO_PROPOSER, SLASHING_DEPOSIT_AMOUNT, SCANNER_REGISTRATION_DELAY, CHILD_CHAIN_MANAGER_PROXY } = require('./loadEnv');
 
 upgrades.silenceWarnings();
 
@@ -302,24 +302,6 @@ async function migrate(config = {}) {
         );
 
         DEBUG(`[11] nodeRunners: ${contracts.nodeRunners.address}`);
-
-        DEBUG(`[12] Deploying ScannerToNodeRunnerMigration...`);
-
-        contracts.registryMigration = await ethers.getContractFactory('ScannerToNodeRunnerMigration', deployer).then((factory) =>
-            utils.tryFetchProxy(
-                CACHE,
-                'node-runner-migration',
-                factory,
-                'uups',
-                [contracts.access.address, contracts.scanners.address, contracts.nodeRunners.address, MIGRATION_DURATION(chainId)],
-                {
-                    constructorArgs: [contracts.forwarder.address],
-                    unsafeAllow: 'delegatecall',
-                }
-            )
-        );
-
-        DEBUG(`[12] scannerToNodeRunnerMigration: ${contracts.registryMigration.address}`);
     }
 
     // Roles dictionary

@@ -16,37 +16,36 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     string public constant version = "0.1.0";
     uint256 public constant NODE_RUNNER_NOT_MIGRATED = 0;
 
-    ScannerRegistry public scannerNodeRegistry;
-    NodeRunnerRegistry public nodeRunnerRegistry;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    ScannerRegistry public immutable scannerNodeRegistry;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    NodeRunnerRegistry public immutable nodeRunnerRegistry;
     uint256 public migrationEndTime;
 
-    event SetScannerNodeRegistry(address registry);
-    event SetNodeRunnerRegistry(address registry);
     event SetMigrationEndtime(uint256 migrationEndTime);
     event MigrationExecuted(uint256 scannersMigrated, uint256 ignoredScanners, uint256 nodeRunnerId, bool mintedNodeRunner);
 
     error NotOwnerOfNodeRunner(address pretender, uint256 nodeRunnerId);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+    constructor(
+        address _forwarder,
+        address _scannerNodeRegistry,
+        address _nodeRunnerRegistry
+    ) initializer ForwardedContext(_forwarder) {
+        if (_scannerNodeRegistry == address(0)) revert ZeroAddress("_scannerNodeRegistry");
+        if (_nodeRunnerRegistry == address(0)) revert ZeroAddress("_nodeRunnerRegistry");
+        scannerNodeRegistry = ScannerRegistry(_scannerNodeRegistry);
+        nodeRunnerRegistry = NodeRunnerRegistry(_nodeRunnerRegistry);
+    }
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
-     * @param __scannerNodeRegistry address of ScannerNodeRegistry (being deprecated)
-     * @param __nodeRunnerRegistry address of NodeRunnerRegistry (new registry)
-     * @param __migrationEndTime time when migration period ends 
+     * @param __migrationEndTime time when migration period ends
      */
-    function initialize(
-        address __manager,
-        address __scannerNodeRegistry,
-        address __nodeRunnerRegistry,
-        uint256 __migrationEndTime
-    ) public initializer {
+    function initialize(address __manager, uint256 __migrationEndTime) public initializer {
         __BaseComponentUpgradeable_init(__manager);
-
-        _setScannerNodeRegistry(__scannerNodeRegistry);
-        _setNodeRunnerRegistry(__nodeRunnerRegistry);
         _setMigrationEndTime(__migrationEndTime);
     }
 
@@ -80,11 +79,19 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
      * @param nodeRunner address that owns the scanners and will own the NodeRunnerRegistry ERC721
      * @return NodeRunnerRegistry ERC721 id the scanners are migrated to.
      */
-    function migrate(address[] calldata scanners, uint256 nodeRunnerId, address nodeRunner) external onlyRole(MIGRATION_EXECUTOR_ROLE) returns (uint256) {
+    function migrate(
+        address[] calldata scanners,
+        uint256 nodeRunnerId,
+        address nodeRunner
+    ) external onlyRole(MIGRATION_EXECUTOR_ROLE) returns (uint256) {
         return _migrate(scanners, nodeRunnerId, nodeRunner);
     }
 
-    function _migrate(address[] calldata scanners, uint256 inputNodeRunnerId, address nodeRunner) private returns (uint256) {
+    function _migrate(
+        address[] calldata scanners,
+        uint256 inputNodeRunnerId,
+        address nodeRunner
+    ) private returns (uint256) {
         uint256 nodeRunnerId = inputNodeRunnerId;
         if (nodeRunnerRegistry.balanceOf(nodeRunner) == 0 && nodeRunnerId == NODE_RUNNER_NOT_MIGRATED) {
             nodeRunnerId = nodeRunnerRegistry.migrateToNodeRunner(nodeRunner);
@@ -117,28 +124,6 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     }
 
     /*********** Admin methods ***********/
-
-    /// Sets ScannerNodeRegistry address
-    function setScannerNodeRegistry(address _scannerNodeRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setScannerNodeRegistry(_scannerNodeRegistry);
-    }
-
-    function _setScannerNodeRegistry(address _scannerNodeRegistry) private {
-        if (_scannerNodeRegistry == address(0)) revert ZeroAddress("_scannerNodeRegistry");
-        scannerNodeRegistry = ScannerRegistry(_scannerNodeRegistry);
-        emit SetScannerNodeRegistry(_scannerNodeRegistry);
-    }
-
-    /// Sets NodeRunnerRegistry address
-    function setNodeRunnerRegistry(address _nodeRunnerRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setNodeRunnerRegistry(_nodeRunnerRegistry);
-    }
-
-    function _setNodeRunnerRegistry(address _nodeRunnerRegistry) private {
-        if (_nodeRunnerRegistry == address(0)) revert ZeroAddress("_nodeRunnerRegistry");
-        nodeRunnerRegistry = NodeRunnerRegistry(_nodeRunnerRegistry);
-        emit SetScannerNodeRegistry(_nodeRunnerRegistry);
-    }
 
     /// Sets timestamp marking the end of the migration process
     function setMigrationEndTime(uint256 _migrationEndTime) external onlyRole(DEFAULT_ADMIN_ROLE) {

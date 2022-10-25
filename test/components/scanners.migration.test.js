@@ -1,6 +1,7 @@
 const { ethers, upgrades } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
+const { MIGRATION_DURATION } = require('../../scripts/loadEnv');
 
 describe('Scanner Registry (Deprecation and migration)', function () {
     prepare({ stake: { min: '0', max: '500', activated: true } });
@@ -98,7 +99,17 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                 unsafeSkipStorageCheck: true,
             });
 
-            await this.registryMigration.connect(this.accounts.admin).setScannerNodeRegistry(this.scanners.address);
+            const deployer = (await ethers.getSigners())[0];
+            const network = await deployer.provider.getNetwork();
+
+            const ScannerToNodeRunnerMigration = await ethers.getContractFactory('ScannerToNodeRunnerMigration', deployer);
+            this.registryMigration = await upgrades.deployProxy(ScannerToNodeRunnerMigration, [this.access.address, MIGRATION_DURATION(network.chainId)], {
+                kind: 'uups',
+                constructorArgs: [this.forwarder.address, this.scanners.address, this.nodeRunners.address],
+                unsafeAllow: 'delegatecall',
+            });
+
+            this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_MIGRATOR, this.registryMigration.address);
         });
 
         it('should not burn ScannerNodeRegistry without NODE_RUNNER_MIGRATOR_ROLE', async function () {
