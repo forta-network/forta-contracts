@@ -23,7 +23,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     uint256 public migrationEndTime;
 
     event SetMigrationEndtime(uint256 migrationEndTime);
-    event MigrationExecuted(uint256 scannersMigrated, uint256 ignoredScanners, uint256 nodeRunnerId, bool mintedNodeRunner);
+    event MigrationExecuted(uint256 scannersMigrated, uint256 scannersIgnored, uint256 indexed nodeRunnerId);
 
     error NotOwnerOfNodeRunner(address pretender, uint256 nodeRunnerId);
 
@@ -74,8 +74,8 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
      * - Registered in NodeRunnerRegistry to the nodeRunnerId either indicated or generated, with the same chainId and metadata.
      * - Deleted in ScannerNodeRegistry. The ERC721 will be burned, disabled flags and managers deleted from storage.
      * Scanners with disabled flags != 0 will be ignored (opted out), and will stay disabled in ScannerNodeRegistry.
-     * @param nodeRunnerId If the set as 0, the NodeRunnerRegistry ERC721 will be minted to nodeRunner (address must not own any),
-     * set as a valid NodeRunnerRegistry ERC721 id owned by nodeRunner address otherwise.
+     * @param nodeRunnerId If set as 0, a new NodeRunnerRegistry ERC721 will be minted to nodeRunner (but it must not own any prior),
+     * otherwise must be set as a valid NodeRunnerRegistry ERC721 id owned by nodeRunner.
      * @param nodeRunner address that owns the scanners and will own the NodeRunnerRegistry ERC721
      * @return NodeRunnerRegistry ERC721 id the scanners are migrated to.
      */
