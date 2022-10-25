@@ -23,7 +23,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     uint256 public migrationEndTime;
 
     event SetMigrationEndtime(uint256 migrationEndTime);
-    event MigrationExecuted(uint256 scannersMigrated, uint256 scannersIgnored, uint256 indexed nodeRunnerId);
+    event MigrationExecuted(uint256 scannersMigrated, uint256 scannersIgnored, uint256 indexed nodeRunnerId, bool mintedNodeRunner);
 
     error NotOwnerOfNodeRunner(address pretender, uint256 nodeRunnerId);
 
