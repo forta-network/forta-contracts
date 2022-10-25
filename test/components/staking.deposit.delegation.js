@@ -361,6 +361,28 @@ describe('Staking - Delegated', function () {
                     expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('500');
                 });
             });
+
+            describe('On Slashing', function () {
+                it('burns from unallocated and allocated', async function () {
+                    const staked = '3000';
+                    await this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, staked);
+                    await this.staking.connect(this.accounts.user1).unallocateStake(subjectType1, subject1, '2000');
+                    await this.nodeRunners.connect(this.accounts.manager).setManagedStakeThreshold({ max: '100000', min: '333', activated: true }, 1);
+                    expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq('3000');
+                    expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq('1000');
+                    expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('2000');
+                    expect(await this.nodeRunners.isScannerOperational(SCANNERS[0].address)).to.eq(true);
+                    await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.admin.address);
+                    await expect(this.staking.connect(this.accounts.admin).slash(subjectType1, subject1, '2500', this.accounts.user1.address, 0))
+                        .to.emit(this.staking, 'UnallocatedStake')
+                        .withArgs(subjectType1, subject1, '2500', 0);
+                    expect(await this.staking.activeStakeFor(subjectType1, subject1)).to.eq('500');
+                    expect(await this.staking.allocatedStakeFor(subjectType1, subject1)).to.eq('500');
+                    expect(await this.staking.unallocatedStakeFor(subjectType1, subject1)).to.eq('0');
+                    expect(await this.nodeRunners.isScannerOperational(SCANNERS[0].address)).to.eq(false);
+
+                });
+            });
         });
     });
 
