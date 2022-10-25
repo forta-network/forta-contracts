@@ -15,7 +15,6 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     /** Contract version */
     string public constant version = "0.1.0";
     uint256 public constant NODE_RUNNER_NOT_MIGRATED = 0;
-    uint256 public constant MAX_SCANNERS = 100;
 
     ScannerRegistry public scannerNodeRegistry;
     NodeRunnerRegistry public nodeRunnerRegistry;
@@ -54,7 +53,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     /**
      * @notice Method to self migrate from the old ScannerRegistry NFTs to a single NodeRunnerRegistry NFT.
      * WARNING: ScannerNodeRegistry's manager addresses will not be migrated, please user NodeRunnerRegistry's methods to set them again.
-     * @param scanners array of scanner addresses to be migrated. Have to be less than MAX_SCANNERS.
+     * @param scanners array of scanner addresses to be migrated.
      * All the enabled (disabled flags set to 0) ScannerRegistry ERC721 identified by the uint256(address) in the input array will be:
      * - Registered in NodeRunnerRegistry to the nodeRunnerId either indicated or generated, with the same chainId and metadata.
      * - Deleted in ScannerNodeRegistry. The ERC721 will be burned, disabled flags and managers deleted from storage.
@@ -71,7 +70,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
      * @notice Method to migrate from the old ScannerRegistry NFTs to a single NodeRunnerRegistry NFT, executed by an address with the role
      * MIGRATION_EXECUTOR_ROLE.
      * WARNING: ScannerNodeRegistry's manager addresses will not be migrated, please user NodeRunnerRegistry's methods to set them again.
-     * @param scanners array of scanner addresses to be migrated. Have to be less than MAX_SCANNERS.
+     * @param scanners array of scanner addresses to be migrated.
      * All the enabled (disabled flags set to 0) ScannerRegistry ERC721 identified by the uint256(address) in the input array will be:
      * - Registered in NodeRunnerRegistry to the nodeRunnerId either indicated or generated, with the same chainId and metadata.
      * - Deleted in ScannerNodeRegistry. The ERC721 will be burned, disabled flags and managers deleted from storage.
