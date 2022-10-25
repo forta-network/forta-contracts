@@ -270,7 +270,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     function isOperational(address scanner) public view returns (bool) {
         // _isStakedOverMin already checks for disabled, but returns true in every case if stakeController is not set.
         // since isStakedOverMin() is external, we need to keep this duplicate check.
-        return !_scannerNodes[scanner].disabled &&
+        return _scannerNodes[scanner].registered &&
             !_scannerNodes[scanner].disabled &&
             _isStakedOverMin(scannerAddressToId(scanner));
     }
