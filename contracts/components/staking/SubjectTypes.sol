@@ -8,8 +8,21 @@ uint8 constant SCANNER_SUBJECT = 0;
 uint8 constant AGENT_SUBJECT = 1;
 uint8 constant NODE_RUNNER_SUBJECT = 2;
 
+/**
+ * Defines the types of staking Subject Types, their agency and relationships.
+ * There are different types of subject type agency:
+ * - MANAGED --> Cannot be staked on directly, allocation of stake is controlled by their manager, a DELEGATED type
+ * - DIRECT --> Can be staked on by multiple different stakers
+ * - DELEGATED --> Can be staked on by the owner of the relevant Registry entry. Manages MANAGED subjects.
+ * - DELEGATOR --> TBD
+ * 
+ * The current Subject Types and their Agency:
+ * - SCANNER_SUBJECT --> MANAGED
+ * - AGENT_SUBJECT (detection bots) --> DIRECT
+ * - NODE_RUNNER_SUBJECT --> DELEGATED
+ * 
+ */
 contract SubjectTypeValidator {
-
     enum SubjectStakeAgency {
         UNDEFINED,
         MANAGED,
@@ -20,7 +33,6 @@ contract SubjectTypeValidator {
 
     error InvalidSubjectType(uint8 subjectType);
     error ForbiddenForType(uint8 subjectType, SubjectStakeAgency provided, SubjectStakeAgency expected);
-    error NotManagedType(uint8 subjectType);
 
     /**
      * @dev check if `subjectType` belongs to the defined SUBJECT_TYPES
@@ -28,11 +40,7 @@ contract SubjectTypeValidator {
      * upgradeable (StakingEscrow)
      */
     modifier onlyValidSubjectType(uint8 subjectType) {
-        if (
-            subjectType != SCANNER_SUBJECT &&
-            subjectType != AGENT_SUBJECT &&
-            subjectType != NODE_RUNNER_SUBJECT
-        ) revert InvalidSubjectType(subjectType);
+        if (subjectType != SCANNER_SUBJECT && subjectType != AGENT_SUBJECT && subjectType != NODE_RUNNER_SUBJECT) revert InvalidSubjectType(subjectType);
         _;
     }
 
@@ -46,7 +54,7 @@ contract SubjectTypeValidator {
         _;
     }
 
-    function getSubjectTypeAgency(uint8 subjectType) public pure returns(SubjectStakeAgency) {
+    function getSubjectTypeAgency(uint8 subjectType) public pure returns (SubjectStakeAgency) {
         if (subjectType == SCANNER_SUBJECT) {
             return SubjectStakeAgency.MANAGED;
         } else if (subjectType == AGENT_SUBJECT) {
@@ -56,21 +64,4 @@ contract SubjectTypeValidator {
         }
         return SubjectStakeAgency.UNDEFINED;
     }
-
-    function getManagedTypeFor(uint8 subjectType) public pure returns(uint8) {
-        if (subjectType == NODE_RUNNER_SUBJECT) {
-            return SCANNER_SUBJECT;
-        } else {
-            return UNDEFINED_SUBJECT;
-        }
-    }
-
-    function getManagerTypeFor(uint8 subjectType) public pure returns(uint8) {
-        if (subjectType == SCANNER_SUBJECT) {
-            return NODE_RUNNER_SUBJECT;
-        } else {
-            return UNDEFINED_SUBJECT;
-        }
-    }
-
 }

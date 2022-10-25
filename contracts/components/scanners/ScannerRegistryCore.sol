@@ -101,6 +101,10 @@ abstract contract ScannerRegistryCore is
         return super._msgData();
     }
 
+    /**
+     * @notice disambiguation of ownerOf.
+     * @inheritdoc ERC721Upgradeable
+     */
     function ownerOf(uint256 subject) public view virtual override(StakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
         return super.ownerOf(subject);
     }

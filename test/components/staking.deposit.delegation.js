@@ -20,7 +20,7 @@ const MIN_STAKE_MANAGED = '100';
 const MAX_STAKE_MANAGER = '10000';
 const chainId = 1;
 let SCANNERS;
-describe.only('Staking - Delegated and Delegators', function () {
+describe('Staking - Delegated', function () {
     prepare({
         stake: {
             scanners: { min: MIN_STAKE_MANAGED, max: MAX_STAKE_MANAGED, activated: true },
@@ -67,13 +67,6 @@ describe.only('Staking - Delegated and Delegators', function () {
             expect(await this.staking.getSubjectTypeAgency(this.stakingSubjects.NODE_RUNNER)).to.eq(this.subjectAgency.DELEGATED);
             expect(await this.staking.getSubjectTypeAgency(this.stakingSubjects.UNDEFINED)).to.eq(this.subjectAgency.UNDEFINED);
             expect(await this.staking.getSubjectTypeAgency(123)).to.eq(this.subjectAgency.UNDEFINED);
-        });
-
-        it('should know managed types for subject types', async function () {
-            expect(await this.staking.getManagedTypeFor(this.stakingSubjects.NODE_RUNNER)).to.eq(this.stakingSubjects.SCANNER);
-            expect(await this.staking.getManagedTypeFor(this.stakingSubjects.SCANNER)).to.eq(this.stakingSubjects.UNDEFINED);
-            expect(await this.staking.getManagedTypeFor(this.stakingSubjects.AGENT)).to.eq(this.stakingSubjects.UNDEFINED);
-            expect(await this.staking.getManagedTypeFor(this.stakingSubjects.UNDEFINED)).to.eq(this.stakingSubjects.UNDEFINED);
         });
     });
 

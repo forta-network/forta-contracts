@@ -5,6 +5,7 @@ pragma solidity ^0.8.9;
 
 import "../BaseComponentUpgradeable.sol";
 import "../staking/StakeSubject.sol";
+import "../staking/IDelegatedStakeSubject.sol";
 import "../../errors/GeneralErrors.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -432,8 +433,9 @@ abstract contract NodeRunnerRegistryCore is
     // ************* IDelegatedStakeSubject *************
 
     /**
-     * @notice Sets stake parameters (min, max, activated) for node runners. Restricted to NODE_RUNNER_ADMIN_ROLE
+     * @notice Sets stake parameters (min, max, activated) for scanners. Restricted to NODE_RUNNER_ADMIN_ROLE
      * @param newStakeThreshold struct with stake parameters.
+     * @param chainId scanned chain the thresholds applies to.
      */
     function setManagedStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(NODE_RUNNER_ADMIN_ROLE) {
         if (chainId == 0) revert ZeroAmount("chainId");
@@ -449,14 +451,17 @@ abstract contract NodeRunnerRegistryCore is
         return _scannerStakeThresholds[managedId];
     }
 
+    /// Total scanners registered to a Node Runner
     function getTotalManagedSubjects(uint256 subject) public view virtual override returns (uint256) {
         return _enabledScanners[subject];
     }
 
+    /// Amount of FORT allocated to each *enabled* scanner
     function allocatedStakePerScanner(uint256 nodeRunnerId) public view returns (uint256) {
         return getSubjectHandler().allocatedStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) / getTotalManagedSubjects(nodeRunnerId);
     }
 
+    /// Amount of FORT allocated in a scanner. Returns 0 if disabled.
     function allocatedStakeOfScanner(address scanner) public view returns (uint256) {
         if (_scannerNodes[scanner].disabled) {
             return 0;
@@ -507,6 +512,10 @@ abstract contract NodeRunnerRegistryCore is
         return super._msgData();
     }
 
+    /**
+     * @notice disambiguation of ownerOf.
+     * @inheritdoc ERC721Upgradeable
+     */
     function ownerOf(uint256 subject) public view virtual override(IStakeSubject, StakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
         return super.ownerOf(subject);
     }

@@ -4,16 +4,25 @@
 pragma solidity ^0.8.9;
 
 import "./FortaStaking.sol";
+import "./IDelegatedStakeSubject.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165CheckerUpgradeable.sol";
+import "hardhat/console.sol";
 
 contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidator, IStakeSubjectHandler {
+
+    using ERC165CheckerUpgradeable for address;
+
     FortaStaking private _fortaStaking;
     // stake subject parameters for each subject
     mapping(uint8 => IStakeSubject) private _stakeSubjects;
 
     event FortaStakingChanged(address staking);
 
+    error NonIDelegatedSubjectHandler(uint8 subjectType, address handler);
+
     string public constant version = "0.1.1";
     uint256 public constant maxSlashableStakePercent = 90;
+
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -44,7 +53,6 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
      * Sets stake subject handler stake for subject type.
      */
     function setStakeSubject(uint8 subjectType, IStakeSubject subject) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
-        // TODO if subjectType is Delegated, (Address.isContract(account) && account.supportsInterface(type(IDelegatedSubject).interfaceId)) {
         if (address(subject) == address(0)) revert ZeroAddress("subject");
         emit StakeSubjectChanged(address(subject), address(_stakeSubjects[subjectType]));
         _stakeSubjects[subjectType] = subject;

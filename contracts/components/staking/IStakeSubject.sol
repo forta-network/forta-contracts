@@ -14,8 +14,3 @@ interface IStakeSubject {
     function isRegistered(uint256 subject) external view returns(bool);
     function ownerOf(uint256 subject) external view returns (address);
 }
-
-interface IDelegatedStakeSubject is IStakeSubject {
-    function getTotalManagedSubjects(uint256 subject) external view returns(uint256);
-    function getManagedStakeThreshold(uint256 managedId) external view returns(StakeThreshold memory);
-}
