@@ -93,7 +93,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
             revert NotOwnerOfNodeRunner(nodeRunner, nodeRunnerId);
         }
         uint256 total = scanners.length;
-        uint256 scannersMigrated;
+        uint256 scannersMigrated = 0;
         for (uint256 i = 0; i < total; i++) {
             address scanner = scanners[i];
             uint256 scannerId = scannerNodeRegistry.scannerAddressToId(scanner);
