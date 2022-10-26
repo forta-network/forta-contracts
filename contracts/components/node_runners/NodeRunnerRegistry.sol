@@ -44,11 +44,11 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
         __NodeRunnerRegistryCore_init(__name, __symbol, __stakeSubjectManager, __registrationDelay);
     }
 
-    function migrateToNodeRunner(address nodeRunnerAddress) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) returns(uint256 nodeRunnerId) {
+    function registerMigratedNodeRunner(address nodeRunnerAddress) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) returns(uint256 nodeRunnerId) {
         return _registerNodeRunner(nodeRunnerAddress);
     }
 
-    function migrateScannerNode(ScannerNodeRegistration calldata req) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) {
+    function registerMigratedScannerNode(ScannerNodeRegistration calldata req) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) {
         _registerScannerNode(req); 
     }
 

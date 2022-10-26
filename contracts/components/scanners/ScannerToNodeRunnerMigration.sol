@@ -94,7 +94,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     ) private returns (uint256) {
         uint256 nodeRunnerId = inputNodeRunnerId;
         if (nodeRunnerRegistry.balanceOf(nodeRunner) == 0 && nodeRunnerId == NODE_RUNNER_NOT_MIGRATED) {
-            nodeRunnerId = nodeRunnerRegistry.migrateToNodeRunner(nodeRunner);
+            nodeRunnerId = nodeRunnerRegistry.registerMigratedNodeRunner(nodeRunner);
         } else if (nodeRunnerRegistry.ownerOf(nodeRunnerId) != nodeRunner) {
             revert NotOwnerOfNodeRunner(nodeRunner, nodeRunnerId);
         }
@@ -106,7 +106,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
             if (scannerNodeRegistry.ownerOf(scannerId) != nodeRunner) revert SenderNotOwner(nodeRunner, scannerId);
             (, , uint256 chainId, string memory metadata, , uint256 disabledFlags) = scannerNodeRegistry.getScannerState(scannerId);
             if (disabledFlags == 0) {
-                nodeRunnerRegistry.migrateScannerNode(
+                nodeRunnerRegistry.registerMigratedScannerNode(
                     NodeRunnerRegistryCore.ScannerNodeRegistration({
                         scanner: scanner,
                         nodeRunnerId: nodeRunnerId,
