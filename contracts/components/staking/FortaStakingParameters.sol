@@ -85,7 +85,7 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
         return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getManagedStakeThreshold(subject).min;
     }
 
-    function totalManagedSubjectsFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
+    function totalManagedSubjects(uint8 subjectType, uint256 subject) external view returns (uint256) {
         return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getTotalManagedSubjects(subject);
     }
 

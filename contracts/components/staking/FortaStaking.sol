@@ -44,8 +44,8 @@ interface IRewardReceiver {
  * totalStake = activeStake + inactiveStake
  * activeStake(delegated) = allocatedStake(delegated) + unallocatedStake(delegated)
  * activeStake(delegator) = allocatedStake(delegator) + unallocatedStake(delegator)
- * activeStake(managed) = allocatedStake(delegated) + allocatedStake(delegator) / totalManagedSubjects(delegated)
- * inactiveStake(managed) = 0
+ * allocatedStake(managed) = (allocatedStake(delegated) + allocatedStake(delegator)) / totalManagedSubjects(delegated)
+ * activeStake(managed) = inactiveStake(managed) = 0;
  *
  * The SLASHER_ROLE should be given to a smart contract that will be in charge of handling the slashing proposal process.
  *
@@ -100,6 +100,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     Distributions.Balances private _allocatedStake;
     // subject => inactive stake
     Distributions.Balances private _unallocatedStake;
+    uint256 public slashDelegatorsPercent;
 
     uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
     uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
@@ -120,6 +121,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     event TokensSwept(address indexed token, address to, uint256 amount);
     event AllocatedStake(uint8 indexed subjectType, uint256 indexed subject, uint256 amount, uint256 totalAllocated);
     event UnallocatedStake(uint8 indexed subjectType, uint256 indexed subject, uint256 amount, uint256 totalAllocated);
+    event SlashDelegatorsPercentSet(uint256 percent);
 
     error WithdrawalNotReady();
     error SlashingOver90Percent();
@@ -129,6 +131,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     error NoInactiveShares();
     error StakeInactiveOrSubjectNotFound();
     error SenderCannotAllocateFor(uint8 subjectType, uint256 subject);
+    error CannotDelegateStakeUnderMin(uint8 subjectType, uint256 subject);
 
     string public constant version = "0.1.1";
 
@@ -201,22 +204,20 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         return _inactiveStake.totalSupply();
     }
 
-    /// Total active stake allocated on subjects
+    /// Active stake allocated on subject
     function allocatedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
         return _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject));
     }
 
-    function totalAllocatedStakeFor(uint8 subjectType, uint256 subject) public view returns (uint256) {
+    /// Total allocated stake in all managed subjects, both from delegated and delegator. Only returns values from
+    /// DELEGATED types, else 0.
+    function allocatedManagedStake(uint8 subjectType, uint256 subject) public view returns (uint256) {
         if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
             return
                 _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject)) +
                 _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(getDelegatorSubjectType(subjectType), subject));
-        } else if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR) {
-            return
-                _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject)) +
-                _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(getDelegatedSubjectType(subjectType), subject));
         }
-        return _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject));
+        return 0;
     }
 
     /// Total active stake not allocated on subjects
@@ -355,71 +356,129 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         if (agency != SubjectStakeAgency.DELEGATED && agency != SubjectStakeAgency.DELEGATOR) {
             return;
         }
-        uint256 subjects = 0;
-        uint256 maxPerManaged = 0;
-        if (agency == SubjectStakeAgency.DELEGATED) {
-            if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
-            subjects = _subjectHandler.totalManagedSubjectsFor(subjectType, subject);
-            maxPerManaged = _subjectHandler.maxManagedStakeFor(subjectType, subject);
-        } else (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR) {
-            subjects = _subjectHandler.totalManagedSubjectsFor(getDelegatedSubjectType(subjectType), subject);
-            maxPerManaged = _subjectHandler.maxManagedStakeFor(getDelegatedSubjectType(subjectType), subject);
-            // If delegated has staked less than minimum stake, revert cause delegation not unlocked
-            // TODO separate isStakedOverMin from activated, get isScannerOverMin to be from IDelegatedStakeSubject
-            if (_allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(getDelegatedSubjectType(subjectType), subject)) / subjects <= maxPerManaged) {
-                revert 
-            }
-        } else {
-            return;
-        }
 
-        
-        int256 extraStake = int256(_allocatedStake.balanceOf(activeSharesId) + amount) - int256(maxPerManaged * subjects);
-        if (extraStake > 0) {
-            _allocatedStake.mint(activeSharesId, amount - uint256(extraStake));
-            emit AllocatedStake(subjectType, subject, amount - uint256(extraStake), _allocatedStake.balanceOf(activeSharesId));
-            _unallocatedStake.mint(activeSharesId, uint256(extraStake));
-            emit UnallocatedStake(subjectType, subject, uint256(extraStake), _unallocatedStake.balanceOf(activeSharesId));
+        (int256 extra, ) = _checkIfAllocationOverflows(subjectType, subject, agency, amount);
+        if (extra > 0) {
+            _allocatedStake.mint(activeSharesId, amount - uint256(extra));
+            emit AllocatedStake(subjectType, subject, amount - uint256(extra), _allocatedStake.balanceOf(activeSharesId));
+            _unallocatedStake.mint(activeSharesId, uint256(extra));
+            emit UnallocatedStake(subjectType, subject, uint256(extra), _unallocatedStake.balanceOf(activeSharesId));
         } else {
             _allocatedStake.mint(activeSharesId, amount);
             emit AllocatedStake(subjectType, subject, amount, _allocatedStake.balanceOf(activeSharesId));
         }
     }
 
+    function _checkIfAllocationOverflows(
+        uint8 subjectType,
+        uint256 subject,
+        SubjectStakeAgency agency,
+        uint256 amount
+    ) private returns (int256 extra, uint256 max) {
+        uint256 subjects = 0;
+        uint256 maxPerManaged = 0;
+        uint256 currentlyAllocated = 0;
+        if (agency == SubjectStakeAgency.DELEGATED) {
+            // i.e NodeRunnerRegistry
+            if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
+            subjects = _subjectHandler.totalManagedSubjects(subjectType, subject);
+            maxPerManaged = _subjectHandler.maxManagedStakeFor(subjectType, subject);
+            currentlyAllocated = allocatedManagedStake(subjectType, subject);
+        } else if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR) {
+            // i.e Delegator to NodeRunnerRegistry
+            subjects = _subjectHandler.totalManagedSubjects(getDelegatedSubjectType(subjectType), subject);
+            maxPerManaged = _subjectHandler.maxManagedStakeFor(getDelegatedSubjectType(subjectType), subject);
+            // If delegated has staked less than minimum stake, revert cause delegation not unlocked
+            if (_allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(getDelegatedSubjectType(subjectType), subject)) / subjects <= maxPerManaged) {
+                revert CannotDelegateStakeUnderMin(getDelegatedSubjectType(subjectType), subject);
+            }
+            currentlyAllocated = allocatedManagedStake(getDelegatedSubjectType(subjectType), subject);
+        }
+
+        return (int256(currentlyAllocated + amount) - int256(maxPerManaged * subjects), maxPerManaged * subjects);
+    }
+
     /**
-     * @notice owner of a DELEGATED subject moves tokens from unallocated to allocated.
+     * @notice owner of a DELEGATED subject moves tokens from its own unallocated to allocated.
+     * It will fail if allocating more than the max for managed stake.
      * @param subjectType type id of Stake Subject. See SubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @param amount amount of stake to move from unallocated to allocated.
      */
-    function allocateStake(
+    function allocateOwnStake(
         uint8 subjectType,
         uint256 subject,
-        uint256 amount,
-        uint8 allocateFRom
+        uint256 amount
     ) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) {
         if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
+        _allocateStake(subjectType, subject, amount);
+    }
+
+    /**
+     * @notice owner of a DELEGATED subject moves tokens from DELEGATOR's unallocated to allocated.
+     * It will fail if allocating more than the max for managed stake.
+     * @param subjectType type id of Stake Subject. See SubjectTypes.sol
+     * @param subject id identifying subject (external to FortaStaking).
+     * @param amount amount of stake to move from unallocated to allocated.
+     */
+    function allocateDelegatorStake(
+        uint8 subjectType,
+        uint256 subject,
+        uint256 amount
+    ) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) {
+        if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
+        _allocateStake(getDelegatorSubjectType(subjectType), subject, amount);
+    }
+
+    function _allocateStake(
+        uint8 subjectType,
+        uint256 subject,
+        uint256 amount
+    ) private {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         if (_unallocatedStake.balanceOf(activeSharesId) < amount) revert AmountTooLarge(amount, _unallocatedStake.balanceOf(activeSharesId));
+        (int256 extra, uint256 max) = _checkIfAllocationOverflows(subjectType, subject, SubjectStakeAgency.DELEGATED, amount);
+        if (extra > 0) revert AmountTooLarge(amount, max);
         _allocatedStake.mint(activeSharesId, amount);
         _unallocatedStake.burn(activeSharesId, amount);
         emit AllocatedStake(subjectType, subject, amount, _allocatedStake.balanceOf(activeSharesId));
     }
 
     /**
-     * @notice owner of a DELEGATED subject moves tokens from allocated to unallocated.
+     * @notice owner of a DELEGATED subject moves it's own tokens from allocated to unallocated.
      * @param subjectType type id of Stake Subject. See SubjectTypes.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @param amount amount of incoming staked token.
      */
-    function unallocateStake(
+    function unallocateOwnStake(
         uint8 subjectType,
         uint256 subject,
-        uint256 amount,
-                uint8 allocateFRom
-
+        uint256 amount
     ) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) {
         if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
+        _unallocateStake(subjectType, subject, amount);
+    }
+
+    /**
+     * @notice owner of a DELEGATED subject moves it's own tokens from allocated to unallocated.
+     * @param subjectType type id of Stake Subject. See SubjectTypes.sol
+     * @param subject id identifying subject (external to FortaStaking).
+     * @param amount amount of incoming staked token.
+     */
+    function unallocateDelegatorStake(
+        uint8 subjectType,
+        uint256 subject,
+        uint256 amount
+    ) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) {
+        if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
+        _unallocateStake(getDelegatorSubjectType(subjectType), subject, amount);
+    }
+
+    function _unallocateStake(
+        uint8 subjectType,
+        uint256 subject,
+        uint256 amount
+    ) private {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         if (_allocatedStake.balanceOf(activeSharesId) < amount) revert AmountTooLarge(amount, _allocatedStake.balanceOf(activeSharesId));
         _allocatedStake.burn(activeSharesId, amount);
@@ -565,12 +624,43 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 stakeValue,
         address proposer,
         uint256 proposerPercent
-    ) public override onlyRole(SLASHER_ROLE) returns (uint256) {
-        Cannot slash delegator directly
+    ) public override onlyRole(SLASHER_ROLE) notAgencyType(subjectType, SubjectStakeAgency.DELEGATOR) returns (uint256) {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        uint256 slashFromActive = _slash(activeSharesId, subjectType, subject, stakeValue);
+        uint256 slashedFromDelegators;
+        if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
+            _withdrawAllocation(activeSharesId, subjectType, subject, slashFromActive);
+
+            if (slashDelegatorsPercent > 0) {
+                slashedFromDelegators = Math.mulDiv(stakeValue, slashDelegatorsPercent, HUNDRED_PERCENT);
+                uint8 delegatorSubjectType = getDelegatorSubjectType(subjectType);
+
+                uint256 slashActiveDelegator = _slash(FortaStakingUtils.subjectToActive(delegatorSubjectType, subject), delegatorSubjectType, subject, slashedFromDelegators);
+                _withdrawAllocation(FortaStakingUtils.subjectToActive(delegatorSubjectType, subject), delegatorSubjectType, subject, slashActiveDelegator);
+            }
+        }
+
+        if (proposerPercent > 0) {
+            if (proposer == address(0)) revert ZeroAddress("proposer");
+            uint256 proposerShare = Math.mulDiv(stakeValue + slashedFromDelegators, proposerPercent, HUNDRED_PERCENT);
+            SafeERC20.safeTransfer(stakedToken, proposer, proposerShare);
+            emit SlashedShareSent(subjectType, subject, proposer, proposerShare);
+            SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue + slashedFromDelegators - proposerShare);
+        } else {
+            SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue + slashedFromDelegators);
+        }
+
+        return stakeValue;
+    }
+
+    function _slash(
+        uint256 activeSharesId,
+        uint8 subjectType,
+        uint256 subject,
+        uint256 stakeValue
+    ) private returns (uint256 slashFromActive) {
         uint256 activeStake = _activeStake.balanceOf(activeSharesId);
         uint256 inactiveStake = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
-
         // We set the slash limit at 90% of the stake, so new depositors on slashed pools (with now 0 stake) won't mint
         // an amounts of shares so big that they might cause overflows.
         // New shares = pool shares * new staked amount / pool stake
@@ -578,32 +668,13 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, _subjectHandler.maxSlashableStakePercent(), HUNDRED_PERCENT);
         if (stakeValue > maxSlashableStake) revert SlashingOver90Percent();
 
-        uint256 slashFromActive = Math.mulDiv(activeStake, stakeValue, activeStake + inactiveStake);
+        slashFromActive = Math.mulDiv(activeStake, stakeValue, activeStake + inactiveStake);
         uint256 slashFromInactive = stakeValue - slashFromActive;
-        stakeValue = slashFromActive + slashFromInactive;
 
         _activeStake.burn(activeSharesId, slashFromActive);
         _inactiveStake.burn(FortaStakingUtils.activeToInactive(activeSharesId), slashFromInactive);
-
-        if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
-            _withdrawAllocation(activeSharesId, subjectType, subject, slashFromActive);
-            uint256 slashFromDelegation = slashFromActive muldiv (delegatorsSlashPErcent);
-            _withdrawAllocation(delegatorharesId, delegatorType, subject, slashFromActive);
-
-        }
-
-        if (proposerPercent > 0) {
-            if (proposer == address(0)) revert ZeroAddress("proposer");
-            uint256 proposerShare = Math.mulDiv(stakeValue, proposerPercent, HUNDRED_PERCENT);
-            SafeERC20.safeTransfer(stakedToken, proposer, proposerShare);
-            emit SlashedShareSent(subjectType, subject, proposer, proposerShare);
-            SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue - proposerShare);
-        } else {
-            SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue);
-        }
         emit Slashed(subjectType, subject, _msgSender(), stakeValue);
-
-        return stakeValue;
+        return slashFromActive;
     }
 
     /**
@@ -871,6 +942,11 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         if (address(subjectHandler) == address(0)) revert ZeroAddress("subjectHandler");
         emit StakeParamsManagerSet(address(subjectHandler));
         _subjectHandler = subjectHandler;
+    }
+
+    function setSlashDelegatorsPercent(uint256 percent) public onlyRole(STAKING_ADMIN_ROLE) {
+        slashDelegatorsPercent = percent;
+        emit SlashDelegatorsPercentSet(percent);
     }
 
     // Overrides
