@@ -10,7 +10,7 @@ import "./ScannerRegistryCore.sol";
 abstract contract ScannerRegistryManaged is ScannerRegistryCore {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    mapping(uint256 => EnumerableSet.AddressSet) private _managers;
+    mapping(uint256 => EnumerableSet.AddressSet) internal _managers;
 
     event ManagerEnabled(uint256 indexed scannerId, address indexed manager, bool enabled);
 
@@ -56,20 +56,6 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
         return _managers[scannerId].at(index);
     }
 
-    /**
-     * @notice Adds or removes a manager to a certain scanner. Restricted to scanner owner.
-     * @param scannerId ERC721 token id of the scanner.
-     * @param manager address to be added or removed fromm manager list for the scanner.
-     * @param enable true for adding, false for removing.
-     */
-    function setManager(uint256 scannerId, address manager, bool enable) public onlyOwnerOf(scannerId) {
-        if (enable) {
-            _managers[scannerId].add(manager);
-        } else {
-            _managers[scannerId].remove(manager);
-        }
-        emit ManagerEnabled(scannerId, manager, enable);
-    }
 
     uint256[49] private __gap;
 }

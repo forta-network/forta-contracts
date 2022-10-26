@@ -22,7 +22,7 @@ const txTimestamp = (tx) =>
 
 const MAX_STAKE = '10000';
 
-describe('Forta Staking', function () {
+describe.skip('Forta Staking', function () {
     prepare({ stake: { min: '1', max: MAX_STAKE, activated: true } });
 
     beforeEach(async function () {

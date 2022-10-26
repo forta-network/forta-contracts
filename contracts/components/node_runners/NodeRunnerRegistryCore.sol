@@ -39,7 +39,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     /// nodeRunnerIds is a sequential autoincremented uint
     CountersUpgradeable.Counter private _nodeRunnerIdCounter;
     /// ScannerNode data for each scanner address;
-    mapping(address => ScannerNode) _scannerNodes;
+    mapping(address => ScannerNode) internal _scannerNodes;
     /// Set of Scanner Node addresses each nodeRunnerId owns;
     mapping(uint256 => EnumerableSet.AddressSet) internal _scannerNodeOwnership;
     /// StakeThreshold of each chainId;
@@ -115,13 +115,18 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * @return nodeRunnerId (autoincremented uint)
      */
     function registerNodeRunner() external returns (uint256 nodeRunnerId) {
+        return _registerNodeRunner(_msgSender());
+    }
+
+    function _registerNodeRunner(address nodeRunnerAddress) internal returns(uint256 nodeRunnerId) {
+        if (nodeRunnerAddress == address(0)) revert ZeroAddress("nodeRunnerAddress");
         _nodeRunnerIdCounter.increment();
         nodeRunnerId = _nodeRunnerIdCounter.current();
-        _safeMint(_msgSender(), nodeRunnerId);
+        _safeMint(nodeRunnerAddress, nodeRunnerId);
         return nodeRunnerId;
     }
 
-    // ************* Scanner ownership *************
+    // ************* Scanner Ownership *************
 
     /**
      * @notice Checks if scanner address has been registered
@@ -153,7 +158,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      */
     function registerScannerNode(ScannerNodeRegistration calldata req, bytes calldata signature) external onlyNodeRunner(req.nodeRunnerId) {
         if (req.timestamp + registrationDelay < block.timestamp) revert RegisteringTooLate();
-        if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
         if (
             !SignatureCheckerUpgradeable.isValidSignatureNow(
                 req.scanner,
@@ -174,6 +178,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
                 signature
             )
         ) revert SignatureDoesNotMatch();
+        _registerScannerNode(req);
+    }
+
+    function _registerScannerNode(ScannerNodeRegistration calldata req) internal {
+        if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
         _scannerNodes[req.scanner] = ScannerNode({
             registered: true,
             disabled: false,
@@ -259,7 +268,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * - (Scanner Node has more than minimum stake allocated to it OR staking is not activated for the Scanner Node's chain)
      */
     function isOperational(address scanner) public view returns (bool) {
-        return !_scannerNodes[scanner].disabled && _isStakedOverMin(scannerAddressToId(scanner));
+        // _isStakedOverMin already checks for disabled, but returns true in every case if stakeController is not set.
+        // since isStakedOverMin() is external, we need to keep this duplicate check.
+        return _scannerNodes[scanner].registered &&
+            !_scannerNodes[scanner].disabled &&
+            _isStakedOverMin(scannerAddressToId(scanner));
     }
 
     /**
@@ -292,7 +305,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         _setScannerDisableFlag(scanner, true);
     }
 
-    function _setScannerDisableFlag(address scanner, bool value) private {
+    function _setScannerDisableFlag(address scanner, bool value) internal {
         _scannerNodes[scanner].disabled = value;
         emit ScannerEnabled(scannerAddressToId(scanner), isOperational(scanner), _msgSender(), value);
     }
@@ -318,11 +331,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         )
     {
         ScannerNode memory scanner = getScanner(scannerIdToAddress(scannerId));
-
         return (
             scanner.registered,
-            ownerOf(scanner.nodeRunnerId),
-            scanner.chainId, scanner.metadata,
+            scanner.registered ? ownerOf(scanner.nodeRunnerId) : address(0),
+            scanner.chainId,
+            scanner.metadata,
             isOperational(scannerIdToAddress(scannerId)),
             scanner.disabled);
     }

@@ -48,7 +48,7 @@ const EVIDENCE_FOR_STATE = (state) => {
 
 const PROPOSAL_ID = BigNumber.from('1');
 
-describe('Slashing Proposals', function () {
+describe.skip('Slashing Proposals', function () {
     prepare({ stake: { min: MIN_STAKE, max: MAX_STAKE, activated: true } });
 
     beforeEach(async function () {

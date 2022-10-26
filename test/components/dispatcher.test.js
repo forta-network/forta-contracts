@@ -3,7 +3,7 @@ const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { BigNumber } = require('@ethersproject/bignumber');
 
-describe('Dispatcher', function () {
+describe.skip('Dispatcher', function () {
     prepare({ stake: { min: '100', max: '500', activated: true } });
 
     beforeEach(async function () {
