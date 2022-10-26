@@ -32,9 +32,11 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
      * Returns false if otherwise
      */
     function isEnabled(uint256 agentId) public view virtual returns (bool) {
-        return isRegistered(agentId) &&
-            getDisableFlags(agentId) == 0 &&
-            _isStakedOverMin(agentId); 
+        if (_isStakedActivated()) {
+            return isRegistered(agentId) && getDisableFlags(agentId) == 0 && _isStakedOverMin(agentId);
+        } else {
+            return isRegistered(agentId) && getDisableFlags(agentId) == 0;
+        }
     }
 
     /**
@@ -44,7 +46,6 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
      * @param permission the sender claims to have to enable the agent.
      */
     function enableAgent(uint256 agentId, Permission permission) public virtual {
-        if (!_isStakedOverMin(agentId)) revert StakedUnderMinimum(agentId);
         if (!_hasPermission(agentId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), agentId);
         _enable(agentId, permission, true);
     }

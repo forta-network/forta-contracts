@@ -89,6 +89,10 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
         return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getTotalManagedSubjects(subject);
     }
 
+    function allocatedStakePerManaged(uint8 subjectType, uint256 subject) external view returns (uint256) {
+        return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).allocatedStakePerManaged(subject);
+    }
+
     /// Get if staking is activated for that `subjectType` and `subject`. If not set, will return false.
     function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns (bool) {
         return _stakeSubjects[subjectType].getStakeThreshold(subject).activated;

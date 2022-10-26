@@ -152,9 +152,11 @@ abstract contract NodeRunnerRegistryCore is
      * returns true if id exists and is staked over minimum, false otherwise.
      */
     function isNodeRunnerOperational(uint256 nodeRunnerId) public view returns (bool) {
-        // _isStakedOverMin already checks for disabled, but returns true in every case if stakeController is not set.
-        // since isStakedOverMin() is external, we need to keep this duplicate check.
-        return _exists(nodeRunnerId) && _isStakedOverMin(nodeRunnerId);
+        if (!_stakeThreshold.activated) {
+            return _exists(nodeRunnerId);
+        } else {
+            return _exists(nodeRunnerId) && _isStakedOverMin(nodeRunnerId);
+        }
     }
 
     function monitoredChainId(uint256 nodeRunnerId) public view returns (uint256) {
@@ -303,20 +305,15 @@ abstract contract NodeRunnerRegistryCore is
      * - (Scanner Node has more than minimum stake allocated to it OR staking is not activated for the Scanner Node's chain)
      */
     function isScannerOperational(address scanner) public view returns (bool) {
-        // _isStakedOverMin already checks for disabled, but returns true in every case if stakeController is not set.
-        // since isStakedOverMin() is external, we need to keep this duplicate check.
-        return
-            _isStakedOverMin(_scannerNodes[scanner].nodeRunnerId) &&
-            _scannerNodes[scanner].registered &&
-            !_scannerNodes[scanner].disabled &&
-            _isScannerStakedOverMin(scanner);
+        bool result =  _scannerNodes[scanner].registered && !_scannerNodes[scanner].disabled;
+        if (_scannerStakeThresholds[_scannerNodes[scanner].chainId].activated) {
+            result = result && _isScannerStakedOverMin(scanner);
+        }
+        return result && isNodeRunnerOperational(_scannerNodes[scanner].nodeRunnerId);
     }
 
     function _isScannerStakedOverMin(address scanner) internal view returns (bool) {
-        if (!_scannerStakeThresholds[_scannerNodes[scanner].chainId].activated) {
-            return true;
-        }
-        return allocatedStakePerScanner(_scannerNodes[scanner].nodeRunnerId) >= _scannerStakeThresholds[_scannerNodes[scanner].chainId].min;
+        return allocatedStakePerManaged(_scannerNodes[scanner].nodeRunnerId) >= _scannerStakeThresholds[_scannerNodes[scanner].chainId].min;
     }
 
     /**
@@ -424,9 +421,6 @@ abstract contract NodeRunnerRegistryCore is
      * false otherwise
      */
     function _isStakedOverMin(uint256 nodeRunnerId) internal view virtual override returns (bool) {
-        if (address(getSubjectHandler()) == address(0) || ! _stakeThreshold.activated) {
-            return true;
-        }
         return (getSubjectHandler().activeStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) >= _stakeThreshold.min && _exists(nodeRunnerId));
     }
 
@@ -457,7 +451,7 @@ abstract contract NodeRunnerRegistryCore is
     }
 
     /// Amount of FORT allocated to each *enabled* scanner
-    function allocatedStakePerScanner(uint256 nodeRunnerId) public view returns (uint256) {
+    function allocatedStakePerManaged(uint256 nodeRunnerId) public view returns (uint256) {
         return getSubjectHandler().allocatedStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) / getTotalManagedSubjects(nodeRunnerId);
     }
 
@@ -466,7 +460,7 @@ abstract contract NodeRunnerRegistryCore is
         if (_scannerNodes[scanner].disabled) {
             return 0;
         }
-        return allocatedStakePerScanner(_scannerNodes[scanner].nodeRunnerId);
+        return allocatedStakePerManaged(_scannerNodes[scanner].nodeRunnerId);
     }
 
     // ************* Priviledge setters ***************

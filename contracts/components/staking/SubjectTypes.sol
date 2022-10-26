@@ -7,6 +7,7 @@ uint8 constant UNDEFINED_SUBJECT = 255;
 uint8 constant SCANNER_SUBJECT = 0;
 uint8 constant AGENT_SUBJECT = 1;
 uint8 constant NODE_RUNNER_SUBJECT = 2;
+uint8 constant DELEGATOR_NODE_RUNNER_SUBJECT = 3;
 
 /**
  * Defines the types of staking Subject Types, their agency and relationships.
@@ -61,7 +62,23 @@ contract SubjectTypeValidator {
             return SubjectStakeAgency.DIRECT;
         } else if (subjectType == NODE_RUNNER_SUBJECT) {
             return SubjectStakeAgency.DELEGATED;
+        }  else if (subjectType == DELEGATOR_NODE_RUNNER_SUBJECT) {
+            return SubjectStakeAgency.DELEGATOR;
         }
         return SubjectStakeAgency.UNDEFINED;
+    }
+
+    function getDelegatorSubjectType(uint8 subjectType) public pure returns (uint8) {
+        if (subjectType == NODE_RUNNER_SUBJECT) {
+            return DELEGATOR_NODE_RUNNER_SUBJECT;
+        }
+        return UNDEFINED_SUBJECT;
+    }
+
+    function getDelegatedSubjectType(uint8 subjectType) public pure returns (uint8) {
+        if (subjectType == DELEGATOR_NODE_RUNNER_SUBJECT) {
+            return NODE_RUNNER_SUBJECT;
+        }
+        return UNDEFINED_SUBJECT;
     }
 }

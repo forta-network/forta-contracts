@@ -118,6 +118,10 @@ abstract contract AgentRegistryCore is
         return _stakeThreshold;
     }
 
+    function _isStakedActivated() internal view returns(bool) {
+        return address(getSubjectHandler()) != address(0) && _stakeThreshold.activated;
+    }
+
     /**
      * Checks if agent is staked over minimum stake
      * @param subject agentId
@@ -125,9 +129,6 @@ abstract contract AgentRegistryCore is
      * false otherwise
      */
     function _isStakedOverMin(uint256 subject) internal override view returns(bool) {
-        if (address(getSubjectHandler()) == address(0) || !_stakeThreshold.activated) {
-            return true;
-        }
         return getSubjectHandler().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min && _exists(subject);
     }
 
