@@ -57,8 +57,8 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
      * - Registered in NodeRunnerRegistry to the nodeRunnerId either indicated or generated, with the same chainId and metadata.
      * - Deleted in ScannerNodeRegistry. The ERC721 will be burned, disabled flags and managers deleted from storage.
      * Scanners with disabled flags != 0 will be ignored (opted out), and will stay disabled in ScannerNodeRegistry.
-     * @param nodeRunnerId If the set as 0, the NodeRunnerRegistry ERC721 will be minted to the sender (address must not own any),
-     * set as a valid NodeRunnerRegistry ERC721 id owned by sender address otherwise.
+     * @param nodeRunnerId If set as 0, a new NodeRunnerRegistry ERC721 will be minted to nodeRunner (but it must not own any prior),
+     * otherwise must be set as a valid NodeRunnerRegistry ERC721 id owned by nodeRunner.
      * @return NodeRunnerRegistry ERC721 id the scanners are migrated to.
      */
     function selfMigrate(address[] calldata scanners, uint256 nodeRunnerId) external returns (uint256) {
