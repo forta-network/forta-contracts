@@ -46,6 +46,10 @@ describe('Scanner Registry (Deprecation and migration)', function () {
             constructorArgs: [this.contracts.forwarder.address],
             unsafeAllow: ['delegatecall'],
             unsafeSkipStorageCheck: true,
+            call: {
+                fn: 'configureMigration(uint256, address)',
+                args: [(await this.contracts.scanners.sunsettingTime()).toNumber() + 5000, await this.nodeRunners.address],
+            },
         });
 
         for (let i = 0; i < SCANNERS.length; i++) {
