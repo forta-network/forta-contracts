@@ -8,18 +8,21 @@ import "./ScannerRegistryCore.sol";
 import "./ScannerRegistryManaged.sol";
 import "./ScannerRegistryEnable.sol";
 import "./ScannerRegistryMetadata.sol";
-import "./IScannerMigration.sol";
 
 contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryManaged, ScannerRegistryEnable, ScannerRegistryMetadata {
+    event DeregisteredScanner(uint256 scannerId);
+    event ConfiguredMigration(uint256 sunsettingTime, address nodeRunnerRegistry);
+
     string public constant version = "0.1.4";
 
-    IScannerMigration private _migration;
-
-    event DeregisteredScanner(uint256 scannerId);
-    event SetMigrationController(address controller);
+    mapping(uint256 => bool) public optingOutOfMigration;
+    uint256 public sunsettingTime;
+    NodeRunnerRegistry public nodeRunnerRegistry;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+
+    error CannotDeregister(uint256 scannerId);
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
@@ -59,11 +62,31 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         )
     {
         // If migration has started, and scanner has migrated, return NodeRunnerRegistry values
-        if (_hasMigrationStarted() && _migration.isScannerInNewRegistry(scannerId)) {
-            return _migration.getScannerState(scannerId);
+        if (nodeRunnerRegistry.isScannerRegistered(address(uint160(scannerId)))) {
+            return _getScannerStateFromNodeRunner(scannerId);
         } else {
             return _getScannerState(scannerId);
         }
+    }
+
+    function _getScannerStateFromNodeRunner(uint256 scannerId)
+        private
+        view
+        returns (
+            bool registered,
+            address owner,
+            uint256 chainId,
+            string memory metadata,
+            bool enabled,
+            uint256 disabledFlags
+        )
+    {
+        bool disabled;
+        (registered, owner, chainId, metadata, enabled, disabled) = nodeRunnerRegistry.getScannerState(address(uint160(scannerId)));
+        if (disabled) {
+            disabledFlags = 1;
+        }
+        return (registered, owner, chainId, metadata, enabled, disabledFlags);
     }
 
     function _getScannerState(uint256 scannerId)
@@ -82,6 +105,20 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         return (registered, owner, chainId, metadata, isEnabled(scannerId), _getDisableFlags(scannerId));
     }
 
+    function _getScannerFromNodeRunner(uint256 scannerId)
+        private
+        view
+        returns (
+            bool registered,
+            address owner,
+            uint256 chainId,
+            string memory metadata
+        )
+    {
+        (registered, owner, chainId, metadata, , ) = nodeRunnerRegistry.getScannerState(address(uint160(scannerId)));
+        return (registered, owner, chainId, metadata);
+    }
+
     function getScanner(uint256 scannerId)
         public
         view
@@ -95,8 +132,8 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         )
     {
         // If migration has started, and scanner has migrated, return NodeRunnerRegistry values
-        if (_hasMigrationStarted() && _migration.isScannerInNewRegistry(scannerId)) {
-            return _migration.getScanner(scannerId);
+        if (nodeRunnerRegistry.isScannerRegistered(address(uint160(scannerId)))) {
+            return _getScannerFromNodeRunner(scannerId);
         } else {
             return super.getScanner(scannerId);
         }
@@ -106,35 +143,50 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         // after migration, return false
         if (hasMigrationEnded()) {
             return false;
-        // During migration, return NodeRunnerRegistry value if scannerId is migrated
-        } else if (_hasMigrationStarted() && _migration.isScannerInNewRegistry(scannerId)) {
-            return _migration.isScannerOperational(scannerId);
-        // Return ScannerRegistry value if migration has not started or if is not yet migrated
+            // During migration, return NodeRunnerRegistry value if scannerId is migrated
+        } else if (nodeRunnerRegistry.isScannerRegistered(address(uint160(scannerId)))) {
+            return nodeRunnerRegistry.isScannerOperational(address(uint160(scannerId)));
+            // Return ScannerRegistry value if migration has not started or if is not yet migrated
         } else {
             return super.isEnabled(scannerId);
         }
     }
 
-    function _hasMigrationStarted() private view returns (bool) {
-        return address(_migration) != address(0);
+    function hasMigrationEnded() public view returns (bool) {
+        return sunsettingTime < block.timestamp;
     }
 
-    function hasMigrationEnded() public view returns(bool) {
-        return _hasMigrationStarted() && _migration.migrationEndTime() < block.timestamp;
-    }
-
-    function setMigrationController(address _migrationController) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_migrationController == address(0)) revert ZeroAddress("_migrationController");
-        _migration = IScannerMigration(_migrationController);
-        emit SetMigrationController(_migrationController);
-    }
-
-    function deregisterScannerNode(uint256 scannerId) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) {
+    function deregisterScannerNode(uint256 scannerId) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) {
+        if (optingOutOfMigration[scannerId]) revert CannotDeregister(scannerId);
         _burn(scannerId);
         delete _disabled[scannerId];
         delete _managers[scannerId];
         delete _scannerMetadata[scannerId];
         emit DeregisteredScanner(scannerId);
+    }
+
+    /**
+     * Declares preference for migration from ScanerRegistry to NodeRunnerRegistry. Default is yes.
+     * @param scannerId ERC721 id
+     * @param isOut true if the scanner does not want to be migrated to the NodeRunnerRegistry (and deleted)
+     */
+    function setMigrationPrefrence(uint256 scannerId, bool isOut) external onlyOwnerOf(scannerId) {
+        optingOutOfMigration[scannerId] = isOut;
+    }
+
+    /*********** Admin methods ***********/
+
+    /**
+     * Configures migration params
+     * @param _sunsettingTime time after which the scanners won't be operational (isEnabled will return false) and will not get bot assignments or rewards.
+     * @param _nodeRunnerRegistry new registry, for compatibility for off chain components during migration
+     */
+    function configureMigration(uint256 _sunsettingTime, address _nodeRunnerRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_sunsettingTime == 0) revert ZeroAmount("_sunsettingTime");
+        if (_nodeRunnerRegistry == address(0)) revert ZeroAddress("_nodeRunnerRegistry");
+        sunsettingTime = _sunsettingTime;
+        nodeRunnerRegistry = NodeRunnerRegistry(_nodeRunnerRegistry);
+        emit ConfiguredMigration(sunsettingTime, _nodeRunnerRegistry);
     }
 
     /**

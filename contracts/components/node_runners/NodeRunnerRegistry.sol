@@ -44,24 +44,23 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
         __NodeRunnerRegistryCore_init(__name, __symbol, __stakeSubjectManager, __registrationDelay);
     }
 
-    function migrateToNodeRunner(address nodeRunnerAddress, uint256 chainId)
-        external
-        onlyRole(NODE_RUNNER_MIGRATOR_ROLE)
-        returns (uint256 nodeRunnerId)
-    {
+    function registerMigratedNodeRunner(address nodeRunnerAddress, uint256 chainId) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) returns(uint256 nodeRunnerId) {
         return _registerNodeRunner(nodeRunnerAddress, chainId);
     }
 
-    function migrateScannerNode(ScannerNodeRegistration calldata req) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) {
+    function registerMigratedScannerNode(ScannerNodeRegistration calldata req, bool disabled) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) {
         _registerScannerNode(req);
+        if (disabled) {
+            _setScannerDisableFlag(req.scanner, true);
+        } 
     }
 
     /**
-     * @notice disambiguation of _canSetEnableState, adding NODE_RUNNER_MIGRATOR_ROLE to the allowed setters.
+     * @notice disambiguation of _canSetEnableState, adding SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE to the allowed setters.
      * @inheritdoc NodeRunnerRegistryManaged
-     */
-    function _canSetEnableState(address scanner) internal view virtual override(NodeRunnerRegistryCore, NodeRunnerRegistryManaged) returns (bool) {
-        return super._canSetEnableState(scanner) || hasRole(NODE_RUNNER_MIGRATOR_ROLE, _msgSender());
+     */ 
+    function _canSetEnableState(address scanner) internal virtual override(NodeRunnerRegistryCore, NodeRunnerRegistryManaged) view returns (bool) {
+        return super._canSetEnableState(scanner) || hasRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE, _msgSender());
     }
 
     /**
