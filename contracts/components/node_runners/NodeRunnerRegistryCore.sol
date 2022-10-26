@@ -329,7 +329,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         return _scannerNodes[scanner];
     }
 
-    /// Gets ScannerNode data for address (compatibility method for off-chain components)
+    /// Gets ScannerNode data for address
     function getScannerState(address scanner)
         external
         view
