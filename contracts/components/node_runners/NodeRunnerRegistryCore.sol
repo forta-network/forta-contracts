@@ -373,7 +373,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     /**
      * Checks if scanner is staked over minimum stake
-     * @param nodeRunnerId scanner
      * @return true if scanner is staked over the minimum threshold for that chainId and is registered,
      * or staking is not yet enabled (stakeController = 0).
      * false otherwise
