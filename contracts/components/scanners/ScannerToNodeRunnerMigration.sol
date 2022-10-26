@@ -5,13 +5,12 @@ pragma solidity ^0.8.9;
 
 import "../BaseComponentUpgradeable.sol";
 import "./ScannerRegistry.sol";
-import "./IScannerMigration.sol";
 import "../node_runners/NodeRunnerRegistry.sol";
 
 /**
  * Migration of ScannerRegistry to NodeRunnerRegistry
  */
-contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigration {
+contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
     /** Contract version */
     string public constant version = "0.1.0";
     uint256 public constant NODE_RUNNER_NOT_MIGRATED = 0;
@@ -20,9 +19,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     ScannerRegistry public immutable scannerNodeRegistry;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     NodeRunnerRegistry public immutable nodeRunnerRegistry;
-    uint256 public migrationEndTime;
 
-    event SetMigrationEndtime(uint256 migrationEndTime);
     event MigrationExecuted(uint256 scannersMigrated, uint256 scannersIgnored, uint256 indexed nodeRunnerId, bool mintedNodeRunner);
 
     error NotOwnerOfNodeRunner(address pretender, uint256 nodeRunnerId);
@@ -42,11 +39,9 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
-     * @param __migrationEndTime time when migration period ends
      */
-    function initialize(address __manager, uint256 __migrationEndTime) public initializer {
+    function initialize(address __manager) public initializer {
         __BaseComponentUpgradeable_init(__manager);
-        _setMigrationEndTime(__migrationEndTime);
     }
 
     /**
@@ -127,18 +122,5 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
         return nodeRunnerId;
     }
 
-    /*********** Admin methods ***********/
-
-    /// Sets timestamp marking the end of the migration process
-    function setMigrationEndTime(uint256 _migrationEndTime) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setMigrationEndTime(_migrationEndTime);
-    }
-
-    function _setMigrationEndTime(uint256 _migrationEndTime) private {
-        if (_migrationEndTime == 0) revert ZeroAmount("_migrationEndTime");
-        migrationEndTime = _migrationEndTime;
-        emit SetMigrationEndtime(migrationEndTime);
-    }
-
-    uint256[47] private __gap;
+    uint256[48] private __gap;
 }

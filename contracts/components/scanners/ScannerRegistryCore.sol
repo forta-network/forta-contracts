@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../staking/StakeSubject.sol";
 import "../../errors/GeneralErrors.sol";
+import "../node_runners/NodeRunnerRegistry.sol";
 
 abstract contract ScannerRegistryCore is
     BaseComponentUpgradeable,
@@ -20,7 +21,6 @@ abstract contract ScannerRegistryCore is
     event StakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
     
     error ScannerNotRegistered(address scanner);
-    error PublicRegistrationDisabled(uint256 chainId);
 
     /**
      * @notice Checks sender (or metatx signer) is owner of the scanner token.

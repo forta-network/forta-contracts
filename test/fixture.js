@@ -37,6 +37,7 @@ function prepare(config = {}) {
                 this.access.connect(this.accounts.admin).grantRole(this.roles.UPGRADER, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.AGENT_ADMIN, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN, this.accounts.manager.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_ADMIN, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.DISPATCHER, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.REWARDS_ADMIN, this.accounts.admin.address),
@@ -63,12 +64,18 @@ function prepare(config = {}) {
             this.stakingSubjects = {};
             this.stakingSubjects.SCANNER_SUBJECT_TYPE = 0;
             this.stakingSubjects.AGENT_SUBJECT_TYPE = 1;
+            this.stakingSubjects.NODE_RUNNER_SUBJECT_TYPE = 3;
+
             await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated });
             await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated }, 1);
-            await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated }, 1);
+            await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated });
 
             DEBUG('Fixture: stake configured');
         }
+
+        // Increase time to after migration
+        await ethers.provider.send('evm_setNextBlockTimestamp', [(await this.scanners.sunsettingTime()).toNumber() + 1]);
+        await ethers.provider.send('evm_mine');
 
         // eslint-disable-next-line no-undef
         __SNAPSHOT_ID__ = await ethers.provider.send('evm_snapshot');

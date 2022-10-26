@@ -5,6 +5,7 @@ const pLimit = require('p-limit');
 const DEBUG = require('debug')('forta:utils');
 const assert = require('assert');
 const EthDater = require('block-by-date-ethers');
+const process = require('process');
 
 // override process.env with dotenv
 Object.assign(process.env, require('dotenv').config().parsed);
@@ -34,6 +35,11 @@ const getDefaultDeployer = async (provider, baseDeployer) => {
  *********************************************************************************************************************/
 class AsyncConf extends Conf {
     constructor(conf) {
+        /* TODO: uncomment when this is solved https://github.com/OpenZeppelin/openzeppelin-upgrades/issues/645
+        if (conf.configName === '.cache-31337') {
+            conf.configName = `.cache-31337_${process.pid}`;
+        }
+        */
         super(conf);
         this.limit = pLimit(1);
     }
