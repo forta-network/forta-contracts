@@ -320,23 +320,6 @@ async function migrate(config = {}) {
             )
         );
         DEBUG(`[${Object.keys(contracts).length}] dispatch: ${contracts.dispatch.address}`);
-
-        DEBUG(`Deploying ScannerToNodeRunnerMigration...`);
-        const now = await ethers.provider.getBlock('latest').then(({ timestamp }) => timestamp);
-        contracts.registryMigration = await ethers.getContractFactory('ScannerToNodeRunnerMigration', deployer).then((factory) =>
-            utils.tryFetchProxy(
-                CACHE,
-                'node-runner-migration',
-                factory,
-                'uups',
-                [contracts.access.address, contracts.scanners.address, contracts.nodeRunners.address, now + deployEnv.MIGRATION_DURATION(chainId)],
-                {
-                    constructorArgs: [contracts.forwarder.address],
-                    unsafeAllow: 'delegatecall',
-                }
-            )
-        );
-        DEBUG(`[${Object.keys(contracts).length}] scannerToNodeRunnerMigration: ${contracts.registryMigration.address}`);
     }
 
     // Roles dictionary

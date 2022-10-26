@@ -317,7 +317,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         _setScannerDisableFlag(scanner, true);
     }
 
-    function _setScannerDisableFlag(address scanner, bool value) private {
+    function _setScannerDisableFlag(address scanner, bool value) internal {
         _scannerNodes[scanner].disabled = value;
         emit ScannerEnabled(scannerAddressToId(scanner), isScannerOperational(scanner), _msgSender(), value);
     }
