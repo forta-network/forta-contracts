@@ -84,7 +84,7 @@ describe('Node Runner Registry', function () {
 
     describe('migration', function () {
         beforeEach(async function () {
-            await this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_MIGRATOR, this.accounts.manager.address);
+            await this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR, this.accounts.manager.address);
         });
 
         it('migrate node runner', async function () {
@@ -95,9 +95,9 @@ describe('Node Runner Registry', function () {
             expect(await this.nodeRunners.ownerOf(1)).to.be.equal(this.accounts.user1.address);
         });
 
-        it('should not migrate node runner if not NODE_RUNNER_MIGRATOR_ROLE ', async function () {
+        it('should not migrate node runner if not SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE ', async function () {
             await expect(this.nodeRunners.connect(this.accounts.user1).registerMigratedNodeRunner(this.accounts.user1.address)).to.be.revertedWith(
-                `MissingRole("${this.roles.NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
+                `MissingRole("${this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
             );
         });
 
@@ -113,10 +113,10 @@ describe('Node Runner Registry', function () {
             expect(await this.nodeRunners.totalScannersRegistered(1)).to.be.equal(1);
         });
 
-        it('should not migrate scanner if not NODE_RUNNER_MIGRATOR_ROLE', async function () {
+        it('should not migrate scanner if not SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE', async function () {
             await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
             await expect(this.nodeRunners.connect(this.accounts.user1).registerMigratedScannerNode(scanner1Registration, false)).to.be.revertedWith(
-                `MissingRole("${this.roles.NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
+                `MissingRole("${this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
             );
         });
     });

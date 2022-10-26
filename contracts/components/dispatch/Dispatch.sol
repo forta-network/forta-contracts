@@ -53,26 +53,14 @@ contract Dispatch is BaseComponentUpgradeable {
         _setNodeRunnerRegistry(__nodeRunners);
     }
 
-    /**
-     * @notice Getter for AgentRegistry.
-     * @return AgentRegistry.
-     */
     function agentRegistry() public view returns (AgentRegistry) {
         return _agents;
     }
 
-    /**
-     * @notice Getter for ScannerRegistry.
-     * @return ScannerRegistry.
-     */
     function scannerRegistry() public view returns (ScannerRegistry) {
         return _scanners_deprecated;
     }
 
-    /**
-     * @notice Getter for ScannerRegistry.
-     * @return ScannerRegistry.
-     */
     function nodeRunnerRegistry() public view returns (NodeRunnerRegistry) {
         return _nodeRunners;
     }
@@ -162,7 +150,7 @@ contract Dispatch is BaseComponentUpgradeable {
      * @return owner address.
      * @return chainId that the scanner monitors.
      * @return metadata IPFS pointer for agent metadata.
-     * @return enabled true if scanner is enabled, false otherwise.
+     * @return operational true if scanner is not disabled and staked over min, false otherwise.
      * @return disabled true if disabled by Node Runner or scanner itself.
      */
     function scannerRefAt(uint256 agentId, uint256 pos)
@@ -174,13 +162,13 @@ contract Dispatch is BaseComponentUpgradeable {
             address owner,
             uint256 chainId,
             string memory metadata,
-            bool enabled, // NOTE: change this to operational when off-chain components ready
+            bool operational,
             bool disabled
         )
     {
         scannerId = scannerAt(agentId, pos);
-        (registered, owner, chainId, metadata, enabled, disabled) = _getScannerState(scannerId);
-        return (registered, scannerId, owner, chainId, metadata, enabled, disabled);
+        (registered, owner, chainId, metadata, operational, disabled) = _getScannerState(scannerId);
+        return (registered, scannerId, owner, chainId, metadata, operational, disabled);
     }
 
     /// Returns true if scanner and agents are linked, false otherwise.

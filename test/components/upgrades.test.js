@@ -2,6 +2,7 @@ const { ethers, upgrades, network } = require('hardhat');
 const { expect } = require('chai');
 const { prepare, deploy } = require('../fixture');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
+const loadEnv = require('../../scripts/loadEnv');
 
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
 
@@ -174,7 +175,11 @@ describe('Upgrades testing', function () {
             });
             await this.contracts.stakingParameters.setStakeSubjectHandler(0, scannerRegistry.address);
             await scannerRegistry.connect(this.accounts.manager).setStakeThreshold({ max: '100', min: '0', activated: true }, 1);
+            const network = await this.accounts.user1.provider.getNetwork();
 
+            await scannerRegistry
+                .connect(this.accounts.admin)
+                .configureMigration(loadEnv.MIGRATION_DURATION(network.chainId) + (await ethers.provider.getBlock('latest')).timestamp, this.contracts.nodeRunners.address);
             await this.contracts.access.grantRole(this.roles.SCANNER_ADMIN, this.accounts.admin.address);
             expect(await scannerRegistry.getStakeController()).to.be.equal(this.contracts.stakingParameters.address);
             expect(await scannerRegistry.version()).to.be.equal('0.1.4');

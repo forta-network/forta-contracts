@@ -3,7 +3,7 @@ const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { BigNumber } = require('ethers');
 
-describe.skip('Scanner Registry (Deprecation and migration)', function () {
+describe('Scanner Registry (Deprecation and migration)', function () {
     prepare({ stake: { min: '0', max: '500', activated: true } });
     let SCANNERS;
     const chainId = 1;
@@ -97,7 +97,7 @@ describe.skip('Scanner Registry (Deprecation and migration)', function () {
                 unsafeSkipStorageCheck: true,
             });
 
-            await this.registryMigration.connect(this.accounts.admin).setMigrationEndTime((await this.registryMigration.migrationEndTime()).toNumber() + 5000);
+            await this.scanners.connect(this.accounts.admin).configureMigration((await this.scanners.sunsettingTime()).toNumber() + 5000, await this.nodeRunners.address);
             for (let i = 0; i < SCANNERS.length; i++) {
                 const scannerId = SCANNERS[i].address;
 
@@ -108,25 +108,24 @@ describe.skip('Scanner Registry (Deprecation and migration)', function () {
             }
 
             const deployer = (await ethers.getSigners())[0];
-            const network = await deployer.provider.getNetwork();
 
             const ScannerToNodeRunnerMigration = await ethers.getContractFactory('ScannerToNodeRunnerMigration', deployer);
-            this.registryMigration = await upgrades.deployProxy(ScannerToNodeRunnerMigration, [this.access.address, MIGRATION_DURATION(network.chainId)], {
+            this.registryMigration = await upgrades.deployProxy(ScannerToNodeRunnerMigration, [this.access.address], {
                 kind: 'uups',
                 constructorArgs: [this.forwarder.address, this.scanners.address, this.nodeRunners.address],
                 unsafeAllow: 'delegatecall',
             });
 
-            this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_MIGRATOR, this.registryMigration.address);
+            this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR, this.registryMigration.address);
         });
 
-        it('should not burn ScannerNodeRegistry without NODE_RUNNER_MIGRATOR_ROLE', async function () {
+        it('should not burn ScannerNodeRegistry without SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE', async function () {
             await expect(this.scanners.connect(this.accounts.user1).deregisterScannerNode(SCANNERS[0].address)).to.be.revertedWith(
-                `MissingRole("${this.roles.NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
+                `MissingRole("${this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
             );
         });
 
-        describe('migrate scanners - priviledged path', function () {
+        describe('migrate scanners - privileged path', function () {
             it('non-registered node runner - 1 opted out scanner', async function () {
                 const inputNodeRunnerId = await this.registryMigration.NODE_RUNNER_NOT_MIGRATED();
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
@@ -397,8 +396,6 @@ describe.skip('Scanner Registry (Deprecation and migration)', function () {
             beforeEach(async function () {
                 nonMigrated = SCANNERS[0].address;
                 migrated = SCANNERS[1].address;
-                await this.scanners.connect(this.accounts.admin).setMigrationController(this.registryMigration.address);
-                await this.registryMigration.connect(this.accounts.user1).selfMigrate([migrated], 0);
                 await this.nodeRunners.connect(this.accounts.user1).updateScannerMetadata(migrated, 'migrated');
                 await this.nodeRunners.connect(this.accounts.user1).disableScanner(migrated);
             });
@@ -427,7 +424,7 @@ describe.skip('Scanner Registry (Deprecation and migration)', function () {
                 });
 
                 it('after migration ends', async function () {
-                    await ethers.provider.send('evm_setNextBlockTimestamp', [(await this.registryMigration.migrationEndTime()).toNumber() + 1]);
+                    await ethers.provider.send('evm_setNextBlockTimestamp', [(await this.scanners.sunsettingTime()).toNumber() + 1]);
                     await ethers.provider.send('evm_mine');
 
                     expect(await this.scanners.isEnabled(nonMigrated)).to.equal(false);

@@ -72,11 +72,9 @@ function prepare(config = {}) {
 
             DEBUG('Fixture: stake configured');
         }
-        // Start migration
-        await this.scanners.connect(this.accounts.admin).setMigrationController(this.registryMigration.address);
 
         // Increase time to after migration
-        await ethers.provider.send('evm_setNextBlockTimestamp', [(await this.registryMigration.migrationEndTime()).toNumber() + 1]);
+        await ethers.provider.send('evm_setNextBlockTimestamp', [(await this.scanners.sunsettingTime()).toNumber() + 1]);
         await ethers.provider.send('evm_mine');
 
         // eslint-disable-next-line no-undef
