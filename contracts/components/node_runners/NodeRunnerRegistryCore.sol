@@ -372,7 +372,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     }
 
     /**
-     * Checks if scanner is staked over minimum stake
+     * Checks if node runner is staked over minimum stake
      * @return true if scanner is staked over the minimum threshold for that chainId and is registered,
      * or staking is not yet enabled (stakeController = 0).
      * false otherwise
@@ -387,7 +387,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             _exists(nodeRunnerId);
     }
 
-    // ************* Priviledge setters ***************
+    // ************* Privilege setters ***************
 
     /// Sets maximum delay between execution of forta auth in Scan Node CLI and execution of registerScanner() in this contract
     function setRegistrationDelay(uint256 delay) external onlyRole(NODE_RUNNER_ADMIN_ROLE) {
