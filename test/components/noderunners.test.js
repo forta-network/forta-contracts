@@ -90,39 +90,39 @@ describe('Node Runner Registry', function () {
 
     describe('migration', function () {
         beforeEach(async function () {
-            await this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_MIGRATOR, this.accounts.manager.address);
+            await this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR, this.accounts.manager.address);
         });
 
         it('migrate node runner', async function () {
-            await expect(this.nodeRunners.connect(this.accounts.manager).migrateToNodeRunner(this.accounts.user1.address, 1))
+            await expect(this.nodeRunners.connect(this.accounts.manager).registerMigratedNodeRunner(this.accounts.user1.address, 1))
                 .to.emit(this.nodeRunners, 'Transfer')
                 .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, '1');
             expect(await this.nodeRunners.isRegistered(1)).to.be.equal(true);
             expect(await this.nodeRunners.ownerOf(1)).to.be.equal(this.accounts.user1.address);
         });
 
-        it('should not migrate node runner if not NODE_RUNNER_MIGRATOR_ROLE ', async function () {
-            await expect(this.nodeRunners.connect(this.accounts.user1).migrateToNodeRunner(this.accounts.user1.address, 1)).to.be.revertedWith(
-                `MissingRole("${this.roles.NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
+        it('should not migrate node runner if not SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE ', async function () {
+            await expect(this.nodeRunners.connect(this.accounts.user1).registerMigratedNodeRunner(this.accounts.user1.address, 1)).to.be.revertedWith(
+                `MissingRole("${this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
             );
         });
 
         it('migrate scanner', async function () {
             const SCANNER_ADDRESS = this.accounts.scanner.address;
             await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
-            await expect(this.nodeRunners.connect(this.accounts.manager).migrateScannerNode(scanner1Registration))
+            await expect(this.nodeRunners.connect(this.accounts.manager).registerMigratedScannerNode(scanner1Registration, true))
                 .to.emit(this.nodeRunners, 'ScannerUpdated')
                 .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
-            expect(await this.nodeRunners.getScanner(SCANNER_ADDRESS)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), 'metadata']);
+            expect(await this.nodeRunners.getScanner(SCANNER_ADDRESS)).to.be.deep.equal([true, true, BigNumber.from(1), BigNumber.from(1), 'metadata']);
             expect(await this.nodeRunners.isScannerRegistered(SCANNER_ADDRESS)).to.be.equal(true);
             expect(await this.nodeRunners.registeredScannerAddressAtIndex(1, 0)).to.be.equal(SCANNER_ADDRESS);
             expect(await this.nodeRunners.totalScannersRegistered(1)).to.be.equal(1);
         });
 
-        it('should not migrate scanner if not NODE_RUNNER_MIGRATOR_ROLE', async function () {
+        it('should not migrate scanner if not SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE', async function () {
             await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
-            await expect(this.nodeRunners.connect(this.accounts.user1).migrateScannerNode(scanner1Registration)).to.be.revertedWith(
-                `MissingRole("${this.roles.NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
+            await expect(this.nodeRunners.connect(this.accounts.user1).registerMigratedScannerNode(scanner1Registration, false)).to.be.revertedWith(
+                `MissingRole("${this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
             );
         });
     });

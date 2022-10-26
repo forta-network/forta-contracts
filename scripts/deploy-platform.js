@@ -295,6 +295,12 @@ async function migrate(config = {}) {
             )
         );
         DEBUG(`[${Object.keys(contracts).length}] nodeRunners: ${contracts.nodeRunners.address}`);
+        if (semver.gte(scannersVersion, '0.1.4')) {
+            await contracts.scanners.configureMigration(
+                deployEnv.MIGRATION_DURATION(chainId) + (await ethers.provider.getBlock('latest')).timestamp,
+                contracts.nodeRunners.address
+            );
+        }
 
         DEBUG('Configuring stake controller...');
 
@@ -320,23 +326,6 @@ async function migrate(config = {}) {
             )
         );
         DEBUG(`[${Object.keys(contracts).length}] dispatch: ${contracts.dispatch.address}`);
-
-        DEBUG(`Deploying ScannerToNodeRunnerMigration...`);
-        const now = await ethers.provider.getBlock('latest').then(({ timestamp }) => timestamp);
-        contracts.registryMigration = await ethers.getContractFactory('ScannerToNodeRunnerMigration', deployer).then((factory) =>
-            utils.tryFetchProxy(
-                CACHE,
-                'node-runner-migration',
-                factory,
-                'uups',
-                [contracts.access.address, contracts.scanners.address, contracts.nodeRunners.address, now + deployEnv.MIGRATION_DURATION(chainId)],
-                {
-                    constructorArgs: [contracts.forwarder.address],
-                    unsafeAllow: 'delegatecall',
-                }
-            )
-        );
-        DEBUG(`[${Object.keys(contracts).length}] scannerToNodeRunnerMigration: ${contracts.registryMigration.address}`);
     }
 
     // Roles dictionary
@@ -358,7 +347,7 @@ async function migrate(config = {}) {
             REWARDS_ADMIN: ethers.utils.id('REWARDS_ADMIN_ROLE'),
             SCANNER_VERSION: ethers.utils.id('SCANNER_VERSION_ROLE'),
             SCANNER_BETA_VERSION: ethers.utils.id('SCANNER_BETA_VERSION_ROLE'),
-            NODE_RUNNER_MIGRATOR: ethers.utils.id('NODE_RUNNER_MIGRATOR_ROLE'),
+            SCANNER_2_NODE_RUNNER_MIGRATOR: ethers.utils.id('SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE'),
             MIGRATION_EXECUTOR: ethers.utils.id('MIGRATION_EXECUTOR_ROLE'),
         }).map((entry) => Promise.all(entry))
     ).then(Object.fromEntries);

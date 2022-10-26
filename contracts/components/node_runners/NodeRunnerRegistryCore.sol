@@ -348,7 +348,7 @@ abstract contract NodeRunnerRegistryCore is
         _removeEnabledScanner(_scannerNodes[scanner].nodeRunnerId);
     }
 
-    function _setScannerDisableFlag(address scanner, bool value) private {
+    function _setScannerDisableFlag(address scanner, bool value) internal {
         _scannerNodes[scanner].disabled = value;
         emit ScannerEnabled(scannerAddressToId(scanner), isScannerOperational(scanner), _msgSender(), value);
     }
@@ -370,7 +370,7 @@ abstract contract NodeRunnerRegistryCore is
         return _scannerNodes[scanner];
     }
 
-    /// Gets ScannerNode data for address (compatibility method for off-chain components)
+    /// Gets ScannerNode data for address
     function getScannerState(address scanner)
         external
         view
@@ -463,7 +463,7 @@ abstract contract NodeRunnerRegistryCore is
         return allocatedStakePerManaged(_scannerNodes[scanner].nodeRunnerId);
     }
 
-    // ************* Priviledge setters ***************
+    // ************* Privilege setters ***************
 
     /// Sets maximum delay between execution of forta auth in Scan Node CLI and execution of registerScanner() in this contract
     function setRegistrationDelay(uint256 delay) external onlyRole(NODE_RUNNER_ADMIN_ROLE) {
