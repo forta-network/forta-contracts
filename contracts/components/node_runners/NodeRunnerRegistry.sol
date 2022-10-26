@@ -48,8 +48,11 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
         return _registerNodeRunner(nodeRunnerAddress);
     }
 
-    function registerMigratedScannerNode(ScannerNodeRegistration calldata req) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) {
-        _registerScannerNode(req); 
+    function registerMigratedScannerNode(ScannerNodeRegistration calldata req, bool disabled) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) {
+        _registerScannerNode(req);
+        if (disabled) {
+            _setScannerDisableFlag(req.scanner, true);
+        } 
     }
 
     /**

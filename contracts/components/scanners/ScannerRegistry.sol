@@ -13,8 +13,12 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
     
     string public constant version = "0.1.4";
 
+    mapping(uint256 => bool) public optingOutOfMigration;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+
+    error CannotDeregister(uint256 scannerId);
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
@@ -58,10 +62,20 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
     }
 
     function deregisterScannerNode(uint256 scannerId) external onlyRole(NODE_RUNNER_MIGRATOR_ROLE) {
+        if (optingOutOfMigration[scannerId]) revert CannotDeregister(scannerId); 
         _burn(scannerId);
         delete _disabled[scannerId];
         delete _managers[scannerId];
         delete _scannerMetadata[scannerId];
+    }
+
+    /**
+     * Declares preference for migration from ScanerRegistry to NodeRunnerRegistry. Default is yes.
+     * @param scannerId ERC721 id
+     * @param isOut true if the scanner does not want to be migrated to the NodeRunnerRegistry (and deleted)
+     */
+    function setMigrationPrefrence(uint256 scannerId, bool isOut) external onlyOwnerOf(scannerId) {
+        optingOutOfMigration[scannerId] = isOut;
     }
 
 
@@ -89,5 +103,5 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         return super._msgData();
     }
 
-    uint256[50] private __gap;
+    uint256[49] private __gap;
 }

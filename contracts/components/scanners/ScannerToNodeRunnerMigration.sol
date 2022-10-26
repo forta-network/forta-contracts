@@ -53,10 +53,12 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
      * @notice Method to self migrate from the old ScannerRegistry NFTs to a single NodeRunnerRegistry NFT.
      * WARNING: ScannerNodeRegistry's manager addresses will not be migrated, please user NodeRunnerRegistry's methods to set them again.
      * @param scanners array of scanner addresses to be migrated.
-     * All the enabled (disabled flags set to 0) ScannerRegistry ERC721 identified by the uint256(address) in the input array will be:
+     * All the scanners willing to migrate (optingOutOfMigration flags set to false) ScannerRegistry ERC721 identified by the uint256(address)
+     * in the input array will be:
      * - Registered in NodeRunnerRegistry to the nodeRunnerId either indicated or generated, with the same chainId and metadata.
      * - Deleted in ScannerNodeRegistry. The ERC721 will be burned, disabled flags and managers deleted from storage.
-     * Scanners with disabled flags != 0 will be ignored (opted out), and will stay disabled in ScannerNodeRegistry.
+     * Scanners with optingOutOfMigration flags == true will be ignored (opted out), and will stay in ScannerNodeRegistry.
+     * At migration end, they will stop receiving work and rewards.
      * @param nodeRunnerId If set as 0, a new NodeRunnerRegistry ERC721 will be minted to nodeRunner (but it must not own any prior),
      * otherwise must be set as a valid NodeRunnerRegistry ERC721 id owned by nodeRunner.
      * @return NodeRunnerRegistry ERC721 id the scanners are migrated to.
@@ -70,10 +72,11 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
      * MIGRATION_EXECUTOR_ROLE.
      * WARNING: ScannerNodeRegistry's manager addresses will not be migrated, please user NodeRunnerRegistry's methods to set them again.
      * @param scanners array of scanner addresses to be migrated.
-     * All the enabled (disabled flags set to 0) ScannerRegistry ERC721 identified by the uint256(address) in the input array will be:
+     * All the scanners willing to migrate (optingOutOfMigration flags set to false) ScannerRegistry ERC721 identified by the uint256(address)
+     * in the input array will be:
      * - Registered in NodeRunnerRegistry to the nodeRunnerId either indicated or generated, with the same chainId and metadata.
      * - Deleted in ScannerNodeRegistry. The ERC721 will be burned, disabled flags and managers deleted from storage.
-     * Scanners with disabled flags != 0 will be ignored (opted out), and will stay disabled in ScannerNodeRegistry.
+     * Scanners with with optingOutOfMigration flags == true will be ignored (opted out), and will stay in ScannerNodeRegistry.
      * @param nodeRunnerId If set as 0, a new NodeRunnerRegistry ERC721 will be minted to nodeRunner (but it must not own any prior),
      * otherwise must be set as a valid NodeRunnerRegistry ERC721 id owned by nodeRunner.
      * @param nodeRunner address that owns the scanners and will own the NodeRunnerRegistry ERC721
@@ -104,8 +107,8 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
             address scanner = scanners[i];
             uint256 scannerId = scannerNodeRegistry.scannerAddressToId(scanner);
             if (scannerNodeRegistry.ownerOf(scannerId) != nodeRunner) revert SenderNotOwner(nodeRunner, scannerId);
-            (, , uint256 chainId, string memory metadata, , uint256 disabledFlags) = scannerNodeRegistry.getScannerState(scannerId);
-            if (disabledFlags == 0) {
+            if (!scannerNodeRegistry.optingOutOfMigration(scannerId)) {
+                (, , uint256 chainId, string memory metadata, , uint256 disabledFlags) = scannerNodeRegistry.getScannerState(scannerId);
                 nodeRunnerRegistry.registerMigratedScannerNode(
                     NodeRunnerRegistryCore.ScannerNodeRegistration({
                         scanner: scanner,
@@ -113,7 +116,8 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable, IScannerMigra
                         chainId: chainId,
                         metadata: metadata,
                         timestamp: block.timestamp
-                    })
+                    }),
+                    disabledFlags != 0
                 );
                 scannerNodeRegistry.deregisterScannerNode(scannerId);
                 scannersMigrated++;
