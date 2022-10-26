@@ -18,7 +18,7 @@ async function deploy() {
     console.log('----------------------------------------------------');
     DEBUG(`Deploying ScannerToNodeRunnerMigration...`);
     const registryMigration = await ethers.getContractFactory('ScannerToNodeRunnerMigration', deployer).then((factory) =>
-        utils.tryFetchProxy(CACHE, 'node-runner-migration', factory, 'uups', [deployment.access.address, MIGRATION_DURATION(chainId)], {
+        utils.tryFetchProxy(CACHE, 'node-runner-migration', factory, 'uups', [deployment.access.address], {
             constructorArgs: [deployment.forwarder.address, deployment.scanners.address, deployment['node-runners'].address],
             unsafeAllow: 'delegatecall',
         })

@@ -283,8 +283,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         // _isStakedOverMin already checks for disabled, but returns true in every case if stakeController is not set.
         // since isStakedOverMin() is external, we need to keep this duplicate check.
         return _scannerNodes[scanner].registered &&
-            !_scannerNodes[scanner].disabled &&
-            getStakeController().getStakeSubjectHandler(SCANNER_SUBJECT).isStakedOverMin(scannerAddressToId(scanner));
+            !_scannerNodes[scanner].disabled; // && TODO: stake
+            // getStakeController().getStakeSubjectHandler(SCANNER_SUBJECT).isStakedOverMin(scannerAddressToId(scanner));
     }
 
     /**

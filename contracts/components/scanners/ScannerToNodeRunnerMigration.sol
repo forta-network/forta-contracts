@@ -39,9 +39,8 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
-     * @param __sunsettingTime time when migration period ends
      */
-    function initialize(address __manager, uint256 __sunsettingTime) public initializer {
+    function initialize(address __manager) public initializer {
         __BaseComponentUpgradeable_init(__manager);
     }
 
