@@ -6,7 +6,13 @@ const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRe
 
 let verifyingContractInfo;
 describe('Dispatcher', function () {
-    prepare({ stake: { agents: { min: '100', max: '500', activated: true }, scanners: { min: '100', max: '500', activated: true } } });
+    prepare({
+        stake: {
+            agents: { min: '100', max: '500', activated: true },
+            scanners: { min: '100', max: '500', activated: true },
+            nodeRunners: { min: '100', max: '1500', activated: true },
+        },
+    });
 
     beforeEach(async function () {
         this.accounts.getAccount('scanner');
@@ -15,7 +21,7 @@ describe('Dispatcher', function () {
         this.SCANNER_SUBJECT_ID = BigNumber.from(this.SCANNER_ID);
         // Create Agent and Scanner
         await this.agents.createAgent(this.AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]);
-        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
         const { chainId } = await ethers.provider.getNetwork();
         verifyingContractInfo = {
             address: this.contracts.nodeRunners.address,
@@ -34,7 +40,7 @@ describe('Dispatcher', function () {
         await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
 
         // Stake
-        await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.NODE_RUNNER, this.SCANNER_SUBJECT_ID, '100');
+        await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.NODE_RUNNER, 1, '100');
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, this.AGENT_ID, '100');
     });
 
@@ -46,8 +52,6 @@ describe('Dispatcher', function () {
 
     it('link', async function () {
         const hashBefore = await this.dispatch.scannerHash(this.SCANNER_ID);
-        // expect(await this.scanners.isStakedOverMin(this.SCANNER_ID)).to.be.equal(true);
-        expect(await this.nodeRunners.isStakedOverMin(this.SCANNER_ID)).to.be.equal(true);
         expect(await this.dispatch.areTheyLinked(this.AGENT_ID, this.SCANNER_ID)).to.be.equal(false);
 
         await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
@@ -59,8 +63,7 @@ describe('Dispatcher', function () {
     });
 
     it('link fails if scanner not staked over minimum', async function () {
-        // await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
-        await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
+        await this.nodeRunners.connect(this.accounts.manager).setManagedStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
         await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.be.revertedWith('Disabled("Scanner")');
     });
 
@@ -82,13 +85,10 @@ describe('Dispatcher', function () {
 
     it('unlink', async function () {
         const hashBefore = await this.dispatch.scannerHash(this.SCANNER_ID);
-        console.log('sdasda')
-        expect(await this.nodeRunners.isStakedOverMin(this.SCANNER_ID)).to.be.equal(true);
-
         await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID))
             .to.emit(this.dispatch, 'Link')
             .withArgs(this.AGENT_ID, this.SCANNER_ID, true);
-        console.log('213213')
+
         expect(await this.dispatch.areTheyLinked(this.AGENT_ID, this.SCANNER_ID)).to.be.equal(true);
 
         await expect(this.dispatch.connect(this.accounts.manager).unlink(this.AGENT_ID, this.SCANNER_ID))
@@ -101,38 +101,28 @@ describe('Dispatcher', function () {
 
     it('agent disable', async function () {
         await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.be.not.reverted;
-
         const hashBefore = await this.dispatch.scannerHash(this.SCANNER_ID);
-
         await expect(this.agents.connect(this.accounts.user1).disableAgent(this.AGENT_ID, 1)).to.be.not.reverted;
-
         expect(await this.dispatch.scannerHash(this.SCANNER_ID)).to.not.be.deep.equal(hashBefore);
     });
 
     it('agent re-enable', async function () {
         await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.be.not.reverted;
-
         const hashBefore = await this.dispatch.scannerHash(this.SCANNER_ID);
-
         await expect(this.agents.connect(this.accounts.user1).disableAgent(this.AGENT_ID, 1)).to.be.not.reverted;
         await expect(this.agents.connect(this.accounts.user1).enableAgent(this.AGENT_ID, 1)).to.be.not.reverted;
-
         expect(await this.dispatch.scannerHash(this.SCANNER_ID)).to.be.deep.equal(hashBefore);
     });
 
     it('update', async function () {
         await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.be.not.reverted;
-
         const hashBefore = await this.dispatch.scannerHash(this.SCANNER_ID);
-
         await expect(this.agents.connect(this.accounts.user1).updateAgent(this.AGENT_ID, 'Metadata2', [1])).to.be.not.reverted;
-
         expect(await this.dispatch.scannerHash(this.SCANNER_ID)).to.not.be.deep.equal(hashBefore);
     });
 
     it('agentAt', async function () {
         expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.emit(this.dispatch, 'Link').withArgs(this.AGENT_ID, this.SCANNER_ID, true);
-
         expect(await this.dispatch.agentAt(this.SCANNER_ID, 0)).to.be.equal(this.AGENT_ID);
     });
 
