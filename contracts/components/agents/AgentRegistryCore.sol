@@ -6,7 +6,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponentUpgradeable.sol";
-import "../staking/stakeSubjectHandling/StakeSubject.sol";
+import "../staking/stakeSubjectHandling/DirectStakeSubject.sol";
 import "../../tools/FrontRunningProtection.sol";
 import "../../errors/GeneralErrors.sol";
 
@@ -14,7 +14,7 @@ abstract contract AgentRegistryCore is
     BaseComponentUpgradeable,
     FrontRunningProtection,
     ERC721Upgradeable,
-    StakeSubjectUpgradeable
+    DirectStakeSubjectUpgradeable
 {
     StakeThreshold private _stakeThreshold; // 3 storage slots
     // Initially 0 because the frontrunning protection starts disabled.
@@ -189,7 +189,7 @@ abstract contract AgentRegistryCore is
         return super._msgData();
     }
 
-    function ownerOf(uint256 subject) public view virtual override(StakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
+    function ownerOf(uint256 subject) public view virtual override(DirectStakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
         return super.ownerOf(subject);
     }
 

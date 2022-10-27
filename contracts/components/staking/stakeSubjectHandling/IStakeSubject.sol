@@ -9,6 +9,8 @@ interface IStakeSubject {
         uint256 max;
         bool activated;
     }
+    error StakeThresholdMaxLessOrEqualMin();
+    
     function isRegistered(uint256 subject) external view returns(bool);
     function ownerOf(uint256 subject) external view returns (address);
 }

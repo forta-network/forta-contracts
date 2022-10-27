@@ -7,8 +7,8 @@ import "./IStakeSubject.sol";
 
 interface IStakeSubjectHandler {
     event StakeSubjectChanged(address newHandler, address oldHandler);
-    function setStakeSubject(uint8 subjectType, IStakeSubject subject) external;
-    function getStakeSubject(uint8 subjectType) external view returns (IStakeSubject);
+    function setStakeSubject(uint8 subjectType, address subject) external;
+    function getStakeSubject(uint8 subjectType) external view returns (address);
     function activeStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
     function maxStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
     function minStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);

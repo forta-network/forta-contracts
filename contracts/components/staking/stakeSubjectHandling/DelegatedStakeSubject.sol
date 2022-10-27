@@ -14,8 +14,6 @@ abstract contract DelegatedStakeSubjectUpgradeable is AccessManagedUpgradeable, 
     IStakeSubjectHandler private _subjectHandler;
 
     event SubjectHandlerUpdated(address indexed newHandler);
-
-    error StakeThresholdMaxLessOrEqualMin();
     error StakedUnderMinimum(uint256 subject);
 
     /*
@@ -43,16 +41,6 @@ abstract contract DelegatedStakeSubjectUpgradeable is AccessManagedUpgradeable, 
         _subjectHandler = IStakeSubjectHandler(subjectHandler);
         emit SubjectHandlerUpdated(subjectHandler);
     }
-
-    /// Returns true if `subject` amount of staked tokens is bigger or equal the minimum stake set
-    /// for it. It's for contracts implementing `StakeSubjectUpgradeable` to decide what that means.
-    function isStakedOverMin(uint256 subject) external view virtual override returns (bool) {
-        return _isStakedOverMin(subject);
-    }
-
-    function _isStakedOverMin(uint256 subject) internal view virtual returns (bool);
-    
-    function ownerOf(uint256 subject) external view virtual returns (address);
 
     uint256[4] private __gap;
 }

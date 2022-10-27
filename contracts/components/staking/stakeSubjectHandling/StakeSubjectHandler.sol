@@ -5,6 +5,7 @@ pragma solidity ^0.8.9;
 
 import "../FortaStaking.sol";
 import "./IDelegatedStakeSubject.sol";
+import "./IDirectStakeSubject.sol";
 
 /**
  * Formerly StakeSubjectHandler.
@@ -15,13 +16,13 @@ import "./IDelegatedStakeSubject.sol";
 contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, IStakeSubjectHandler {
     FortaStaking private _fortaStaking;
     // stake subject parameters for each subject
-    mapping(uint8 => IStakeSubject) private _stakeSubjects;
+    mapping(uint8 => address) private _stakeSubjects;
 
     event FortaStakingChanged(address staking);
-
     error NonIDelegatedSubjectHandler(uint8 subjectType, address handler);
 
     string public constant version = "0.1.1";
+    uint256 private constant MAX_UINT = 2**256 - 1;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -51,9 +52,9 @@ contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, 
     /**
      * Sets stake subject handler stake for subject type.
      */
-    function setStakeSubject(uint8 subjectType, IStakeSubject subject) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
-        if (address(subject) == address(0)) revert ZeroAddress("subject");
-        emit StakeSubjectChanged(address(subject), address(_stakeSubjects[subjectType]));
+    function setStakeSubject(uint8 subjectType, address subject) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
+        if (subject == address(0)) revert ZeroAddress("subject");
+        emit StakeSubjectChanged(subject, (_stakeSubjects[subjectType]));
         _stakeSubjects[subjectType] = subject;
     }
 
@@ -62,29 +63,66 @@ contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, 
         delete _stakeSubjects[subjectType];
     }
 
-    function getStakeSubject(uint8 subjectType) external view returns (IStakeSubject) {
+    function getStakeSubject(uint8 subjectType) external view returns (address) {
         return _stakeSubjects[subjectType];
     }
 
-    /// Get max stake for that `subjectType` and `subject`. If not set, will return 0.
+    /**
+     * Get max stake for that `subjectType` and `subject`
+     * @return if subject is DIRECT, returns stakeThreshold.max, if not MAX_UINT. If handler not set, it will return 0.
+     */ 
     function maxStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
-        return _stakeSubjects[subjectType].getStakeThreshold(subject).max;
+        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DIRECT) {
+            return MAX_UINT;
+        }
+        if (address(0) == _stakeSubjects[subjectType]) {
+            return 0;
+        }
+        return IDirectStakeSubject(_stakeSubjects[subjectType]).getStakeThreshold(subject).max;
+
     }
 
-    /// Get min stake for that `subjectType` and `subject`. If not set, will return 0.
+    /**
+     * Get min stake for that `subjectType` and `subject`
+     * @return if subject is DIRECT, returns stakeThreshold.min, if not 0. If handler not set, it will return MAX_UINT.
+     */ 
     function minStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
-        return _stakeSubjects[subjectType].getStakeThreshold(subject).min;
+        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DIRECT) {
+            return 0;
+        }
+        if (address(0) == _stakeSubjects[subjectType]) {
+            return MAX_UINT;
+        }
+        return IDirectStakeSubject(_stakeSubjects[subjectType]).getStakeThreshold(subject).min;
     }
 
     function maxManagedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
+        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED) {
+            return MAX_UINT;
+        }
+        if (address(0) == _stakeSubjects[subjectType]) {
+            return 0;
+        }
         return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getManagedStakeThreshold(subject).max;
     }
 
     function minManagedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
+        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED) {
+            return 0;
+        }
+        if (address(0) == _stakeSubjects[subjectType]) {
+            return MAX_UINT;
+        }
         return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getManagedStakeThreshold(subject).min;
     }
 
     function totalManagedSubjects(uint8 subjectType, uint256 subject) external view returns (uint256) {
+        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED) {
+            return 0;
+        }
+        if (address(0) == _stakeSubjects[subjectType]) {
+            return 0;
+        }
         return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getTotalManagedSubjects(subject);
     }
 
@@ -93,7 +131,10 @@ contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, 
         if (subjectType == NODE_RUNNER_SUBJECT || subjectType == DELEGATOR_NODE_RUNNER_SUBJECT) {
             return true;
         }
-        return _stakeSubjects[subjectType].getStakeThreshold(subject).activated;
+        if (address(0) == _stakeSubjects[subjectType]) {
+            return false;
+        }
+        return IDirectStakeSubject(_stakeSubjects[subjectType]).getStakeThreshold(subject).activated;
     }
 
     /// Gets active stake (amount of staked tokens) on `subject` id for `subjectType`
@@ -108,11 +149,23 @@ contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, 
 
     /// Checks if subject, subjectType is registered
     function isRegistered(uint8 subjectType, uint256 subject) external view returns (bool) {
-        return _stakeSubjects[subjectType].isRegistered(subject);
+        if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR) {
+            return true;
+        }
+        if (address(0) == _stakeSubjects[subjectType]) {
+            return false;
+        }
+        return IStakeSubject(_stakeSubjects[subjectType]).isRegistered(subject);
     }
 
     function canManageAllocation(uint8 subjectType, uint256 subject, address allocator) external view returns (bool) {
-        return _stakeSubjects[subjectType].ownerOf(subject) == allocator;
+        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATOR) {
+            return false;
+        }
+        if (address(0) == _stakeSubjects[subjectType]) {
+            return false;
+        }
+        return IStakeSubject(_stakeSubjects[subjectType]).ownerOf(subject) == allocator;
     }
 
 }

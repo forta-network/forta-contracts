@@ -5,16 +5,16 @@ pragma solidity ^0.8.9;
 
 import "../../../errors/GeneralErrors.sol";
 import "./IStakeSubjectHandler.sol";
+import "./IDirectStakeSubject.sol";
 import "../SubjectTypeValidator.sol";
 import "../../Roles.sol";
 import "../../utils/AccessManaged.sol";
 
-abstract contract StakeSubjectUpgradeable is AccessManagedUpgradeable, IStakeSubject {
+abstract contract DirectStakeSubjectUpgradeable is AccessManagedUpgradeable, IDirectStakeSubject {
     IStakeSubjectHandler private _subjectHandler;
 
     event SubjectHandlerUpdated(address indexed newHandler);
 
-    error StakeThresholdMaxLessOrEqualMin();
     error StakedUnderMinimum(uint256 subject);
 
     /*

@@ -440,7 +440,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * @notice disambiguation of ownerOf.
      * @inheritdoc ERC721Upgradeable
      */
-    function ownerOf(uint256 subject) public view virtual override(IStakeSubject, DelegatedStakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
+    function ownerOf(uint256 subject) public view virtual override(IStakeSubject, ERC721Upgradeable) returns (address) {
         return super.ownerOf(subject);
     }
 

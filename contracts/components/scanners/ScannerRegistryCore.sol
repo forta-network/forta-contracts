@@ -6,14 +6,14 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponentUpgradeable.sol";
-import "../staking/stakeSubjectHandling/StakeSubject.sol";
+import "../staking/stakeSubjectHandling/DirectStakeSubject.sol";
 import "../../errors/GeneralErrors.sol";
 import "../node_runners/NodeRunnerRegistry.sol";
 
 abstract contract ScannerRegistryCore is
     BaseComponentUpgradeable,
     ERC721Upgradeable,
-    StakeSubjectUpgradeable
+    DirectStakeSubjectUpgradeable
 {
     mapping(uint256 => StakeThreshold) internal _stakeThresholds;
     
@@ -105,7 +105,7 @@ abstract contract ScannerRegistryCore is
      * @notice disambiguation of ownerOf.
      * @inheritdoc ERC721Upgradeable
      */
-    function ownerOf(uint256 subject) public view virtual override(StakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
+    function ownerOf(uint256 subject) public view virtual override(DirectStakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
         return super.ownerOf(subject);
     }
 
