@@ -167,5 +167,4 @@ describe('Dispatcher', function () {
         }
     });
 
-    describe.skip('During ScannerRegistry Migration to NodeRunnerRegistry');
 });

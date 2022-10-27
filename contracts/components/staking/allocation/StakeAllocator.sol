@@ -294,7 +294,10 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
             subjects = _subjectHandler.totalManagedSubjects(getDelegatedSubjectType(subjectType), subject);
             maxPerManaged = _subjectHandler.maxManagedStakeFor(getDelegatedSubjectType(subjectType), subject);
             // If DELEGATED has staked less than minimum stake, revert cause delegation not unlocked
-            if (allocatedStakeFor(getDelegatedSubjectType(subjectType), subject) / subjects <= maxPerManaged) {
+            if (
+                allocatedStakeFor(getDelegatedSubjectType(subjectType), subject) / subjects <
+                _subjectHandler.minManagedStakeFor(getDelegatedSubjectType(subjectType), subject)
+            ) {
                 revert CannotDelegateStakeUnderMin(getDelegatedSubjectType(subjectType), subject);
             }
             currentlyAllocated = allocatedManagedStake(getDelegatedSubjectType(subjectType), subject);

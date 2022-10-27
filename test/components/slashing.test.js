@@ -47,7 +47,7 @@ const EVIDENCE_FOR_STATE = (state) => {
 
 const PROPOSAL_ID = BigNumber.from('1');
 
-describe.only('Slashing Proposals', function () {
+describe('Slashing Proposals', function () {
     prepare({
         stake: {
             agents: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
