@@ -16,12 +16,12 @@ uint8 constant DELEGATOR_NODE_RUNNER_SUBJECT = 3;
  * - DIRECT --> Can be staked on by multiple different stakers
  * - DELEGATED --> Can be staked on by the owner of the relevant Registry entry. Manages MANAGED subjects.
  * - DELEGATOR --> TBD
- * 
+ *
  * The current Subject Types and their Agency:
  * - SCANNER_SUBJECT --> MANAGED
  * - AGENT_SUBJECT (detection bots) --> DIRECT
  * - NODE_RUNNER_SUBJECT --> DELEGATED
- * 
+ *
  */
 contract SubjectTypeValidator {
     enum SubjectStakeAgency {
@@ -41,7 +41,8 @@ contract SubjectTypeValidator {
      * upgradeable (StakingEscrow)
      */
     modifier onlyValidSubjectType(uint8 subjectType) {
-        if (subjectType != SCANNER_SUBJECT && subjectType != AGENT_SUBJECT && subjectType != NODE_RUNNER_SUBJECT) revert InvalidSubjectType(subjectType);
+        if (subjectType != SCANNER_SUBJECT && subjectType != AGENT_SUBJECT && subjectType != NODE_RUNNER_SUBJECT && subjectType != DELEGATOR_NODE_RUNNER_SUBJECT)
+            revert InvalidSubjectType(subjectType);
         _;
     }
 
@@ -62,7 +63,7 @@ contract SubjectTypeValidator {
             return SubjectStakeAgency.DIRECT;
         } else if (subjectType == NODE_RUNNER_SUBJECT) {
             return SubjectStakeAgency.DELEGATED;
-        }  else if (subjectType == DELEGATOR_NODE_RUNNER_SUBJECT) {
+        } else if (subjectType == DELEGATOR_NODE_RUNNER_SUBJECT) {
             return SubjectStakeAgency.DELEGATOR;
         }
         return SubjectStakeAgency.UNDEFINED;

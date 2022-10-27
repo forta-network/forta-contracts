@@ -5,8 +5,7 @@ pragma solidity ^0.8.9;
 
 import "../BaseComponentUpgradeable.sol";
 import "../staking/allocation/IStakeAllocator.sol";
-import "../staking/stakeSubjectHandling/StakeSubject.sol";
-import "../staking/stakeSubjectHandling/IDelegatedStakeSubject.sol";
+import "../staking/stakeSubjectHandling/DelegatedStakeSubject.sol";
 import "../../errors/GeneralErrors.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -16,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
 
-abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, StakeSubjectUpgradeable, IDelegatedStakeSubject, EIP712Upgradeable {
+abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, DelegatedStakeSubjectUpgradeable, EIP712Upgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -49,7 +48,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     /// Count of enabled scanners per nodeRunnerId (nodeRunnerId => total Enabled Scanners)
     mapping(uint256 => uint256) private _enabledScanners;
     /// StakeThreshold of node runners
-    StakeThreshold private _stakeThreshold; // 3 storage slots
     mapping(uint256 => StakeThreshold) private _scannerStakeThresholds;
     /// nodeRunnerId => chainId. Limitation necessary to calculate stake allocations.
     mapping(uint256 => uint256) private _nodeRunnerChainId;
@@ -146,19 +144,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         _nodeRunnerChainId[nodeRunnerId] = chainId;
         emit NodeRunnerRegistered(nodeRunnerId, chainId);
         return nodeRunnerId;
-    }
-
-    /**
-     * @notice checks if a node runner is operational in the network.
-     * @param nodeRunnerId ERC721 id for a Node Runner.
-     * returns true if id exists and is staked over minimum, false otherwise.
-     */
-    function isNodeRunnerOperational(uint256 nodeRunnerId) public view returns (bool) {
-        if (!_stakeThreshold.activated) {
-            return _exists(nodeRunnerId);
-        } else {
-            return _exists(nodeRunnerId) && _isStakedOverMin(nodeRunnerId);
-        }
     }
 
     function monitoredChainId(uint256 nodeRunnerId) public view returns (uint256) {
@@ -296,7 +281,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         if (_scannerStakeThresholds[_scannerNodes[scanner].chainId].activated) {
             result = result && _isScannerStakedOverMin(scanner);
         }
-        return result && isNodeRunnerOperational(_scannerNodes[scanner].nodeRunnerId);
+        return result && _exists(_scannerNodes[scanner].nodeRunnerId);
     }
 
     /// Returns true if the owner of NodeRegistry (DELEGATED) has staked over min for scanner, false otherwise.
@@ -382,37 +367,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         );
     }
 
-    // ************* StakeSubjectUpgradeable *************
-
-    /**
-     * @notice Sets stake parameters (min, max, activated) for node runners. Restricted to NODE_RUNNER_ADMIN_ROLE
-     * @param newStakeThreshold struct with stake parameters.
-     */
-    function setStakeThreshold(StakeThreshold calldata newStakeThreshold) external onlyRole(NODE_RUNNER_ADMIN_ROLE) {
-        if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
-        emit StakeThresholdChanged(newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
-        _stakeThreshold = newStakeThreshold;
-    }
-
-    /**
-     * @notice Getter for StakeThreshold for the scanner with id `subject`
-     */
-    function getStakeThreshold(uint256 subject) public view returns (StakeThreshold memory) {
-        return _stakeThreshold;
-    }
-
-    /**
-     * Checks if nodeRunner is staked over minimum stake
-     * @param nodeRunnerId nodeRunner
-     * @return true if nodeRunner is staked over the minimum threshold,
-     * or staking is not enabled (stakeController = address(0) or activated=false).
-     * false otherwise
-     */
-    function _isStakedOverMin(uint256 nodeRunnerId) internal view virtual override returns (bool) {
-        return (getSubjectHandler().activeStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) >= _stakeThreshold.min && _exists(nodeRunnerId));
-    }
-
-    // ************* IDelegatedStakeSubject *************
+    // ************* DelegatedStakeSubjectUpgradeable *************
 
     /**
      * @notice Sets stake parameters (min, max, activated) for scanners. Restricted to NODE_RUNNER_ADMIN_ROLE
@@ -485,11 +440,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * @notice disambiguation of ownerOf.
      * @inheritdoc ERC721Upgradeable
      */
-    function ownerOf(uint256 subject) public view virtual override(IStakeSubject, StakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
+    function ownerOf(uint256 subject) public view virtual override(IStakeSubject, DelegatedStakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
         return super.ownerOf(subject);
     }
 
-    uint256[41] private __gap;
+    uint256[44] private __gap;
 
 
 }

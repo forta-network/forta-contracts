@@ -90,6 +90,9 @@ contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, 
 
     /// Get if staking is activated for that `subjectType` and `subject`. If not set, will return false.
     function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns (bool) {
+        if (subjectType == NODE_RUNNER_SUBJECT || subjectType == DELEGATOR_NODE_RUNNER_SUBJECT) {
+            return true;
+        }
         return _stakeSubjects[subjectType].getStakeThreshold(subject).activated;
     }
 
