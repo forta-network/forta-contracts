@@ -505,25 +505,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     /**
-     * @notice Deposit reward value for a given `subject`. The corresponding tokens will be shared amongst the shareholders
-     * of this subject.
-     * @dev Emits a Reward event.
-     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
-     * @param subject id identifying subject (external to FortaStaking).
-     * @param value amount of reward tokens.
-     */
-    /*
-    function reward(
-        uint8 subjectType,
-        uint256 subject,
-        uint256 value
-    ) public onlyValidSubjectType(subjectType) {
-        SafeERC20.safeTransferFrom(stakedToken, _msgSender(), address(this), value);
-        _rewards.mint(FortaStakingUtils.subjectToActive(subjectType, subject), value);
-        emit Rewarded(subjectType, subject, _msgSender(), value);
-    }*/
-
-    /**
      * @notice Sweep all token that might be mistakenly sent to the contract. This covers both unrelated tokens and staked
      * tokens that would be sent through a direct transfer. Restricted to SWEEPER_ROLE.
      * If tokens are the same as staked tokens, only the extra tokens (no stake or rewards) will be transferred.
@@ -539,76 +520,13 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         if (token == stakedToken) {
             amount -= totalActiveStake();
             amount -= totalInactiveStake();
-            amount -= _rewards.totalSupply();
+            // amount -= _rewards.totalSupply();
         }
 
         SafeERC20.safeTransfer(token, recipient, amount);
         emit TokensSwept(address(token), recipient, amount);
         return amount;
     }
-
-    /**
-     * @notice Release reward owed by given `account` for its current or past share for a given `subject`.
-     * @dev If staking from a contract, said contract may optionally implement ERC165 for IRewardReceiver.
-     * Emits a Release event.
-     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
-     * @param subject id identifying subject (external to FortaStaking).
-     * @param account that staked on the subject.
-     * @return available reward transferred.
-     */
-    /*
-    function releaseReward(
-        uint8 subjectType,
-        uint256 subject,
-        address account
-    ) public onlyValidSubjectType(subjectType) returns (uint256) {
-        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
-        uint256 value = _availableReward(activeSharesId, account);
-        _rewards.burn(activeSharesId, value);
-        _released[activeSharesId].mint(account, SafeCast.toInt256(value));
-
-        SafeERC20.safeTransfer(stakedToken, account, value);
-
-        emit Released(subjectType, subject, account, value);
-
-        if (Address.isContract(account) && account.supportsInterface(type(IRewardReceiver).interfaceId)) {
-            IRewardReceiver(account).onRewardReceived(subjectType, subject, value);
-        }
-
-        return value;
-    }*/
-
-    /**
-     * @notice Amount of reward tokens owed by given `account` for its current or past share for a given `subject`.
-     * @param activeSharesId ERC1155 id representing the active shares of a subject / subjectType pair.
-     * @param account address of the staker
-     * @return rewards available for staker on that subject.
-     */
-    /*
-    function _availableReward(uint256 activeSharesId, address account) internal view returns (uint256) {
-        return
-            SafeCast.toUint256(
-                SafeCast.toInt256(_historicalRewardFraction(activeSharesId, balanceOf(account, activeSharesId), Math.Rounding.Down)) -
-                    _released[activeSharesId].balanceOf(account)
-            );
-    }*/
-
-    /**
-     * @dev Amount of reward tokens owed by given `account` for its current or past share for a given `subject`.
-     * @param subjectType type of staking subject (see SubjectTypeValidator.sol)
-     * @param subject ID of subject
-     * @param account address of the staker
-     * @return rewards available for staker on that subject.
-     */
-    /*
-    function availableReward(
-        uint8 subjectType,
-        uint256 subject,
-        address account
-    ) external view returns (uint256) {
-        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
-        return _availableReward(activeSharesId, account);
-    }*/
 
     /**
      * @dev Relay a ERC2612 permit signature to the staked token. This cal be bundled with a {deposit} or a {reward}
@@ -630,20 +548,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     // Internal helpers
-    /*
-    function _totalHistoricalReward(uint256 activeSharesId) internal view returns (uint256) {
-        return SafeCast.toUint256(SafeCast.toInt256(_rewards.balanceOf(activeSharesId)) + _released[activeSharesId].totalSupply());
-    }
-
-    function _historicalRewardFraction(
-        uint256 activeSharesId,
-        uint256 amount,
-        Math.Rounding rounding
-    ) internal view returns (uint256) {
-        uint256 supply = totalSupply(activeSharesId);
-        return amount > 0 && supply > 0 ? Math.mulDiv(_totalHistoricalReward(activeSharesId), amount, supply, rounding) : 0;
-    }*/
-
     function _beforeTokenTransfer(
         address operator,
         address from,
