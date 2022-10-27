@@ -28,7 +28,7 @@ async function main() {
     const contracts = {
         forwarder: await utils.attach('Forwarder', await CACHE.get('forwarder.address')).then((contract) => contract.connect(deployer)),
         staking: await utils.attach('FortaStaking', await CACHE.get('staking.address')).then((contract) => contract.connect(deployer)),
-        stakingParameters: await utils.attach('FortaStakingParameters', await CACHE.get('staking-parameters.address')).then((contract) => contract.connect(deployer)),
+        subjectHandler: await utils.attach('StakeSubjectHandler', await CACHE.get('staking-parameters.address')).then((contract) => contract.connect(deployer)),
         agents: await utils.attach('AgentRegistry', await CACHE.get('agents.address')).then((contract) => contract.connect(deployer)),
         scanners: await utils.attach('ScannerRegistry', await CACHE.get('scanners.address')).then((contract) => contract.connect(deployer)),
         dispatch: await utils.attach('Dispatch', await CACHE.get('dispatch.address')).then((contract) => contract.connect(deployer)),
@@ -92,17 +92,17 @@ async function main() {
     );
     console.log('FortaStaking proposed!');
     */
-    console.log('upgrading FortaStakingParameters...');
+    console.log('upgrading StakeSubjectHandler...');
 
     proposals.push(
-        await defender.proposeUpgrade(contracts.stakingParameters.address, await ethers.getContractFactory('FortaStakingParameters', deployer), {
+        await defender.proposeUpgrade(contracts.subjectHandler.address, await ethers.getContractFactory('StakeSubjectHandler', deployer), {
             unsafeAllow: ['delegatecall'],
             multisig: MULTISIG_ADDRESS,
             constructorArgs: [contracts.forwarder.address],
             //proxyAdmin?: string,
         })
     );
-    console.log('FortaStakingParameters proposed!');
+    console.log('StakeSubjectHandler proposed!');
 
     console.log(proposals.map((x) => x.url));
 }

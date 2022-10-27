@@ -50,7 +50,7 @@ async function main() {
         dispatch: utils.attach('Dispatch', await CACHE.get('dispatch.address')).then((contract) => contract.connect(deployer)),
         router: utils.attach('Router', await CACHE.get('router.address')).then((contract) => contract.connect(deployer)),
         scannerNodeVersion: utils.attach('ScannerNodeVersion', await CACHE.get('scanner-node-version.address')).then((contract) => contract.connect(deployer)),
-        stakingParameters: utils.attach('FortaStakingParameters', await CACHE.get('staking-parameters.address')).then((contract) => contract.connect(deployer)),
+        subjectHandler: utils.attach('StakeSubjectHandler', await CACHE.get('staking-parameters.address')).then((contract) => contract.connect(deployer)),
     };
 
     const contracts = await Promise.all(
@@ -190,9 +190,9 @@ async function main() {
     }
 
     if (CONTRACTS_TO_UPGRADE.includes('staking-parameters')) {
-        const StakingParameters = await ethers.getContractFactory('FortaStakingParameters');
+        const StakingParameters = await ethers.getContractFactory('StakeSubjectHandler');
         const newStakingParameters = await utils.performUpgrade(
-            contracts.stakingParameters,
+            contracts.subjectHandler,
             StakingParameters.connect(deployer),
             {
                 constructorArgs: [contracts.forwarder.address],

@@ -3,8 +3,8 @@
 
 pragma solidity ^0.8.9;
 
-import "./FortaStakingParameters.sol";
-import "../utils/StateMachines.sol";
+import "../stakeSubjectHandling/StakeSubjectHandler.sol";
+import "../../utils/StateMachines.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -50,7 +50,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     mapping(uint256 => uint256) public deposits; // proposalId --> tokenAmount
     mapping(bytes32 => SlashPenalty) public penalties; // penaltyId --> SlashPenalty
     ISlashingExecutor public slashingExecutor;
-    FortaStakingParameters public stakingParameters;
+    StakeSubjectHandler public subjectHandler;
     uint256 public depositAmount;
     uint256 public slashPercentToProposer;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -75,7 +75,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     );
     event EvidenceSubmitted(uint256 proposalId, StateMachines.State stateId, string[] evidence);
     event SlashingExecutorChanged(address indexed slashingExecutor);
-    event StakingParametersManagerChanged(address indexed stakingParametersManager);
+    event subjectHandlerChanged(address indexed subjectHandler);
     event DepositAmountChanged(uint256 amount);
     event SlashPercentToProposerChanged(uint256 amount);
     event DepositSubmitted(uint256 indexed proposalId, address indexed proposer, uint256 amount);
@@ -121,7 +121,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     function initialize(
         address __manager,
         ISlashingExecutor __executor,
-        FortaStakingParameters __stakingParameters,
+        StakeSubjectHandler __subjectHandler,
         uint256 __depositAmount,
         uint256 __slashPercentToProposer,
         bytes32[] calldata __slashPenaltyIds,
@@ -130,7 +130,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         __BaseComponentUpgradeable_init(__manager);
 
         _setSlashingExecutor(__executor);
-        _setStakingParametersManager(__stakingParameters);
+        _setsubjectHandler(__subjectHandler);
         _setDepositAmount(__depositAmount);
         _setSlashPercentToProposer(__slashPercentToProposer);
         _setSlashPenalties(__slashPenaltyIds, __slashPenalties);
@@ -151,8 +151,8 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         bytes32 _penaltyId,
         string[] calldata _evidence
     ) external onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) returns (uint256 proposalId) {
-        if (!stakingParameters.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
-        if (stakingParameters.totalStakeFor(_subjectType, _subjectId) == 0) revert ZeroAmount("subject stake");
+        if (!subjectHandler.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
+        if (subjectHandler.totalStakeFor(_subjectType, _subjectId) == 0) revert ZeroAmount("subject stake");
         Proposal memory slashProposal = Proposal(_subjectId, _msgSender(), _penaltyId, _subjectType);
         SafeERC20.safeTransferFrom(depositToken, _msgSender(), address(this), depositAmount);
         _proposalIds.increment();
@@ -222,7 +222,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         string[] calldata _evidence
     ) external onlyRole(SLASHING_ARBITER_ROLE) onlyInState(_proposalId, IN_REVIEW) onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) {
         // No need to check for proposal existence, onlyInState will revert if _proposalId is in undefined state
-        if (!stakingParameters.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
+        if (!subjectHandler.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
 
         _submitEvidence(_proposalId, IN_REVIEW, _evidence);
         if (_subjectType != proposals[_proposalId].subjectType || _subjectId != proposals[_proposalId].subjectId) {
@@ -281,12 +281,12 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     function getSlashedStakeValue(uint256 _proposalId) public view returns (uint256) {
         Proposal memory proposal = proposals[_proposalId];
         SlashPenalty memory penalty = penalties[proposal.penaltyId];
-        uint256 totalStake = stakingParameters.totalStakeFor(proposal.subjectType, proposal.subjectId);
-        uint256 max = Math.mulDiv(totalStake, stakingParameters.maxSlashableStakePercent(), HUNDRED_PERCENT);
+        uint256 totalStake = subjectHandler.totalStakeFor(proposal.subjectType, proposal.subjectId);
+        uint256 max = Math.mulDiv(totalStake, subjectHandler.maxSlashableStakePercent(), HUNDRED_PERCENT);
         if (penalty.mode == PenaltyMode.UNDEFINED) {
             return 0;
         } else if (penalty.mode == PenaltyMode.MIN_STAKE) {
-            return Math.min(max, Math.mulDiv(stakingParameters.minStakeFor(proposal.subjectType, proposal.subjectId), penalty.percentSlashed, HUNDRED_PERCENT));
+            return Math.min(max, Math.mulDiv(subjectHandler.minStakeFor(proposal.subjectType, proposal.subjectId), penalty.percentSlashed, HUNDRED_PERCENT));
         } else if (penalty.mode == PenaltyMode.CURRENT_STAKE) {
             return Math.min(max, Math.mulDiv(totalStake, penalty.percentSlashed, HUNDRED_PERCENT));
         }
@@ -308,8 +308,8 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         _setSlashingExecutor(_executor);
     }
 
-    function setSubjectHandler(FortaStakingParameters _stakingParameters) external onlyRole(STAKING_ADMIN_ROLE) {
-        _setStakingParametersManager(_stakingParameters);
+    function setSubjectHandler(StakeSubjectHandler _subjectHandler) external onlyRole(STAKING_ADMIN_ROLE) {
+        _setsubjectHandler(_subjectHandler);
     }
 
     function setDepositAmount(uint256 _amount) external onlyRole(STAKING_ADMIN_ROLE) {
@@ -342,10 +342,10 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         emit SlashingExecutorChanged(address(_executor));
     }
 
-    function _setStakingParametersManager(FortaStakingParameters _stakingParameters) private {
-        if (address(_stakingParameters) == address(0)) revert ZeroAddress("_stakingParameters");
-        stakingParameters = _stakingParameters;
-        emit StakingParametersManagerChanged(address(_stakingParameters));
+    function _setsubjectHandler(StakeSubjectHandler _subjectHandler) private {
+        if (address(_subjectHandler) == address(0)) revert ZeroAddress("_subjectHandler");
+        subjectHandler = _subjectHandler;
+        emit subjectHandlerChanged(address(_subjectHandler));
     }
 
     function _setDepositAmount(uint256 _amount) private {

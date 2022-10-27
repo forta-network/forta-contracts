@@ -30,14 +30,14 @@ describe('Forta Staking Parameters', function () {
             //await this.scanners.connect(this.accounts.manager).adminRegister(subject3Address, this.accounts.user1.address, 2, 'metadata');
         });
         it('happy path', async function () {
-            expect(await this.stakingParameters.minStakeFor(subjectType1, subject1)).to.equal(0);
+            expect(await this.subjectHandler.minStakeFor(subjectType1, subject1)).to.equal(0);
             expect(await this.nodeRunners.isStakedOverMin(subject1)).to.equal(true);
 
             await expect(this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100', activated: true }))
                 .to.emit(this.nodeRunners, 'StakeThresholdChanged')
                 .withArgs('100', '500', true);
-            expect(await this.stakingParameters.minStakeFor(subjectType1, subject1)).to.equal(100);
-            expect(await this.stakingParameters.maxStakeFor(subjectType1, subject1)).to.equal(500);
+            expect(await this.subjectHandler.minStakeFor(subjectType1, subject1)).to.equal(100);
+            expect(await this.subjectHandler.maxStakeFor(subjectType1, subject1)).to.equal(500);
 
             expect(await this.nodeRunners.isStakedOverMin(subject1)).to.equal(false);
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType1, subject1, '101')).to.not.be.reverted;
@@ -95,14 +95,14 @@ describe('Forta Staking Parameters', function () {
             await this.agents.connect(this.accounts.other).createAgent(...args2);
         });
         it('happy path', async function () {
-            expect(await this.stakingParameters.minStakeFor(subjectType2, AGENT_ID_1)).to.equal(0);
+            expect(await this.subjectHandler.minStakeFor(subjectType2, AGENT_ID_1)).to.equal(0);
             expect(await this.agents.isStakedOverMin(AGENT_ID_1)).to.equal(true);
 
             await expect(this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100', activated: true }))
                 .to.emit(this.agents, 'StakeThresholdChanged')
                 .withArgs('100', '500', true);
-            expect(await this.stakingParameters.minStakeFor(subjectType2, AGENT_ID_1)).to.equal(100);
-            expect(await this.stakingParameters.maxStakeFor(subjectType2, AGENT_ID_1)).to.equal(500);
+            expect(await this.subjectHandler.minStakeFor(subjectType2, AGENT_ID_1)).to.equal(100);
+            expect(await this.subjectHandler.maxStakeFor(subjectType2, AGENT_ID_1)).to.equal(500);
 
             expect(await this.agents.isStakedOverMin(AGENT_ID_1)).to.equal(false);
             await expect(this.staking.connect(this.accounts.user1).deposit(subjectType2, AGENT_ID_1, '101')).to.not.be.reverted;
@@ -151,33 +151,33 @@ describe('Forta Staking Parameters', function () {
     });
 
     describe('Set up', function () {
-        let fortaStakingParameters;
+        let stakeSubjectHandler;
 
         beforeEach(async function () {
-            const FortaStakingParameters = await ethers.getContractFactory('FortaStakingParameters');
-            fortaStakingParameters = await upgrades.deployProxy(FortaStakingParameters, [this.contracts.access.address, this.contracts.staking.address], {
+            const StakeSubjectHandler = await ethers.getContractFactory('StakeSubjectHandler');
+            stakeSubjectHandler = await upgrades.deployProxy(StakeSubjectHandler, [this.contracts.access.address, this.contracts.staking.address], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             });
-            await fortaStakingParameters.deployed();
+            await StakeSubjectHandler.deployed();
         });
         it('admin methods must be called by admin', async function () {
-            await expect(fortaStakingParameters.connect(this.accounts.user1).setFortaStaking(this.contracts.staking.address)).to.be.revertedWith(
+            await expect(stakeSubjectHandler.connect(this.accounts.user1).setFortaStaking(this.contracts.staking.address)).to.be.revertedWith(
                 `MissingRole("${this.roles.DEFAULT_ADMIN}", "${this.accounts.user1.address}")`
             );
-            await expect(fortaStakingParameters.connect(this.accounts.user1).setStakeSubject(0, this.contracts.staking.address)).to.be.revertedWith(
+            await expect(stakeSubjectHandler.connect(this.accounts.user1).setStakeSubject(0, this.contracts.staking.address)).to.be.revertedWith(
                 `MissingRole("${this.roles.DEFAULT_ADMIN}", "${this.accounts.user1.address}")`
             );
         });
 
         it('admin methods cannot be called with address 0', async function () {
-            await expect(fortaStakingParameters.connect(this.accounts.admin).setFortaStaking(ethers.constants.AddressZero)).to.be.revertedWith('ZeroAddress("newFortaStaking")');
-            await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubject(0, ethers.constants.AddressZero)).to.be.revertedWith('ZeroAddress("subject")');
+            await expect(stakeSubjectHandler.connect(this.accounts.admin).setFortaStaking(ethers.constants.AddressZero)).to.be.revertedWith('ZeroAddress("newFortaStaking")');
+            await expect(stakeSubjectHandler.connect(this.accounts.admin).setStakeSubject(0, ethers.constants.AddressZero)).to.be.revertedWith('ZeroAddress("subject")');
         });
 
         it('subject type must be valid', async function () {
-            await expect(fortaStakingParameters.connect(this.accounts.admin).setStakeSubject(4, this.contracts.staking.address)).to.be.revertedWith('InvalidSubjectType(4)');
+            await expect(stakeSubjectHandler.connect(this.accounts.admin).setStakeSubject(4, this.contracts.staking.address)).to.be.revertedWith('InvalidSubjectType(4)');
         });
     });
 });

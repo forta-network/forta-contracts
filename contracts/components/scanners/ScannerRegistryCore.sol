@@ -6,7 +6,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponentUpgradeable.sol";
-import "../staking/StakeSubject.sol";
+import "../staking/stakeSubjectHandling/StakeSubject.sol";
 import "../../errors/GeneralErrors.sol";
 import "../node_runners/NodeRunnerRegistry.sol";
 

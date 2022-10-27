@@ -4,8 +4,9 @@
 pragma solidity ^0.8.9;
 
 import "../BaseComponentUpgradeable.sol";
-import "../staking/StakeSubject.sol";
-import "../staking/IDelegatedStakeSubject.sol";
+import "../staking/allocation/IStakeAllocator.sol";
+import "../staking/stakeSubjectHandling/StakeSubject.sol";
+import "../staking/stakeSubjectHandling/IDelegatedStakeSubject.sol";
 import "../../errors/GeneralErrors.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -15,14 +16,7 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
 
-abstract contract NodeRunnerRegistryCore is
-    BaseComponentUpgradeable,
-    ERC721Upgradeable,
-    ERC721EnumerableUpgradeable,
-    StakeSubjectUpgradeable,
-    IDelegatedStakeSubject,
-    EIP712Upgradeable
-{
+abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, StakeSubjectUpgradeable, IDelegatedStakeSubject, EIP712Upgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -43,6 +37,7 @@ abstract contract NodeRunnerRegistryCore is
 
     bytes32 private constant _SCANNERNODEREGISTRATION_TYPEHASH =
         keccak256("ScannerNodeRegistration(address scanner,uint256 nodeRunnerId,uint256 chainId,string metadata,uint256 timestamp)");
+    IStakeAllocator private immutable _stakeAllocator;
 
     /// nodeRunnerIds is a sequential autoincremented uint
     CountersUpgradeable.Counter private _nodeRunnerIdCounter;
@@ -91,6 +86,12 @@ abstract contract NodeRunnerRegistryCore is
     modifier onlyRegisteredScanner(address scanner) {
         if (!isScannerRegistered(scanner)) revert ScannerNotRegistered(scanner);
         _;
+    }
+    
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor(address __stakeAllocator) {
+        if (__stakeAllocator == address(0)) revert ZeroAddress("__stakeAllocator");
+        _stakeAllocator = IStakeAllocator(__stakeAllocator);
     }
 
     /**
@@ -199,16 +200,7 @@ abstract contract NodeRunnerRegistryCore is
             !SignatureCheckerUpgradeable.isValidSignatureNow(
                 req.scanner,
                 _hashTypedDataV4(
-                    keccak256(
-                        abi.encode(
-                            _SCANNERNODEREGISTRATION_TYPEHASH,
-                            req.scanner,
-                            req.nodeRunnerId,
-                            req.chainId,
-                            keccak256(abi.encodePacked(req.metadata)),
-                            req.timestamp
-                        )
-                    )
+                    keccak256(abi.encode(_SCANNERNODEREGISTRATION_TYPEHASH, req.scanner, req.nodeRunnerId, req.chainId, keccak256(abi.encodePacked(req.metadata)), req.timestamp))
                 ),
                 signature
             )
@@ -219,13 +211,7 @@ abstract contract NodeRunnerRegistryCore is
     function _registerScannerNode(ScannerNodeRegistration calldata req) internal {
         if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
         if (_nodeRunnerChainId[req.nodeRunnerId] != req.chainId) revert ChainIdMismatch(_nodeRunnerChainId[req.nodeRunnerId], req.chainId);
-        _scannerNodes[req.scanner] = ScannerNode({
-            registered: true,
-            disabled: false,
-            nodeRunnerId: req.nodeRunnerId,
-            chainId: req.chainId,
-            metadata: req.metadata
-        });
+        _scannerNodes[req.scanner] = ScannerNode({ registered: true, disabled: false, nodeRunnerId: req.nodeRunnerId, chainId: req.chainId, metadata: req.metadata });
         // It is safe to ignore add()'s returned bool, since isScannerRegistered() already checks for duplicates.
         !_scannerNodeOwnership[req.nodeRunnerId].add(req.scanner);
         emit ScannerUpdated(scannerAddressToId(req.scanner), req.chainId, req.metadata, req.nodeRunnerId);
@@ -305,15 +291,16 @@ abstract contract NodeRunnerRegistryCore is
      * - (Scanner Node has more than minimum stake allocated to it OR staking is not activated for the Scanner Node's chain)
      */
     function isScannerOperational(address scanner) public view returns (bool) {
-        bool result =  _scannerNodes[scanner].registered && !_scannerNodes[scanner].disabled;
+        bool result = _scannerNodes[scanner].registered && !_scannerNodes[scanner].disabled;
         if (_scannerStakeThresholds[_scannerNodes[scanner].chainId].activated) {
             result = result && _isScannerStakedOverMin(scanner);
         }
         return result && isNodeRunnerOperational(_scannerNodes[scanner].nodeRunnerId);
     }
 
+    /// Returns true if the owner of NodeRegistry (DELEGATED) has staked over min for scanner, false otherwise.
     function _isScannerStakedOverMin(address scanner) internal view returns (bool) {
-        return allocatedStakePerManaged(_scannerNodes[scanner].nodeRunnerId) >= _scannerStakeThresholds[_scannerNodes[scanner].chainId].min;
+        return _stakeAllocator.allocatedStakePerManaged(NODE_RUNNER_SUBJECT, _scannerNodes[scanner].nodeRunnerId) >= _scannerStakeThresholds[_scannerNodes[scanner].chainId].min;
     }
 
     /**
@@ -450,19 +437,6 @@ abstract contract NodeRunnerRegistryCore is
         return _enabledScanners[subject];
     }
 
-    /// Amount of FORT allocated to each *enabled* scanner
-    function allocatedStakePerManaged(uint256 nodeRunnerId) public view returns (uint256) {
-        return getSubjectHandler().allocatedStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId) / getTotalManagedSubjects(nodeRunnerId);
-    }
-
-    /// Amount of FORT allocated in a scanner. Returns 0 if disabled.
-    function allocatedStakeOfScanner(address scanner) public view returns (uint256) {
-        if (_scannerNodes[scanner].disabled) {
-            return 0;
-        }
-        return allocatedStakePerManaged(_scannerNodes[scanner].nodeRunnerId);
-    }
-
     // ************* Privilege setters ***************
 
     /// Sets maximum delay between execution of forta auth in Scan Node CLI and execution of registerScanner() in this contract
@@ -515,4 +489,6 @@ abstract contract NodeRunnerRegistryCore is
     }
 
     uint256[41] private __gap;
+
+
 }

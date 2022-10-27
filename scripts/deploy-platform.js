@@ -137,19 +137,19 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}] staking: ${contracts.staking.address}`);
 
-        contracts.stakingParameters = await ethers.getContractFactory('FortaStakingParameters', deployer).then((factory) =>
+        contracts.subjectHandler = await ethers.getContractFactory('StakeSubjectHandler', deployer).then((factory) =>
             utils.tryFetchProxy(CACHE, 'staking-parameters', factory, 'uups', [contracts.access.address, contracts.staking.address], {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             })
         );
 
-        DEBUG(`[${Object.keys(contracts).length}.1] staking parameters: ${contracts.stakingParameters.address}`);
+        DEBUG(`[${Object.keys(contracts).length}.1] staking parameters: ${contracts.subjectHandler.address}`);
         DEBUG('setFortaStaking?');
-        const stakingUpdatedLogs = await utils.getEventsFromContractCreation(CACHE, 'staking-parameters', 'FortaStakingChanged', contracts.stakingParameters);
+        const stakingUpdatedLogs = await utils.getEventsFromContractCreation(CACHE, 'staking-parameters', 'FortaStakingChanged', contracts.subjectHandler);
         if (stakingUpdatedLogs[stakingUpdatedLogs.length - 1]?.args[0] !== contracts.staking.address) {
             DEBUG('settingFortaStaking');
-            await contracts.stakingParameters.connect(deployer).setFortaStaking(contracts.staking.address);
+            await contracts.subjectHandler.connect(deployer).setFortaStaking(contracts.staking.address);
         } else {
             DEBUG('Not neededed');
         }
@@ -157,8 +157,8 @@ async function migrate(config = {}) {
         const paramsUpdatedLogs = await utils.getEventsFromContractCreation(CACHE, 'staking', 'StakeParamsManagerSet', contracts.staking);
         DEBUG('setSubjectHandler?');
 
-        if (paramsUpdatedLogs[paramsUpdatedLogs.length - 1]?.args[0] !== contracts.stakingParameters.address) {
-            await contracts.staking.connect(deployer).setSubjectHandler(contracts.stakingParameters.address);
+        if (paramsUpdatedLogs[paramsUpdatedLogs.length - 1]?.args[0] !== contracts.subjectHandler.address) {
+            await contracts.staking.connect(deployer).setSubjectHandler(contracts.subjectHandler.address);
             DEBUG('setSubjectHandler');
         } else {
             DEBUG('Not neededed');
@@ -192,9 +192,9 @@ async function migrate(config = {}) {
         if (semver.gte(agentVersion, '0.1.2')) {
             DEBUG('Configuring stake controller...');
 
-            if ((await contracts.agents.getSubjectHandler()) !== contracts.stakingParameters.address) {
-                await contracts.agents.connect(deployer).setSubjectHandler(contracts.stakingParameters.address);
-                await contracts.stakingParameters.connect(deployer).setStakeSubject(AGENT_SUBJECT, contracts.agents.address);
+            if ((await contracts.agents.getSubjectHandler()) !== contracts.subjectHandler.address) {
+                await contracts.agents.connect(deployer).setSubjectHandler(contracts.subjectHandler.address);
+                await contracts.subjectHandler.connect(deployer).setStakeSubject(AGENT_SUBJECT, contracts.agents.address);
                 DEBUG('Configured stake controller');
             } else {
                 DEBUG('Not needed');
@@ -219,9 +219,9 @@ async function migrate(config = {}) {
 
         if (semver.gte(scannersVersion, '0.1.1')) {
             DEBUG('Configuring stake controller...');
-            if ((await contracts.scanners.getSubjectHandler()) !== contracts.stakingParameters.address) {
-                await contracts.scanners.connect(deployer).setSubjectHandler(contracts.stakingParameters.address);
-                await contracts.stakingParameters.connect(deployer).setStakeSubject(SCANNER_SUBJECT, contracts.scanners.address);
+            if ((await contracts.scanners.getSubjectHandler()) !== contracts.subjectHandler.address) {
+                await contracts.scanners.connect(deployer).setSubjectHandler(contracts.subjectHandler.address);
+                await contracts.subjectHandler.connect(deployer).setStakeSubject(SCANNER_SUBJECT, contracts.scanners.address);
                 DEBUG('Configured stake controller');
             } else {
                 DEBUG('Not needed');
@@ -262,7 +262,7 @@ async function migrate(config = {}) {
                 [
                     contracts.access.address,
                     contracts.staking.address,
-                    contracts.stakingParameters.address,
+                    contracts.subjectHandler.address,
                     deployEnv.SLASHING_DEPOSIT_AMOUNT(chainId),
                     deployEnv.SLASH_PERCENT_TO_PROPOSER(chainId),
                     reasonIds,
@@ -287,7 +287,7 @@ async function migrate(config = {}) {
                 'node-runners',
                 factory,
                 'uups',
-                [contracts.access.address, 'Forta Node Runners', 'FNodeRunners', contracts.stakingParameters.address, deployEnv.SCANNER_REGISTRATION_DELAY(chainId)],
+                [contracts.access.address, 'Forta Node Runners', 'FNodeRunners', contracts.subjectHandler.address, deployEnv.SCANNER_REGISTRATION_DELAY(chainId)],
                 {
                     constructorArgs: [contracts.forwarder.address],
                     unsafeAllow: 'delegatecall',
@@ -304,8 +304,8 @@ async function migrate(config = {}) {
 
         DEBUG('Configuring stake controller...');
 
-        if ((await contracts.stakingParameters.getStakeSubject(NODE_RUNNER_SUBJECT)) !== contracts.nodeRunners.address) {
-            await contracts.stakingParameters.connect(deployer).setStakeSubject(NODE_RUNNER_SUBJECT, contracts.nodeRunners.address);
+        if ((await contracts.subjectHandler.getStakeSubject(NODE_RUNNER_SUBJECT)) !== contracts.nodeRunners.address) {
+            await contracts.subjectHandler.connect(deployer).setStakeSubject(NODE_RUNNER_SUBJECT, contracts.nodeRunners.address);
             DEBUG('Configured stake controller');
         } else {
             DEBUG('Not needed');
@@ -395,7 +395,7 @@ async function migrate(config = {}) {
                     registerNode('forwarder.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.forwarder.address, chainId: chainId }),
                     registerNode('staking.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.staking.address, chainId: chainId }),
                     registerNode('slashing.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.staking.address, chainId: chainId }),
-                    registerNode('staking-params.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.stakingParameters.address, chainId: chainId }),
+                    registerNode('staking-params.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.subjectHandler.address, chainId: chainId }),
                     registerNode('agents.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.agents.address, chainId: chainId }),
                     registerNode('scanners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scanners.address, chainId: chainId }),
                     registerNode('node-runners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.nodeRunners.address, chainId: chainId }),
@@ -420,7 +420,7 @@ async function migrate(config = {}) {
                 reverseRegister(contracts.dispatch, 'dispatch.forta.eth'),
                 reverseRegister(contracts.staking, 'staking.forta.eth'),
                 reverseRegister(contracts.slashing, 'slashing.forta.eth'),
-                reverseRegister(contracts.stakingParameters, 'staking-params.forta.eth'),
+                reverseRegister(contracts.subjectHandler, 'staking-params.forta.eth'),
                 reverseRegister(contracts.agents, 'agents.registries.forta.eth'),
                 reverseRegister(contracts.scanners, 'scanners.registries.forta.eth'),
                 reverseRegister(contracts.nodeRunners, 'node-runners.registries.forta.eth'),

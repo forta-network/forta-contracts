@@ -3,15 +3,16 @@
 
 pragma solidity ^0.8.9;
 
-import "./FortaStaking.sol";
+import "../FortaStaking.sol";
 import "./IDelegatedStakeSubject.sol";
-import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165CheckerUpgradeable.sol";
-import "hardhat/console.sol";
 
-contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidator, IStakeSubjectHandler {
-
-    using ERC165CheckerUpgradeable for address;
-
+/**
+ * Formerly StakeSubjectHandler.
+ * 
+ * This contract manages the relationship between the staking contracts and the several affected staking subjects,
+ * who hold the responsability of defining staking thresholds, managed subjects, and related particularities.
+ */
+contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, IStakeSubjectHandler {
     FortaStaking private _fortaStaking;
     // stake subject parameters for each subject
     mapping(uint8 => IStakeSubject) private _stakeSubjects;
@@ -21,8 +22,7 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
     error NonIDelegatedSubjectHandler(uint8 subjectType, address handler);
 
     string public constant version = "0.1.1";
-    uint256 public constant maxSlashableStakePercent = 90;
-
+    uint256 public constant maxSlallocatedStakeForashableStakePercent = 90;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -89,10 +89,6 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
         return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).getTotalManagedSubjects(subject);
     }
 
-    function allocatedStakePerManaged(uint8 subjectType, uint256 subject) external view returns (uint256) {
-        return IDelegatedStakeSubject(address(_stakeSubjects[subjectType])).allocatedStakePerManaged(subject);
-    }
-
     /// Get if staking is activated for that `subjectType` and `subject`. If not set, will return false.
     function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns (bool) {
         return _stakeSubjects[subjectType].getStakeThreshold(subject).activated;
@@ -108,16 +104,18 @@ contract FortaStakingParameters is BaseComponentUpgradeable, SubjectTypeValidato
         return _fortaStaking.activeStakeFor(subjectType, subject) + _fortaStaking.inactiveStakeFor(subjectType, subject);
     }
 
-    function allocatedStakeFor(uint8 subjectType, uint256 subject) external view override returns (uint256) {
-        return _fortaStaking.allocatedStakeFor(subjectType, subject);
-    }
-
     /// Checks if subject, subjectType is registered
     function isRegistered(uint8 subjectType, uint256 subject) external view returns (bool) {
         return _stakeSubjects[subjectType].isRegistered(subject);
     }
 
-    function canManageAllocation(uint8 subjectType, uint256 subject, address allocator) external view returns (bool) {
+    function canManageAllocation(
+        uint8 subjectType,
+        uint256 subject,
+        address allocator
+    ) external view returns (bool) {
         return _stakeSubjects[subjectType].ownerOf(subject) == allocator;
     }
+
+    function maxSlashableStakePercent() external view override returns (uint256) {}
 }

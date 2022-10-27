@@ -23,7 +23,7 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
     string public constant version = "0.1.0";
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+    constructor(address forwarder, address stakeAllocator) initializer ForwardedContext(forwarder) NodeRunnerRegistryCore(stakeAllocator) {}
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
@@ -44,7 +44,7 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
         __NodeRunnerRegistryCore_init(__name, __symbol, __stakeSubjectManager, __registrationDelay);
     }
 
-    function registerMigratedNodeRunner(address nodeRunnerAddress, uint256 chainId) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) returns(uint256 nodeRunnerId) {
+    function registerMigratedNodeRunner(address nodeRunnerAddress, uint256 chainId) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) returns (uint256 nodeRunnerId) {
         return _registerNodeRunner(nodeRunnerAddress, chainId);
     }
 
@@ -52,14 +52,14 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
         _registerScannerNode(req);
         if (disabled) {
             _setScannerDisableFlag(req.scanner, true);
-        } 
+        }
     }
 
     /**
      * @notice disambiguation of _canSetEnableState, adding SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE to the allowed setters.
      * @inheritdoc NodeRunnerRegistryManaged
-     */ 
-    function _canSetEnableState(address scanner) internal virtual override(NodeRunnerRegistryCore, NodeRunnerRegistryManaged) view returns (bool) {
+     */
+    function _canSetEnableState(address scanner) internal view virtual override(NodeRunnerRegistryCore, NodeRunnerRegistryManaged) returns (bool) {
         return super._canSetEnableState(scanner) || hasRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE, _msgSender());
     }
 
@@ -80,4 +80,5 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
     }
 
     uint256[50] private __gap;
+
 }
