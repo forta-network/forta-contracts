@@ -4,12 +4,28 @@
 pragma solidity ^0.8.9;
 
 import "../stakeSubjectHandling/StakeSubjectHandler.sol";
+import "../../../tools/Distributions.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract RewardsAllocator is BaseComponentUpgradeable, SubjectTypeValidator {
 
+    using Distributions for Distributions.Balances
+
+    event Rewarded(uint8 indexed subjectType, uint256 indexed subject, address indexed from, uint256 value);
+    event Released(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 value);
+
+    IERC20 public immutable rewardsToken;
+    
+    // subject => reward
+    Distributions.Balances private _rewards;
+    // subject => staker => released reward
+    mapping(uint256 => Distributions.SignedBalances) private _released;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder) initializer ForwardedContext(forwarder) { }
+    constructor(address _forwarder, address _rewardsToken) initializer ForwardedContext(_forwarder) {
+        if (_rewardsToken == address(0)) revert ZeroAddress("_rewardsToken");
+        rewardsToken = _rewardsToken;
+    }
 
     /**
      * @notice Deposit reward value for a given `subject`. The corresponding tokens will be shared amongst the shareholders
@@ -24,7 +40,7 @@ contract RewardsAllocator is BaseComponentUpgradeable, SubjectTypeValidator {
         uint256 subject,
         uint256 value
     ) public onlyValidSubjectType(subjectType) {
-        SafeERC20.safeTransferFrom(stakedToken, _msgSender(), address(this), value);
+
         _rewards.mint(FortaStakingUtils.subjectToActive(subjectType, subject), value);
         emit Rewarded(subjectType, subject, _msgSender(), value);
     }
@@ -48,7 +64,7 @@ contract RewardsAllocator is BaseComponentUpgradeable, SubjectTypeValidator {
         _rewards.burn(activeSharesId, value);
         _released[activeSharesId].mint(account, SafeCast.toInt256(value));
 
-        SafeERC20.safeTransfer(stakedToken, account, value);
+        SafeERC20.safeTransfer(rewardToken, account, value);
 
         emit Released(subjectType, subject, account, value);
 
@@ -96,8 +112,7 @@ contract RewardsAllocator is BaseComponentUpgradeable, SubjectTypeValidator {
 
     function _historicalRewardFraction(
         uint256 activeSharesId,
-        uint256 amount,
-        Math.Rounding rounding
+        uint256 amount
     ) internal view returns (uint256) {
         uint256 supply = totalSupply(activeSharesId);
         return amount > 0 && supply > 0 ? Math.mulDiv(_totalHistoricalReward(activeSharesId), amount, supply, rounding) : 0;
