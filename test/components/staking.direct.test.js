@@ -43,7 +43,8 @@ describe('Staking - DIRECT', function () {
 
     describe('Deposit / Withdraw', function () {
         it('Should not direct deposit on managed stake', async function () {
-            await expect(this.staking.connect(this.accounts.user1).deposit(0, this.accounts.other.address, '100')).to.be.revertedWith('ForbiddenForType(0, 1, 1)');
+            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ min: 1, max: 200, activated: true }, 1);
+            await expect(this.staking.connect(this.accounts.user1).deposit(0, this.accounts.other.address, '100')).to.be.revertedWith('ForbiddenForType(0, 4, 4)');
         });
 
         describe('Direct Subject - no delay', function () {
