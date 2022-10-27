@@ -4,7 +4,7 @@ const { prepare, attach, deploy, deployUpgradeable } = require('../fixture');
 
 const min = (...args) => args.slice(1).reduce((x, y) => (x.lt(y) ? x : y), args[0]);
 
-describe('VestingWallet', function () {
+describe.skip('VestingWallet', function () {
     prepare();
 
     beforeEach(async function () {

@@ -60,6 +60,7 @@ abstract contract NodeRunnerRegistryCore is
     /// Maximum amount of time allowed from scanner signing a ScannerNodeRegistration and its execution by NodeRunner
     uint256 public registrationDelay;
 
+
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata, uint256 nodeRunner);
     event StakeThresholdChanged(uint256 min, uint256 max, bool activated);
     event ManagedStakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
