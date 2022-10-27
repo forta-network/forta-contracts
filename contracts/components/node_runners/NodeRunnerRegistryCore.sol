@@ -37,6 +37,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     bytes32 private constant _SCANNERNODEREGISTRATION_TYPEHASH =
         keccak256("ScannerNodeRegistration(address scanner,uint256 nodeRunnerId,uint256 chainId,string metadata,uint256 timestamp)");
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IStakeAllocator private immutable _stakeAllocator;
 
     /// nodeRunnerIds is a sequential autoincremented uint

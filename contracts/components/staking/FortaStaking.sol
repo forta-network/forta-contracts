@@ -82,13 +82,14 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     // treasury for slashing
     address private _treasury;
-    IStakeSubjectHandler private _subjectHandler;
+    IStakeSubjectHandler public subjectHandler;
 
     uint256 public slashDelegatorsPercent;
     IStakeAllocator private _allocator;
 
     uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
     uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
+    uint256 public constant MAX_SLASHABLE_PERCENT = 90;
     uint256 private constant HUNDRED_PERCENT = 100;
 
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
@@ -261,7 +262,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * If stakeValue would drive the stake over the maximum, only stakeValue - excess is transferred, but transaction will
      * not fail.
      * Reverts if max stake for subjectType not set, or subject not found.
-     * If subjectType is DELEGATED, it will allocate stake among it's managed subjects. See _depositAllocation
      * @dev NOTE: Subject type is necessary because we can't infer subject ID uniqueness between scanners, agents, etc
      * Emits a ERC1155.TransferSingle event and StakeDeposited (to allow accounting per subject type)
      * Emits MaxStakeReached(subjectType, activeSharesId)
@@ -280,8 +280,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 subject,
         uint256 stakeValue
     ) public onlyValidSubjectType(subjectType) notAgencyType(subjectType, SubjectStakeAgency.MANAGED) returns (uint256) {
-        if (address(_subjectHandler) == address(0)) revert ZeroAddress("_subjectHandler");
-        if (!_subjectHandler.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
+        if (address(subjectHandler) == address(0)) revert ZeroAddress("subjectHandler");
+        if (!subjectHandler.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         bool reachedMax;
@@ -295,7 +295,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _activeStake.mint(activeSharesId, stakeValue);
         _mint(staker, activeSharesId, sharesValue, new bytes(0));
         emit StakeDeposited(subjectType, subject, staker, stakeValue);
-        _allocator.depositAllocation(activeSharesId, subjectType, subject, stakeValue);
+        _allocator.depositAllocation(activeSharesId, subjectType, subject, staker, stakeValue);
         return sharesValue;
     }
     
@@ -313,7 +313,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 subject,
         uint256 stakeValue
     ) private view returns (uint256, bool) {
-        uint256 max = _subjectHandler.maxStakeFor(subjectType, subject);
+        uint256 max = subjectHandler.maxStakeFor(subjectType, subject);
         if (activeStakeFor(subjectType, subject) >= max) {
             return (0, true);
         } else {
@@ -406,7 +406,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @param subject id identifying subject (external to FortaStaking).
      * @param stakeValue amount of staked token to be slashed.
      * @param proposer address of the slash proposer. Must be nonzero address if proposerPercent > 0
-     * @param proposerPercent percentage of stakeValue sent to the proposer. From 0 to StakeSubjectHandler.maxSlashableStakePercent()
+     * @param proposerPercent percentage of stakeValue sent to the proposer. From 0 to MAX_SLASHABLE_PERCENT
      * @return stakeValue
      */
 
@@ -460,7 +460,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         // an amounts of shares so big that they might cause overflows.
         // New shares = pool shares * new staked amount / pool stake
         // See deposit and stakeToActiveShares methods.
-        uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, _subjectHandler.maxSlashableStakePercent(), HUNDRED_PERCENT);
+        uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, MAX_SLASHABLE_PERCENT, HUNDRED_PERCENT);
+
         if (stakeValue > maxSlashableStake) revert SlashingOver90Percent();
 
         slashFromActive = Math.mulDiv(activeStake, stakeValue, activeStake + inactiveStake);
@@ -746,12 +747,12 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     // Admin: change staking parameters manager
-    function configureStakingHelpers(IStakeSubjectHandler subjectHandler, IStakeAllocator allocator) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (address(subjectHandler) == address(0)) revert ZeroAddress("subjectHandler");
-        if (address(allocator) == address(0)) revert ZeroAddress("allocator");
-        _subjectHandler = subjectHandler;
-        _allocator = allocator;
-        emit StakeHelpersConfigured(address(subjectHandler), address(allocator));
+    function configureStakingHelpers(IStakeSubjectHandler __subjectHandler, IStakeAllocator __allocator) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (address(__subjectHandler) == address(0)) revert ZeroAddress("__subjectHandler");
+        if (address(__allocator) == address(0)) revert ZeroAddress("__allocator");
+        subjectHandler = __subjectHandler;
+        _allocator = __allocator;
+        emit StakeHelpersConfigured(address(__subjectHandler), address(__allocator));
     }
 
     function setSlashDelegatorsPercent(uint256 percent) public onlyRole(STAKING_ADMIN_ROLE) {

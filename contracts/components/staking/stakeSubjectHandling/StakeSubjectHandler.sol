@@ -22,7 +22,6 @@ contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, 
     error NonIDelegatedSubjectHandler(uint8 subjectType, address handler);
 
     string public constant version = "0.1.1";
-    uint256 public constant maxSlallocatedStakeForashableStakePercent = 90;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -109,13 +108,8 @@ contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, 
         return _stakeSubjects[subjectType].isRegistered(subject);
     }
 
-    function canManageAllocation(
-        uint8 subjectType,
-        uint256 subject,
-        address allocator
-    ) external view returns (bool) {
+    function canManageAllocation(uint8 subjectType, uint256 subject, address allocator) external view returns (bool) {
         return _stakeSubjects[subjectType].ownerOf(subject) == allocator;
     }
 
-    function maxSlashableStakePercent() external view override returns (uint256) {}
 }

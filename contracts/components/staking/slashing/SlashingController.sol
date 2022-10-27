@@ -282,7 +282,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         Proposal memory proposal = proposals[_proposalId];
         SlashPenalty memory penalty = penalties[proposal.penaltyId];
         uint256 totalStake = subjectHandler.totalStakeFor(proposal.subjectType, proposal.subjectId);
-        uint256 max = Math.mulDiv(totalStake, subjectHandler.maxSlashableStakePercent(), HUNDRED_PERCENT);
+        uint256 max = Math.mulDiv(totalStake, slashingExecutor.MAX_SLASHABLE_PERCENT(), HUNDRED_PERCENT);
         if (penalty.mode == PenaltyMode.UNDEFINED) {
             return 0;
         } else if (penalty.mode == PenaltyMode.MIN_STAKE) {

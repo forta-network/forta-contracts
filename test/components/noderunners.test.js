@@ -202,11 +202,6 @@ describe('Node Runner Registry', function () {
         await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature)).to.be.revertedWith('ScannerExists');
     });
 
-    it.skip('public scanner register fails if stake not activated', async function () {
-        await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '0', activated: false }, 1);
-        await expect(this.nodeRunners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1, 'metadata')).to.be.revertedWith('PublicRegistrationDisabled(1)');
-    });
-
     it('scanner metadata update', async function () {
         const SCANNER_ADDRESS = this.accounts.scanner.address;
 

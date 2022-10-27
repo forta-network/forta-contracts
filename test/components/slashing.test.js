@@ -4,9 +4,8 @@ const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { BigNumber } = require('ethers');
 
-const SUBJECT_1_ADDRESS = '0x727E5FCcb9e2367555373e90E637500BCa5Da40c';
 const subjects = [
-    { id: ethers.BigNumber.from(SUBJECT_1_ADDRESS), type: 0 }, // Scanner id, scanner type
+    { id: '1', type: 2 }, // NodeRunners id, NodeRunner type
     { id: ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), type: 1 }, // Agent id, agent type
 ];
 
@@ -48,12 +47,12 @@ const EVIDENCE_FOR_STATE = (state) => {
 
 const PROPOSAL_ID = BigNumber.from('1');
 
-describe.skip('Slashing Proposals', function () {
+describe('Slashing Proposals', function () {
     prepare({
         stake: {
             agents: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
-            scanners: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
             nodeRunners: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
+            scanners: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
         },
     });
 
@@ -73,11 +72,11 @@ describe.skip('Slashing Proposals', function () {
         await this.token.connect(this.accounts.user2).approve(this.staking.address, ethers.constants.MaxUint256);
         await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
 
-        await this.scanners.connect(this.accounts.manager).adminRegister(SUBJECT_1_ADDRESS, this.accounts.user2.address, 1, 'metadata');
         const args = [subjects[1].id, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
         await this.agents.connect(this.accounts.other).createAgent(...args);
+        await this.nodeRunners.connect(this.accounts.user2).registerNodeRunner(1);
 
-        await this.staking.connect(this.accounts.user2).deposit(0, SUBJECT_1_ADDRESS, STAKING_DEPOSIT);
+        await this.staking.connect(this.accounts.user2).deposit(2, '1', STAKING_DEPOSIT);
         await this.staking.connect(this.accounts.user2).deposit(1, subjects[1].id, STAKING_DEPOSIT);
 
         slashTreasuryAddress = await this.staking.treasury();
@@ -635,7 +634,7 @@ describe.skip('Slashing Proposals', function () {
         });
 
         it('max possible stake', async function () {
-            const maxSlashableStakePercent = await this.subjectHandler.maxSlashableStakePercent();
+            const maxSlashableStakePercent = await this.staking.MAX_SLASHABLE_PERCENT();
             const totalStake = await this.subjectHandler.totalStakeFor(subjects[0].type, subjects[0].id);
             const maxSlashable = totalStake.mul(maxSlashableStakePercent).div('100');
 
