@@ -72,6 +72,7 @@ function prepare(config = {}) {
             this.subjectAgency.DIRECT = 1;
             this.subjectAgency.DELEGATED = 2;
             this.subjectAgency.DELEGATOR = 3;
+            this.subjectAgency.MANAGED = 4;
 
             if (config.stake.agents) {
                 await this.agents
