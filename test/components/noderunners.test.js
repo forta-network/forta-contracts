@@ -8,7 +8,7 @@ const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRe
 let SCANNER_ADDRESS_1, scanner1Registration, scanner1Signature, verifyingContractInfo;
 describe('Node Runner Registry', function () {
     // TODO Stake related stuff
-    prepare({ stake: { nodeRunners: { min: '100', max: '500', activated: true }, scanners: { min: '100', max: '500', activated: true } } });
+    prepare({ stake: { scanners: { min: '100', max: '500', activated: true } } });
 
     beforeEach(async function () {
         const network = await ethers.provider.getNetwork();
@@ -28,10 +28,6 @@ describe('Node Runner Registry', function () {
         };
 
         scanner1Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner1Registration, this.accounts.scanner);
-    });
-
-    it('isStakedOverMin false if scanner non existant', async function () {
-        expect(await this.nodeRunners.isStakedOverMin(this.accounts.scanner.address)).to.equal(false);
     });
 
     it('register node runner', async function () {

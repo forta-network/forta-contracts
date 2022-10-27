@@ -20,7 +20,6 @@ describe('Forta Staking General', function () {
     prepare({
         stake: {
             agents: { min: '1', max: MAX_STAKE, activated: true },
-            nodeRunners: { min: '1', max: MAX_STAKE, activated: true },
             scanners: { min: '1', max: MAX_STAKE, activated: true },
         },
     });

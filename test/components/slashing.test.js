@@ -47,11 +47,10 @@ const EVIDENCE_FOR_STATE = (state) => {
 
 const PROPOSAL_ID = BigNumber.from('1');
 
-describe('Slashing Proposals', function () {
+describe.only('Slashing Proposals', function () {
     prepare({
         stake: {
             agents: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
-            nodeRunners: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
             scanners: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
         },
     });
@@ -617,19 +616,19 @@ describe('Slashing Proposals', function () {
         it('min stake', async function () {
             // All active stake
             await this.staking.connect(this.accounts.user2).deposit(subjects[1].type, subjects[1].id, STAKING_DEPOSIT);
-            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[1].type, subjects[1].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('1')).to.eq(MIN_STAKE.mul('10').div('100'));
             await this.slashing.connect(this.accounts.user3).dismissSlashProposal('1', EVIDENCE_FOR_STATE(STATES.DISMISSED));
 
             // Mix active and inactive stake
             await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, MIN_STAKE.div(2));
-            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[1].type, subjects[1].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('2')).to.eq(MIN_STAKE.mul('10').div('100'));
             await this.slashing.connect(this.accounts.user3).dismissSlashProposal('2', EVIDENCE_FOR_STATE(STATES.DISMISSED));
 
             // All inactive stake
             await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, MIN_STAKE.div(2));
-            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[1].type, subjects[1].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('3')).to.eq(MIN_STAKE.mul('10').div('100'));
         });
 

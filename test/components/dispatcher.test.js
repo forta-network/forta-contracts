@@ -10,7 +10,6 @@ describe('Dispatcher', function () {
         stake: {
             agents: { min: '100', max: '500', activated: true },
             scanners: { min: '100', max: '500', activated: true },
-            nodeRunners: { min: '100', max: '1500', activated: true },
         },
     });
 

@@ -69,10 +69,9 @@ function prepare(config = {}) {
             this.stakingSubjects.UNDEFINED = 255;
             this.subjectAgency = {};
             this.subjectAgency.UNDEFINED = 0;
-            this.subjectAgency.MANAGED = 1;
-            this.subjectAgency.DIRECT = 2;
-            this.subjectAgency.DELEGATED = 3;
-            this.subjectAgency.DELEGATOR = 4;
+            this.subjectAgency.DIRECT = 1;
+            this.subjectAgency.DELEGATED = 2;
+            this.subjectAgency.DELEGATOR = 3;
 
             if (config.stake.agents) {
                 await this.agents
@@ -80,14 +79,10 @@ function prepare(config = {}) {
                     .setStakeThreshold({ max: config.stake.agents.max, min: config.stake.agents.min, activated: config.stake.agents.activated });
             }
             if (config.stake.scanners) {
+                // DEPRECATION NOTICE: scanners
                 await this.scanners
                     .connect(this.accounts.manager)
                     .setStakeThreshold({ max: config.stake.scanners.max, min: config.stake.scanners.min, activated: config.stake.scanners.activated }, 1);
-            }
-            if (config.stake.nodeRunners) {
-                await this.nodeRunners
-                    .connect(this.accounts.manager)
-                    .setStakeThreshold({ max: config.stake.nodeRunners.max, min: config.stake.nodeRunners.min, activated: config.stake.nodeRunners.activated });
                 await this.nodeRunners
                     .connect(this.accounts.manager)
                     .setManagedStakeThreshold({ max: config.stake.scanners.max, min: config.stake.scanners.min, activated: config.stake.scanners.activated }, 1);

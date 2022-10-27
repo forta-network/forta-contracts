@@ -26,11 +26,10 @@ const MIN_STAKE_MANAGED = '100';
 const MAX_STAKE_MANAGER = '10000';
 const chainId = 1;
 let SCANNERS;
-describe('Staking - Delegation', function () {
+describe.skip('Staking - Delegation', function () {
     prepare({
         stake: {
             scanners: { min: MIN_STAKE_MANAGED, max: MAX_STAKE_MANAGED, activated: true },
-            nodeRunners: { min: '1', max: MAX_STAKE_MANAGER, activated: true },
         },
     });
 
@@ -68,7 +67,7 @@ describe('Staking - Delegation', function () {
 
     describe('Subject Agency', function () {
         it('should know agency for subject types', async function () {
-            expect(await this.staking.getSubjectTypeAgency(this.stakingSubjects.SCANNER)).to.eq(this.subjectAgency.MANAGED);
+            expect(await this.staking.getSubjectTypeAgency(this.stakingSubjects.SCANNER)).to.eq(this.subjectAgency.DIRECT); // MANAGED after sunsetting
             expect(await this.staking.getSubjectTypeAgency(this.stakingSubjects.AGENT)).to.eq(this.subjectAgency.DIRECT);
             expect(await this.staking.getSubjectTypeAgency(this.stakingSubjects.NODE_RUNNER)).to.eq(this.subjectAgency.DELEGATED);
             expect(await this.staking.getSubjectTypeAgency(this.stakingSubjects.UNDEFINED)).to.eq(this.subjectAgency.UNDEFINED);
@@ -78,7 +77,7 @@ describe('Staking - Delegation', function () {
 
     describe('Allocation', function () {
         describe('On Deposit', function () {
-            it.only('should allocate between all managed subjects', async function () {
+            it('should allocate between all managed subjects', async function () {
                 await expect(this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, '100'))
                     .to.emit(this.stakeAllocator, 'AllocatedStake')
                     .withArgs(nodeRunnerSubjectType, nodeRunnerId, '100', '100');

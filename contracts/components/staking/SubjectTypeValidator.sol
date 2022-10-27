@@ -18,7 +18,7 @@ uint8 constant DELEGATOR_NODE_RUNNER_SUBJECT = 3;
  * - DELEGATOR --> TBD
  *
  * The current Subject Types and their Agency:
- * - SCANNER_SUBJECT --> MANAGED
+ * - SCANNER_SUBJECT --> DIRECT
  * - AGENT_SUBJECT (detection bots) --> DIRECT
  * - NODE_RUNNER_SUBJECT --> DELEGATED
  *
@@ -26,10 +26,10 @@ uint8 constant DELEGATOR_NODE_RUNNER_SUBJECT = 3;
 contract SubjectTypeValidator {
     enum SubjectStakeAgency {
         UNDEFINED,
-        MANAGED,
         DIRECT,
         DELEGATED,
         DELEGATOR
+        // MANAGED, Note: After sunsetting ScannerRegistry, scanners will be MANAGED.
     }
 
     error InvalidSubjectType(uint8 subjectType);
@@ -57,9 +57,8 @@ contract SubjectTypeValidator {
     }
 
     function getSubjectTypeAgency(uint8 subjectType) public pure returns (SubjectStakeAgency) {
-        if (subjectType == SCANNER_SUBJECT) {
-            return SubjectStakeAgency.MANAGED;
-        } else if (subjectType == AGENT_SUBJECT) {
+        // After sunsetting ScannerRegistry, SCANNER_SUBJECT will be MANAGED
+        if (subjectType == AGENT_SUBJECT || subjectType == SCANNER_SUBJECT) {
             return SubjectStakeAgency.DIRECT;
         } else if (subjectType == NODE_RUNNER_SUBJECT) {
             return SubjectStakeAgency.DELEGATED;

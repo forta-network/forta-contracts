@@ -4,7 +4,7 @@ const { prepare } = require('../fixture');
 const { BigNumber } = require('ethers');
 
 describe('Scanner Registry (Deprecation and migration)', function () {
-    prepare({ stake: { min: '0', max: '500', activated: true } });
+    prepare();
     let SCANNERS;
     const chainId = 1;
     it('upgrade: deprecated implementation keeps storage', async function () {

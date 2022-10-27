@@ -159,7 +159,7 @@ contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, 
     }
 
     function canManageAllocation(uint8 subjectType, uint256 subject, address allocator) external view returns (bool) {
-        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATOR) {
+        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATOR && getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED) {
             return false;
         }
         if (address(0) == _stakeSubjects[subjectType]) {

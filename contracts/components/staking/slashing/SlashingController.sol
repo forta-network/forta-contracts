@@ -150,7 +150,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         uint256 _subjectId,
         bytes32 _penaltyId,
         string[] calldata _evidence
-    ) external onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) returns (uint256 proposalId) {
+    ) external onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) notAgencyType(_subjectType, SubjectStakeAgency.DELEGATOR) returns (uint256 proposalId) {
         if (!subjectHandler.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
         if (subjectHandler.totalStakeFor(_subjectType, _subjectId) == 0) revert ZeroAmount("subject stake");
         Proposal memory slashProposal = Proposal(_subjectId, _msgSender(), _penaltyId, _subjectType);
@@ -160,10 +160,10 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         deposits[proposalId] = depositAmount;
         proposals[proposalId] = slashProposal;
         emit DepositSubmitted(proposalId, _msgSender(), depositAmount);
+        _freeze(_subjectType, _subjectId);
         _transition(proposalId, CREATED);
         emit SlashProposalUpdated(_msgSender(), proposalId, CREATED, slashProposal.proposer, slashProposal.subjectId, slashProposal.subjectType, slashProposal.penaltyId);
         _submitEvidence(proposalId, CREATED, _evidence);
-        slashingExecutor.freeze(_subjectType, _subjectId, true);
         return proposalId;
     }
 
@@ -177,7 +177,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         _transition(_proposalId, DISMISSED);
         _submitEvidence(_proposalId, DISMISSED, _evidence);
         _returnDeposit(_proposalId);
-        slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
+        _unfreeze(_proposalId);
     }
 
     /**
@@ -190,7 +190,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         _transition(_proposalId, REJECTED);
         _submitEvidence(_proposalId, REJECTED, _evidence);
         _slashDeposit(_proposalId);
-        slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
+        _unfreeze(_proposalId);
     }
 
     /**
@@ -220,15 +220,19 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         uint256 _subjectId,
         bytes32 _penaltyId,
         string[] calldata _evidence
-    ) external onlyRole(SLASHING_ARBITER_ROLE) onlyInState(_proposalId, IN_REVIEW) onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) {
+    ) external onlyRole(SLASHING_ARBITER_ROLE) onlyInState(_proposalId, IN_REVIEW) onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) notAgencyType(_subjectType, SubjectStakeAgency.DELEGATOR) {
         // No need to check for proposal existence, onlyInState will revert if _proposalId is in undefined state
         if (!subjectHandler.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
 
         _submitEvidence(_proposalId, IN_REVIEW, _evidence);
         if (_subjectType != proposals[_proposalId].subjectType || _subjectId != proposals[_proposalId].subjectId) {
-            slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
-            slashingExecutor.freeze(_subjectType, _subjectId, true);
+            _unfreeze(_proposalId);
+            _freeze(_subjectType, _subjectId);
         }
+        _updateProposal(_proposalId, _subjectType, _subjectId, _penaltyId);
+    }
+
+    function _updateProposal(uint256 _proposalId, uint8 _subjectType, uint256 _subjectId, bytes32 _penaltyId) private {
         Proposal memory slashProposal = Proposal(_subjectId, proposals[_proposalId].proposer, _penaltyId, _subjectType);
         proposals[_proposalId] = slashProposal;
         emit SlashProposalUpdated(_msgSender(), _proposalId, IN_REVIEW, slashProposal.proposer, slashProposal.subjectId, slashProposal.subjectType, slashProposal.penaltyId);
@@ -253,7 +257,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         _authorizeRevertSlashProposal(_proposalId);
         _transition(_proposalId, REVERTED);
         _submitEvidence(_proposalId, REVERTED, _evidence);
-        slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
+        _unfreeze(_proposalId);
     }
 
     /**
@@ -286,7 +290,13 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         if (penalty.mode == PenaltyMode.UNDEFINED) {
             return 0;
         } else if (penalty.mode == PenaltyMode.MIN_STAKE) {
-            return Math.min(max, Math.mulDiv(subjectHandler.minStakeFor(proposal.subjectType, proposal.subjectId), penalty.percentSlashed, HUNDRED_PERCENT));
+            uint256 minStake = 0;
+            if (getSubjectTypeAgency(proposal.subjectType) == SubjectStakeAgency.DELEGATED) {
+                minStake = subjectHandler.minManagedStakeFor(proposal.subjectType, proposal.subjectId);
+            } else {
+                minStake = subjectHandler.minStakeFor(proposal.subjectType, proposal.subjectId);
+            }
+            return Math.min(max, Math.mulDiv(minStake, penalty.percentSlashed, HUNDRED_PERCENT));
         } else if (penalty.mode == PenaltyMode.CURRENT_STAKE) {
             return Math.min(max, Math.mulDiv(totalStake, penalty.percentSlashed, HUNDRED_PERCENT));
         }
@@ -332,6 +342,14 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
             revert MissingRole(requiredRole, _msgSender());
         }
         // If it's in another state, _transition() will revert
+    }
+
+    function _unfreeze(uint256 _proposalId) private {
+        slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
+    }
+
+    function _freeze(uint8 _subjectType, uint256 _subjectId) private {
+        slashingExecutor.freeze(_subjectType, _subjectId, true);
     }
 
     // Private param setting
