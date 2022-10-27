@@ -55,7 +55,6 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     uint256 public registrationDelay;
 
     event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata, uint256 nodeRunner);
-    event StakeThresholdChanged(uint256 min, uint256 max, bool activated);
     event ManagedStakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
     event RegistrationDelaySet(uint256 delay);
     // TODO: discuss with the dev team if it breaks compatibility to change 'enabled' too 'operational'
@@ -86,7 +85,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         if (!isScannerRegistered(scanner)) revert ScannerNotRegistered(scanner);
         _;
     }
-    
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address __stakeAllocator) {
         if (__stakeAllocator == address(0)) revert ZeroAddress("__stakeAllocator");
@@ -445,6 +444,4 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     }
 
     uint256[44] private __gap;
-
-
 }

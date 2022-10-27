@@ -19,7 +19,6 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
     ScannerRegistry public immutable scannerNodeRegistry;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     NodeRunnerRegistry public immutable nodeRunnerRegistry;
-    
     /// chainId => nodeRunnerAddress => nodeRunnerId
     mapping(uint256 => mapping(address => uint256)) private _migratedNodeRunners;
 

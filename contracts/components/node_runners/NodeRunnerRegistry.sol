@@ -58,8 +58,8 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
     /**
      * @notice disambiguation of _canSetEnableState, adding SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE to the allowed setters.
      * @inheritdoc NodeRunnerRegistryManaged
-     */
-    function _canSetEnableState(address scanner) internal view virtual override(NodeRunnerRegistryCore, NodeRunnerRegistryManaged) returns (bool) {
+     */ 
+    function _canSetEnableState(address scanner) internal virtual override(NodeRunnerRegistryCore, NodeRunnerRegistryManaged) view returns (bool) {
         return super._canSetEnableState(scanner) || hasRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE, _msgSender());
     }
 

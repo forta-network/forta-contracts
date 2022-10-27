@@ -166,5 +166,4 @@ describe('Dispatcher', function () {
             );
         }
     });
-
 });

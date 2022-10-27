@@ -114,7 +114,7 @@ describe('Staking - Delegation', function () {
                 expect(await this.stakeAllocator.allocatedDelegatorsStakePerManaged(2, 1)).to.eq('33');
             });
 
-            it.only('delegating over max goes to unallocated', async function () {
+            it('delegating over max goes to unallocated', async function () {
                 const staked = MAX_STAKE_MANAGED * 3;
                 await expect(this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, staked))
                     .to.emit(this.stakeAllocator, 'AllocatedStake')

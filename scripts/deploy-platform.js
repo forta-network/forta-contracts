@@ -5,6 +5,7 @@ const utils = require('./utils');
 const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
 const NODE_RUNNER_SUBJECT = 2;
+
 const semver = require('semver');
 const deployEnv = require('./loadEnv');
 
@@ -209,7 +210,6 @@ async function migrate(config = {}) {
         if (semver.gte(scannersVersion, '0.1.1')) {
             DEBUG('Configuring stake controller...');
             await contracts.scanners.connect(deployer).setSubjectHandler(contracts.subjectHandler.address);
-
         }
 
         DEBUG(`[${Object.keys(contracts).length}.1] staking for scanners configured`);
@@ -289,7 +289,6 @@ async function migrate(config = {}) {
                 contracts.nodeRunners.address
             );
         }
-
 
         DEBUG(`Deploying Dispatch...`);
         contracts.dispatch = await ethers.getContractFactory('Dispatch', deployer).then((factory) =>
