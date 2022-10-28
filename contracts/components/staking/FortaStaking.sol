@@ -418,25 +418,31 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 proposerPercent
     ) public override onlyRole(SLASHER_ROLE) notAgencyType(subjectType, SubjectStakeAgency.DELEGATOR) returns (uint256) {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
-        uint256 slashFromActive = _slash(activeSharesId, subjectType, subject, stakeValue);
-        uint256 slashedFromDelegators;
+
         if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
-            _allocator.withdrawAllocation(activeSharesId, subjectType, subject, slashFromActive);
+            uint256 delegatorSlashValue = Math.mulDiv(stakeValue, slashDelegatorsPercent, HUNDRED_PERCENT);
+            uint256 delegatedSlashValue = stakeValue;
 
-            if (slashDelegatorsPercent > 0) {
-                slashedFromDelegators = _slashDelegator(getDelegatorSubjectType(subjectType), subject, stakeValue);
+            _slash(activeSharesId, subjectType, subject, delegatedSlashValue);
+
+            if (delegatorSlashValue > 0) {
+                uint8 delegatorType = getDelegatorSubjectType(subjectType);
+                uint256 activeDelegatorSharesId = FortaStakingUtils.subjectToActive(delegatorType, subject);
+                _slash(activeDelegatorSharesId, delegatorType, subject, delegatorSlashValue);
             }
+        } else {
+            _slash(activeSharesId, subjectType, subject, stakeValue);
         }
 
-        if (proposerPercent > 0) {
+        uint256 proposerShare = Math.mulDiv(stakeValue, proposerPercent, HUNDRED_PERCENT);
+
+        if (proposerShare > 0) {
             if (proposer == address(0)) revert ZeroAddress("proposer");
-            uint256 proposerShare = Math.mulDiv(stakeValue + slashedFromDelegators, proposerPercent, HUNDRED_PERCENT);
             SafeERC20.safeTransfer(stakedToken, proposer, proposerShare);
-            emit SlashedShareSent(subjectType, subject, proposer, proposerShare);
-            SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue + slashedFromDelegators - proposerShare);
-        } else {
-            SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue + slashedFromDelegators);
         }
+
+        SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue - proposerShare);
+        emit SlashedShareSent(subjectType, subject, proposer, proposerShare);
 
         return stakeValue;
     }
@@ -453,7 +459,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint8 subjectType,
         uint256 subject,
         uint256 stakeValue
-    ) private returns (uint256 slashFromActive) {
+    ) private {
         uint256 activeStake = _activeStake.balanceOf(activeSharesId);
         uint256 inactiveStake = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
         // We set the slash limit at 90% of the stake, so new depositors on slashed pools (with now 0 stake) won't mint
@@ -464,26 +470,15 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
         if (stakeValue > maxSlashableStake) revert SlashingOver90Percent();
 
-        slashFromActive = Math.mulDiv(activeStake, stakeValue, activeStake + inactiveStake);
+        uint256 slashFromActive = Math.mulDiv(activeStake, stakeValue, activeStake + inactiveStake);
         uint256 slashFromInactive = stakeValue - slashFromActive;
 
         _activeStake.burn(activeSharesId, slashFromActive);
         _inactiveStake.burn(FortaStakingUtils.activeToInactive(activeSharesId), slashFromInactive);
-        emit Slashed(subjectType, subject, _msgSender(), stakeValue);
-        return slashFromActive;
-    }
 
-    /**
-     * @notice slashes delegator and withdraws allocation, according to slashDelegatorsPercent
-     * @param delegatorType type id of DELEGATOR for DELEGATED being slashed
-     * @param subject id identifying subject (external to FortaStaking).
-     * @param stakeValue amount of staked token to be slashed.
-     */
-    function _slashDelegator(uint8 delegatorType, uint256 subject, uint256 stakeValue) private returns(uint256 slashedFromDelegators) {
-        slashedFromDelegators = Math.mulDiv(stakeValue, slashDelegatorsPercent, HUNDRED_PERCENT);
-        uint256 slashActiveDelegator = _slash(FortaStakingUtils.subjectToActive(delegatorType, subject), delegatorType, subject, slashedFromDelegators);
-        _allocator.withdrawAllocation(FortaStakingUtils.subjectToActive(delegatorType, subject), delegatorType, subject, slashActiveDelegator);
-        return slashedFromDelegators;
+        _allocator.withdrawAllocation(activeSharesId, subjectType, subject, slashFromActive);
+
+        emit Slashed(subjectType, subject, _msgSender(), stakeValue);
     }
 
     /**
