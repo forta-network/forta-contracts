@@ -276,11 +276,14 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * - (Scanner Node has more than minimum stake allocated to it OR staking is not activated for the Scanner Node's chain)
      */
     function isScannerOperational(address scanner) public view returns (bool) {
-        bool result = _scannerNodes[scanner].registered && !_scannerNodes[scanner].disabled;
-        if (_scannerStakeThresholds[_scannerNodes[scanner].chainId].activated) {
-            result = result && _isScannerStakedOverMin(scanner);
-        }
-        return result && _exists(_scannerNodes[scanner].nodeRunnerId);
+        ScannerNode storage node = _scannerNodes[scanner];
+        StakeThreshold storage stake = _scannerStakeThresholds[node.chainId];
+        return (
+            node.registered &&
+            !node.disabled &&
+            (!stake.activated || _isScannerStakedOverMin(scanner)) &&
+            _exists(node.nodeRunnerId)
+        );
     }
 
     /// Returns true if the owner of NodeRegistry (DELEGATED) has staked over min for scanner, false otherwise.
