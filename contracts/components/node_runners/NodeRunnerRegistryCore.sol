@@ -288,7 +288,9 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     /// Returns true if the owner of NodeRegistry (DELEGATED) has staked over min for scanner, false otherwise.
     function _isScannerStakedOverMin(address scanner) internal view returns (bool) {
-        return _stakeAllocator.allocatedStakePerManaged(NODE_RUNNER_SUBJECT, _scannerNodes[scanner].nodeRunnerId) >= _scannerStakeThresholds[_scannerNodes[scanner].chainId].min;
+        ScannerNode storage node = _scannerNodes[scanner];
+        StakeThreshold storage stake = _scannerStakeThresholds[node.chainId];
+        return _stakeAllocator.allocatedStakePerManaged(NODE_RUNNER_SUBJECT, node.nodeRunnerId) >= stake.min;
     }
 
     /**
