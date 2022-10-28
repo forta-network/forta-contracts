@@ -96,19 +96,19 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * @notice Initializer method
      * @param __name ERC721 token name.
      * @param __symbol ERC721 token symbol.
-     * @param __stakeSubjectManager address of StakeSubjectManager
+     * @param __stakeSubjectGateway address of StakeSubjectGateway
      * @param __registrationDelay amount of time allowed from scanner signing a ScannerNodeRegistration and it's execution by NodeRunner
      */
     function __NodeRunnerRegistryCore_init(
         string calldata __name,
         string calldata __symbol,
-        address __stakeSubjectManager,
+        address __stakeSubjectGateway,
         uint256 __registrationDelay
     ) internal initializer {
         __ERC721_init(__name, __symbol);
         __ERC721Enumerable_init();
         __EIP712_init("NodeRunnerRegistry", "1");
-        __StakeSubjectUpgradeable_init(__stakeSubjectManager);
+        __StakeSubjectUpgradeable_init(__stakeSubjectGateway);
 
         _setRegistrationDelay(__registrationDelay);
     }

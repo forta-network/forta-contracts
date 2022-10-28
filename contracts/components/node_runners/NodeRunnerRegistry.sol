@@ -30,18 +30,18 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
      * @param __manager address of AccessManager.
      * @param __name ERC721 token name.
      * @param __symbol ERC721 token symbol.
-     * @param __stakeSubjectManager address of StakeSubjectManager
+     * @param __stakeSubjectGateway address of StakeSubjectGateway
      * @param __registrationDelay amount of time allowed from scanner signing a ScannerNodeRegistration and it's execution by NodeRunner
      */
     function initialize(
         address __manager,
         string calldata __name,
         string calldata __symbol,
-        address __stakeSubjectManager,
+        address __stakeSubjectGateway,
         uint256 __registrationDelay
     ) public initializer {
         __BaseComponentUpgradeable_init(__manager);
-        __NodeRunnerRegistryCore_init(__name, __symbol, __stakeSubjectManager, __registrationDelay);
+        __NodeRunnerRegistryCore_init(__name, __symbol, __stakeSubjectGateway, __registrationDelay);
     }
 
     function registerMigratedNodeRunner(address nodeRunnerAddress, uint256 chainId) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) returns (uint256 nodeRunnerId) {
