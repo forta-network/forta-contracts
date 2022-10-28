@@ -747,7 +747,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     // Admin: change staking parameters manager
-    function configureStakingHelpers(IStakeSubjectGateway __subjectGateway, IStakeAllocator __allocator) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function configureStakeHelpers(IStakeSubjectGateway __subjectGateway, IStakeAllocator __allocator) public onlyRole(DEFAULT_ADMIN_ROLE) {
         if (address(__subjectGateway) == address(0)) revert ZeroAddress("__subjectGateway");
         if (address(__allocator) == address(0)) revert ZeroAddress("__allocator");
         subjectGateway = __subjectGateway;

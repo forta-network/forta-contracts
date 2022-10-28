@@ -156,7 +156,7 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}.1] stake allocator: ${contracts.stakeAllocator.address}`);
 
-        await contracts.staking.configureStakingHelpers(contracts.subjectGateway.address, contracts.stakeAllocator.address);
+        await contracts.staking.configureStakeHelpers(contracts.subjectGateway.address, contracts.stakeAllocator.address);
 
         DEBUG(`[${Object.keys(contracts).length}.2] configured Staking`);
 
