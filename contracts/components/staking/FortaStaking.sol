@@ -421,7 +421,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
         if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
             uint256 delegatorSlashValue = Math.mulDiv(stakeValue, slashDelegatorsPercent, HUNDRED_PERCENT);
-            uint256 delegatedSlashValue = stakeValue;
+            uint256 delegatedSlashValue = stakeValue - delegatorSlashValue;
 
             _slash(activeSharesId, subjectType, subject, delegatedSlashValue);
 
