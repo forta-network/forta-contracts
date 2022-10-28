@@ -195,7 +195,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     function _registerScannerNode(ScannerNodeRegistration calldata req) internal {
         if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
-        if (_nodeRunnerChainId[req.nodeRunnerId] != req.chainId) revert ChainIdMismatch(_nodeRunnerChainId[req.nodeRunnerId], req.chainId);
+        if (_nodeRunnerChainId[req.nodeRunnerId] != req.chainId)
+            revert ChainIdMismatch(_nodeRunnerChainId[req.nodeRunnerId], req.chainId);
         _scannerNodes[req.scanner] = ScannerNode({ registered: true, disabled: false, nodeRunnerId: req.nodeRunnerId, chainId: req.chainId, metadata: req.metadata });
         // It is safe to ignore add()'s returned bool, since isScannerRegistered() already checks for duplicates.
         !_scannerNodeOwnership[req.nodeRunnerId].add(req.scanner);
