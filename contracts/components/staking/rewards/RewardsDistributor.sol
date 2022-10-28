@@ -81,7 +81,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         delAccStake.total.subRate(amount);
     }
 
-    function reward(uint8 subjectType, uint256 subjectId, uint256 amount, uint256 epochNumber) onlyRole(REWARDER) external {
+    function reward(uint8 subjectType, uint256 subjectId, uint256 amount, uint256 epochNumber) onlyRole(REWARDER_ROLE) external {
         if (subjectType != NODE_RUNNER_SUBJECT) revert InvalidSubjectType(subjectType);
         if (!_subjectGateway.isRegistered(subjectType, subjectId)) revert RewardingNonRegisteredSubject(subjectType, subjectId);
         uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subjectId);

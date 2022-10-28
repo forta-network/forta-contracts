@@ -9,6 +9,7 @@ import "../FortaStakingUtils.sol";
 import "../stake_subjects/IStakeSubjectGateway.sol";
 import "../../BaseComponentUpgradeable.sol";
 import "../../../tools/Distributions.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 /**
  * This contract also manages the allocation of stake. See SubjectTypeValidator.sol for in depth explanation of Subject Agency
@@ -33,11 +34,12 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
     // subject => inactive stake
     Distributions.Balances private _unallocatedStake;
 
-    event AllocatedStake(uint8 indexed subjectType, uint256 indexed subject, uint256 amount, uint256 totalAllocated);
-    event UnallocatedStake(uint8 indexed subjectType, uint256 indexed subject, uint256 amount, uint256 totalAllocated);
+    event AllocatedStake(uint8 indexed subjectType, uint256 indexed subject, bool increase, uint256 amount, uint256 totalAllocated);
+    event UnallocatedStake(uint8 indexed subjectType, uint256 indexed subject, bool increase, uint256 amount, uint256 totalAllocated);
 
     error SenderCannotAllocateFor(uint8 subjectType, uint256 subject);
     error CannotDelegateStakeUnderMin(uint8 subjectType, uint256 subject);
+    error CannotDelegateNoEnabledSubjects(uint8 subjectType, uint256 subject);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder, address subjectGateway) initializer ForwardedContext(forwarder) {
@@ -182,7 +184,8 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         if (extra > 0) revert AmountTooLarge(amount, max);
         _allocatedStake.mint(activeSharesId, amount);
         _unallocatedStake.burn(activeSharesId, amount);
-        emit AllocatedStake(subjectType, subject, amount, _allocatedStake.balanceOf(activeSharesId));
+        emit AllocatedStake(subjectType, subject, true, amount, _allocatedStake.balanceOf(activeSharesId));
+        emit UnallocatedStake(subjectType, subject, false, amount, _unallocatedStake.balanceOf(activeSharesId));
     }
 
     /**
@@ -200,7 +203,8 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         if (_allocatedStake.balanceOf(activeSharesId) < amount) revert AmountTooLarge(amount, _allocatedStake.balanceOf(activeSharesId));
         _allocatedStake.burn(activeSharesId, amount);
         _unallocatedStake.mint(activeSharesId, amount);
-        emit UnallocatedStake(subjectType, subject, amount, _unallocatedStake.balanceOf(activeSharesId));
+        emit AllocatedStake(subjectType, subject, false, amount, _allocatedStake.balanceOf(activeSharesId));
+        emit UnallocatedStake(subjectType, subject, true, amount, _unallocatedStake.balanceOf(activeSharesId));
     }
 
     /************* When incrementing/decrementing activeStake (IStakeAllocator) *************/
@@ -225,16 +229,15 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         if (agency != SubjectStakeAgency.DELEGATED && agency != SubjectStakeAgency.DELEGATOR) {
             return;
         }
-
         (int256 extra, ) = _allocationIncreaseChecks(subjectType, subject, agency, allocator, amount);
         if (extra > 0) {
             _allocatedStake.mint(activeSharesId, amount - uint256(extra));
-            emit AllocatedStake(subjectType, subject, amount - uint256(extra), _allocatedStake.balanceOf(activeSharesId));
+            emit AllocatedStake(subjectType, subject, true, amount - uint256(extra), _allocatedStake.balanceOf(activeSharesId));
             _unallocatedStake.mint(activeSharesId, uint256(extra));
-            emit UnallocatedStake(subjectType, subject, uint256(extra), _unallocatedStake.balanceOf(activeSharesId));
+            emit UnallocatedStake(subjectType, subject, true, uint256(extra), _unallocatedStake.balanceOf(activeSharesId));
         } else {
             _allocatedStake.mint(activeSharesId, amount);
-            emit AllocatedStake(subjectType, subject, amount, _allocatedStake.balanceOf(activeSharesId));
+            emit AllocatedStake(subjectType, subject, true, amount, _allocatedStake.balanceOf(activeSharesId));
         }
     }
 
@@ -251,26 +254,20 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         uint256 subject,
         uint256 amount
     ) external onlyRole(STAKING_CONTRACT) {
-        int256 fromAllocated = int256(_unallocatedStake.balanceOf(activeSharesId)) - int256(amount);
+        uint256 oldUnallocated = _unallocatedStake.balanceOf(activeSharesId);
+        int256 fromAllocated = int256(oldUnallocated) - int256(amount);
         if (fromAllocated < 0) {
             _allocatedStake.burn(activeSharesId, uint256(-fromAllocated));
+            emit AllocatedStake(subjectType, subject, false, uint256(-fromAllocated), _allocatedStake.balanceOf(activeSharesId));
             _unallocatedStake.burn(activeSharesId, _unallocatedStake.balanceOf(activeSharesId));
+            emit UnallocatedStake(subjectType, subject, false, oldUnallocated, _unallocatedStake.balanceOf(activeSharesId));
+
         } else {
             _unallocatedStake.burn(activeSharesId, amount);
+            emit UnallocatedStake(subjectType, subject, false, amount, _unallocatedStake.balanceOf(activeSharesId));
         }
-        emit UnallocatedStake(subjectType, subject, amount, _unallocatedStake.balanceOf(activeSharesId));
     }
 
-    function slashAllocation(
-        uint256 activeSharesId,
-        uint8 subjectType,
-        uint256 subject,
-        uint256 amount
-    ) external onlyRole(STAKING_CONTRACT) {
-        _allocatedStake.burn(activeSharesId, Math.min(_allocateStake.balanceOf(activeSharesId), amount));
-
-        emit UnallocatedStake(subjectType, subject, amount, _unallocatedStake.balanceOf(activeSharesId));
-    }
 
     /**
      * @notice Checks if:
@@ -297,22 +294,27 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         if (agency == SubjectStakeAgency.DELEGATED) {
             // i.e NodeRunnerRegistry
             if (!_subjectGateway.canManageAllocation(subjectType, subject, allocator)) revert SenderCannotAllocateFor(subjectType, subject);
+
             subjects = _subjectGateway.totalManagedSubjects(subjectType, subject);
             maxPerManaged = _subjectGateway.maxManagedStakeFor(subjectType, subject);
             currentlyAllocated = allocatedManagedStake(subjectType, subject);
         } else if (agency == SubjectStakeAgency.DELEGATOR) {
             // i.e Delegator to NodeRunnerRegistry
-            subjects = _subjectGateway.totalManagedSubjects(getDelegatedSubjectType(subjectType), subject);
-            maxPerManaged = _subjectGateway.maxManagedStakeFor(getDelegatedSubjectType(subjectType), subject);
-            if enablednodes = 0 revert
+            uint8 delegatedSubjectType = getDelegatedSubjectType(subjectType);
+            subjects = _subjectGateway.totalManagedSubjects(delegatedSubjectType, subject);
+            if (subjects == 0) {
+                revert CannotDelegateNoEnabledSubjects(delegatedSubjectType, subject);
+            }
+            maxPerManaged = _subjectGateway.maxManagedStakeFor(delegatedSubjectType, subject);
+            
             // If DELEGATED has staked less than minimum stake, revert cause delegation not unlocked
             if (
-                allocatedStakeFor(getDelegatedSubjectType(subjectType), subject) / subjects <
-                _subjectGateway.minManagedStakeFor(getDelegatedSubjectType(subjectType), subject)
+                allocatedStakeFor(delegatedSubjectType, subject) / subjects <
+                _subjectGateway.minManagedStakeFor(delegatedSubjectType, subject)
             ) {
-                revert CannotDelegateStakeUnderMin(getDelegatedSubjectType(subjectType), subject);
+                revert CannotDelegateStakeUnderMin(delegatedSubjectType, subject);
             }
-            currentlyAllocated = allocatedManagedStake(getDelegatedSubjectType(subjectType), subject);
+            currentlyAllocated = allocatedManagedStake(delegatedSubjectType, subject);
         }
 
         return (int256(currentlyAllocated + amount) - int256(maxPerManaged * subjects), maxPerManaged * subjects);

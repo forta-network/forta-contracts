@@ -421,7 +421,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 slashFromActive = _slash(activeSharesId, subjectType, subject, stakeValue);
         uint256 slashedFromDelegators;
         if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
-            _allocator.slashAllocation(activeSharesId, subjectType, subject, slashFromActive);
+            _allocator.withdrawAllocation(activeSharesId, subjectType, subject, slashFromActive);
 
             if (slashDelegatorsPercent > 0) {
                 slashedFromDelegators = _slashDelegator(getDelegatorSubjectType(subjectType), subject, stakeValue);
@@ -482,7 +482,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     function _slashDelegator(uint8 delegatorType, uint256 subject, uint256 stakeValue) private returns(uint256 slashedFromDelegators) {
         slashedFromDelegators = Math.mulDiv(stakeValue, slashDelegatorsPercent, HUNDRED_PERCENT);
         uint256 slashActiveDelegator = _slash(FortaStakingUtils.subjectToActive(delegatorType, subject), delegatorType, subject, slashedFromDelegators);
-        _allocator.slashAllocation(FortaStakingUtils.subjectToActive(delegatorType, subject), delegatorType, subject, slashActiveDelegator);
+        _allocator.withdrawAllocation(FortaStakingUtils.subjectToActive(delegatorType, subject), delegatorType, subject, slashActiveDelegator);
         return slashedFromDelegators;
     }
 
@@ -520,7 +520,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         if (token == stakedToken) {
             amount -= totalActiveStake();
             amount -= totalInactiveStake();
-            // amount -= _rewards.totalSupply();
         }
 
         SafeERC20.safeTransfer(token, recipient, amount);
