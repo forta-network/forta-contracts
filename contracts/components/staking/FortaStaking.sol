@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Supp
 import "./FortaStakingUtils.sol";
 import "./SubjectTypeValidator.sol";
 import "./allocation/IStakeAllocator.sol";
-import "./stakeSubjectHandling/IStakeSubjectHandler.sol";
+import "./stake_subjects/IStakeSubjectGateway.sol";
 import "./slashing/ISlashingExecutor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
@@ -82,7 +82,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     // treasury for slashing
     address private _treasury;
-    IStakeSubjectHandler public subjectHandler;
+    IStakeSubjectGateway public subjectGateway;
 
     uint256 public slashDelegatorsPercent;
     IStakeAllocator private _allocator;
@@ -100,7 +100,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     event SlashedShareSent(uint8 indexed subjectType, uint256 indexed subject, address indexed by, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
-    event StakeHelpersConfigured(address indexed subjectManager, address indexed allocator);
+    event StakeHelpersConfigured(address indexed subjectGateway, address indexed allocator);
     event MaxStakeReached(uint8 indexed subjectType, uint256 indexed subject);
     event TokensSwept(address indexed token, address to, uint256 amount);
     event SlashDelegatorsPercentSet(uint256 percent);
@@ -278,8 +278,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 subject,
         uint256 stakeValue
     ) public onlyValidSubjectType(subjectType) notAgencyType(subjectType, SubjectStakeAgency.MANAGED) returns (uint256) {
-        if (address(subjectHandler) == address(0)) revert ZeroAddress("subjectHandler");
-        if (!subjectHandler.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
+        if (address(subjectGateway) == address(0)) revert ZeroAddress("subjectGateway");
+        if (!subjectGateway.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         bool reachedMax;
@@ -311,7 +311,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 subject,
         uint256 stakeValue
     ) private view returns (uint256, bool) {
-        uint256 max = subjectHandler.maxStakeFor(subjectType, subject);
+        uint256 max = subjectGateway.maxStakeFor(subjectType, subject);
         if (activeStakeFor(subjectType, subject) >= max) {
             return (0, true);
         } else {
@@ -350,8 +350,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 activeShares = Math.min(sharesValue, balanceOf(staker, activeSharesId));
         uint256 stakeValue = activeSharesToStake(activeSharesId, activeShares);
         uint256 inactiveShares = stakeToInactiveShares(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
-
-        if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED || getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR) {
+        SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
+        if (agency== SubjectStakeAgency.DELEGATED || agency == SubjectStakeAgency.DELEGATOR) {
             _allocator.withdrawAllocation(activeSharesId, subjectType, subject, stakeValue);
         }
         _activeStake.burn(activeSharesId, stakeValue);
@@ -561,16 +561,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
                 // Mint, burn, or transfer of subject shares would by default affect the distribution of the
                 // currently available reward for the subject. We create a "virtual release" that should preserve
                 // reward distribution as it was prior to the transfer.
-                /*
-                int256 virtualRelease = SafeCast.toInt256(_historicalRewardFraction(ids[i], amounts[i], Math.Rounding.Up));
-
-                if (from == address(0)) {
-                    _released[ids[i]].mint(to, virtualRelease);
-                } else if (to == address(0)) {
-                    _released[ids[i]].burn(from, virtualRelease);
-                } else {
-                    _released[ids[i]].transfer(from, to, virtualRelease);
-                }*/
+                //TODO reward allocator
             } else {
                 if (!(from == address(0) || to == address(0))) revert WithdrawalSharesNotTransferible();
             }
@@ -649,12 +640,12 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     // Admin: change staking parameters manager
-    function configureStakingHelpers(IStakeSubjectHandler __subjectHandler, IStakeAllocator __allocator) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (address(__subjectHandler) == address(0)) revert ZeroAddress("__subjectHandler");
+    function configureStakeHelpers(IStakeSubjectGateway __subjectGateway, IStakeAllocator __allocator) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (address(__subjectGateway) == address(0)) revert ZeroAddress("__subjectGateway");
         if (address(__allocator) == address(0)) revert ZeroAddress("__allocator");
-        subjectHandler = __subjectHandler;
+        subjectGateway = __subjectGateway;
         _allocator = __allocator;
-        emit StakeHelpersConfigured(address(__subjectHandler), address(__allocator));
+        emit StakeHelpersConfigured(address(__subjectGateway), address(__allocator));
     }
 
     function setSlashDelegatorsPercent(uint256 percent) public onlyRole(STAKING_ADMIN_ROLE) {

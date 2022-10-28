@@ -67,7 +67,7 @@ describe('Staking - Delegation', function () {
 
     describe('Subject Agency', function () {
         it('should know agency for subject types', async function () {
-            expect(await this.staking.getSubjectTypeAgency(this.stakingSubjects.SCANNER)).to.eq(this.subjectAgency.DIRECT); // MANAGED after sunsetting
+            expect(await this.staking.getSubjectTypeAgency(this.stakingSubjects.SCANNER)).to.eq(this.subjectAgency.MANAGED);
             expect(await this.staking.getSubjectTypeAgency(this.stakingSubjects.AGENT)).to.eq(this.subjectAgency.DIRECT);
             expect(await this.staking.getSubjectTypeAgency(this.stakingSubjects.NODE_RUNNER)).to.eq(this.subjectAgency.DELEGATED);
             expect(await this.staking.getSubjectTypeAgency(this.stakingSubjects.UNDEFINED)).to.eq(this.subjectAgency.UNDEFINED);
@@ -175,8 +175,8 @@ describe('Staking - Delegation', function () {
                 await expect(this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, '200'))
                     .to.emit(this.stakeAllocator, 'AllocatedStake')
                     .withArgs(nodeRunnerSubjectType, nodeRunnerId, '200', '200');
-                expect(await this.subjectHandler.minManagedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('100');
-                expect(await this.subjectHandler.totalManagedSubjects(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3');
+                expect(await this.subjectGateway.minManagedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('100');
+                expect(await this.subjectGateway.totalManagedSubjects(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3');
 
                 expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('66');
                 for (const scanner of SCANNERS) {

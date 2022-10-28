@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 
 import "../BaseComponentUpgradeable.sol";
 import "../staking/allocation/IStakeAllocator.sol";
-import "../staking/stakeSubjectHandling/DelegatedStakeSubject.sol";
+import "../staking/stake_subjects/DelegatedStakeSubject.sol";
 import "../../errors/GeneralErrors.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -96,19 +96,19 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * @notice Initializer method
      * @param __name ERC721 token name.
      * @param __symbol ERC721 token symbol.
-     * @param __stakeSubjectManager address of StakeSubjectManager
+     * @param __stakeSubjectGateway address of StakeSubjectGateway
      * @param __registrationDelay amount of time allowed from scanner signing a ScannerNodeRegistration and it's execution by NodeRunner
      */
     function __NodeRunnerRegistryCore_init(
         string calldata __name,
         string calldata __symbol,
-        address __stakeSubjectManager,
+        address __stakeSubjectGateway,
         uint256 __registrationDelay
     ) internal initializer {
         __ERC721_init(__name, __symbol);
         __ERC721Enumerable_init();
         __EIP712_init("NodeRunnerRegistry", "1");
-        __StakeSubjectUpgradeable_init(__stakeSubjectManager);
+        __StakeSubjectUpgradeable_init(__stakeSubjectGateway);
 
         _setRegistrationDelay(__registrationDelay);
     }
@@ -195,7 +195,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     function _registerScannerNode(ScannerNodeRegistration calldata req) internal {
         if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
-        if (_nodeRunnerChainId[req.nodeRunnerId] != req.chainId) revert ChainIdMismatch(_nodeRunnerChainId[req.nodeRunnerId], req.chainId);
+        if (_nodeRunnerChainId[req.nodeRunnerId] != req.chainId)
+            revert ChainIdMismatch(_nodeRunnerChainId[req.nodeRunnerId], req.chainId);
         _scannerNodes[req.scanner] = ScannerNode({ registered: true, disabled: false, nodeRunnerId: req.nodeRunnerId, chainId: req.chainId, metadata: req.metadata });
         // It is safe to ignore add()'s returned bool, since isScannerRegistered() already checks for duplicates.
         !_scannerNodeOwnership[req.nodeRunnerId].add(req.scanner);
@@ -276,16 +277,21 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * - (Scanner Node has more than minimum stake allocated to it OR staking is not activated for the Scanner Node's chain)
      */
     function isScannerOperational(address scanner) public view returns (bool) {
-        bool result = _scannerNodes[scanner].registered && !_scannerNodes[scanner].disabled;
-        if (_scannerStakeThresholds[_scannerNodes[scanner].chainId].activated) {
-            result = result && _isScannerStakedOverMin(scanner);
-        }
-        return result && _exists(_scannerNodes[scanner].nodeRunnerId);
+        ScannerNode storage node = _scannerNodes[scanner];
+        StakeThreshold storage stake = _scannerStakeThresholds[node.chainId];
+        return (
+            node.registered &&
+            !node.disabled &&
+            (!stake.activated || _isScannerStakedOverMin(scanner)) &&
+            _exists(node.nodeRunnerId)
+        );
     }
 
     /// Returns true if the owner of NodeRegistry (DELEGATED) has staked over min for scanner, false otherwise.
     function _isScannerStakedOverMin(address scanner) internal view returns (bool) {
-        return _stakeAllocator.allocatedStakePerManaged(NODE_RUNNER_SUBJECT, _scannerNodes[scanner].nodeRunnerId) >= _scannerStakeThresholds[_scannerNodes[scanner].chainId].min;
+        ScannerNode storage node = _scannerNodes[scanner];
+        StakeThreshold storage stake = _scannerStakeThresholds[node.chainId];
+        return _stakeAllocator.allocatedStakePerManaged(NODE_RUNNER_SUBJECT, node.nodeRunnerId) >= stake.min;
     }
 
     /**

@@ -3,13 +3,14 @@
 
 pragma solidity ^0.8.9;
 
-import "../stakeSubjectHandling/StakeSubjectHandler.sol";
+import "../stake_subjects/StakeSubjectGateway.sol";
 import "../../../tools/Distributions.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract RewardsAllocator is BaseComponentUpgradeable, SubjectTypeValidator {
 
-    using Distributions for Distributions.Balances
+    using Distributions for Distributions.Balances;
+    using Distributions for Distributions.SignedBalances;
 
     event Rewarded(uint8 indexed subjectType, uint256 indexed subject, address indexed from, uint256 value);
     event Released(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 value);

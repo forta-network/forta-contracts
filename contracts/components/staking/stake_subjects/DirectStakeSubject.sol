@@ -4,14 +4,14 @@
 pragma solidity ^0.8.9;
 
 import "../../../errors/GeneralErrors.sol";
-import "./IStakeSubjectHandler.sol";
+import "./IStakeSubjectGateway.sol";
 import "./IDirectStakeSubject.sol";
 import "../SubjectTypeValidator.sol";
 import "../../Roles.sol";
 import "../../utils/AccessManaged.sol";
 
 abstract contract DirectStakeSubjectUpgradeable is AccessManagedUpgradeable, IDirectStakeSubject {
-    IStakeSubjectHandler private _subjectHandler;
+    IStakeSubjectGateway private _subjectGateway;
 
     event SubjectHandlerUpdated(address indexed newHandler);
 
@@ -19,28 +19,28 @@ abstract contract DirectStakeSubjectUpgradeable is AccessManagedUpgradeable, IDi
 
     /*
      * @dev: For contracts made StakeAwareUpgradeable via upgrade, initializer call is not available.
-     * Use setSubjectHandler(subjectHandler) when upgrading instead.
-     * @param subjectHandler address.
+     * Use setSubjectHandler(subjectGateway) when upgrading instead.
+     * @param subjectGateway address.
      */
-    function __StakeSubjectUpgradeable_init(address subjectHandler) internal initializer {
-        _setSubjectHandler(subjectHandler);
+    function __StakeSubjectUpgradeable_init(address subjectGateway) internal initializer {
+        _setSubjectHandler(subjectGateway);
     }
 
     /// Stake controller setter, restricted to DEFAULT_ADMIN_ROLE
-    function setSubjectHandler(address subjectHandler) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setSubjectHandler(subjectHandler);
+    function setSubjectHandler(address subjectGateway) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setSubjectHandler(subjectGateway);
     }
 
-    /// Getter for subjectHandler
-    function getSubjectHandler() public view returns (IStakeSubjectHandler) {
-        return _subjectHandler;
+    /// Getter for subjectGateway
+    function getSubjectHandler() public view returns (IStakeSubjectGateway) {
+        return _subjectGateway;
     }
 
-    /// Internal setter for subjectHandler, emits subjectHandlerUpdated
-    function _setSubjectHandler(address subjectHandler) private {
-        if (subjectHandler == address(0)) revert ZeroAddress("subjectHandler");
-        _subjectHandler = IStakeSubjectHandler(subjectHandler);
-        emit SubjectHandlerUpdated(subjectHandler);
+    /// Internal setter for subjectGateway, emits subjectGatewayUpdated
+    function _setSubjectHandler(address subjectGateway) private {
+        if (subjectGateway == address(0)) revert ZeroAddress("subjectGateway");
+        _subjectGateway = IStakeSubjectGateway(subjectGateway);
+        emit SubjectHandlerUpdated(subjectGateway);
     }
 
     /// Returns true if `subject` amount of staked tokens is bigger or equal the minimum stake set

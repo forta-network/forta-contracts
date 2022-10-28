@@ -39,7 +39,6 @@ function prepare(config = {}) {
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_ADMIN, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.DISPATCHER, this.accounts.manager.address),
-                this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.REWARDS_ADMIN, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_BETA_VERSION, this.accounts.admin.address),
@@ -72,6 +71,7 @@ function prepare(config = {}) {
             this.subjectAgency.DIRECT = 1;
             this.subjectAgency.DELEGATED = 2;
             this.subjectAgency.DELEGATOR = 3;
+            this.subjectAgency.MANAGED = 4;
 
             if (config.stake.agents) {
                 await this.agents

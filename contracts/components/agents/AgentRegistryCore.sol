@@ -6,7 +6,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponentUpgradeable.sol";
-import "../staking/stakeSubjectHandling/DirectStakeSubject.sol";
+import "../staking/stake_subjects/DirectStakeSubject.sol";
 import "../../tools/FrontRunningProtection.sol";
 import "../../errors/GeneralErrors.sol";
 
@@ -118,7 +118,7 @@ abstract contract AgentRegistryCore is
         return _stakeThreshold;
     }
 
-    function _isStakedActivated() internal view returns(bool) {
+    function _isStakeActivated() internal view returns(bool) {
         return address(getSubjectHandler()) != address(0) && _stakeThreshold.activated;
     }
 

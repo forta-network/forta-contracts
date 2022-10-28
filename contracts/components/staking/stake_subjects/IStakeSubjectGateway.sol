@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 
 import "./IStakeSubject.sol";
 
-interface IStakeSubjectHandler {
+interface IStakeSubjectGateway {
     event StakeSubjectChanged(address newHandler, address oldHandler);
     function setStakeSubject(uint8 subjectType, address subject) external;
     function getStakeSubject(uint8 subjectType) external view returns (address);
