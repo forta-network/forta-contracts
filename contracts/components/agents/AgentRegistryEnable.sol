@@ -32,11 +32,11 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
      * Returns false if otherwise
      */
     function isEnabled(uint256 agentId) public view virtual returns (bool) {
-        if (_isStakeActivated()) {
-            return isRegistered(agentId) && getDisableFlags(agentId) == 0 && _isStakedOverMin(agentId);
-        } else {
-            return isRegistered(agentId) && getDisableFlags(agentId) == 0;
-        }
+        return (
+            isRegistered(agentId) &&
+            getDisableFlags(agentId) == 0 &&
+            (!_isStakeActivated() || _isStakedOverMin(agentId))
+        );
     }
 
     /**
