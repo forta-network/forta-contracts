@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Supp
 import "./FortaStakingUtils.sol";
 import "./SubjectTypeValidator.sol";
 import "./allocation/IStakeAllocator.sol";
-import "./stakeSubjects/IStakeSubjectGateway.sol";
+import "./stake_subjects/IStakeSubjectGateway.sol";
 import "./slashing/ISlashingExecutor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
@@ -352,8 +352,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 activeShares = Math.min(sharesValue, balanceOf(staker, activeSharesId));
         uint256 stakeValue = activeSharesToStake(activeSharesId, activeShares);
         uint256 inactiveShares = stakeToInactiveShares(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
-
-        if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED || getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR) {
+        SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
+        if (agency== SubjectStakeAgency.DELEGATED || agency == SubjectStakeAgency.DELEGATOR) {
             _allocator.withdrawAllocation(activeSharesId, subjectType, subject, stakeValue);
         }
         _activeStake.burn(activeSharesId, stakeValue);

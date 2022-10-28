@@ -152,7 +152,8 @@ contract StakeSubjectGateway is BaseComponentUpgradeable, SubjectTypeValidator, 
     }
 
     function canManageAllocation(uint8 subjectType, uint256 subject, address allocator) external view returns (bool) {
-        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATOR && getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED) {
+        SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
+        if (agency != SubjectStakeAgency.DELEGATOR && agency != SubjectStakeAgency.DELEGATED) {
             return false;
         }
         if (address(0) == _stakeSubjects[subjectType]) {

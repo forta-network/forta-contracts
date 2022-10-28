@@ -88,7 +88,7 @@ async function migrate(config = {}) {
 
     //const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
     const configName = `${chainId === 5 ? './_old/' : ''}.cache-${chainId}${chainId === 5 ? '-with-components' : ''}`;
-    console.log('configName:', configName);
+    DEBUG('configName:', configName);
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: configName });
 
     if (config?.force) {

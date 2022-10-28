@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.9;
 
-import "../stakeSubjects/StakeSubjectGateway.sol";
+import "../stake_subjects/StakeSubjectGateway.sol";
 import "../../utils/StateMachines.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";

@@ -6,7 +6,7 @@ pragma solidity ^0.8.9;
 import "./IStakeAllocator.sol";
 import "../SubjectTypeValidator.sol";
 import "../FortaStakingUtils.sol";
-import "../stakeSubjects/IStakeSubjectGateway.sol";
+import "../stake_subjects/IStakeSubjectGateway.sol";
 import "../../BaseComponentUpgradeable.sol";
 import "../../../tools/Distributions.sol";
 
@@ -289,7 +289,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
             subjects = _subjectGateway.totalManagedSubjects(subjectType, subject);
             maxPerManaged = _subjectGateway.maxManagedStakeFor(subjectType, subject);
             currentlyAllocated = allocatedManagedStake(subjectType, subject);
-        } else if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR) {
+        } else if (agency == SubjectStakeAgency.DELEGATOR) {
             // i.e Delegator to NodeRunnerRegistry
             subjects = _subjectGateway.totalManagedSubjects(getDelegatedSubjectType(subjectType), subject);
             maxPerManaged = _subjectGateway.maxManagedStakeFor(getDelegatedSubjectType(subjectType), subject);
