@@ -8,16 +8,16 @@ const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRe
 let SCANNER_ADDRESS_1, scanner1Registration, scanner1Signature, verifyingContractInfo;
 describe('Node Runner Registry', function () {
     // TODO Stake related stuff
-    prepare({ stake: { min: '0', max: '500', activated: true } });
+    prepare({ stake: { scanners: { min: '100', max: '500', activated: true } } });
 
     beforeEach(async function () {
-        const { chainId } = await ethers.provider.getNetwork();
+        const network = await ethers.provider.getNetwork();
         this.accounts.getAccount('scanner');
 
         SCANNER_ADDRESS_1 = this.accounts.scanner.address;
         verifyingContractInfo = {
             address: this.contracts.nodeRunners.address,
-            chainId: chainId,
+            chainId: network.chainId,
         };
         scanner1Registration = {
             scanner: SCANNER_ADDRESS_1,
@@ -30,50 +30,52 @@ describe('Node Runner Registry', function () {
         scanner1Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner1Registration, this.accounts.scanner);
     });
 
-    it('isStakedOverMin false if scanner non existant', async function () {
-        expect(await this.nodeRunners.isStakedOverMin(this.accounts.scanner.address)).to.equal(false);
-    });
-
     it('register node runner', async function () {
-        await expect(this.nodeRunners.connect(this.accounts.user1).registerNodeRunner())
+        await expect(this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1))
             .to.emit(this.nodeRunners, 'Transfer')
-            .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, '1');
+            .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, '1')
+            .to.emit(this.nodeRunners, 'NodeRunnerRegistered')
+            .withArgs(1, 1);
         expect(await this.nodeRunners.isRegistered(1)).to.be.equal(true);
         expect(await this.nodeRunners.ownerOf(1)).to.be.equal(this.accounts.user1.address);
+        expect(await this.nodeRunners.monitoredChainId(1)).to.be.equal(1);
 
-        await expect(this.nodeRunners.connect(this.accounts.user2).registerNodeRunner())
+        await expect(this.nodeRunners.connect(this.accounts.user2).registerNodeRunner(44))
             .to.emit(this.nodeRunners, 'Transfer')
-            .withArgs(ethers.constants.AddressZero, this.accounts.user2.address, '2');
+            .withArgs(ethers.constants.AddressZero, this.accounts.user2.address, '2')
+            .to.emit(this.nodeRunners, 'NodeRunnerRegistered')
+            .withArgs(2, 44);
         expect(await this.nodeRunners.isRegistered(2)).to.be.equal(true);
         expect(await this.nodeRunners.ownerOf(2)).to.be.equal(this.accounts.user2.address);
+        expect(await this.nodeRunners.monitoredChainId(2)).to.be.equal(44);
     });
 
     it('register scanner', async function () {
         const SCANNER_ADDRESS = this.accounts.scanner.address;
         const SCANNER_ADDRESS_2 = this.accounts.user2.address;
 
-        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
         await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
             .to.emit(this.nodeRunners, 'ScannerUpdated')
             .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
         const scanner2Registration = {
             scanner: SCANNER_ADDRESS_2,
             nodeRunnerId: 1,
-            chainId: 2,
+            chainId: 1,
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
         };
         const scanner2Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner2Registration, this.accounts.user2);
         await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
             .to.emit(this.nodeRunners, 'ScannerUpdated')
-            .withArgs(SCANNER_ADDRESS_2, 2, 'metadata2', 1);
+            .withArgs(SCANNER_ADDRESS_2, 1, 'metadata2', 1);
 
         expect(await this.nodeRunners.getScanner(SCANNER_ADDRESS)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), 'metadata']);
 
         expect(await this.nodeRunners.isScannerRegistered(SCANNER_ADDRESS)).to.be.equal(true);
         expect(await this.nodeRunners.registeredScannerAddressAtIndex(1, 0)).to.be.equal(SCANNER_ADDRESS);
 
-        expect(await this.nodeRunners.getScanner(SCANNER_ADDRESS_2)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(2), 'metadata2']);
+        expect(await this.nodeRunners.getScanner(SCANNER_ADDRESS_2)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), 'metadata2']);
         expect(await this.nodeRunners.isScannerRegistered(SCANNER_ADDRESS_2)).to.be.equal(true);
         expect(await this.nodeRunners.registeredScannerAddressAtIndex(1, 1)).to.be.equal(SCANNER_ADDRESS_2);
 
@@ -88,7 +90,7 @@ describe('Node Runner Registry', function () {
         });
 
         it('migrate node runner', async function () {
-            await expect(this.nodeRunners.connect(this.accounts.manager).registerMigratedNodeRunner(this.accounts.user1.address))
+            await expect(this.nodeRunners.connect(this.accounts.manager).registerMigratedNodeRunner(this.accounts.user1.address, 1))
                 .to.emit(this.nodeRunners, 'Transfer')
                 .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, '1');
             expect(await this.nodeRunners.isRegistered(1)).to.be.equal(true);
@@ -96,14 +98,14 @@ describe('Node Runner Registry', function () {
         });
 
         it('should not migrate node runner if not SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE ', async function () {
-            await expect(this.nodeRunners.connect(this.accounts.user1).registerMigratedNodeRunner(this.accounts.user1.address)).to.be.revertedWith(
+            await expect(this.nodeRunners.connect(this.accounts.user1).registerMigratedNodeRunner(this.accounts.user1.address, 1)).to.be.revertedWith(
                 `MissingRole("${this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
             );
         });
 
         it('migrate scanner', async function () {
             const SCANNER_ADDRESS = this.accounts.scanner.address;
-            await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+            await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
             await expect(this.nodeRunners.connect(this.accounts.manager).registerMigratedScannerNode(scanner1Registration, true))
                 .to.emit(this.nodeRunners, 'ScannerUpdated')
                 .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
@@ -114,7 +116,7 @@ describe('Node Runner Registry', function () {
         });
 
         it('should not migrate scanner if not SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE', async function () {
-            await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+            await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
             await expect(this.nodeRunners.connect(this.accounts.user1).registerMigratedScannerNode(scanner1Registration, false)).to.be.revertedWith(
                 `MissingRole("${this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
             );
@@ -122,11 +124,11 @@ describe('Node Runner Registry', function () {
     });
 
     it('should not register scanner after delay', async function () {
-        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
         const scanner2Registration = {
             scanner: this.accounts.user2.address,
             nodeRunnerId: 1,
-            chainId: 2,
+            chainId: 1,
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
         };
@@ -138,7 +140,7 @@ describe('Node Runner Registry', function () {
     });
 
     it('should not register scanner signed by other', async function () {
-        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(2);
         const scanner2Registration = {
             scanner: this.accounts.user2.address,
             nodeRunnerId: 1,
@@ -151,7 +153,7 @@ describe('Node Runner Registry', function () {
     });
 
     it('should not register scanner if not owner', async function () {
-        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(2);
         const scanner2Registration = {
             scanner: this.accounts.user2.address,
             nodeRunnerId: 1,
@@ -165,17 +167,30 @@ describe('Node Runner Registry', function () {
         );
     });
 
+    it('should not register scanner if not same chain', async function () {
+        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
+        const scanner2Registration = {
+            scanner: this.accounts.user2.address,
+            nodeRunnerId: 1,
+            chainId: 2,
+            metadata: 'metadata2',
+            timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+        };
+        const scanner2Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner2Registration, this.accounts.user2);
+        await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature)).to.be.revertedWith(`ChainIdMismatch(1, 2)`);
+    });
+
     it('should not register scanner if already registered', async function () {
         const SCANNER_ADDRESS = this.accounts.scanner.address;
 
-        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
         await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
             .to.emit(this.nodeRunners, 'ScannerUpdated')
             .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
         const scanner2Registration = {
             scanner: SCANNER_ADDRESS,
             nodeRunnerId: 1,
-            chainId: 2,
+            chainId: 1,
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
         };
@@ -183,15 +198,10 @@ describe('Node Runner Registry', function () {
         await expect(this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature)).to.be.revertedWith('ScannerExists');
     });
 
-    it.skip('public scanner register fails if stake not activated', async function () {
-        await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '0', activated: false }, 1);
-        await expect(this.nodeRunners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1, 'metadata')).to.be.revertedWith('PublicRegistrationDisabled(1)');
-    });
-
     it('scanner metadata update', async function () {
         const SCANNER_ADDRESS = this.accounts.scanner.address;
 
-        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
         await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
         await expect(this.nodeRunners.connect(this.accounts.user1).updateScannerMetadata(SCANNER_ADDRESS, '333'))
             .to.emit(this.nodeRunners, 'ScannerUpdated')
@@ -204,7 +214,7 @@ describe('Node Runner Registry', function () {
     it('scanner metadata update - non registered scanner', async function () {
         const WRONG_SCANNER_ADDRESS = this.accounts.admin.address;
 
-        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
         await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
 
         await expect(this.nodeRunners.connect(this.accounts.user1).updateScannerMetadata(WRONG_SCANNER_ADDRESS, '333')).to.be.revertedWith(
@@ -214,7 +224,7 @@ describe('Node Runner Registry', function () {
 
     describe('managers', function () {
         beforeEach(async function () {
-            await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+            await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
         });
 
         it('add manager', async function () {
@@ -272,7 +282,7 @@ describe('Node Runner Registry', function () {
         beforeEach(async function () {
             await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
             await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
-            // await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_ADDRESS, '100');
+            // await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER, SCANNER_ADDRESS, '100');
         });
 
         describe('manager', async function () {
@@ -395,7 +405,7 @@ describe('Node Runner Registry', function () {
                 expect(await this.nodeRunners.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);
                 await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
                 expect(await this.nodeRunners.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
-                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_SUBJECT_TYPE, SCANNER_SUBJECT_ID, '10000');
+                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER, SCANNER_SUBJECT_ID, '10000');
                 expect(await this.nodeRunners.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);
             });
         });

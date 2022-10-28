@@ -17,8 +17,8 @@
       "options": {
         "singleQuote": false,
         "tabWidth": 4,
-        "maxLineLength": 150,
-        "printWidth": 150
+        "maxLineLength": 180,
+        "printWidth": 180
       }
     },
     {

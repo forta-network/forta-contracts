@@ -39,12 +39,12 @@ function prepare(config = {}) {
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_ADMIN, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.DISPATCHER, this.accounts.manager.address),
-                this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.REWARDS_ADMIN, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_BETA_VERSION, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.contracts.slashing.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.STAKING_ADMIN, this.accounts.admin.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.STAKE_ALLOCATOR_ACCESS, this.contracts.staking.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.MIGRATION_EXECUTOR, this.accounts.manager.address),
                 this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
                 this.otherToken.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
@@ -62,13 +62,31 @@ function prepare(config = {}) {
             this.accounts.staker = this.accounts.user1;
             await this.token.connect(this.accounts.staker).approve(this.staking.address, ethers.constants.MaxUint256);
             this.stakingSubjects = {};
-            this.stakingSubjects.SCANNER_SUBJECT_TYPE = 0;
-            this.stakingSubjects.AGENT_SUBJECT_TYPE = 1;
-            this.stakingSubjects.NODE_RUNNER_SUBJECT_TYPE = 3;
+            this.stakingSubjects.SCANNER = 0;
+            this.stakingSubjects.AGENT = 1;
+            this.stakingSubjects.NODE_RUNNER = 2;
+            this.stakingSubjects.UNDEFINED = 255;
+            this.subjectAgency = {};
+            this.subjectAgency.UNDEFINED = 0;
+            this.subjectAgency.DIRECT = 1;
+            this.subjectAgency.DELEGATED = 2;
+            this.subjectAgency.DELEGATOR = 3;
+            this.subjectAgency.MANAGED = 4;
 
-            await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated });
-            await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated }, 1);
-            await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated });
+            if (config.stake.agents) {
+                await this.agents
+                    .connect(this.accounts.manager)
+                    .setStakeThreshold({ max: config.stake.agents.max, min: config.stake.agents.min, activated: config.stake.agents.activated });
+            }
+            if (config.stake.scanners) {
+                // DEPRECATION NOTICE: scanners
+                await this.scanners
+                    .connect(this.accounts.manager)
+                    .setStakeThreshold({ max: config.stake.scanners.max, min: config.stake.scanners.min, activated: config.stake.scanners.activated }, 1);
+                await this.nodeRunners
+                    .connect(this.accounts.manager)
+                    .setManagedStakeThreshold({ max: config.stake.scanners.max, min: config.stake.scanners.min, activated: config.stake.scanners.activated }, 1);
+            }
 
             DEBUG('Fixture: stake configured');
         }

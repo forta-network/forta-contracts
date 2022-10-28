@@ -3,13 +3,12 @@ const { expect } = require('chai');
 const { prepare } = require('./fixture');
 
 describe('Forta', function () {
-    prepare();
+    prepare({ mainnet: true });
 
     it('check deployment', async function () {
         expect(await this.token.hasRole(this.roles.ADMIN, this.accounts.admin.address));
         expect(await this.token.hasRole(this.roles.MINTER, this.accounts.minter.address));
     });
-
 
     describe('mint', function () {
         describe('non-authorized', function () {

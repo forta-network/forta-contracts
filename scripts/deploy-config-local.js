@@ -73,8 +73,8 @@ async function deployAndConfig(config = {}) {
         this.accounts.staker = this.accounts.user1;
         await this.token.connect(this.accounts.staker).approve(this.staking.address, ethers.constants.MaxUint256);
         this.stakingSubjects = {};
-        this.stakingSubjects.SCANNER_SUBJECT_TYPE = 0;
-        this.stakingSubjects.AGENT_SUBJECT_TYPE = 1;
+        this.stakingSubjects.SCANNER = 0;
+        this.stakingSubjects.AGENT = 1;
         await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated });
         await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: config.stake.max, min: config.stake.min, activated: config.stake.activated }, 1);
 

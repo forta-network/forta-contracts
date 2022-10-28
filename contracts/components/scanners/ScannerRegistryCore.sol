@@ -6,14 +6,14 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponentUpgradeable.sol";
-import "../staking/StakeSubject.sol";
+import "../staking/stake_subjects/DirectStakeSubject.sol";
 import "../../errors/GeneralErrors.sol";
 import "../node_runners/NodeRunnerRegistry.sol";
 
 abstract contract ScannerRegistryCore is
     BaseComponentUpgradeable,
     ERC721Upgradeable,
-    StakeSubjectUpgradeable
+    DirectStakeSubjectUpgradeable
 {
     mapping(uint256 => StakeThreshold) internal _stakeThresholds;
     
@@ -78,10 +78,10 @@ abstract contract ScannerRegistryCore is
      * false otherwise
      */
     function _isStakedOverMin(uint256 scannerId) internal virtual override view returns(bool) {
-        if (address(getStakeController()) == address(0)) {
+        if (address(getSubjectHandler()) == address(0) || !_getStakeThreshold(scannerId).activated) {
             return true;
         }
-        return getStakeController().activeStakeFor(SCANNER_SUBJECT, scannerId) >= _getStakeThreshold(scannerId).min && _exists(scannerId);
+        return getSubjectHandler().activeStakeFor(SCANNER_SUBJECT, scannerId) >= _getStakeThreshold(scannerId).min && _exists(scannerId);
     }
 
 
@@ -99,6 +99,14 @@ abstract contract ScannerRegistryCore is
      */
     function _msgData() internal view virtual override(BaseComponentUpgradeable, ContextUpgradeable) returns (bytes calldata) {
         return super._msgData();
+    }
+
+    /**
+     * @notice disambiguation of ownerOf.
+     * @inheritdoc ERC721Upgradeable
+     */
+    function ownerOf(uint256 subject) public view virtual override(DirectStakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
+        return super.ownerOf(subject);
     }
 
     uint256[44] private __gap; // 50 - 1 (_stakeThresholds) - 5 (StakeSubjectUpgradeable)

@@ -8,7 +8,7 @@ const AGENT_SUBJECT = 1;
 const config = {
     subjectType: SCANNER_SUBJECT,
     min: ethers.utils.parseEther('500'),
-    max: ethers.utils.parseEther('750'),
+    max: ethers.utils.parseEther('3000'),
     activated: true,
     chainId: 250, // only relevant to SCANNER_SUBJECT
 };
