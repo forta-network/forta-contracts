@@ -175,8 +175,8 @@ describe('Staking - Delegation', function () {
                 await expect(this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, '200'))
                     .to.emit(this.stakeAllocator, 'AllocatedStake')
                     .withArgs(nodeRunnerSubjectType, nodeRunnerId, '200', '200');
-                expect(await this.subjectHandler.minManagedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('100');
-                expect(await this.subjectHandler.totalManagedSubjects(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3');
+                expect(await this.subjectGateway.minManagedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('100');
+                expect(await this.subjectGateway.totalManagedSubjects(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3');
 
                 expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('66');
                 for (const scanner of SCANNERS) {

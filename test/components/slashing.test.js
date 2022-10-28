@@ -634,7 +634,7 @@ describe('Slashing Proposals', function () {
 
         it('max possible stake', async function () {
             const maxSlashableStakePercent = await this.staking.MAX_SLASHABLE_PERCENT();
-            const totalStake = await this.subjectHandler.totalStakeFor(subjects[0].type, subjects[0].id);
+            const totalStake = await this.subjectGateway.totalStakeFor(subjects[0].type, subjects[0].id);
             const maxSlashable = totalStake.mul(maxSlashableStakePercent).div('100');
 
             // All active stake

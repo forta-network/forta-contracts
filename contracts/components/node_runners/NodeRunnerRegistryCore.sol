@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 
 import "../BaseComponentUpgradeable.sol";
 import "../staking/allocation/IStakeAllocator.sol";
-import "../staking/stakeSubjectHandling/DelegatedStakeSubject.sol";
+import "../staking/stakeSubjects/DelegatedStakeSubject.sol";
 import "../../errors/GeneralErrors.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";

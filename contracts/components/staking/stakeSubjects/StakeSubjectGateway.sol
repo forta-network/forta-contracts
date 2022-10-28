@@ -8,17 +8,17 @@ import "./IDelegatedStakeSubject.sol";
 import "./IDirectStakeSubject.sol";
 
 /**
- * Formerly StakeSubjectHandler.
+ * Formerly FortaStakingParameters.
  * 
  * This contract manages the relationship between the staking contracts and the several affected staking subjects,
  * who hold the responsability of defining staking thresholds, managed subjects, and related particularities.
  */
-contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, IStakeSubjectHandler {
+contract StakeSubjectGateway is BaseComponentUpgradeable, SubjectTypeValidator, IStakeSubjectGateway {
     FortaStaking private _fortaStaking; // Should be immutable but already deployed.
     // stake subject parameters for each subject
     mapping(uint8 => address) private _stakeSubjects;
 
-    error NonIDelegatedSubjectHandler(uint8 subjectType, address handler);
+    error NonIDelegatedSubjectHandler(uint8 subjectType, address stakeSubject);
 
     string public constant version = "0.1.1";
     uint256 private constant MAX_UINT = 2**256 - 1;
@@ -43,7 +43,7 @@ contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, 
     }
 
     /**
-     * Sets stake subject handler stake for subject type.
+     * Sets stake subject for subject type.
      */
     function setStakeSubject(uint8 subjectType, address subject) external onlyRole(DEFAULT_ADMIN_ROLE) onlyValidSubjectType(subjectType) {
         if (subject == address(0)) revert ZeroAddress("subject");
@@ -62,7 +62,7 @@ contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, 
 
     /**
      * Get max stake for that `subjectType` and `subject`
-     * @return if subject is DIRECT, returns stakeThreshold.max, if not MAX_UINT. If handler not set, it will return 0.
+     * @return if subject is DIRECT, returns stakeThreshold.max, if not MAX_UINT. If subject not set, it will return 0.
      */ 
     function maxStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
         if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DIRECT) {
@@ -77,7 +77,7 @@ contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, 
 
     /**
      * Get min stake for that `subjectType` and `subject`
-     * @return if subject is DIRECT, returns stakeThreshold.min, if not 0. If handler not set, it will return MAX_UINT.
+     * @return if subject is DIRECT, returns stakeThreshold.min, if not 0. If subject not set, it will return MAX_UINT.
      */ 
     function minStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256) {
         if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DIRECT) {

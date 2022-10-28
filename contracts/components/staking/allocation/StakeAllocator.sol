@@ -6,7 +6,7 @@ pragma solidity ^0.8.9;
 import "./IStakeAllocator.sol";
 import "../SubjectTypeValidator.sol";
 import "../FortaStakingUtils.sol";
-import "../stakeSubjectHandling/IStakeSubjectHandler.sol";
+import "../stakeSubjects/IStakeSubjectGateway.sol";
 import "../../BaseComponentUpgradeable.sol";
 import "../../../tools/Distributions.sol";
 
@@ -26,7 +26,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
 
     string public constant version = "0.1.0";
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    IStakeSubjectHandler private immutable _subjectHandler;
+    IStakeSubjectGateway private immutable _subjectGateway;
 
     // subject => active stake
     Distributions.Balances private _allocatedStake;
@@ -40,9 +40,9 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
     error CannotDelegateStakeUnderMin(uint8 subjectType, uint256 subject);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder, address subjectHandler) initializer ForwardedContext(forwarder) {
-        if (subjectHandler == address(0)) revert ZeroAddress("subjectHandler");
-        _subjectHandler = IStakeSubjectHandler(subjectHandler);
+    constructor(address forwarder, address subjectGateway) initializer ForwardedContext(forwarder) {
+        if (subjectGateway == address(0)) revert ZeroAddress("subjectGateway");
+        _subjectGateway = IStakeSubjectGateway(subjectGateway);
     }
 
     /**
@@ -76,7 +76,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED) {
             return 0;
         }
-        return allocatedManagedStake(subjectType, subject) / _subjectHandler.totalManagedSubjects(subjectType, subject);
+        return allocatedManagedStake(subjectType, subject) / _subjectGateway.totalManagedSubjects(subjectType, subject);
     }
 
     /// Returns allocatedManagedStake (own only) in DELEGATED / total managed subjects, or 0 if not DELEGATED
@@ -84,7 +84,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED) {
             return 0;
         }
-        return allocatedStakeFor(subjectType, subject) / _subjectHandler.totalManagedSubjects(subjectType, subject);
+        return allocatedStakeFor(subjectType, subject) / _subjectGateway.totalManagedSubjects(subjectType, subject);
     }
 
     /// Returns allocatedManagedStake (delegators only) in DELEGATED / total managed subjects, or 0 if not DELEGATED
@@ -92,7 +92,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED) {
             return 0;
         }
-        return allocatedStakeFor(getDelegatorSubjectType(subjectType), subject) / _subjectHandler.totalManagedSubjects(subjectType, subject);
+        return allocatedStakeFor(getDelegatorSubjectType(subjectType), subject) / _subjectGateway.totalManagedSubjects(subjectType, subject);
     }
 
     /// Total active stake not allocated on subjects
@@ -114,7 +114,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         uint256 subject,
         uint256 amount
     ) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) {
-        if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
+        if (!_subjectGateway.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
         _allocateStake(subjectType, subject, _msgSender(), amount);
     }
 
@@ -129,7 +129,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         uint256 subject,
         uint256 amount
     ) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) {
-        if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
+        if (!_subjectGateway.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
         _unallocateStake(subjectType, subject, amount);
     }
 
@@ -145,7 +145,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         uint256 subject,
         uint256 amount
     ) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) {
-        if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
+        if (!_subjectGateway.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
         _allocateStake(getDelegatorSubjectType(subjectType), subject, _msgSender(), amount);
     }
 
@@ -160,7 +160,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         uint256 subject,
         uint256 amount
     ) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) {
-        if (!_subjectHandler.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
+        if (!_subjectGateway.canManageAllocation(subjectType, subject, _msgSender())) revert SenderCannotAllocateFor(subjectType, subject);
         _unallocateStake(getDelegatorSubjectType(subjectType), subject, amount);
     }
 
@@ -285,18 +285,18 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         uint256 currentlyAllocated = 0;
         if (agency == SubjectStakeAgency.DELEGATED) {
             // i.e NodeRunnerRegistry
-            if (!_subjectHandler.canManageAllocation(subjectType, subject, allocator)) revert SenderCannotAllocateFor(subjectType, subject);
-            subjects = _subjectHandler.totalManagedSubjects(subjectType, subject);
-            maxPerManaged = _subjectHandler.maxManagedStakeFor(subjectType, subject);
+            if (!_subjectGateway.canManageAllocation(subjectType, subject, allocator)) revert SenderCannotAllocateFor(subjectType, subject);
+            subjects = _subjectGateway.totalManagedSubjects(subjectType, subject);
+            maxPerManaged = _subjectGateway.maxManagedStakeFor(subjectType, subject);
             currentlyAllocated = allocatedManagedStake(subjectType, subject);
         } else if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR) {
             // i.e Delegator to NodeRunnerRegistry
-            subjects = _subjectHandler.totalManagedSubjects(getDelegatedSubjectType(subjectType), subject);
-            maxPerManaged = _subjectHandler.maxManagedStakeFor(getDelegatedSubjectType(subjectType), subject);
+            subjects = _subjectGateway.totalManagedSubjects(getDelegatedSubjectType(subjectType), subject);
+            maxPerManaged = _subjectGateway.maxManagedStakeFor(getDelegatedSubjectType(subjectType), subject);
             // If DELEGATED has staked less than minimum stake, revert cause delegation not unlocked
             if (
                 allocatedStakeFor(getDelegatedSubjectType(subjectType), subject) / subjects <
-                _subjectHandler.minManagedStakeFor(getDelegatedSubjectType(subjectType), subject)
+                _subjectGateway.minManagedStakeFor(getDelegatedSubjectType(subjectType), subject)
             ) {
                 revert CannotDelegateStakeUnderMin(getDelegatedSubjectType(subjectType), subject);
             }

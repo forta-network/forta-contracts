@@ -29,14 +29,14 @@ describe('Forta Staking Parameters', function () {
             await this.agents.connect(this.accounts.other).createAgent(...args2);
         });
         it('happy path', async function () {
-            expect(await this.subjectHandler.minStakeFor(AGENT_SUBJECT, AGENT_ID_1)).to.equal(0);
+            expect(await this.subjectGateway.minStakeFor(AGENT_SUBJECT, AGENT_ID_1)).to.equal(0);
             expect(await this.agents.isStakedOverMin(AGENT_ID_1)).to.equal(true);
 
             await expect(this.agents.connect(this.accounts.manager).setStakeThreshold({ max: '500', min: '100', activated: true }))
                 .to.emit(this.agents, 'StakeThresholdChanged')
                 .withArgs('100', '500', true);
-            expect(await this.subjectHandler.minStakeFor(AGENT_SUBJECT, AGENT_ID_1)).to.equal(100);
-            expect(await this.subjectHandler.maxStakeFor(AGENT_SUBJECT, AGENT_ID_1)).to.equal(500);
+            expect(await this.subjectGateway.minStakeFor(AGENT_SUBJECT, AGENT_ID_1)).to.equal(100);
+            expect(await this.subjectGateway.maxStakeFor(AGENT_SUBJECT, AGENT_ID_1)).to.equal(500);
 
             expect(await this.agents.isStakedOverMin(AGENT_ID_1)).to.equal(false);
             await this.staking.connect(this.accounts.user1).deposit(AGENT_SUBJECT, AGENT_ID_1, '101');
@@ -85,33 +85,29 @@ describe('Forta Staking Parameters', function () {
     });
 
     describe('Set up', function () {
-        let stakeSubjectHandler;
+        let subjectGateway;
 
         beforeEach(async function () {
-            const StakeSubjectHandler = await ethers.getContractFactory('StakeSubjectHandler');
-            stakeSubjectHandler = await upgrades.deployProxy(StakeSubjectHandler, [this.contracts.access.address, this.contracts.staking.address], {
+            const StakeSubjectGateway = await ethers.getContractFactory('StakeSubjectGateway');
+            subjectGateway = await upgrades.deployProxy(StakeSubjectGateway, [this.contracts.access.address, this.contracts.staking.address], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             });
-            await stakeSubjectHandler.deployed();
+            await subjectGateway.deployed();
         });
         it('admin methods must be called by admin', async function () {
-            await expect(stakeSubjectHandler.connect(this.accounts.user1).setFortaStaking(this.contracts.staking.address)).to.be.revertedWith(
-                `MissingRole("${this.roles.DEFAULT_ADMIN}", "${this.accounts.user1.address}")`
-            );
-            await expect(stakeSubjectHandler.connect(this.accounts.user1).setStakeSubject(0, this.contracts.staking.address)).to.be.revertedWith(
+            await expect(subjectGateway.connect(this.accounts.user1).setStakeSubject(0, this.contracts.staking.address)).to.be.revertedWith(
                 `MissingRole("${this.roles.DEFAULT_ADMIN}", "${this.accounts.user1.address}")`
             );
         });
 
         it('admin methods cannot be called with address 0', async function () {
-            await expect(stakeSubjectHandler.connect(this.accounts.admin).setFortaStaking(ethers.constants.AddressZero)).to.be.revertedWith('ZeroAddress("newFortaStaking")');
-            await expect(stakeSubjectHandler.connect(this.accounts.admin).setStakeSubject(0, ethers.constants.AddressZero)).to.be.revertedWith('ZeroAddress("subject")');
+            await expect(subjectGateway.connect(this.accounts.admin).setStakeSubject(0, ethers.constants.AddressZero)).to.be.revertedWith('ZeroAddress("subject")');
         });
 
         it('subject type must be valid', async function () {
-            await expect(stakeSubjectHandler.connect(this.accounts.admin).setStakeSubject(4, this.contracts.staking.address)).to.be.revertedWith('InvalidSubjectType(4)');
+            await expect(subjectGateway.connect(this.accounts.admin).setStakeSubject(4, this.contracts.staking.address)).to.be.revertedWith('InvalidSubjectType(4)');
         });
     });
 });
