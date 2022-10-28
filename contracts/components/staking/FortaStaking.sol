@@ -476,7 +476,10 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _activeStake.burn(activeSharesId, slashFromActive);
         _inactiveStake.burn(FortaStakingUtils.activeToInactive(activeSharesId), slashFromInactive);
 
-        _allocator.withdrawAllocation(activeSharesId, subjectType, subject, slashFromActive);
+        SubjectStakeAgency subjectAgency = getSubjectTypeAgency(subjectType);
+        if (subjectAgency == SubjectStakeAgency.DELEGATED || subjectAgency == SubjectStakeAgency.DELEGATOR) {
+            _allocator.withdrawAllocation(activeSharesId, subjectType, subject, slashFromActive);
+        }
 
         emit Slashed(subjectType, subject, _msgSender(), stakeValue);
     }
