@@ -74,8 +74,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         bytes32 penaltyId
     );
     event EvidenceSubmitted(uint256 proposalId, StateMachines.State stateId, string[] evidence);
-    event SlashingExecutorChanged(address indexed slashingExecutor);
-    event subjectHandlerChanged(address indexed subjectHandler);
     event DepositAmountChanged(uint256 amount);
     event SlashPercentToProposerChanged(uint256 amount);
     event DepositSubmitted(uint256 indexed proposalId, address indexed proposer, uint256 amount);
@@ -349,13 +347,11 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     function _setSlashingExecutor(ISlashingExecutor _executor) private {
         if (address(_executor) == address(0)) revert ZeroAddress("_executor");
         slashingExecutor = _executor;
-        emit SlashingExecutorChanged(address(_executor));
     }
 
     function _setsubjectHandler(StakeSubjectHandler _subjectHandler) private {
         if (address(_subjectHandler) == address(0)) revert ZeroAddress("_subjectHandler");
         subjectHandler = _subjectHandler;
-        emit SubjectHandlerChanged(address(_subjectHandler));
     }
 
     function _setDepositAmount(uint256 _amount) private {

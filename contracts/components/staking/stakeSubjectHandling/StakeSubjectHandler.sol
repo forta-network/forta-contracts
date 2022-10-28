@@ -14,11 +14,10 @@ import "./IDirectStakeSubject.sol";
  * who hold the responsability of defining staking thresholds, managed subjects, and related particularities.
  */
 contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, IStakeSubjectHandler {
-    FortaStaking private _fortaStaking;
+    FortaStaking private _fortaStaking; // Should be immutable but already deployed.
     // stake subject parameters for each subject
     mapping(uint8 => address) private _stakeSubjects;
 
-    event FortaStakingChanged(address staking);
     error NonIDelegatedSubjectHandler(uint8 subjectType, address handler);
 
     string public constant version = "0.1.1";
@@ -38,15 +37,9 @@ contract StakeSubjectHandler is BaseComponentUpgradeable, SubjectTypeValidator, 
         _setFortaStaking(__fortaStaking);
     }
 
-    /// Setter for FortaStaking implementation address.
-    function setFortaStaking(address newFortaStaking) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setFortaStaking(newFortaStaking);
-    }
-
     function _setFortaStaking(address newFortaStaking) internal {
         if (newFortaStaking == address(0)) revert ZeroAddress("newFortaStaking");
         _fortaStaking = FortaStaking(newFortaStaking);
-        emit FortaStakingChanged(address(_fortaStaking));
     }
 
     /**
