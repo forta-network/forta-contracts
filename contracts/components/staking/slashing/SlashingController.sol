@@ -50,7 +50,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     mapping(uint256 => uint256) public deposits; // proposalId --> tokenAmount
     mapping(bytes32 => SlashPenalty) public penalties; // penaltyId --> SlashPenalty
     ISlashingExecutor public slashingExecutor;
-    StakeSubjectHandler public subjectHandler;
+    StakeSubjectHandler public subjectHandler; // Should be immutable, but it's already deployed.
     uint256 public depositAmount;
     uint256 public slashPercentToProposer;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -314,14 +314,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     }
 
     // Admin methods
-    function setSlashingExecutor(ISlashingExecutor _executor) external onlyRole(STAKING_ADMIN_ROLE) {
-        _setSlashingExecutor(_executor);
-    }
-
-    function setSubjectHandler(StakeSubjectHandler _subjectHandler) external onlyRole(STAKING_ADMIN_ROLE) {
-        _setsubjectHandler(_subjectHandler);
-    }
-
     function setDepositAmount(uint256 _amount) external onlyRole(STAKING_ADMIN_ROLE) {
         _setDepositAmount(_amount);
     }
@@ -363,7 +355,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     function _setsubjectHandler(StakeSubjectHandler _subjectHandler) private {
         if (address(_subjectHandler) == address(0)) revert ZeroAddress("_subjectHandler");
         subjectHandler = _subjectHandler;
-        emit subjectHandlerChanged(address(_subjectHandler));
+        emit SubjectHandlerChanged(address(_subjectHandler));
     }
 
     function _setDepositAmount(uint256 _amount) private {
