@@ -16,6 +16,7 @@ import "./SubjectTypeValidator.sol";
 import "./allocation/IStakeAllocator.sol";
 import "./stake_subjects/IStakeSubjectGateway.sol";
 import "./slashing/ISlashingExecutor.sol";
+import "./rewards/IRewardsDistributor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 
@@ -86,6 +87,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     uint256 public slashDelegatorsPercent;
     IStakeAllocator private _allocator;
+    IRewardsDistributor private _rewardsDistributor;
 
     uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
     uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
@@ -100,7 +102,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     event SlashedShareSent(uint8 indexed subjectType, uint256 indexed subject, address indexed by, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
-    event StakeHelpersConfigured(address indexed subjectGateway, address indexed allocator);
+    event StakeHelpersConfigured(address indexed subjectGateway, address indexed allocator, address indexed rewardsDistributor);
     event MaxStakeReached(uint8 indexed subjectType, uint256 indexed subject);
     event TokensSwept(address indexed token, address to, uint256 amount);
     event SlashDelegatorsPercentSet(uint256 percent);
@@ -419,7 +421,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 slashFromActive = _slash(activeSharesId, subjectType, subject, stakeValue);
         uint256 slashedFromDelegators;
         if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
-            _allocator.withdrawAllocation(activeSharesId, subjectType, subject, slashFromActive);
+            _allocator.slashAllocation(activeSharesId, subjectType, subject, slashFromActive);
 
             if (slashDelegatorsPercent > 0) {
                 slashedFromDelegators = _slashDelegator(getDelegatorSubjectType(subjectType), subject, stakeValue);
@@ -480,7 +482,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     function _slashDelegator(uint8 delegatorType, uint256 subject, uint256 stakeValue) private returns(uint256 slashedFromDelegators) {
         slashedFromDelegators = Math.mulDiv(stakeValue, slashDelegatorsPercent, HUNDRED_PERCENT);
         uint256 slashActiveDelegator = _slash(FortaStakingUtils.subjectToActive(delegatorType, subject), delegatorType, subject, slashedFromDelegators);
-        _allocator.withdrawAllocation(FortaStakingUtils.subjectToActive(delegatorType, subject), delegatorType, subject, slashActiveDelegator);
+        _allocator.slashAllocation(FortaStakingUtils.subjectToActive(delegatorType, subject), delegatorType, subject, slashActiveDelegator);
         return slashedFromDelegators;
     }
 
@@ -559,9 +561,20 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         for (uint256 i = 0; i < ids.length; i++) {
             if (FortaStakingUtils.isActive(ids[i])) {
                 // Mint, burn, or transfer of subject shares would by default affect the distribution of the
-                // currently available reward for the subject. We create a "virtual release" that should preserve
-                // reward distribution as it was prior to the transfer.
-                //TODO reward allocator
+                // currently available reward for the subject.
+                /*
+                if (
+                    FortaStakingUtils.subjectTypeOfShares(ids[i]) == NODE_RUNNER_SUBJECT ||
+                    FortaStakingUtils.subjectTypeOfShares(ids[i]) == DELEGATOR_NODE_RUNNER_SUBJECT
+                ) {
+                    if (from != address(0)) {
+                        _rewardsDistributor.didRemoveStake(ids[i], activeSharesToStake(ids[i], amounts[i]), from);
+                    }
+                    if (to != address(0)) {
+                        _rewardsDistributor.didAddStake(ids[i], activeSharesToStake(ids[i], amounts[i]), to);
+                    }   
+                }*/
+                
             } else {
                 if (!(from == address(0) || to == address(0))) revert WithdrawalSharesNotTransferible();
             }
@@ -640,12 +653,19 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     // Admin: change staking parameters manager
-    function configureStakeHelpers(IStakeSubjectGateway __subjectGateway, IStakeAllocator __allocator) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function configureStakeHelpers(
+        IStakeSubjectGateway __subjectGateway,
+        IStakeAllocator __allocator,
+        IRewardsDistributor __rewardsDistributor
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         if (address(__subjectGateway) == address(0)) revert ZeroAddress("__subjectGateway");
         if (address(__allocator) == address(0)) revert ZeroAddress("__allocator");
+        if (address(__rewardsDistributor) == address(0)) revert ZeroAddress("__rewardsDistributor");
+
         subjectGateway = __subjectGateway;
         _allocator = __allocator;
-        emit StakeHelpersConfigured(address(__subjectGateway), address(__allocator));
+        _rewardsDistributor = __rewardsDistributor;
+        emit StakeHelpersConfigured(address(__subjectGateway), address(__allocator), address(__rewardsDistributor));
     }
 
     function setSlashDelegatorsPercent(uint256 percent) public onlyRole(STAKING_ADMIN_ROLE) {

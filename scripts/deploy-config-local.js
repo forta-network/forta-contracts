@@ -49,7 +49,7 @@ async function deployAndConfig(config = {}) {
         this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_ADMIN, this.accounts.admin.address),
         this.access.connect(this.accounts.admin).grantRole(this.roles.DISPATCHER, this.accounts.manager.address),
         this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address),
-        this.access.connect(this.accounts.admin).grantRole(this.roles.REWARDS_ADMIN, this.accounts.admin.address),
+        this.access.connect(this.accounts.admin).grantRole(this.roles.REWARDER, this.accounts.admin.address),
         this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
         this.staking.connect(this.accounts.admin).setTreasury(this.accounts.treasure.address),
     ];

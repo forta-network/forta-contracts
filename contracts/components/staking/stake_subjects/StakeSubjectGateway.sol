@@ -162,4 +162,11 @@ contract StakeSubjectGateway is BaseComponentUpgradeable, SubjectTypeValidator, 
         return IStakeSubject(_stakeSubjects[subjectType]).ownerOf(subject) == allocator;
     }
 
+    function ownerOf(uint8 subjectType, uint256 subject) external view returns (address) {
+        if (address(0) == _stakeSubjects[subjectType]) {
+            return address(0);
+        }
+        return IStakeSubject(_stakeSubjects[subjectType]).ownerOf(subject);
+    }
+
 }

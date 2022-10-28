@@ -15,7 +15,7 @@ const accessRoles = {
     //DISPATCHER:           ethers.utils.id('DISPATCHER_ROLE'),
     //SLASHER:              ethers.utils.id('SLASHER_ROLE'),
     //SWEEPER:              ethers.utils.id('SWEEPER_ROLE'),
-    //REWARDS_ADMIN:        ethers.utils.id('REWARDS_ADMIN_ROLE'),
+    //REWARDER:        ethers.utils.id('REWARDER_ROLE'),
     SCANNER_VERSION: ethers.utils.id('SCANNER_VERSION_ROLE'),
 };
 

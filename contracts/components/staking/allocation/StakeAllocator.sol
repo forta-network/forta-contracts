@@ -220,7 +220,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         uint256 subject,
         address allocator,
         uint256 amount
-    ) external override onlyRole(STAKE_ALLOCATOR_ACCESS) {
+    ) external override onlyRole(STAKING_CONTRACT) {
         SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
         if (agency != SubjectStakeAgency.DELEGATED && agency != SubjectStakeAgency.DELEGATOR) {
             return;
@@ -250,7 +250,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         uint8 subjectType,
         uint256 subject,
         uint256 amount
-    ) external onlyRole(STAKE_ALLOCATOR_ACCESS) {
+    ) external onlyRole(STAKING_CONTRACT) {
         int256 fromAllocated = int256(_unallocatedStake.balanceOf(activeSharesId)) - int256(amount);
         if (fromAllocated < 0) {
             _allocatedStake.burn(activeSharesId, uint256(-fromAllocated));
@@ -258,6 +258,17 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         } else {
             _unallocatedStake.burn(activeSharesId, amount);
         }
+        emit UnallocatedStake(subjectType, subject, amount, _unallocatedStake.balanceOf(activeSharesId));
+    }
+
+    function slashAllocation(
+        uint256 activeSharesId,
+        uint8 subjectType,
+        uint256 subject,
+        uint256 amount
+    ) external onlyRole(STAKING_CONTRACT) {
+        _allocatedStake.burn(activeSharesId, Math.min(_allocateStake.balanceOf(activeSharesId), amount));
+
         emit UnallocatedStake(subjectType, subject, amount, _unallocatedStake.balanceOf(activeSharesId));
     }
 
@@ -293,6 +304,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
             // i.e Delegator to NodeRunnerRegistry
             subjects = _subjectGateway.totalManagedSubjects(getDelegatedSubjectType(subjectType), subject);
             maxPerManaged = _subjectGateway.maxManagedStakeFor(getDelegatedSubjectType(subjectType), subject);
+            if enablednodes = 0 revert
             // If DELEGATED has staked less than minimum stake, revert cause delegation not unlocked
             if (
                 allocatedStakeFor(getDelegatedSubjectType(subjectType), subject) / subjects <

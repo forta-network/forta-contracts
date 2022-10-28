@@ -156,7 +156,16 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}.1] stake allocator: ${contracts.stakeAllocator.address}`);
 
-        await contracts.staking.configureStakeHelpers(contracts.subjectGateway.address, contracts.stakeAllocator.address);
+        contracts.rewardsDistributor = await ethers.getContractFactory('RewardsDistributor', deployer).then((factory) =>
+            utils.tryFetchProxy(CACHE, 'staking-rewards', factory, 'uups', [contracts.access.address, deployEnv.COMISSION_DELAY(chainId)], {
+                constructorArgs: [contracts.forwarder.address, contracts.token.address, contracts.subjectGateway.address],
+                unsafeAllow: ['delegatecall'],
+            })
+        );
+
+        DEBUG(`[${Object.keys(contracts).length}.1] rewardsDistributor ${contracts.rewardsDistributor.address}`);
+
+        await contracts.staking.configureStakeHelpers(contracts.subjectGateway.address, contracts.stakeAllocator.address, contracts.rewardsDistributor.address);
 
         DEBUG(`[${Object.keys(contracts).length}.2] configured Staking`);
 
@@ -320,10 +329,10 @@ async function migrate(config = {}) {
             DISPATCHER: ethers.utils.id('DISPATCHER_ROLE'),
             SLASHER: ethers.utils.id('SLASHER_ROLE'),
             SLASHING_ARBITER: ethers.utils.id('SLASHING_ARBITER_ROLE'),
-            STAKE_ALLOCATOR_ACCESS: ethers.utils.id('STAKE_ALLOCATOR_ACCESS_ROLE'),
+            STAKING_CONTRACT: ethers.utils.id('STAKING_CONTRACT_ROLE'),
             STAKING_ADMIN: ethers.utils.id('STAKING_ADMIN_ROLE'),
             SWEEPER: ethers.utils.id('SWEEPER_ROLE'),
-            REWARDS_ADMIN: ethers.utils.id('REWARDS_ADMIN_ROLE'),
+            REWARDER: ethers.utils.id('REWARDER_ROLE'),
             SCANNER_VERSION: ethers.utils.id('SCANNER_VERSION_ROLE'),
             SCANNER_BETA_VERSION: ethers.utils.id('SCANNER_BETA_VERSION_ROLE'),
             SCANNER_2_NODE_RUNNER_MIGRATOR: ethers.utils.id('SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE'),
