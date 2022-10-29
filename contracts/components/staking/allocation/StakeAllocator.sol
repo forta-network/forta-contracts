@@ -222,30 +222,32 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
      * @param activeSharesId ERC1155 id representing the active shares of a subject / subjectType pair.
      * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
-     * @param amount amount of incoming staked token.
+     * @param stakeAmount amount of incoming staked token.
+     * @param sharesAmount amount of minted active shares for stake
      */
     function depositAllocation(
         uint256 activeSharesId,
         uint8 subjectType,
         uint256 subject,
         address allocator,
-        uint256 amount
+        uint256 stakeAmount,
+        uint256 sharesAmount
     ) external override onlyRole(STAKING_CONTRACT_ROLE) {
         SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
         if (agency != SubjectStakeAgency.DELEGATED && agency != SubjectStakeAgency.DELEGATOR) {
             return;
         }
-        (int256 extra, ) = _allocationIncreaseChecks(subjectType, subject, agency, allocator, amount);
+        (int256 extra, ) = _allocationIncreaseChecks(subjectType, subject, agency, allocator, stakeAmount);
         if (extra > 0) {
-            _allocatedStake.mint(activeSharesId, amount - uint256(extra));
-            _rewardsDistributor.didAddStake(subjectType, subject, amount - uint256(extra), allocator);
-            emit AllocatedStake(subjectType, subject, true, amount - uint256(extra), _allocatedStake.balanceOf(activeSharesId));
+            _allocatedStake.mint(activeSharesId, stakeAmount - uint256(extra));
+            _rewardsDistributor.didAddStake(subjectType, subject, stakeAmount - uint256(extra), sharesAmount, allocator);
+            emit AllocatedStake(subjectType, subject, true, stakeAmount - uint256(extra), _allocatedStake.balanceOf(activeSharesId));
             _unallocatedStake.mint(activeSharesId, uint256(extra));
             emit UnallocatedStake(subjectType, subject, true, uint256(extra), _unallocatedStake.balanceOf(activeSharesId));
         } else {
-            _allocatedStake.mint(activeSharesId, amount);
-            _rewardsDistributor.didAddStake(subjectType, subject, amount, allocator);
-            emit AllocatedStake(subjectType, subject, true, amount, _allocatedStake.balanceOf(activeSharesId));
+            _allocatedStake.mint(activeSharesId, stakeAmount);
+            _rewardsDistributor.didAddStake(subjectType, subject, stakeAmount, sharesAmount, allocator);
+            emit AllocatedStake(subjectType, subject, true, stakeAmount, _allocatedStake.balanceOf(activeSharesId));
         }
     }
 
@@ -254,24 +256,30 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
      * @param activeSharesId ERC1155 id representing the active shares of a subject / subjectType pair.
      * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
-     * @param amount amount of incoming staked token.
+     * @param stakeAmount amount of outgoing staked token.
+     * @param sharesAmount amount of outgoing active shares
      */
     function withdrawAllocation(
         uint256 activeSharesId,
         uint8 subjectType,
         uint256 subject,
-        uint256 amount
+        address allocator,
+        uint256 stakeAmount,
+        uint256 sharesAmount
     ) external onlyRole(STAKING_CONTRACT_ROLE) {
         uint256 oldUnallocated = _unallocatedStake.balanceOf(activeSharesId);
-        int256 fromAllocated = int256(oldUnallocated) - int256(amount);
-        if (fromAllocated < 0) {
-            _allocatedStake.burn(activeSharesId, uint256(-fromAllocated));
-            emit AllocatedStake(subjectType, subject, false, uint256(-fromAllocated), _allocatedStake.balanceOf(activeSharesId));
+        int256 fromAllocated = int256(stakeAmount) - int256(oldUnallocated);
+        // TODO: didRemoveStake
+        if (fromAllocated > 0) {
+            _allocatedStake.burn(activeSharesId, uint256(fromAllocated));
+            _rewardsDistributor.didRemoveStake(subjectType, subject, uint256(fromAllocated), sharesAmount, allocator);
+            emit AllocatedStake(subjectType, subject, false, uint256(fromAllocated), _allocatedStake.balanceOf(activeSharesId));
             _unallocatedStake.burn(activeSharesId, _unallocatedStake.balanceOf(activeSharesId));
             emit UnallocatedStake(subjectType, subject, false, oldUnallocated, 0);
         } else {
-            _unallocatedStake.burn(activeSharesId, amount);
-            emit UnallocatedStake(subjectType, subject, false, amount, _unallocatedStake.balanceOf(activeSharesId));
+            _unallocatedStake.burn(activeSharesId, stakeAmount);
+            _rewardsDistributor.didRemoveStake(subjectType, subject, 0, sharesAmount, allocator);
+            emit UnallocatedStake(subjectType, subject, false, stakeAmount, _unallocatedStake.balanceOf(activeSharesId));
         }
     }
 

@@ -38,7 +38,6 @@ library Accumulators {
     }
 
     function setRate(Accumulator storage acc, uint256 rate) internal {
-        uint32 currentEpoch = getEpochNumber();
         EpochCheckpoint memory ckpt = EpochCheckpoint({
             timestamp: SafeCast.toUint32(block.timestamp),
             rate: SafeCast.toUint224(rate),
@@ -83,7 +82,7 @@ library Accumulators {
         return high == 0 ? zeroEpoch() : acc.checkpoints[high - 1];
     }
 
-    function zeroEpoch() private view returns (EpochCheckpoint memory) {
+    function zeroEpoch() private pure returns (EpochCheckpoint memory) {
         return EpochCheckpoint({
             timestamp: 0,
             rate: 0,

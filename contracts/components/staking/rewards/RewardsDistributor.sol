@@ -77,35 +77,49 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     function didAddStake(
         uint8 subjectType,
         uint256 subject,
-        uint256 amount,
+        uint256 stakeAmount,
+        uint256 sharesAmount,
         address staker
     ) onlyRole(ALLOCATOR_CONTRACT_ROLE) external {
         bool delegated = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED;
         if (delegated) {
             uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subject);
             DelegatedAccStake storage s = _accStakes[shareId];
-            s.delegated.addRate(amount);
+            s.delegated.addRate(stakeAmount);
         } else {
             uint8 delegatedType = getDelegatedSubjectType(subjectType);
             uint256 shareId = FortaStakingUtils.subjectToActive(delegatedType, subject);
             DelegatedAccStake storage s = _accStakes[shareId];
-            s.delegators.addRate(amount);
+            s.delegators.addRate(stakeAmount);
 
-            // This doesn't make sense.
-            s.delegatorsTotal.addRate(amount);
-            s.delegatorsPortions[staker].addRate(amount);
+            s.delegatorsTotal.addRate(sharesAmount);
+            s.delegatorsPortions[staker].addRate(sharesAmount);
         }
     }
 
     function didRemoveStake(
         uint8 subjectType,
         uint256 subject,
-        uint256 amount,
+        uint256 stakeAmount,
+        uint256 sharesAmount,
         address staker
     ) onlyRole(ALLOCATOR_CONTRACT_ROLE) external {
-        // DelegatedAccStake storage delAccStake = _accStakes[shareId];
-        // delAccStake.stakers[staker].subRate(amount);
-        // delAccStake.total.subRate(amount);
+        bool delegated = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED;
+        if (delegated) {
+            uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subject);
+            DelegatedAccStake storage s = _accStakes[shareId];
+            s.delegated.subRate(stakeAmount);
+        } else {
+            uint8 delegatedType = getDelegatedSubjectType(subjectType);
+            uint256 shareId = FortaStakingUtils.subjectToActive(delegatedType, subject);
+            DelegatedAccStake storage s = _accStakes[shareId];
+            s.delegators.subRate(stakeAmount);
+
+            if (staker != address(0)) {
+                s.delegatorsTotal.subRate(sharesAmount);
+                s.delegatorsPortions[staker].subRate(sharesAmount);
+            }
+        }
     }
 
     function reward(uint8 subjectType, uint256 subjectId, uint256 amount, uint256 epochNumber) onlyRole(REWARDER_ROLE) external {

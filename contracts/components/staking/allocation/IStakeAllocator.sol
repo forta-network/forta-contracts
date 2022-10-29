@@ -9,14 +9,17 @@ interface IStakeAllocator {
         uint8 subjectType,
         uint256 subject,
         address allocator,
-        uint256 amount
+        uint256 stakeAmount,
+        uint256 sharesAmount
     ) external;
 
     function withdrawAllocation(
         uint256 activeSharesId,
         uint8 subjectType,
         uint256 subject,
-        uint256 amount
+        address allocator,
+        uint256 stakeAmount,
+        uint256 sharesAmount
     ) external;
 
     function allocatedStakePerManaged(uint8 subjectType, uint256 subject) external view returns (uint256);

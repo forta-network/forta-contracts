@@ -288,7 +288,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _activeStake.mint(activeSharesId, stakeValue);
         _mint(staker, activeSharesId, sharesValue, new bytes(0));
         emit StakeDeposited(subjectType, subject, staker, stakeValue);
-        _allocator.depositAllocation(activeSharesId, subjectType, subject, staker, stakeValue);
+        _allocator.depositAllocation(activeSharesId, subjectType, subject, staker, stakeValue, sharesValue);
         return sharesValue;
     }
     
@@ -320,7 +320,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _burn(staker, oldSharesId, oldShares);
         _mint(staker, newSharesId, newShares, new bytes(0));
         emit StakeDeposited(newSubjectType, newSubject, staker, stake);
-        _allocator.depositAllocation(newSharesId, newSubjectType, newSubject, staker, stake);
+        _allocator.depositAllocation(newSharesId, newSubjectType, newSubject, staker, stake, newShares);
     }
 
     /**
@@ -376,13 +376,13 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 stakeValue = activeSharesToStake(activeSharesId, activeShares);
         uint256 inactiveShares = stakeToInactiveShares(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
         SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
-        if (agency == SubjectStakeAgency.DELEGATED || agency == SubjectStakeAgency.DELEGATOR) {
-            _allocator.withdrawAllocation(activeSharesId, subjectType, subject, stakeValue);
-        }
         _activeStake.burn(activeSharesId, stakeValue);
         _inactiveStake.mint(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
         _burn(staker, activeSharesId, activeShares);
         _mint(staker, FortaStakingUtils.activeToInactive(activeSharesId), inactiveShares, new bytes(0));
+        if (agency == SubjectStakeAgency.DELEGATED || agency == SubjectStakeAgency.DELEGATOR) {
+            _allocator.withdrawAllocation(activeSharesId, subjectType, subject, staker, stakeValue, activeShares);
+        }
 
         emit WithdrawalInitiated(subjectType, subject, staker, deadline);
 
@@ -501,7 +501,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
         SubjectStakeAgency subjectAgency = getSubjectTypeAgency(subjectType);
         if (subjectAgency == SubjectStakeAgency.DELEGATED || subjectAgency == SubjectStakeAgency.DELEGATOR) {
-            _allocator.withdrawAllocation(activeSharesId, subjectType, subject, slashFromActive);
+            _allocator.withdrawAllocation(activeSharesId, subjectType, subject, address(0), slashFromActive, 0);
         }
 
         emit Slashed(subjectType, subject, _msgSender(), stakeValue);
