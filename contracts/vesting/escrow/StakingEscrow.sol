@@ -149,7 +149,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * @return released amount
      */
     function claimReward(uint8 subjectType, uint256 subject) public returns (uint256) {
-        // return l2staking.releaseReward(subjectType, subject, address(this));
+        return l2staking.releaseReward(subjectType, subject, address(this));
     }
 
     /**
