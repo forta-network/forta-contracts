@@ -281,17 +281,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 subject,
         uint256 stakeValue
     ) external onlyValidSubjectType(subjectType) notAgencyType(subjectType, SubjectStakeAgency.MANAGED) returns (uint256) {
-        return _deposit(subjectType, subject, stakeValue, _msgSender());
-    }
-
-    function _deposit(
-        uint8 subjectType,
-        uint256 subject,
-        uint256 stakeValue,
-        address staker
-    ) private returns (uint256) {
         if (address(subjectGateway) == address(0)) revert ZeroAddress("subjectGateway");
         if (!subjectGateway.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
+        address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         bool reachedMax;
         (stakeValue, reachedMax) = _getInboundStake(subjectType, subject, stakeValue);
@@ -325,12 +317,18 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         if (newSubjectType != NODE_RUNNER_SUBJECT) revert InvalidSubjectType(newSubjectType); 
         if (isFrozen(oldSubjectType, oldSubject)) revert FrozenSubject();
 
-        uint256 oldShareId = FortaStakingUtils.subjectToActive(oldSubjectType, oldSubject);
-        uint256 oldShares = balanceOf(staker, oldShareId);
-        uint256 oldStake = activeSharesToStake(oldShareId, oldShares);
-        _activeStake.burn(oldShareId, oldStake);
-        _burn(staker, oldShareId, oldShares);
-        _deposit(newSubjectType, newSubject, oldStake, staker);
+        uint256 oldSharesId = FortaStakingUtils.subjectToActive(oldSubjectType, oldSubject);
+        uint256 oldShares = balanceOf(staker, oldSharesId);
+        uint256 stake = activeSharesToStake(oldSharesId, oldShares);
+        uint256 newSharesId = FortaStakingUtils.subjectToActive(newSubjectType, newSubject);
+        uint256 newShares = stakeToActiveShares(newSharesId, stake);
+
+        _activeStake.burn(oldSharesId, stake);
+        _activeStake.mint(newSharesId, stake);
+        _burn(staker, oldSharesId, oldShares);
+        _mint(staker, newSharesId, newShares, new bytes(0));
+        emit StakeDeposited(newSubjectType, newSubject, staker, stake);
+        _allocator.depositAllocation(newSharesId, newSubjectType, newSubject, staker, stake);
     }
 
     /**
