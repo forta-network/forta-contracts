@@ -69,10 +69,18 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     }
 
     function didAddStake(uint256 shareId, uint256 amount, address staker) onlyRole(STAKING_CONTRACT) external {
-        DelegatedAccStake storage delAccStake = _accStakes[shareId];
+        DelegatedAccStake storage s = _accStakes[shareId];
         uint8 subjectType = FortaStakingUtils.subjectTypeOfShares(shareId);
-        delAccStake.stakers[staker].addRate(amount);
-        delAccStake.total.addRate(amount);
+        bool delegated = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED;
+        if (delegated) {
+            s.delegated.addRate(amount);
+        } else {
+            s.delegators.addRate(amount);
+
+            // This doesn't make sense.
+            s.delegatorsTotal.addRate(amount);
+            s.delegatorsPortions.addRate(amount);
+        }
     }
 
     function didRemoveStake(uint256 shareId, uint256 amount, address staker) onlyRole(STAKING_CONTRACT) external {
