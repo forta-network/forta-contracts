@@ -101,6 +101,7 @@ async function migrate(config = {}) {
     const slashParams = {};
 
     const hardhatDeployment = chainId === 31337;
+    
     contracts.forwarder = await ethers.getContractFactory('Forwarder', deployer).then((factory) => utils.tryFetchContract(CACHE, 'forwarder', factory, []));
 
     DEBUG(`[${Object.keys(contracts).length}] forwarder: ${contracts.forwarder.address}`);
@@ -229,11 +230,11 @@ async function migrate(config = {}) {
         penaltyModes.CURRENT_STAKE = 2;
         const reasons = {};
         reasons.OPERATIONAL_SLASH = ethers.utils.id('OPERATIONAL_SLASH');
-        reasons.MALICIOUS_SUBJECT_SLASH = ethers.utils.id('MALICIOUS_SUBJECT_SLASH');
+        reasons.MISCONDUCT_SLASH = ethers.utils.id('MISCONDUCT_SLASH');
 
         const penalties = {};
         penalties[reasons.OPERATIONAL_SLASH] = { mode: penaltyModes.MIN_STAKE, percentSlashed: '15' };
-        penalties[reasons.MALICIOUS_SUBJECT_SLASH] = { mode: penaltyModes.CURRENT_STAKE, percentSlashed: '90' };
+        penalties[reasons.MISCONDUCT_SLASH] = { mode: penaltyModes.CURRENT_STAKE, percentSlashed: '90' };
         const reasonIds = Object.keys(reasons).map((reason) => reasons[reason]);
 
         contracts.slashing = await ethers.getContractFactory('SlashingController', deployer).then((factory) =>
@@ -252,7 +253,7 @@ async function migrate(config = {}) {
                     Object.keys(reasons).map((reason) => penalties[reasons[reason]]),
                 ],
                 {
-                    constructorArgs: [contracts.forwarder.address, contracts.token.address],
+                    constructorArgs: [contracts.forwarder.address, contracts.forta.address],
                     unsafeAllow: 'delegatecall',
                 }
             )
@@ -374,7 +375,7 @@ async function migrate(config = {}) {
                     registerNode('forwarder.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.forwarder.address, chainId: chainId }),
                     registerNode('staking.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.staking.address, chainId: chainId }),
                     registerNode('slashing.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.staking.address, chainId: chainId }),
-                    registerNode('staking-params.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.subjectGateway.address, chainId: chainId }),
+                    registerNode('staking-subjects.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.subjectGateway.address, chainId: chainId }),
                     registerNode('agents.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.agents.address, chainId: chainId }),
                     registerNode('scanners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scanners.address, chainId: chainId }),
                     registerNode('node-runners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.nodeRunners.address, chainId: chainId }),

@@ -1,0 +1,38 @@
+{
+  "matic": {
+    "ScannerRegistry": {
+        "address": "0xbF2920129f83d75DeC95D97A879942cCe3DcD387",
+        "startBlock": 20187154
+    },
+    "AgentRegistry": {
+        "address": "0x61447385B019187daa48e91c55c02AF1F1f3F863",
+        "startBlock": 20187154
+    },
+    "Dispatcher": {
+        "address": "0xd46832F3f8EA8bDEFe5316696c0364F01b31a573",
+        "startBlock": 20187154
+    },
+    "FortaStaking": {
+        "address": "0xd2863157539b1D11F39ce23fC4834B62082F6874",
+        "startBlock": 20187154
+    }
+  },
+  "mumbai": {
+    "ScannerRegistry": {
+      "address": "0xa30c3951f85941bfe474620dA25DEb90283C99D7",
+      "startBlock": 21300000
+    },
+    "AgentRegistry": {
+        "address": "0x5Cf7008aC441Ec1797fAfA4EE132eA4277E9239B",
+        "startBlock": 21300000
+    },
+    "Dispatcher": {
+        "address": "0x634C83F3213CcfC895A4e6A2c137b2B572fa64ad",
+        "startBlock": 21300000
+    },
+    "FortaStaking": {
+        "address": "0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c",
+        "startBlock": 21300000
+    }
+  }
+}

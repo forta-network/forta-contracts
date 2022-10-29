@@ -3,13 +3,18 @@
   "license": "UNLICENSED",
   "scripts": {
     "prepare:schema": "concat -o schema.graphql src/schema.gql node_modules/@amxx/graphprotocol-utils/generated/schema.graphql",
-    "prepare:codegen": "graph codegen subgraph.yaml",
-    "prepare:compile": "graph build subgraph.yaml",
+    "prepare:codegen": "graph codegen subgraph.yaml --network matic",
+    "prepare:compile": "graph build subgraph.yaml --network matic",
+    "prepare-dev:schema": "concat -o schema.graphql src/schema.gql node_modules/@amxx/graphprotocol-utils/generated/schema.graphql",
+    "prepare-dev:codegen": "graph codegen subgraph.yaml --network mumbai",
+    "prepare-dev:compile": "graph build subgraph.yaml --network mumbai",
     "prepare": "yarn prepare:schema && yarn prepare:codegen && yarn prepare:compile",
-    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ TDrachev/forta-subgraph",
-    "create-local": "graph create --node http://localhost:8020/ TDrachev/forta-subgraph",
-    "remove-local": "graph remove --node http://localhost:8020/ TDrachev/forta-subgraph",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 TDrachev/forta-subgraph"
+    "prepare-dev": "yarn prepare-dev:schema && yarn prepare-dev:codegen && yarn prepare-dev:compile",
+    "deploy-dev": "graph deploy --network mumbai --node https://api.thegraph.com/deploy/ ivandiazwm/forta-network-dev",
+    "deploy": "graph deploy --network matic --node https://api.thegraph.com/deploy/ forta-network/forta-network",
+    "create-local": "graph create --node http://localhost:8020/ forta-network/forta-network",
+    "remove-local": "graph remove --node http://localhost:8020/ forta-network/forta-network",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 forta-network/forta-network"
   },
   "dependencies": {
     "@amxx/graphprotocol-utils": "^1.1.0-alpha.0",
