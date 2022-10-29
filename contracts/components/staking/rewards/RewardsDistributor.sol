@@ -25,7 +25,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     StakeSubjectGateway private immutable _subjectGateway;
 
     string public constant version = "0.1.0";
-    uint256 public constant DEFAULT_COMISSION_PERCENT = 0 ;// 5;
+    uint256 public constant DEFAULT_FEE_BPS = 0 ;// 5;
 
     struct DelegatedAccStake {
         Accumulators.Accumulator delegated;
@@ -40,10 +40,11 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     // share => epoch => address => claimed
     mapping (uint256 => mapping(uint256 => mapping(address => bool))) private _claimedRewardsPerEpoch;
 
-    // activeSubjectId => percent
-    mapping(uint256 => uint256) public delegatorCommision;
-    // activeSubjectId => percent
-    mapping(uint256 => Timers.Timestamp) private _delegationParamsTimers;
+    // share => epoch => uint256
+    mapping (uint256 => mapping (uint256 => uint256)) public feeBpsPerEpoch;
+
+    // TODO
+    // mapping(uint256 => Timers.Timestamp) private _delegationParamsTimers;
     uint64 public delegationParamsDelay;
 
     event Rewarded(uint8 indexed subjectType, uint256 indexed subject, uint32 blockNumber, uint256 value);
@@ -52,7 +53,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
     error RewardingNonRegisteredSubject(uint8 subjectType, uint256 subject);
     error AlreadyClaimed();
-    error SetComissionNotReady();
+    error SetFeeNotReady();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
@@ -81,6 +82,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256 sharesAmount,
         address staker
     ) onlyRole(ALLOCATOR_CONTRACT_ROLE) external {
+        // TODO: set default fee
         bool delegated = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED;
         if (delegated) {
             uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subject);
@@ -130,7 +132,6 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     }
 
     function availableReward(uint8 subjectType, uint256 subjectId, uint256 epochNumber, address staker) public view returns (uint256) {
-        // TODO: comission
         // TODO: if subjectType is node runner, check staker is owner of nft
 
         bool delegator = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR;
@@ -139,6 +140,10 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
             ? FortaStakingUtils.subjectToActive(getDelegatedSubjectType(subjectType), subjectId)
             : FortaStakingUtils.subjectToActive(subjectType, subjectId);
 
+        return _availableReward(shareId, delegator, epochNumber, staker);
+    }
+
+    function _availableReward(uint256 shareId, bool delegator, uint256 epochNumber, address staker) internal view returns (uint256) {
         if (_claimedRewardsPerEpoch[shareId][epochNumber][staker]) {
             return 0;
         }
@@ -153,25 +158,28 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
             return 0;
         }
 
-        uint256 A = delegator ? D : N;
+        uint256 feeBps = feeBpsPerEpoch[shareId][epochNumber];
+
         uint256 R = _rewardsPerEpoch[shareId][epochNumber];
-        uint256 r = Math.mulDiv(R, A, T);
+        uint256 RD = Math.mulDiv(R, D, T);
+        uint256 fee = RD * feeBps / MAX_BPS; // mulDiv not necessary - feeBps is small
 
         if (delegator) {
+            uint256 r = RD - fee;
             uint256 d = s.delegatorsPortions[staker].getValueAtEpoch(epochNumber);
             uint256 DT = s.delegatorsTotal.getValueAtEpoch(epochNumber);
-            r = Math.mulDiv(r, d, DT);
+            return Math.mulDiv(r, d, DT);
+        } else {
+            uint256 RN = Math.mulDiv(R, N, T);
+            return RN + fee;
         }
-
-        return r;
     }
 
-    // array de epochNumber
+    // TODO: accept an array of multiple epochs to claim
     function claimRewards(uint8 subjectType, uint256 subjectId, uint256 epochNumber) external {
         uint256 shareId;
         if (subjectType == NODE_RUNNER_SUBJECT) {
-            shareId = FortaStakingUtils.subjectToActive(subjectType, subjectId);
-        } else if (subjectType ==  DELEGATOR_NODE_RUNNER_SUBJECT) {
+            shareId = FortaStakingUtils.subjectToActive(subjectType, subjectId); } else if (subjectType ==  DELEGATOR_NODE_RUNNER_SUBJECT) {
             shareId = FortaStakingUtils.subjectToActive(getDelegatedSubjectType(subjectType), subjectId);
         }
         if (_claimedRewardsPerEpoch[shareId][epochNumber][_msgSender()]) revert AlreadyClaimed();
@@ -180,21 +188,25 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         SafeERC20.safeTransfer(rewardsToken, _msgSender(), epochRewards);
     }
 
-    function setCommission(
+    function setFee(
         uint8 subjectType,
         uint256 subject,
-        uint256 comissionPercent
+        uint256 feeBps
     ) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) {
         if (_subjectGateway.ownerOf(subjectType, subject) != _msgSender()) revert SenderNotOwner(_msgSender(), subject);
-        // only owner only subject type delegated
+
         uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subject);
-        Timers.Timestamp storage timer = _delegationParamsTimers[shareId];
 
-        if (!timer.isExpired()) revert SetComissionNotReady();
+        // TODO
+        // Timers.Timestamp storage timer = _delegationParamsTimers[shareId];
+        // if (!timer.isExpired()) revert SetComissionNotReady();
 
-        delegatorCommision[FortaStakingUtils.subjectToActive(subjectType, subject)] = comissionPercent;
-        uint64 deadline = SafeCast.toUint64(block.timestamp) + delegationParamsDelay;
-        timer.setDeadline(deadline);
+        // TODO: getEpochNumberForTimestamp(block.timestamp + 1.5 weeks) ??
+        feeBpsPerEpoch[shareId][getEpochNumber() + 1] = feeBps;
+
+        // TODO
+        // uint64 deadline = SafeCast.toUint64(block.timestamp) + delegationParamsDelay;
+        // timer.setDeadline(deadline);
     }
 
     function setDelegationsParamDelay(uint64 newDelay) external onlyRole(STAKING_ADMIN_ROLE) {
@@ -203,7 +215,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         emit DelegationParamsDelaySet(newDelay);
     }
 
-    function getEpochNumber() external view returns(uint256) {
+    function getEpochNumber() public view returns(uint256) {
         return Accumulators.getEpochNumber();
     }
 
