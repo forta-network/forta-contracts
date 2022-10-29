@@ -111,7 +111,6 @@ async function main() {
         {
             constructorArgs: [ contracts.forwarder.address ],
             unsafeAllow: ['delegatecall'],
-            unsafeSkipStorageCheck: true
         },
         CACHE,
         'router'
@@ -125,12 +124,11 @@ async function main() {
         AgentRegistry.connect(deployer),
         {
             call: {
-                fn:'setStakeController(address)',
+                fn:'setSubjectHandler(address)',
                 args: [contracts.staking.address]
             },
             constructorArgs: [ contracts.forwarder.address ],
             unsafeAllow: ['delegatecall'],
-            unsafeSkipStorageCheck: true
         },
         CACHE,
         'agents'
@@ -144,12 +142,11 @@ async function main() {
         ScannerRegistry.connect(deployer),
         {
             call: {
-                fn:'setStakeController(address)',
+                fn:'setSubjectHandler(address)',
                 args: [contracts.staking.address]
             },
             constructorArgs: [ contracts.forwarder.address ],
             unsafeAllow: ['delegatecall'],
-            unsafeSkipStorageCheck: true
         },
         CACHE,
         'scanners'

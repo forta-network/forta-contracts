@@ -43,8 +43,6 @@ async function main() {
 
     console.log(vesting.address);
 
-    await contracts.token.grantRole(roles.WHITELIST, beneficiary).then((tx) => tx.wait());
-    await contracts.token.grantRole(roles.WHITELIST, vesting.address).then((tx) => tx.wait());
     allocation.isZero() || (await contracts.token.mint(vesting.address, allocation).then((tx) => tx.wait()));
 }
 

@@ -18,5 +18,6 @@ interface ISlashingExecutor {
         uint256 proposerPercent
     ) external returns (uint256);
 
-    function treasury() external returns (address);
+    function treasury() external view returns (address);
+    function MAX_SLASHABLE_PERCENT() external view returns(uint256);
 }

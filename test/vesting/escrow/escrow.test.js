@@ -5,7 +5,7 @@ const utils = require('../../../scripts/utils');
 const { subjectToActive, subjectToInactive } = require('../../../scripts/utils/staking.js');
 
 const subjects = [
-    [ethers.BigNumber.from('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), 0], // Scanner id, scanner type
+    [1, 3], // node runner id, node runner type
 ];
 const [[subject, subjectType, active, inactive]] = subjects.map((items) => [items[0], items[1], subjectToActive(items[1], items[0]), subjectToInactive(items[1], items[0])]);
 const txTimestamp = (tx) =>
@@ -14,7 +14,7 @@ const txTimestamp = (tx) =>
         .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
         .then(({ timestamp }) => timestamp);
 
-describe('Staking Escrow', function () {
+describe.skip('Staking Escrow', function () {
     prepare({
         adminAsChildChainManagerProxy: true,
         stake: { min: '1', max: ethers.utils.parseEther('10000000'), activated: true },
@@ -22,13 +22,10 @@ describe('Staking Escrow', function () {
 
     beforeEach(async function () {
         this.accounts.getAccount('manager');
+        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
 
         await Promise.all([
-            this.token.connect(this.accounts.admin).grantRole(this.roles.WHITELISTER, this.escrowFactory.address),
-            this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.manager.address),
-            this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address),
-            this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user2.address),
-            this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user3.address),
+            this.token.connect(this.accounts.admin).grantRole(ethers.utils.id('WHITELISTER_ROLE'), this.escrowFactory.address),
             this.token.connect(this.accounts.admin).deposit(this.accounts.user1.address, ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther('1000')])),
             this.token.connect(this.accounts.admin).deposit(this.accounts.user2.address, ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther('1000')])),
             this.token.connect(this.accounts.admin).deposit(this.accounts.user3.address, ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther('1000')])),
@@ -37,7 +34,6 @@ describe('Staking Escrow', function () {
             this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256),
         ]);
 
-        await this.scanners.connect(this.accounts.manager).adminRegister(ethers.utils.hexValue(subject), this.accounts.user1.address, 1, 'metadata');
     });
 
     describe('with funded escrow wallet', async function () {
@@ -46,12 +42,8 @@ describe('Staking Escrow', function () {
             this.escrow = await this.escrowFactory.predictWallet(this.vesting, this.accounts.manager.address).then((address) => utils.attach('StakingEscrow', address));
 
             await expect(this.token.connect(this.accounts.admin).deposit(this.escrow.address, ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther('1000')])))
-                .to.emit(this.token, 'RoleGranted')
-                .withArgs(this.roles.WHITELIST, this.escrow.address, this.accounts.admin.address)
                 .to.emit(this.token, 'Transfer')
-                .withArgs(ethers.constants.AddressZero, this.escrow.address, ethers.utils.parseEther('1000'))
-                .to.emit(this.token, 'RoleRevoked')
-                .withArgs(this.roles.WHITELIST, this.escrow.address, this.accounts.admin.address);
+                .withArgs(ethers.constants.AddressZero, this.escrow.address, ethers.utils.parseEther('1000'));
 
             await expect(this.escrowFactory.newWallet(this.vesting, this.accounts.manager.address))
                 .to.emit(this.token, 'RoleGranted')
@@ -79,7 +71,7 @@ describe('Staking Escrow', function () {
             });
 
             it('multiple deposits reaching max stake do not break StakingEscrow', async function () {
-                await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: this.value, min: '1', activated: true }, 1);
+                await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: this.value, min: '1', activated: true });
                 await expect(this.escrow.connect(this.accounts.manager).functions['deposit(uint8,uint256,uint256)'](subjectType, subject, this.value))
                     .to.emit(this.token, 'Approval')
                     .withArgs(this.escrow.address, this.staking.address, this.value)
@@ -103,7 +95,7 @@ describe('Staking Escrow', function () {
                     .withArgs(this.escrow.address, ethers.constants.AddressZero, this.escrow.address, active, ethers.BigNumber.from('0'))
                     .to.emit(this.staking, 'StakeDeposited')
                     .withArgs(subjectType, subject, this.escrow.address, ethers.BigNumber.from('0'));
-                await this.scanners.connect(this.accounts.manager).setStakeThreshold({ max: this.value.mul('2'), min: '1', activated: true }, 1);
+                await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: this.value.mul('2'), min: '1', activated: true });
                 await expect(this.escrow.connect(this.accounts.manager).functions['deposit(uint8,uint256,uint256)'](subjectType, subject, this.value))
                     .to.emit(this.token, 'Approval')
                     .withArgs(this.escrow.address, this.staking.address, this.value)

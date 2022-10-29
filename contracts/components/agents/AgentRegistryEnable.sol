@@ -32,9 +32,11 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
      * Returns false if otherwise
      */
     function isEnabled(uint256 agentId) public view virtual returns (bool) {
-        return isRegistered(agentId) &&
+        return (
+            isRegistered(agentId) &&
             getDisableFlags(agentId) == 0 &&
-            _isStakedOverMin(agentId); 
+            (!_isStakeActivated() || _isStakedOverMin(agentId))
+        );
     }
 
     /**
@@ -44,7 +46,6 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
      * @param permission the sender claims to have to enable the agent.
      */
     function enableAgent(uint256 agentId, Permission permission) public virtual {
-        if (!_isStakedOverMin(agentId)) revert StakedUnderMinimum(agentId);
         if (!_hasPermission(agentId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), agentId);
         _enable(agentId, permission, true);
     }
@@ -128,7 +129,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
      * @param value true if enabling, false if disabling.
      */
     function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterAgentEnable(uint256,uint8,bool)", agentId, uint8(permission), value));
+        
     }
     
     /**

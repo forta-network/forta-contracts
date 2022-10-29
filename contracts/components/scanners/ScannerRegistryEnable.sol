@@ -23,7 +23,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
         length
     }
 
-    mapping(uint256 => BitMaps.BitMap) private _disabled;
+    mapping(uint256 => BitMaps.BitMap) internal _disabled;
 
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, Permission permission, bool value);
 
@@ -35,7 +35,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
     */
     function isEnabled(uint256 scannerId) public view virtual returns (bool) {
         return isRegistered(scannerId) &&
-            getDisableFlags(scannerId) == 0 &&
+            _getDisableFlags(scannerId) == 0 &&
             _isStakedOverMin(scannerId); 
     }
 
@@ -46,7 +46,6 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
      * @param permission the caller claims to have.
      */
     function enableScanner(uint256 scannerId, Permission permission) public virtual {
-        if (!_isStakedOverMin(scannerId)) revert StakedUnderMinimum(scannerId);
         if (!_hasPermission(scannerId, permission)) revert DoesNotHavePermission(_msgSender(), uint8(permission), scannerId);
         _enable(scannerId, permission, true);
     }
@@ -68,7 +67,7 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
      * @param scannerId ERC721 token id of the scanner.
      * @return uint256 containing the byte flags.
      */
-    function getDisableFlags(uint256 scannerId) public view returns (uint256) {
+    function _getDisableFlags(uint256 scannerId) internal view returns (uint256) {
         return _disabled[scannerId]._data[0];
     }
 
@@ -96,43 +95,9 @@ abstract contract ScannerRegistryEnable is ScannerRegistryManaged {
      * @param enable true for enabling, false for disabling
      */
     function _enable(uint256 scannerId, Permission permission, bool enable) internal {
-        _beforeScannerEnable(scannerId, permission, enable);
-        _scannerEnable(scannerId, permission, enable);
-        _afterScannerEnable(scannerId, permission, enable);
-    }
-
-
-    /**
-     * @notice Hook _before scanner enable
-     * @dev does nothing in this contract
-     * @param scannerId ERC721 token id of the scanner.
-     * @param permission the sender claims to have to enable the agent.
-     * @param value true if enabling, false if disabling.
-     */
-    function _beforeScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
-    }
-
-    /**
-     * @notice Logic for enabling or disabling the scanner.
-     * @dev sets the corresponding byte in _disabled bitmap for scannerId. Emits ScannerEnabled event.
-     * @param scannerId ERC721 token id of the scanner.
-     * @param permission the sender claims to have to enable the agent.
-     * @param value true if enabling, false if disabling.
-     */
-    function _scannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
-        _disabled[scannerId].setTo(uint8(permission), !value);
-        emit ScannerEnabled(scannerId, isEnabled(scannerId), permission, value);
-    }
-
-    /**
-     * @notice Hook _after scanner enable
-     * @dev emits Router hook.
-     * @param scannerId ERC721 token id of the scanner.
-     * @param permission the sender claims to have to enable the agent.
-     * @param value true if enabling, false if disabling.
-     */
-    function _afterScannerEnable(uint256 scannerId, Permission permission, bool value) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterScannerEnable(uint256,uint8,bool)", scannerId, uint8(permission), value));
+        if (!isRegistered(scannerId)) revert ScannerNotRegistered(address(uint160(scannerId)));
+        _disabled[scannerId].setTo(uint8(permission), !enable);
+        emit ScannerEnabled(scannerId, isEnabled(scannerId), permission, enable);
     }
 
     /**

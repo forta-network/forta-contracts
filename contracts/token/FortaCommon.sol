@@ -10,15 +10,22 @@ import "../tools/ENSReverseRegistration.sol";
 import "../errors/GeneralErrors.sol";
 import "../components/utils/IVersioned.sol";
 
+/**
+ * Contract with the common functionality for both L1 FORT and L2 FortaBridgedPolygon.
+ * NOTE: Whitelisting functionality, used before the token was public, is deprecated.
+ * The whitelist was disabled setting whitelistDisabled = true, the current code keeps that storage
+ * layout for compatibility and removes whitelist code from _beforeTokenTransfer() to save gas.
+ * We are keeping the related roles to not break StakingEscrowFactory (already deployed), and the 
+ * _setRoleAdmin() in the initializer for historical context.
+ */
 abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable, UUPSUpgradeable, IVersioned {
     bytes32 public constant ADMIN_ROLE       = keccak256("ADMIN_ROLE");
     bytes32 public constant WHITELISTER_ROLE = keccak256("WHITELISTER_ROLE");
     bytes32 public constant WHITELIST_ROLE   = keccak256("WHITELIST_ROLE");
     
-    bool public whitelistDisabled; // __gap[50] -> __gap[49]
-
-    error NotWhitelisted(string name, address guilty);
-
+    /// @custom:oz-renamed-from whitelistDisabled
+    bool private deprecated_whitelistDisabled;
+    
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -39,20 +46,6 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
         _grantRole(ADMIN_ROLE, admin);
     }
 
-    /// Allow whitelister to assign other whitelisters
-    function grantWhitelister(address to) public onlyRole(WHITELISTER_ROLE) {
-        _grantRole(WHITELISTER_ROLE, to);
-    }
-
-    /// Only allow transfer to whitelisted accounts
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
-        if (!whitelistDisabled) {
-            if (!(from == address(0) || hasRole(WHITELIST_ROLE, from))) revert NotWhitelisted("sender", from);
-            if (!(to   == address(0) || hasRole(WHITELIST_ROLE, to))) revert NotWhitelisted("receiver", to);
-        }
-        super._beforeTokenTransfer(from, to, amount);
-    }
-
     /// Access control for the upgrade process
     function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(ADMIN_ROLE) {
     }
@@ -62,18 +55,6 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
     // instead of ENS_MANAGER_ROLE, here the token ADMIN has permission.
     function setName(address ensRegistry, string calldata ensName) external onlyRole(ADMIN_ROLE) {
         ENSReverseRegistration.setName(ensRegistry, ensName);
-    }
-
-    // Disable whitelisting of the token. 
-    // The whitelist functionality is going to be removed via contract upgrade to remove the checks in 
-    // _beforeTokenTransfer and be more gas efficient. In case an upgrade is too risky for some reason,
-    // this methods ensure our comprise to publish the token and keep decentralizing Forta.
-    function disableWhitelist() public onlyRole(WHITELISTER_ROLE) {
-        whitelistDisabled = true;
-    }
-
-    function enableWhitelist() public onlyRole(WHITELISTER_ROLE) {
-        whitelistDisabled = false;
     }
 
     uint256[49] private __gap; 

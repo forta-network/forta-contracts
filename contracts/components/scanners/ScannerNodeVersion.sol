@@ -12,7 +12,6 @@ import "../BaseComponentUpgradeable.sol";
  * A similar system is provided for pre release version.
  */
 contract ScannerNodeVersion is BaseComponentUpgradeable {
-
     /**
      * Version of the scanner image software the network expects (IPFS hash)
      * Starts empty
@@ -38,15 +37,9 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
-     * @param __router address of Router.
      */
-    function initialize(
-        address __manager,
-        address __router
-    ) public initializer {
-        __AccessManaged_init(__manager);
-        __Routed_init(__router);
-        __UUPSUpgradeable_init();
+    function initialize(address __manager) public initializer {
+        __BaseComponentUpgradeable_init(__manager);
     }
 
     /**
@@ -56,9 +49,7 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
      * @param _version IPFS pointer to the new image.
      */
     function setScannerNodeVersion(string calldata _version) public onlyRole(SCANNER_VERSION_ROLE) {
-        if(
-            keccak256(abi.encodePacked(scannerNodeVersion)) == keccak256(abi.encodePacked(_version))
-        ) revert SameScannerNodeVersion();
+        if (keccak256(abi.encodePacked(scannerNodeVersion)) == keccak256(abi.encodePacked(_version))) revert SameScannerNodeVersion();
         emit ScannerNodeVersionUpdated(_version, scannerNodeVersion);
         scannerNodeVersion = _version;
     }
@@ -70,9 +61,7 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
      * @param _version IPFS pointer to the new image.
      */
     function setScannerNodeBetaVersion(string calldata _version) public onlyRole(SCANNER_BETA_VERSION_ROLE) {
-        if(
-            keccak256(abi.encodePacked(scannerNodeBetaVersion)) == keccak256(abi.encodePacked(_version))
-        ) revert SameScannerNodeVersion();
+        if (keccak256(abi.encodePacked(scannerNodeBetaVersion)) == keccak256(abi.encodePacked(_version))) revert SameScannerNodeVersion();
         emit ScannerNodeBetaVersionUpdated(_version, scannerNodeBetaVersion);
         scannerNodeBetaVersion = _version;
     }

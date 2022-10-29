@@ -1,6 +1,7 @@
 const { ethers, upgrades } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
+const { deploy } = require('../../scripts/utils');
 
 const VERSION_1 = 'QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ';
 const VERSION_2 = 'QmQhadgstSRUv7aYnN25kwRBWtxP1gB9Kowdeim32uf8Td';
@@ -46,9 +47,10 @@ describe('Scanner Node Software Version', function () {
     });
 
     describe('upgrade', async function () {
-        it('sets version', async function () {
+        it('upgrades', async function () {
+            const mockRouter = await deploy(await ethers.getContractFactory('MockRouter'));
             const ScannerVersion_0_1_0 = await ethers.getContractFactory('ScannerNodeVersion_0_1_0');
-            const originalScannerVersion = await upgrades.deployProxy(ScannerVersion_0_1_0, [this.contracts.access.address, this.contracts.router.address], {
+            const originalScannerVersion = await upgrades.deployProxy(ScannerVersion_0_1_0, [this.contracts.access.address, mockRouter.address], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
@@ -61,12 +63,12 @@ describe('Scanner Node Software Version', function () {
             const newScannerVersion = await upgrades.upgradeProxy(originalScannerVersion.address, NewImplementation, {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
+                // TODO: remove this after upgrading to a version of `openzeppelin-upgrades` without the error in RoutedUpgradeable.sol
                 unsafeSkipStorageCheck: true,
             });
             await newScannerVersion.connect(this.accounts.admin).setScannerNodeBetaVersion(VERSION_2);
             expect(await newScannerVersion.scannerNodeVersion()).to.equal(VERSION_1);
             expect(await newScannerVersion.scannerNodeBetaVersion()).to.equal(VERSION_2);
-
         });
     });
 });

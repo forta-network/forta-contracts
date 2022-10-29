@@ -4,9 +4,8 @@ const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { BigNumber } = require('ethers');
 
-const SUBJECT_1_ADDRESS = '0x727E5FCcb9e2367555373e90E637500BCa5Da40c';
 const subjects = [
-    { id: ethers.BigNumber.from(SUBJECT_1_ADDRESS), type: 0 }, // Scanner id, scanner type
+    { id: '1', type: 2 }, // NodeRunners id, NodeRunner type
     { id: ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), type: 1 }, // Agent id, agent type
 ];
 
@@ -49,14 +48,14 @@ const EVIDENCE_FOR_STATE = (state) => {
 const PROPOSAL_ID = BigNumber.from('1');
 
 describe('Slashing Proposals', function () {
-    prepare({ stake: { min: MIN_STAKE, max: MAX_STAKE, activated: true } });
+    prepare({
+        stake: {
+            agents: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
+            scanners: { min: MIN_STAKE, max: MAX_STAKE, activated: true },
+        },
+    });
 
     beforeEach(async function () {
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user1.address);
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user2.address);
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.user3.address);
-        await this.token.connect(this.accounts.whitelister).grantRole(this.roles.WHITELIST, this.accounts.minter.address);
-
         await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHING_ARBITER, this.accounts.user3.address);
         await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.admin.address);
 
@@ -72,11 +71,11 @@ describe('Slashing Proposals', function () {
         await this.token.connect(this.accounts.user2).approve(this.staking.address, ethers.constants.MaxUint256);
         await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
 
-        await this.scanners.connect(this.accounts.manager).adminRegister(SUBJECT_1_ADDRESS, this.accounts.user2.address, 1, 'metadata');
         const args = [subjects[1].id, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
         await this.agents.connect(this.accounts.other).createAgent(...args);
+        await this.nodeRunners.connect(this.accounts.user2).registerNodeRunner(1);
 
-        await this.staking.connect(this.accounts.user2).deposit(0, SUBJECT_1_ADDRESS, STAKING_DEPOSIT);
+        await this.staking.connect(this.accounts.user2).deposit(2, '1', STAKING_DEPOSIT);
         await this.staking.connect(this.accounts.user2).deposit(1, subjects[1].id, STAKING_DEPOSIT);
 
         slashTreasuryAddress = await this.staking.treasury();
@@ -168,7 +167,7 @@ describe('Slashing Proposals', function () {
                 .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance.sub(STAKING_DEPOSIT));
 
-            this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
+            await this.slashing.connect(this.accounts.user3).markAsInReviewSlashProposal(PROPOSAL_ID);
 
             expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(initialDepositorBalance);
             expect(await this.token.balanceOf(this.slashing.address)).to.eq(BigNumber.from('0'));
@@ -617,25 +616,25 @@ describe('Slashing Proposals', function () {
         it('min stake', async function () {
             // All active stake
             await this.staking.connect(this.accounts.user2).deposit(subjects[1].type, subjects[1].id, STAKING_DEPOSIT);
-            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[1].type, subjects[1].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('1')).to.eq(MIN_STAKE.mul('10').div('100'));
             await this.slashing.connect(this.accounts.user3).dismissSlashProposal('1', EVIDENCE_FOR_STATE(STATES.DISMISSED));
 
             // Mix active and inactive stake
             await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, MIN_STAKE.div(2));
-            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[1].type, subjects[1].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('2')).to.eq(MIN_STAKE.mul('10').div('100'));
             await this.slashing.connect(this.accounts.user3).dismissSlashProposal('2', EVIDENCE_FOR_STATE(STATES.DISMISSED));
 
             // All inactive stake
             await this.staking.connect(this.accounts.user2).initiateWithdrawal(subjects[1].type, subjects[1].id, MIN_STAKE.div(2));
-            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[0].type, subjects[0].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
+            await this.slashing.connect(this.accounts.user2).proposeSlash(subjects[1].type, subjects[1].id, ethers.utils.id('MIN_STAKE'), EVIDENCE_FOR_STATE(STATES.CREATED));
             expect(await this.slashing.getSlashedStakeValue('3')).to.eq(MIN_STAKE.mul('10').div('100'));
         });
 
         it('max possible stake', async function () {
-            const maxSlashableStakePercent = await this.stakingParameters.maxSlashableStakePercent();
-            const totalStake = await this.stakingParameters.totalStakeFor(subjects[0].type, subjects[0].id);
+            const maxSlashableStakePercent = await this.staking.MAX_SLASHABLE_PERCENT();
+            const totalStake = await this.subjectGateway.totalStakeFor(subjects[0].type, subjects[0].id);
             const maxSlashable = totalStake.mul(maxSlashableStakePercent).div('100');
 
             // All active stake

@@ -6,7 +6,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
 import "../BaseComponentUpgradeable.sol";
-import "../staking/StakeSubject.sol";
+import "../staking/stake_subjects/DirectStakeSubject.sol";
 import "../../tools/FrontRunningProtection.sol";
 import "../../errors/GeneralErrors.sol";
 
@@ -14,7 +14,7 @@ abstract contract AgentRegistryCore is
     BaseComponentUpgradeable,
     FrontRunningProtection,
     ERC721Upgradeable,
-    StakeSubjectUpgradeable
+    DirectStakeSubjectUpgradeable
 {
     StakeThreshold private _stakeThreshold; // 3 storage slots
     // Initially 0 because the frontrunning protection starts disabled.
@@ -118,17 +118,18 @@ abstract contract AgentRegistryCore is
         return _stakeThreshold;
     }
 
+    function _isStakeActivated() internal view returns(bool) {
+        return address(getSubjectHandler()) != address(0) && _stakeThreshold.activated;
+    }
+
     /**
      * Checks if agent is staked over minimum stake
      * @param subject agentId
-     * @return true if agent is staked over the minimum threshold and is, or staking is not yet enabled (stakeController = 0).
+     * @return true if agent is staked over the minimum threshold and is, or staking is not enabled (stakeController = 0 or activated = false ).
      * false otherwise
      */
     function _isStakedOverMin(uint256 subject) internal override view returns(bool) {
-        if (address(getStakeController()) == address(0)) {
-            return true;
-        }
-        return getStakeController().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min && _exists(subject);
+        return getSubjectHandler().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min && _exists(subject);
     }
 
     /**
@@ -169,7 +170,7 @@ abstract contract AgentRegistryCore is
      * @param newChainIds ordered list of chainIds where the agent wants to run.
      */
     function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
-        _emitHook(abi.encodeWithSignature("hook_afterAgentUpdate(uint256,string,uint256[])", agentId, newMetadata, newChainIds));
+        
     }
 
     /**
@@ -186,6 +187,10 @@ abstract contract AgentRegistryCore is
      */
     function _msgData() internal view virtual override(ContextUpgradeable, BaseComponentUpgradeable) returns (bytes calldata) {
         return super._msgData();
+    }
+
+    function ownerOf(uint256 subject) public view virtual override(DirectStakeSubjectUpgradeable, ERC721Upgradeable) returns (address) {
+        return super.ownerOf(subject);
     }
 
     uint256[41] private __gap; // 50 - 1 (frontRunningDelay) - 3 (_stakeThreshold) - 5 StakeSubjectUpgradeable

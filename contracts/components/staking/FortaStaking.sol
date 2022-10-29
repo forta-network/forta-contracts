@@ -11,10 +11,12 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 
+import "./IStakeMigrator.sol";
 import "./FortaStakingUtils.sol";
-import "./SubjectTypes.sol";
-import "./IStakeController.sol";
-import "./ISlashingExecutor.sol";
+import "./SubjectTypeValidator.sol";
+import "./allocation/IStakeAllocator.sol";
+import "./stake_subjects/IStakeSubjectGateway.sol";
+import "./slashing/ISlashingExecutor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 
@@ -38,7 +40,7 @@ interface IRewardReceiver {
  * Stakers can withdraw their funds, following a withdrawal delay. During the withdrawal delay, funds are no longer
  * counting toward the active stake of a subject, but are still slashable.
  *
- * The SLASHER_ROLE should be given to a future smart contract that will be in charge of resolving disputes.
+ * The SLASHER_ROLE should be given to a smart contract that will be in charge of handling the slashing proposal process.
  *
  * Stakers receive ERC1155 shares in exchange for their stake, making the active stake transferable. When a withdrawal
  * is initiated, similarly the ERC1155 tokens representing the (transferable) active shares are burned in exchange for
@@ -54,7 +56,7 @@ interface IRewardReceiver {
  * succeed but you will not be able to withdraw or mint new shares from the contract. If this happens, transfer your
  * shares to an EOA or fully ERC1155 compatible contract.
  */
-contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, SubjectTypeValidator, ISlashingExecutor {
+contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, SubjectTypeValidator, ISlashingExecutor, IStakeMigrator {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers for Timers.Timestamp;
@@ -68,7 +70,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     Distributions.Balances private _activeStake;
     // subject => inactive stake
     Distributions.Balances private _inactiveStake;
-
     // subject => staker => inactive stake timer
     mapping(uint256 => mapping(address => Timers.Timestamp)) private _lockingDelay;
 
@@ -77,22 +78,20 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     // subject => staker => released reward
     mapping(uint256 => Distributions.SignedBalances) private _released;
 
-    // frozen tokens
     mapping(uint256 => bool) private _frozen;
-
-    // withdrawal delay
     uint64 private _withdrawalDelay;
 
     // treasury for slashing
     address private _treasury;
+    IStakeSubjectGateway public subjectGateway;
 
-    uint256 private constant HUNDRED_PERCENT = 100;
+    uint256 public slashDelegatorsPercent;
+    IStakeAllocator private _allocator;
 
-
-    IStakeController private _stakingParameters;
     uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
     uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
-
+    uint256 public constant MAX_SLASHABLE_PERCENT = 90;
+    uint256 private constant HUNDRED_PERCENT = 100;
 
     event StakeDeposited(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint256 amount);
     event WithdrawalInitiated(uint8 indexed subjectType, uint256 indexed subject, address indexed account, uint64 deadline);
@@ -104,9 +103,10 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     event Released(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
-    event StakeParamsManagerSet(address indexed newManager);
+    event StakeHelpersConfigured(address indexed subjectGateway, address indexed allocator);
     event MaxStakeReached(uint8 indexed subjectType, uint256 indexed subject);
     event TokensSwept(address indexed token, address to, uint256 amount);
+    event SlashDelegatorsPercentSet(uint256 percent);
 
     error WithdrawalNotReady();
     error SlashingOver90Percent();
@@ -119,29 +119,24 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     string public constant version = "0.1.1";
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address _forwarder) initializer ForwardedContext(_forwarder) {
-        
-    }
+    constructor(address _forwarder) initializer ForwardedContext(_forwarder) {}
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
-     * @param __router address of Router.
+     * @param __stakedToken ERC20 to be staked (FORT).
      * @param __withdrawalDelay cooldown period between withdrawal init and withdrawal (in seconds).
      * @param __treasury address where the slashed tokens go to.
      */
     function initialize(
         address __manager,
-        address __router,
+        IERC20 __stakedToken,
         uint64 __withdrawalDelay,
-        address __treasury,
-        address __stakedToken
+        address __treasury
     ) public initializer {
         if (__treasury == address(0)) revert ZeroAddress("__treasury");
-        if (__stakedToken == address(0)) revert ZeroAddress("__stakedToken");
-        __AccessManaged_init(__manager);
-        __Routed_init(__router);
-        __UUPSUpgradeable_init();
+        if (address(__stakedToken) == address(0)) revert ZeroAddress("__stakedToken");
+        __BaseComponentUpgradeable_init(__manager);
         __ERC1155_init("");
         __ERC1155Supply_init();
         _withdrawalDelay = __withdrawalDelay;
@@ -158,7 +153,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     /**
      * @notice Get stake of a subject (not marked for withdrawal).
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @return amount of stakedToken actively staked on subject+subjectType.
      */
@@ -176,7 +171,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     /**
      * @notice Get inactive stake of a subject (marked for withdrawal).
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @return amount of stakedToken still staked on subject+subjectType but marked for withdrawal.
      */
@@ -192,11 +187,13 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         return _inactiveStake.totalSupply();
     }
 
+    
+
     /**
      * @notice Get (active) shares of an account on a subject, corresponding to a fraction of the subject stake.
      * @dev This is equivalent to getting the ERC1155 balanceOf for keccak256(abi.encodePacked(subjectType, subject)),
      * shifted 9 bits, with the 9th bit set and uint8(subjectType) masked in
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @param account holder of the ERC1155 staking shares.
      * @return amount of ERC1155 shares account is in possession in representing stake on subject+subjectType.
@@ -213,7 +210,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @notice Get the total (active) shares on a subject.
      * @dev This is equivalent to getting the ERC1155 totalSupply for keccak256(abi.encodePacked(subjectType, subject)),
      * shifted 9 bits, with the 9th bit set and uint8(subjectType) masked in
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @return total ERC1155 shares representing stake on subject+subjectType.
      */
@@ -225,7 +222,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @notice Get inactive shares of an account on a subject, corresponding to a fraction of the subject inactive stake.
      * @dev This is equivalent to getting the ERC1155 balanceOf for keccak256(abi.encodePacked(subjectType, subject)),
      * shifted 9 bits, with the 9th bit unset and uint8(subjectType) masked in.
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @param account holder of the ERC1155 staking shares.
      * @return amount of ERC1155 shares account is in possession in representing inactive stake on subject+subjectType, marked for withdrawal.
@@ -242,7 +239,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @notice Get the total inactive shares on a subject.
      * @dev This is equivalent to getting the ERC1155 totalSupply for keccak256(abi.encodePacked(subjectType, subject)),
      * shifted 9 bits, with the 9th bit unset and uint8(subjectType) masked in
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @return total ERC1155 shares representing inactive stake on subject+subjectType, marked for withdrawal.
      */
@@ -252,7 +249,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     /**
      * @notice Checks if a subject frozen (stake of frozen subject cannot be withdrawn).
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @return true if subject is frozen, false otherwise
      */
@@ -265,7 +262,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * will return tokens staked over maximum for the subject.
      * If stakeValue would drive the stake over the maximum, only stakeValue - excess is transferred, but transaction will
      * not fail.
-     * Reverts if max stake for subjectType not set, or subject not found
+     * Reverts if max stake for subjectType not set, or subject not found.
      * @dev NOTE: Subject type is necessary because we can't infer subject ID uniqueness between scanners, agents, etc
      * Emits a ERC1155.TransferSingle event and StakeDeposited (to allow accounting per subject type)
      * Emits MaxStakeReached(subjectType, activeSharesId)
@@ -274,7 +271,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * Do not deposit on the constructor if you don't implement ERC1155Receiver. During the construction, the minting will
      * succeed but you will not be able to withdraw or mint new shares from the contract. If this happens, transfer your
      * shares to an EOA or fully ERC1155 compatible contract.
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @param stakeValue amount of staked token.
      * @return amount of ERC1155 active shares minted.
@@ -283,9 +280,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint8 subjectType,
         uint256 subject,
         uint256 stakeValue
-    ) public onlyValidSubjectType(subjectType) returns (uint256) {
-        if (address(_stakingParameters) == address(0)) revert ZeroAddress("_stakingParameters");
-        if (!_stakingParameters.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
+    ) external onlyValidSubjectType(subjectType) notAgencyType(subjectType, SubjectStakeAgency.MANAGED) returns (uint256) {
+        if (address(subjectGateway) == address(0)) revert ZeroAddress("subjectGateway");
+        if (!subjectGateway.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         bool reachedMax;
@@ -299,10 +296,39 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _activeStake.mint(activeSharesId, stakeValue);
         _mint(staker, activeSharesId, sharesValue, new bytes(0));
         emit StakeDeposited(subjectType, subject, staker, stakeValue);
-        // NOTE: hooks will be reintroduced (with more info) when first use case is implemented. For now they are removed
-        // to reduce attack surface.
-        // _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
+        _allocator.depositAllocation(activeSharesId, subjectType, subject, staker, stakeValue);
         return sharesValue;
+    }
+    
+
+    /**
+     * deposits active stake from SCANNER to NODE_RUNNER if not frozen. Inactive stake remains for withdrawal in old subject
+     * Burns active stake and shares for old subject.
+     * @dev No slash has been executed, so new NODE_RUNNER share proportions apply.
+     */
+    function migrate(
+        uint8 oldSubjectType,
+        uint256 oldSubject,
+        uint8 newSubjectType,
+        uint256 newSubject,
+        address staker
+    ) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) {
+        if (oldSubjectType != SCANNER_SUBJECT) revert InvalidSubjectType(oldSubjectType); 
+        if (newSubjectType != NODE_RUNNER_SUBJECT) revert InvalidSubjectType(newSubjectType); 
+        if (isFrozen(oldSubjectType, oldSubject)) revert FrozenSubject();
+
+        uint256 oldSharesId = FortaStakingUtils.subjectToActive(oldSubjectType, oldSubject);
+        uint256 oldShares = balanceOf(staker, oldSharesId);
+        uint256 stake = activeSharesToStake(oldSharesId, oldShares);
+        uint256 newSharesId = FortaStakingUtils.subjectToActive(newSubjectType, newSubject);
+        uint256 newShares = stakeToActiveShares(newSharesId, stake);
+
+        _activeStake.burn(oldSharesId, stake);
+        _activeStake.mint(newSharesId, stake);
+        _burn(staker, oldSharesId, oldShares);
+        _mint(staker, newSharesId, newShares, new bytes(0));
+        emit StakeDeposited(newSubjectType, newSubject, staker, stake);
+        _allocator.depositAllocation(newSharesId, newSubjectType, newSubject, staker, stake);
     }
 
     /**
@@ -318,7 +344,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 subject,
         uint256 stakeValue
     ) private view returns (uint256, bool) {
-        uint256 max = _stakingParameters.maxStakeFor(subjectType, subject);
+        uint256 max = subjectGateway.maxStakeFor(subjectType, subject);
         if (activeStakeFor(subjectType, subject) >= max) {
             return (0, true);
         } else {
@@ -337,7 +363,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * shares (non transferrable). Stake will be available for withdraw() after _withdrawalDelay. If the
      * subject has not been slashed, the shares will correspond 1:1 with stake.
      * @dev Emits a WithdrawalInitiated event.
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @param sharesValue amount of shares token.
      * @return amount of time until withdrawal is valid.
@@ -346,7 +372,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint8 subjectType,
         uint256 subject,
         uint256 sharesValue
-    ) public onlyValidSubjectType(subjectType) returns (uint64) {
+    ) external onlyValidSubjectType(subjectType) returns (uint64) {
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         if (balanceOf(staker, activeSharesId) == 0) revert NoActiveShares();
@@ -357,16 +383,17 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 activeShares = Math.min(sharesValue, balanceOf(staker, activeSharesId));
         uint256 stakeValue = activeSharesToStake(activeSharesId, activeShares);
         uint256 inactiveShares = stakeToInactiveShares(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
-
+        SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
+        if (agency == SubjectStakeAgency.DELEGATED || agency == SubjectStakeAgency.DELEGATOR) {
+            _allocator.withdrawAllocation(activeSharesId, subjectType, subject, stakeValue);
+        }
         _activeStake.burn(activeSharesId, stakeValue);
         _inactiveStake.mint(FortaStakingUtils.activeToInactive(activeSharesId), stakeValue);
         _burn(staker, activeSharesId, activeShares);
         _mint(staker, FortaStakingUtils.activeToInactive(activeSharesId), inactiveShares, new bytes(0));
 
         emit WithdrawalInitiated(subjectType, subject, staker, deadline);
-        // NOTE: hooks will be reintroduced (with more info) when first use case is implemented. For now they are removed
-        // to reduce attack surface.
-        // _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
+
         return deadline;
     }
 
@@ -375,11 +402,11 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * (if the subject type has not been frozen, and the withdrawal delay time has passed).
      * @dev shares must have been marked for withdrawal before by initiateWithdrawal().
      * Emits events WithdrawalExecuted and ERC1155.TransferSingle.
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @return amount of withdrawn staked tokens.
      */
-    function withdraw(uint8 subjectType, uint256 subject) public onlyValidSubjectType(subjectType) returns (uint256) {
+    function withdraw(uint8 subjectType, uint256 subject) external onlyValidSubjectType(subjectType) returns (uint256) {
         address staker = _msgSender();
         uint256 inactiveSharesId = FortaStakingUtils.subjectToInactive(subjectType, subject);
         if (balanceOf(staker, inactiveSharesId) == 0) revert NoInactiveShares();
@@ -396,9 +423,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _inactiveStake.burn(inactiveSharesId, stakeValue);
         _burn(staker, inactiveSharesId, inactiveShares);
         SafeERC20.safeTransfer(stakedToken, staker, stakeValue);
-        // NOTE: hooks will be reintroduced (with more info) when first use case is implemented. For now they are removed
-        // to reduce attack surface.
-        // _emitHook(abi.encodeWithSignature("hook_afterStakeChanged(uint8, uint256)", subjectType, subject));
 
         return stakeValue;
     }
@@ -407,50 +431,88 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @notice Slash a fraction of a subject stake, and transfer it to the treasury. Restricted to the `SLASHER_ROLE`.
      * @dev This will alter the relationship between shares and stake, reducing shares value for a subject.
      * Emits a Slashed event.
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * Unallocated stake if needed.
+     * A slash over a DELEGATED type will propagate to DELEGATORs according to proposerPercent.
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @param stakeValue amount of staked token to be slashed.
      * @param proposer address of the slash proposer. Must be nonzero address if proposerPercent > 0
-     * @param proposerPercent percentage of stakeValue sent to the proposer. From 0 to FortaStakingParameters.maxSlashableStakePercent()
+     * @param proposerPercent percentage of stakeValue sent to the proposer. From 0 to MAX_SLASHABLE_PERCENT
      * @return stakeValue
      */
+
     function slash(
         uint8 subjectType,
         uint256 subject,
         uint256 stakeValue,
         address proposer,
         uint256 proposerPercent
-    ) public override onlyRole(SLASHER_ROLE) returns (uint256) {
+    ) external override onlyRole(SLASHER_ROLE) notAgencyType(subjectType, SubjectStakeAgency.DELEGATOR) returns (uint256) {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+
+        if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
+            uint256 delegatorSlashValue = Math.mulDiv(stakeValue, slashDelegatorsPercent, HUNDRED_PERCENT);
+            uint256 delegatedSlashValue = stakeValue - delegatorSlashValue;
+
+            _slash(activeSharesId, subjectType, subject, delegatedSlashValue);
+
+            if (delegatorSlashValue > 0) {
+                uint8 delegatorType = getDelegatorSubjectType(subjectType);
+                uint256 activeDelegatorSharesId = FortaStakingUtils.subjectToActive(delegatorType, subject);
+                _slash(activeDelegatorSharesId, delegatorType, subject, delegatorSlashValue);
+            }
+        } else {
+            _slash(activeSharesId, subjectType, subject, stakeValue);
+        }
+
+        uint256 proposerShare = Math.mulDiv(stakeValue, proposerPercent, HUNDRED_PERCENT);
+
+        if (proposerShare > 0) {
+            if (proposer == address(0)) revert ZeroAddress("proposer");
+            SafeERC20.safeTransfer(stakedToken, proposer, proposerShare);
+        }
+
+        SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue - proposerShare);
+        emit SlashedShareSent(subjectType, subject, proposer, proposerShare);
+
+        return stakeValue;
+    }
+
+    /**
+     * @notice burns slashed stake from active and/or inactive stake for subjectType/subject.
+     * @param activeSharesId ERC1155 id of the shares being slashed
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
+     * @param subject id identifying subject (external to FortaStaking).
+     * @param stakeValue amount of staked token to be slashed.
+     */
+    function _slash(
+        uint256 activeSharesId,
+        uint8 subjectType,
+        uint256 subject,
+        uint256 stakeValue
+    ) private {
         uint256 activeStake = _activeStake.balanceOf(activeSharesId);
         uint256 inactiveStake = _inactiveStake.balanceOf(FortaStakingUtils.activeToInactive(activeSharesId));
-
         // We set the slash limit at 90% of the stake, so new depositors on slashed pools (with now 0 stake) won't mint
         // an amounts of shares so big that they might cause overflows.
         // New shares = pool shares * new staked amount / pool stake
         // See deposit and stakeToActiveShares methods.
-        uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, _stakingParameters.maxSlashableStakePercent(), HUNDRED_PERCENT);
+        uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, MAX_SLASHABLE_PERCENT, HUNDRED_PERCENT);
+
         if (stakeValue > maxSlashableStake) revert SlashingOver90Percent();
 
         uint256 slashFromActive = Math.mulDiv(activeStake, stakeValue, activeStake + inactiveStake);
         uint256 slashFromInactive = stakeValue - slashFromActive;
-        stakeValue = slashFromActive + slashFromInactive;
 
         _activeStake.burn(activeSharesId, slashFromActive);
         _inactiveStake.burn(FortaStakingUtils.activeToInactive(activeSharesId), slashFromInactive);
 
-        if (proposerPercent > 0) {
-            if (proposer == address(0)) revert ZeroAddress("proposer");
-            uint256 proposerShare = Math.mulDiv(stakeValue, proposerPercent, HUNDRED_PERCENT);
-            SafeERC20.safeTransfer(stakedToken, proposer, proposerShare);
-            emit SlashedShareSent(subjectType, subject, proposer, proposerShare);
-            SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue - proposerShare);
-        } else {
-            SafeERC20.safeTransfer(stakedToken, _treasury, stakeValue);
+        SubjectStakeAgency subjectAgency = getSubjectTypeAgency(subjectType);
+        if (subjectAgency == SubjectStakeAgency.DELEGATED || subjectAgency == SubjectStakeAgency.DELEGATOR) {
+            _allocator.withdrawAllocation(activeSharesId, subjectType, subject, slashFromActive);
         }
-        emit Slashed(subjectType, subject, _msgSender(), stakeValue);
 
-        return stakeValue;
+        emit Slashed(subjectType, subject, _msgSender(), stakeValue);
     }
 
     /**
@@ -458,7 +520,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * with a subject but there is not a strong case yet for slashing.
      * Restricted to the `SLASHER_ROLE`.
      * @dev Emits a Freeze event.
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
      * @param frozen true to freeze, false to unfreeze.
      */
@@ -466,27 +528,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint8 subjectType,
         uint256 subject,
         bool frozen
-    ) public override onlyRole(SLASHER_ROLE) onlyValidSubjectType(subjectType) {
+    ) external override onlyRole(SLASHER_ROLE) onlyValidSubjectType(subjectType) {
         _frozen[FortaStakingUtils.subjectToActive(subjectType, subject)] = frozen;
         emit Froze(subjectType, subject, _msgSender(), frozen);
-    }
-
-    /**
-     * @notice Deposit reward value for a given `subject`. The corresponding tokens will be shared amongst the shareholders
-     * of this subject.
-     * @dev Emits a Reward event.
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
-     * @param subject id identifying subject (external to FortaStaking).
-     * @param value amount of reward tokens.
-     */
-    function reward(
-        uint8 subjectType,
-        uint256 subject,
-        uint256 value
-    ) public onlyValidSubjectType(subjectType) {
-        SafeERC20.safeTransferFrom(stakedToken, _msgSender(), address(this), value);
-        _rewards.mint(FortaStakingUtils.subjectToActive(subjectType, subject), value);
-        emit Rewarded(subjectType, subject, _msgSender(), value);
     }
 
     /**
@@ -499,7 +543,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @return amount of tokens swept. For unrelated tokens is FortaStaking's balance, for stakedToken its
      * the balance over the active stake + inactive stake + rewards
      */
-    function sweep(IERC20 token, address recipient) public onlyRole(SWEEPER_ROLE) returns (uint256) {
+    function sweep(IERC20 token, address recipient) external onlyRole(SWEEPER_ROLE) returns (uint256) {
         uint256 amount = token.balanceOf(address(this));
 
         if (token == stakedToken) {
@@ -511,65 +555,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         SafeERC20.safeTransfer(token, recipient, amount);
         emit TokensSwept(address(token), recipient, amount);
         return amount;
-    }
-
-    /**
-     * @notice Release reward owed by given `account` for its current or past share for a given `subject`.
-     * @dev If staking from a contract, said contract may optionally implement ERC165 for IRewardReceiver.
-     * Emits a Release event.
-     * @param subjectType agents, scanner or future types of stake subject. See SubjectTypes.sol
-     * @param subject id identifying subject (external to FortaStaking).
-     * @param account that staked on the subject.
-     * @return available reward transferred.
-     */
-    function releaseReward(
-        uint8 subjectType,
-        uint256 subject,
-        address account
-    ) public onlyValidSubjectType(subjectType) returns (uint256) {
-        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
-        uint256 value = _availableReward(activeSharesId, account);
-        _rewards.burn(activeSharesId, value);
-        _released[activeSharesId].mint(account, SafeCast.toInt256(value));
-
-        SafeERC20.safeTransfer(stakedToken, account, value);
-
-        emit Released(subjectType, subject, account, value);
-
-        if (Address.isContract(account) && account.supportsInterface(type(IRewardReceiver).interfaceId)) {
-            IRewardReceiver(account).onRewardReceived(subjectType, subject, value);
-        }
-
-        return value;
-    }
-
-    /**
-     * @notice Amount of reward tokens owed by given `account` for its current or past share for a given `subject`.
-     * @param activeSharesId ERC1155 id representing the active shares of a subject / subjectType pair.
-     * @param account address of the staker
-     * @return rewards available for staker on that subject.
-     */
-    function _availableReward(uint256 activeSharesId, address account) internal view returns (uint256) {
-        return
-            SafeCast.toUint256(
-                SafeCast.toInt256(_historicalRewardFraction(activeSharesId, balanceOf(account, activeSharesId), Math.Rounding.Down)) - _released[activeSharesId].balanceOf(account)
-            );
-    }
-
-    /**
-     * @dev Amount of reward tokens owed by given `account` for its current or past share for a given `subject`.
-     * @param subjectType type of staking subject (see SubjectTypes.sol)
-     * @param subject ID of subject
-     * @param account address of the staker
-     * @return rewards available for staker on that subject.
-     */
-    function availableReward(
-        uint8 subjectType,
-        uint256 subject,
-        address account
-    ) external view returns (uint256) {
-        uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
-        return _availableReward(activeSharesId, account);
     }
 
     /**
@@ -587,22 +572,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public {
+    ) external {
         IERC2612(address(stakedToken)).permit(_msgSender(), address(this), value, deadline, v, r, s);
-    }
-
-    // Internal helpers
-    function _totalHistoricalReward(uint256 activeSharesId) internal view returns (uint256) {
-        return SafeCast.toUint256(SafeCast.toInt256(_rewards.balanceOf(activeSharesId)) + _released[activeSharesId].totalSupply());
-    }
-
-    function _historicalRewardFraction(
-        uint256 activeSharesId,
-        uint256 amount,
-        Math.Rounding rounding
-    ) internal view returns (uint256) {
-        uint256 supply = totalSupply(activeSharesId);
-        return amount > 0 && supply > 0 ? Math.mulDiv(_totalHistoricalReward(activeSharesId), amount, supply, rounding) : 0;
     }
 
     function _beforeTokenTransfer(
@@ -616,20 +587,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         // Order is important here, we must do the virtual release, which uses totalSupply(activeSharesId) in
         // _historicalRewardFraction, BEFORE the super call updates the totalSupply()
         for (uint256 i = 0; i < ids.length; i++) {
-            if (FortaStakingUtils.isActive(ids[i])) {
-                // Mint, burn, or transfer of subject shares would by default affect the distribution of the
-                // currently available reward for the subject. We create a "virtual release" that should preserve
-                // reward distribution as it was prior to the transfer.
-                int256 virtualRelease = SafeCast.toInt256(_historicalRewardFraction(ids[i], amounts[i], Math.Rounding.Up));
-
-                if (from == address(0)) {
-                    _released[ids[i]].mint(to, virtualRelease);
-                } else if (to == address(0)) {
-                    _released[ids[i]].burn(from, virtualRelease);
-                } else {
-                    _released[ids[i]].transfer(from, to, virtualRelease);
-                }
-            } else {
+            if (!FortaStakingUtils.isActive(ids[i])) {
                 if (!(from == address(0) || to == address(0))) revert WithdrawalSharesNotTransferible();
             }
         }
@@ -689,7 +647,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @notice Sets withdrawal delay. Restricted to DEFAULT_ADMIN_ROLE
      * @param newDelay in seconds.
      */
-    function setDelay(uint64 newDelay) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setDelay(uint64 newDelay) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (newDelay < MIN_WITHDRAWAL_DELAY) revert AmountTooSmall(newDelay, MIN_WITHDRAWAL_DELAY);
         if (newDelay > MAX_WITHDRAWAL_DELAY) revert AmountTooLarge(newDelay, MAX_WITHDRAWAL_DELAY);
         _withdrawalDelay = newDelay;
@@ -700,17 +658,24 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @notice Sets destination of slashed tokens. Restricted to DEFAULT_ADMIN_ROLE
      * @param newTreasury address.
      */
-    function setTreasury(address newTreasury) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setTreasury(address newTreasury) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (newTreasury == address(0)) revert ZeroAddress("newTreasury");
         _treasury = newTreasury;
         emit TreasurySet(newTreasury);
     }
 
     // Admin: change staking parameters manager
-    function setStakingParametersManager(IStakeController newStakingParameters) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (address(newStakingParameters) == address(0)) revert ZeroAddress("newStakingParameters");
-        emit StakeParamsManagerSet(address(newStakingParameters));
-        _stakingParameters = newStakingParameters;
+    function configureStakeHelpers(IStakeSubjectGateway __subjectGateway, IStakeAllocator __allocator) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (address(__subjectGateway) == address(0)) revert ZeroAddress("__subjectGateway");
+        if (address(__allocator) == address(0)) revert ZeroAddress("__allocator");
+        subjectGateway = __subjectGateway;
+        _allocator = __allocator;
+        emit StakeHelpersConfigured(address(__subjectGateway), address(__allocator));
+    }
+
+    function setSlashDelegatorsPercent(uint256 percent) external onlyRole(STAKING_ADMIN_ROLE) {
+        slashDelegatorsPercent = percent;
+        emit SlashDelegatorsPercentSet(percent);
     }
 
     // Overrides
@@ -719,7 +684,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @notice Sets URI of the ERC1155 tokens. Restricted to DEFAULT_ADMIN_ROLE
      * @param newUri root of the hosted metadata.
      */
-    function setURI(string memory newUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setURI(string memory newUri) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setURI(newUri);
     }
 
@@ -739,5 +704,5 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         return super._msgData();
     }
 
-    uint256[40] private __gap;
+    uint256[42] private __gap;
 }

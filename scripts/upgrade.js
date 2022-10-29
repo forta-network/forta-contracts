@@ -50,7 +50,7 @@ async function main() {
         dispatch: utils.attach('Dispatch', await CACHE.get('dispatch.address')).then((contract) => contract.connect(deployer)),
         router: utils.attach('Router', await CACHE.get('router.address')).then((contract) => contract.connect(deployer)),
         scannerNodeVersion: utils.attach('ScannerNodeVersion', await CACHE.get('scanner-node-version.address')).then((contract) => contract.connect(deployer)),
-        stakingParameters: utils.attach('FortaStakingParameters', await CACHE.get('staking-parameters.address')).then((contract) => contract.connect(deployer)),
+        subjectGateway: utils.attach('StakeSubjectGateway', await CACHE.get('staking-parameters.address')).then((contract) => contract.connect(deployer)),
     };
 
     const contracts = await Promise.all(
@@ -75,7 +75,6 @@ async function main() {
             {
                 constructorArgs: [childChainManagerProxy].filter(Boolean),
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'forta'
@@ -113,7 +112,6 @@ async function main() {
             {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'router'
@@ -128,12 +126,11 @@ async function main() {
             AgentRegistry.connect(deployer),
             {
                 call: {
-                    fn: 'setStakeController(address)',
+                    fn: 'setSubjectHandler(address)',
                     args: [contracts.staking.address],
                 },
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'agents'
@@ -148,12 +145,11 @@ async function main() {
             ScannerRegistry.connect(deployer),
             {
                 call: {
-                    fn: 'setStakeController(address)',
+                    fn: 'setSubjectHandler(address)',
                     args: [contracts.staking.address],
                 },
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'scanners'
@@ -185,7 +181,6 @@ async function main() {
             {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'scanner-node-version'
@@ -195,9 +190,9 @@ async function main() {
     }
 
     if (CONTRACTS_TO_UPGRADE.includes('staking-parameters')) {
-        const StakingParameters = await ethers.getContractFactory('FortaStakingParameters');
+        const StakingParameters = await ethers.getContractFactory('StakeSubjectGateway');
         const newStakingParameters = await utils.performUpgrade(
-            contracts.stakingParameters,
+            contracts.subjectGateway,
             StakingParameters.connect(deployer),
             {
                 constructorArgs: [contracts.forwarder.address],

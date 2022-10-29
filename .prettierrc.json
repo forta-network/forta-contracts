@@ -16,7 +16,9 @@
       "files": "*.sol",
       "options": {
         "singleQuote": false,
-        "tabWidth": 4
+        "tabWidth": 4,
+        "maxLineLength": 180,
+        "printWidth": 180
       }
     },
     {

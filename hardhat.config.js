@@ -2,12 +2,15 @@ require('dotenv/config');
 require('@nomiclabs/hardhat-ethers');
 require('@nomiclabs/hardhat-waffle');
 require('@nomiclabs/hardhat-etherscan');
+require('@nomiclabs/hardhat-solhint');
 require('solidity-coverage');
 require('solidity-docgen');
 require('hardhat-gas-reporter');
 require('@openzeppelin/hardhat-upgrades');
 require('@openzeppelin/hardhat-defender');
-const { task } = require('hardhat/config')
+require('hardhat-log-remover');
+
+const { task } = require('hardhat/config');
 const { relative } = require('path');
 
 const argv = require('yargs/yargs')().env('').argv;

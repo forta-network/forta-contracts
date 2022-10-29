@@ -11,7 +11,7 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
         string metadata;
     }
 
-    mapping(uint256 => ScannerMetadata) private _scannerMetadata;
+    mapping(uint256 => ScannerMetadata) internal _scannerMetadata;
 
     /**
      * @notice Gets all scanner properties.
@@ -21,7 +21,7 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
      * @return chainId the scanner is monitoring.
      * @return metadata IPFS pointer for the scanner's JSON metadata.
      */
-    function getScanner(uint256 scannerId) public view returns (bool registered, address owner, uint256 chainId, string memory metadata) {
+    function getScanner(uint256 scannerId) public virtual view returns (bool registered, address owner, uint256 chainId, string memory metadata) {
         bool exists = _exists(scannerId);
         return (
             exists,
@@ -50,17 +50,6 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
         return _stakeThresholds[getScannerChainId(subject)];
     }
 
-    /**
-     * @notice internal logic for scanner update.
-     * @dev adds metadata and chainId for that scanner
-     * @param scannerId ERC721 token id of the scanner.
-     * @param chainId the scanner scans.
-     * @param metadata IPFS pointer for the scanner's JSON metadata.
-     */
-    function _scannerUpdate(uint256 scannerId, uint256 chainId, string calldata metadata) internal virtual override {
-        super._scannerUpdate(scannerId, chainId, metadata);
-        _scannerMetadata[scannerId] = ScannerMetadata({ chainId: chainId, metadata: metadata });
-    }
 
     uint256[49] private __gap;
 }

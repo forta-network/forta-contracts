@@ -40,8 +40,8 @@ describe('Forwarder', function () {
         });
         it('forwards correctly', async function () {
             // Gas the relayer will forward to the external contract to execute grantRole. Tx gasLimit is estimated by ethers.js
-            const gas = await this.contracts.access.estimateGas.grantRole(this.roles.SCANNER_ADMIN, grantee.address);
-            const { data } = await this.contracts.access.populateTransaction.grantRole(this.roles.SCANNER_ADMIN, grantee.address);
+            const gas = await this.contracts.access.estimateGas.grantRole(this.roles.STAKING_ADMIN, grantee.address);
+            const { data } = await this.contracts.access.populateTransaction.grantRole(this.roles.STAKING_ADMIN, grantee.address);
 
             const forwardRequest = {
                 ...defaultRequest,
@@ -56,8 +56,8 @@ describe('Forwarder', function () {
 
         it('fails if deadline is already passed', async function () {
             // Gas the relayer will forward to the external contract to execute grantRole. Tx gasLimit is estimated by ethers.js
-            const gas = await this.contracts.access.estimateGas.grantRole(this.roles.SCANNER_ADMIN, grantee.address);
-            const { data } = await this.contracts.access.populateTransaction.grantRole(this.roles.SCANNER_ADMIN, grantee.address);
+            const gas = await this.contracts.access.estimateGas.grantRole(this.roles.STAKING_ADMIN, grantee.address);
+            const { data } = await this.contracts.access.populateTransaction.grantRole(this.roles.STAKING_ADMIN, grantee.address);
             const { timestamp } = await ethers.provider.getBlock('latest');
 
             const forwardRequest = {
@@ -68,14 +68,13 @@ describe('Forwarder', function () {
                 data: data,
             };
             const signature = await this.accounts.admin._signTypedData(domain, types, forwardRequest);
-
             await expect(this.contracts.forwarder.connect(this.accounts.other).execute(forwardRequest, signature)).to.be.revertedWith('DeadlineExpired()');
         });
 
         it('fails if there is signature mismatch', async function () {
             // Gas the relayer will forward to the external contract to execute grantRole. Tx gasLimit is estimated by ethers.js
-            const gas = await this.contracts.access.estimateGas.grantRole(this.roles.SCANNER_ADMIN, grantee.address);
-            const { data } = await this.contracts.access.populateTransaction.grantRole(this.roles.SCANNER_ADMIN, grantee.address);
+            const gas = await this.contracts.access.estimateGas.grantRole(this.roles.STAKING_ADMIN, grantee.address);
+            const { data } = await this.contracts.access.populateTransaction.grantRole(this.roles.STAKING_ADMIN, grantee.address);
 
             const forwardRequest = {
                 ...defaultRequest,
@@ -93,8 +92,8 @@ describe('Forwarder', function () {
         });
 
         it('consumes all gas on failure', async function () {
-            const gasCallee = await this.contracts.access.estimateGas.grantRole(this.roles.SCANNER_ADMIN, grantee.address);
-            const { data } = await this.contracts.access.populateTransaction.grantRole(this.roles.SCANNER_ADMIN, grantee.address);
+            const gasCallee = await this.contracts.access.estimateGas.grantRole(this.roles.STAKING_ADMIN, grantee.address);
+            const { data } = await this.contracts.access.populateTransaction.grantRole(this.roles.STAKING_ADMIN, grantee.address);
 
             const forwardRequest = {
                 ...defaultRequest,
