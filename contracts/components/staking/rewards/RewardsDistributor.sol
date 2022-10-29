@@ -190,7 +190,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         SafeERC20.safeTransfer(rewardsToken, _msgSender(), epochRewards);
     }
 
-    function setFee(
+    function setFeeBps(
         uint8 subjectType,
         uint256 subject,
         uint256 feeBps

@@ -177,8 +177,34 @@ describe('Forta Staking General', function () {
         await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch);
     });
 
-    it('slash');
-    it('commission');
+    it.only('fee', async function() {
+        await this.rewardsDistributor.connect(this.accounts.user1).setFeeBps(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '2500');
+        await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+
+        // disable automine so deposits are instantaneous to simplify math
+        await network.provider.send('evm_setAutomine', [false]);
+        await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+        await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+        await network.provider.send('evm_setAutomine', [true]);
+        await network.provider.send('evm_mine');
+
+        expect(await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('200');
+
+        const epoch = await this.rewardsDistributor.getEpochNumber();
+
+        await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+
+        expect(await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
+        expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address)).to.be.equal('0');
+
+        await this.rewardsDistributor.connect(this.accounts.manager).reward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '2000', epoch);
+
+        expect(await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address)).to.be.equal('1250');
+        expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address)).to.be.equal('750');
+
+        await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch);
+        await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch);
+    });
 
     describe.skip('Rewards', function () {
         it('cannot reward to invalid subjectType', async function () {
