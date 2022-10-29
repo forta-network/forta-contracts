@@ -4,7 +4,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import "./EpochCheckpoints.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 library Accumulators {
     struct EpochCheckpoint {

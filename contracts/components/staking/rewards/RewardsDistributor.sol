@@ -108,7 +108,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         // TODO: if subjectType is node runner, check staker is owner of nft
 
         console.log("epochNumber", epochNumber);
-        console.log("current", EpochCheckpoints.getEpochNumber());
+        console.log("current", Accumulators.getEpochNumber());
 
         bool delegator = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR;
 
@@ -180,7 +180,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     }
 
     function getEpochNumber() external view returns(uint256) {
-        return EpochCheckpoints.getEpochNumber();
+        return Accumulators.getEpochNumber();
     }
 
     // TODO: function sweep
