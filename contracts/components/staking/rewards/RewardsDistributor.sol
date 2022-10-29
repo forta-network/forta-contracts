@@ -12,6 +12,8 @@ import "@openzeppelin/contracts/utils/Timers.sol";
 import "./Accumulators.sol";
 import "./IRewardsDistributor.sol";
 
+uint256 constant MAX_BPS = 10000;
+
 contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, IRewardsDistributor {
     
     using Timers for Timers.Timestamp;
