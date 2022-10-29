@@ -5,17 +5,14 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
 uint256 constant EPOCH_LENGTH = 1 weeks;
-uint256 constant MAX_BPS = 10000;
 
 library Accumulators {
     struct EpochCheckpoint {
         uint32 timestamp;
         uint224 rate;
-        uint240 value;
-        int16 bpsFactor; // basis points
+        uint256 value;
     }
 
     struct Accumulator {
@@ -24,38 +21,27 @@ library Accumulators {
 
     function getValue(Accumulator storage acc) internal view returns (uint256) {
         EpochCheckpoint memory origin = latest(acc);
-        uint256 duration = block.timestamp - origin.timestamp;
-        return origin.value + origin.rate * duration * uint256(int256(MAX_BPS) + origin.bpsFactor) / MAX_BPS;
+        return origin.value + origin.rate * (block.timestamp - origin.timestamp);
     }
 
     function getValueAtEpoch(Accumulator storage acc, uint256 epoch) internal view returns (uint256) {
         EpochCheckpoint memory origin = getAtEpoch(acc, epoch);
-        uint256 duration = getEpochEndTimestamp(epoch) - origin.timestamp;
-        return origin.value + origin.rate * duration * uint256(int256(MAX_BPS) + origin.bpsFactor) / MAX_BPS;
+        return origin.value + origin.rate * (getEpochEndTimestamp(epoch) - origin.timestamp);
     }
 
     function addRate(Accumulator storage acc, uint256 rate) internal {
-        EpochCheckpoint memory ckpt = latest(acc);
-        update(acc, ckpt.rate + rate, ckpt.bpsFactor);
+        setRate(acc, latest(acc).rate + rate);
     }
 
     function subRate(Accumulator storage acc, uint256 rate) internal {
-        EpochCheckpoint memory ckpt = latest(acc);
-        update(acc, ckpt.rate - rate, ckpt.bpsFactor);
+        setRate(acc, latest(acc).rate - rate);
     }
 
-    function setFactor(Accumulator storage acc, int16 bpsFactor) internal {
-        require(SignedMath.abs(bpsFactor) <= MAX_BPS);
-        EpochCheckpoint memory ckpt = latest(acc);
-        update(acc, ckpt.rate, bpsFactor);
-    }
-
-    function update(Accumulator storage acc, uint256 rate, int16 bpsFactor) private {
+    function setRate(Accumulator storage acc, uint256 rate) internal {
         EpochCheckpoint memory ckpt = EpochCheckpoint({
             timestamp: SafeCast.toUint32(block.timestamp),
             rate: SafeCast.toUint224(rate),
-            value: SafeCast.toUint240(getValue(acc)),
-            bpsFactor: bpsFactor
+            value: getValue(acc)
         });
         uint256 length = acc.checkpoints.length;
         if (length > 0 && isCurrentEpoch(acc.checkpoints[length - 1].timestamp)) {
@@ -100,8 +86,7 @@ library Accumulators {
         return EpochCheckpoint({
             timestamp: 0,
             rate: 0,
-            value: 0,
-            bpsFactor: 0
+            value: 0
         });
     }
 
