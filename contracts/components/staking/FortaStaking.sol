@@ -21,14 +21,6 @@ import "./rewards/IRewardsDistributor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 
-interface IRewardReceiver {
-    function onRewardReceived(
-        uint8 subjectType,
-        uint256 subject,
-        uint256 amount
-    ) external;
-}
-
 /**
  * @dev This is a generic staking contract for the Forta platform. It allows any account to deposit ERC20 tokens to
  * delegate their "power" by staking on behalf of a particular subject. The subject can be scanner, or any other actor
@@ -103,7 +95,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     event SlashedShareSent(uint8 indexed subjectType, uint256 indexed subject, address indexed by, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
-    event StakeHelpersConfigured(address indexed subjectGateway, address indexed allocator, address indexed rewardsDistributor);
+    event StakeHelpersConfigured(address indexed subjectGateway, address indexed allocator);
     event MaxStakeReached(uint8 indexed subjectType, uint256 indexed subject);
     event TokensSwept(address indexed token, address to, uint256 amount);
     event SlashDelegatorsPercentSet(uint256 percent);

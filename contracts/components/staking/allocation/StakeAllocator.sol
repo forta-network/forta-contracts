@@ -6,6 +6,7 @@ pragma solidity ^0.8.9;
 import "./IStakeAllocator.sol";
 import "../SubjectTypeValidator.sol";
 import "../FortaStakingUtils.sol";
+import "../rewards/IRewardsDistributor.sol";
 import "../stake_subjects/IStakeSubjectGateway.sol";
 import "../../BaseComponentUpgradeable.sol";
 import "../../../tools/Distributions.sol";
@@ -29,6 +30,9 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IStakeSubjectGateway private immutable _subjectGateway;
 
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    IRewardsDistributor private immutable _rewardsDistributor;
+
     // subject => active stake
     Distributions.Balances private _allocatedStake;
     // subject => inactive stake
@@ -42,9 +46,11 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
     error CannotDelegateNoEnabledSubjects(uint8 subjectType, uint256 subject);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder, address subjectGateway) initializer ForwardedContext(forwarder) {
+    constructor(address forwarder, address subjectGateway, address rewardsDistributor) initializer ForwardedContext(forwarder) {
         if (subjectGateway == address(0)) revert ZeroAddress("subjectGateway");
+        if (rewardsDistributor == address(0)) revert ZeroAddress("rewardsDistributor");
         _subjectGateway = IStakeSubjectGateway(subjectGateway);
+        _rewardsDistributor = IRewardsDistributor(rewardsDistributor);
     }
 
     /**
@@ -224,7 +230,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         uint256 subject,
         address allocator,
         uint256 amount
-    ) external override onlyRole(STAKING_CONTRACT) {
+    ) external override onlyRole(STAKING_CONTRACT_ROLE) {
         SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
         if (agency != SubjectStakeAgency.DELEGATED && agency != SubjectStakeAgency.DELEGATOR) {
             return;
@@ -253,7 +259,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         uint8 subjectType,
         uint256 subject,
         uint256 amount
-    ) external onlyRole(STAKING_CONTRACT) {
+    ) external onlyRole(STAKING_CONTRACT_ROLE) {
         uint256 oldUnallocated = _unallocatedStake.balanceOf(activeSharesId);
         int256 fromAllocated = int256(oldUnallocated) - int256(amount);
         if (fromAllocated < 0) {

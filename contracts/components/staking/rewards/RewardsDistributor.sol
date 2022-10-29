@@ -68,7 +68,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         emit DelegationParamsDelaySet(_delegationParamsDelay);
     }
 
-    function didAddStake(uint256 shareId, uint256 amount, address staker) onlyRole(STAKING_CONTRACT) external {
+    function didAddStake(uint256 shareId, uint256 amount, address staker) onlyRole(STAKING_CONTRACT_ROLE) external {
         DelegatedAccStake storage s = _accStakes[shareId];
         uint8 subjectType = FortaStakingUtils.subjectTypeOfShares(shareId);
         bool delegated = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED;
@@ -79,14 +79,14 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
             // This doesn't make sense.
             s.delegatorsTotal.addRate(amount);
-            s.delegatorsPortions.addRate(amount);
+            s.delegatorsPortions[staker].addRate(amount);
         }
     }
 
-    function didRemoveStake(uint256 shareId, uint256 amount, address staker) onlyRole(STAKING_CONTRACT) external {
+    function didRemoveStake(uint256 shareId, uint256 amount, address staker) onlyRole(STAKING_CONTRACT_ROLE) external {
         DelegatedAccStake storage delAccStake = _accStakes[shareId];
-        delAccStake.stakers[staker].subRate(amount);
-        delAccStake.total.subRate(amount);
+        // delAccStake.stakers[staker].subRate(amount);
+        // delAccStake.total.subRate(amount);
     }
 
     function reward(uint8 subjectType, uint256 subjectId, uint256 amount, uint256 epochNumber) onlyRole(REWARDER_ROLE) external {
@@ -111,8 +111,8 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
         DelegatedAccStake storage s = _accStakes[shareId];
 
-        uint256 N = s.delegated.getAtEpoch(epochNumber);
-        uint256 D = s.delegators.getAtEpoch(epochNumber);
+        uint256 N = s.delegated.getValueAtEpoch(epochNumber);
+        uint256 D = s.delegators.getValueAtEpoch(epochNumber);
         uint256 T = N + D;
 
         uint256 A = delegator ? D : N;
@@ -120,8 +120,8 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256 r = Math.mulDiv(R, A, T);
 
         if (delegator) {
-            uint256 d = s.delegatorsPortions[staker].getAtEpoch(epochNumber);
-            uint256 DT = s.delegatorsTotal.getAtEpoch(epochNumber);
+            uint256 d = s.delegatorsPortions[staker].getValueAtEpoch(epochNumber);
+            uint256 DT = s.delegatorsTotal.getValueAtEpoch(epochNumber);
             r = Math.mulDiv(r, d, DT);
         }
 
@@ -167,4 +167,6 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     function getEpochNumber() external view returns(uint256) {
         return EpochCheckpoints.getEpochNumber();
     }
+
+    // TODO: function sweep
 }
