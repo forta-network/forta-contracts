@@ -253,7 +253,7 @@ async function migrate(config = {}) {
                     Object.keys(reasons).map((reason) => penalties[reasons[reason]]),
                 ],
                 {
-                    constructorArgs: [contracts.forwarder.address, contracts.forta.address],
+                    constructorArgs: [contracts.forwarder.address, contracts.token.address],
                     unsafeAllow: 'delegatecall',
                 }
             )
