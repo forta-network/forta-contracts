@@ -107,6 +107,12 @@ Contracts that allow vested token holders to stake on `FortaStaking`
 - Interface implementations previously deployed are under `_old` folders, for upgrade testing.
 - Contracts no longer in use are under `_deprecated` folder.
 
+## Testing
+
+```
+yarn
+npm run test
+```
 
 ## Deployments
 

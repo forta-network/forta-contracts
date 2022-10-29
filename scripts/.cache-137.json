@@ -177,5 +177,17 @@
 		"address": "0x0A6f54C598e914aD25Be1d8B7ccD4355C776bCaF",
 		"args": [],
 		"version": "0.0.0"
+	},
+	"slashing-pending": "0x763c1a408fda52894293a0ffe8a6d97ad4f2118120d34e8ad5edd321199f2912",
+	"slashing": {
+		"address": "0x6927C25ff30ed86F86A863d987590A1d77509bDb",
+		"impl": {
+			"args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1"
+			],
+			"address": "0xE7e33d453980e8023d54A70A40753bA7617B08F3",
+			"version": "0.1.0"
+		}
 	}
 }

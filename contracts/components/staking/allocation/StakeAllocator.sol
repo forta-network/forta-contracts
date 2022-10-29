@@ -260,8 +260,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
             _allocatedStake.burn(activeSharesId, uint256(-fromAllocated));
             emit AllocatedStake(subjectType, subject, false, uint256(-fromAllocated), _allocatedStake.balanceOf(activeSharesId));
             _unallocatedStake.burn(activeSharesId, _unallocatedStake.balanceOf(activeSharesId));
-            emit UnallocatedStake(subjectType, subject, false, oldUnallocated, _unallocatedStake.balanceOf(activeSharesId));
-
+            emit UnallocatedStake(subjectType, subject, false, oldUnallocated, 0);
         } else {
             _unallocatedStake.burn(activeSharesId, amount);
             emit UnallocatedStake(subjectType, subject, false, amount, _unallocatedStake.balanceOf(activeSharesId));
