@@ -68,6 +68,7 @@ describe('Forta Staking General', function () {
         await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
         await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '50');
         await network.provider.send('evm_setAutomine', [true]);
+        await network.provider.send('evm_mine');
 
         expect(
             await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID),
