@@ -238,13 +238,13 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         (int256 extra, ) = _allocationIncreaseChecks(subjectType, subject, agency, allocator, amount);
         if (extra > 0) {
             _allocatedStake.mint(activeSharesId, amount - uint256(extra));
-            _rewardsDistributor.didAddStake(activeSharesId, amount - uint256(extra), allocator);
+            _rewardsDistributor.didAddStake(subjectType, subject, amount - uint256(extra), allocator);
             emit AllocatedStake(subjectType, subject, true, amount - uint256(extra), _allocatedStake.balanceOf(activeSharesId));
             _unallocatedStake.mint(activeSharesId, uint256(extra));
             emit UnallocatedStake(subjectType, subject, true, uint256(extra), _unallocatedStake.balanceOf(activeSharesId));
         } else {
             _allocatedStake.mint(activeSharesId, amount);
-            _rewardsDistributor.didAddStake(activeSharesId, amount, allocator);
+            _rewardsDistributor.didAddStake(subjectType, subject, amount, allocator);
             emit AllocatedStake(subjectType, subject, true, amount, _allocatedStake.balanceOf(activeSharesId));
         }
     }

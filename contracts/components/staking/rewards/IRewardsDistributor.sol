@@ -4,6 +4,6 @@
 pragma solidity ^0.8.9;
 
 interface IRewardsDistributor {
-    function didAddStake(uint256 shareId, uint256 amount, address staker) external;
-    function didRemoveStake(uint256 shareId, uint256 amount, address staker) external;
+    function didAddStake(uint8 subjectType, uint256 subject, uint256 amount, address staker) external;
+    function didRemoveStake(uint8 subjectType, uint256 subject, uint256 amount, address staker) external;
 }

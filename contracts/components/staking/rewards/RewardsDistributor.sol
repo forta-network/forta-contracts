@@ -12,8 +12,6 @@ import "@openzeppelin/contracts/utils/Timers.sol";
 import "./Accumulators.sol";
 import "./IRewardsDistributor.sol";
 
-import "hardhat/console.sol";
-
 contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, IRewardsDistributor {
     
     using Timers for Timers.Timestamp;
@@ -53,6 +51,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     event DelegationParamsDelaySet(uint64 delay);
 
     error RewardingNonRegisteredSubject(uint8 subjectType, uint256 subject);
+    error AlreadyClaimed();
     error SetComissionNotReady();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -75,13 +74,21 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         emit DelegationParamsDelaySet(_delegationParamsDelay);
     }
 
-    function didAddStake(uint256 shareId, uint256 amount, address staker) onlyRole(ALLOCATOR_CONTRACT_ROLE) external {
-        DelegatedAccStake storage s = _accStakes[shareId];
-        uint8 subjectType = FortaStakingUtils.subjectTypeOfShares(shareId);
+    function didAddStake(
+        uint8 subjectType,
+        uint256 subject,
+        uint256 amount,
+        address staker
+    ) onlyRole(ALLOCATOR_CONTRACT_ROLE) external {
         bool delegated = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED;
         if (delegated) {
+            uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subject);
+            DelegatedAccStake storage s = _accStakes[shareId];
             s.delegated.addRate(amount);
         } else {
+            uint8 delegatedType = getDelegatedSubjectType(subjectType);
+            uint256 shareId = FortaStakingUtils.subjectToActive(delegatedType, subject);
+            DelegatedAccStake storage s = _accStakes[shareId];
             s.delegators.addRate(amount);
 
             // This doesn't make sense.
@@ -90,8 +97,13 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         }
     }
 
-    function didRemoveStake(uint256 shareId, uint256 amount, address staker) onlyRole(ALLOCATOR_CONTRACT_ROLE) external {
-        DelegatedAccStake storage delAccStake = _accStakes[shareId];
+    function didRemoveStake(
+        uint8 subjectType,
+        uint256 subject,
+        uint256 amount,
+        address staker
+    ) onlyRole(ALLOCATOR_CONTRACT_ROLE) external {
+        // DelegatedAccStake storage delAccStake = _accStakes[shareId];
         // delAccStake.stakers[staker].subRate(amount);
         // delAccStake.total.subRate(amount);
     }
@@ -106,9 +118,6 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     function availableReward(uint8 subjectType, uint256 subjectId, uint256 epochNumber, address staker) public view returns (uint256) {
         // TODO: comission
         // TODO: if subjectType is node runner, check staker is owner of nft
-
-        console.log("epochNumber", epochNumber);
-        console.log("current", Accumulators.getEpochNumber());
 
         bool delegator = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR;
 
@@ -145,14 +154,15 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
     // array de epochNumber
     function claimRewards(uint8 subjectType, uint256 subjectId, uint256 epochNumber) external {
-        uint256 epochRewards = availableReward(subjectType, subjectId, epochNumber, _msgSender());
         uint256 shareId;
         if (subjectType == NODE_RUNNER_SUBJECT) {
             shareId = FortaStakingUtils.subjectToActive(subjectType, subjectId);
         } else if (subjectType ==  DELEGATOR_NODE_RUNNER_SUBJECT) {
             shareId = FortaStakingUtils.subjectToActive(getDelegatedSubjectType(subjectType), subjectId);
         }
+        if (_claimedRewardsPerEpoch[shareId][epochNumber][_msgSender()]) revert AlreadyClaimed();
         _claimedRewardsPerEpoch[shareId][epochNumber][_msgSender()] = true;
+        uint256 epochRewards = availableReward(subjectType, subjectId, epochNumber, _msgSender());
         SafeERC20.safeTransfer(rewardsToken, _msgSender(), epochRewards);
     }
 

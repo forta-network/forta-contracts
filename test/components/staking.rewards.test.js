@@ -85,7 +85,7 @@ describe('Forta Staking General', function () {
             await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address),
         ).to.be.equal('0');
 
-        await this.rewardsDistributor.connect(this.accounts.admin).reward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '1500', epoch);
+        await this.rewardsDistributor.connect(this.accounts.manager).reward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '1500', epoch);
 
         expect(
             await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address),
@@ -94,8 +94,8 @@ describe('Forta Staking General', function () {
             await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address),
         ).to.be.equal('500');
 
-        await this.rewardsDistributor.claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address);
-        await this.rewardsDistributor.claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address);
+        await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch);
+        await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch);
 
         expect(
             await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address),
@@ -105,12 +105,17 @@ describe('Forta Staking General', function () {
         ).to.be.equal('0');
 
         await expect(
-            this.rewardsDistributor.claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address)
-        ).to.be.revertedWith('');
+            this.rewardsDistributor.connect(this.accounts.user1).claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch),
+        ).to.be.revertedWith('AlreadyClaimed()');
         await expect(
-            this.rewardsDistributor.claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address),
-        ).to.be.revertedWith('');
+            this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch),
+        ).to.be.revertedWith('AlreadyClaimed()');
     })
+
+    it('add stake mid-epoch')
+    it('remove stake')
+    it('slash')
+    it('commission')
 
     describe.skip('Rewards', function () {
         it('cannot reward to invalid subjectType', async function () {
