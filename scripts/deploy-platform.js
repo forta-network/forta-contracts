@@ -338,7 +338,7 @@ async function migrate(config = {}) {
             SCANNER_BETA_VERSION: ethers.utils.id('SCANNER_BETA_VERSION_ROLE'),
             SCANNER_2_NODE_RUNNER_MIGRATOR: ethers.utils.id('SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE'),
             MIGRATION_EXECUTOR: ethers.utils.id('MIGRATION_EXECUTOR_ROLE'),
-            ALLOCATOR_CONTRACT_ROLE: ethers.utils.id('MIGRATION_EXECUTOR_ROLE'),
+            ALLOCATOR_CONTRACT: ethers.utils.id('ALLOCATOR_CONTRACT_ROLE'),
         }).map((entry) => Promise.all(entry))
     ).then(Object.fromEntries);
 
