@@ -187,6 +187,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         return _inactiveStake.totalSupply();
     }
 
+    
+
     /**
      * @notice Get (active) shares of an account on a subject, corresponding to a fraction of the subject stake.
      * @dev This is equivalent to getting the ERC1155 balanceOf for keccak256(abi.encodePacked(subjectType, subject)),
@@ -305,6 +307,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _allocator.depositAllocation(activeSharesId, subjectType, subject, staker, stakeValue);
         return sharesValue;
     }
+    
 
     /**
      * deposits active stake from SCANNER to NODE_RUNNER if not frozen. Inactive stake remains for withdrawal in old subject
@@ -506,7 +509,10 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         _activeStake.burn(activeSharesId, slashFromActive);
         _inactiveStake.burn(FortaStakingUtils.activeToInactive(activeSharesId), slashFromInactive);
 
-        _allocator.withdrawAllocation(activeSharesId, subjectType, subject, slashFromActive);
+        SubjectStakeAgency subjectAgency = getSubjectTypeAgency(subjectType);
+        if (subjectAgency == SubjectStakeAgency.DELEGATED || subjectAgency == SubjectStakeAgency.DELEGATOR) {
+            _allocator.withdrawAllocation(activeSharesId, subjectType, subject, slashFromActive);
+        }
 
         emit Slashed(subjectType, subject, _msgSender(), stakeValue);
     }

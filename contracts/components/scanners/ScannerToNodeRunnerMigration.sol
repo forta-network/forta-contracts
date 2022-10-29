@@ -185,6 +185,5 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
         }
         return nodeRunnerId;
     }
-
     uint256[48] private __gap;
 }
