@@ -6,9 +6,11 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
+uint256 constant EPOCH_LENGTH = 1 weeks;
+
 library Accumulators {
     struct EpochCheckpoint {
-        uint32 epochNumber;
+        uint32 timestamp;
         uint224 rate;
         uint256 value;
     }
@@ -19,12 +21,12 @@ library Accumulators {
 
     function getValue(Accumulator storage acc) internal view returns (uint256) {
         EpochCheckpoint memory origin = latest(acc);
-        return origin.value + origin.rate * (getEpochNumber() - origin.epochNumber);
+        return origin.value + origin.rate * (block.timestamp - origin.timestamp);
     }
 
     function getValueAtEpoch(Accumulator storage acc, uint256 epoch) internal view returns (uint256) {
         EpochCheckpoint memory origin = getAtEpoch(acc, epoch);
-        return origin.value + origin.rate * (epoch - origin.epochNumber);
+        return origin.value + origin.rate * (getEpochEndTimestamp(epoch) - origin.timestamp);
     }
 
     function addRate(Accumulator storage acc, uint256 rate) internal {
@@ -38,12 +40,12 @@ library Accumulators {
     function setRate(Accumulator storage acc, uint256 rate) internal {
         uint32 currentEpoch = getEpochNumber();
         EpochCheckpoint memory ckpt = EpochCheckpoint({
-            epochNumber: currentEpoch,
+            timestamp: SafeCast.toUint32(block.timestamp),
             rate: SafeCast.toUint224(rate),
             value: getValue(acc)
         });
         uint256 length = acc.checkpoints.length;
-        if (length > 0 && acc.checkpoints[length - 1].epochNumber == currentEpoch) {
+        if (length > 0 && isCurrentEpoch(acc.checkpoints[length - 1].timestamp)) {
             acc.checkpoints[length - 1] = ckpt;
         } else {
             acc.checkpoints.push(ckpt);
@@ -60,17 +62,19 @@ library Accumulators {
     }
 
     /**
-     * @dev Returns the checkpoint at a given epoch number. If a checkpoint is not available at that
+     * @dev Returns the most recent checkpoint during a given epoch. If a checkpoint is not available at that
      * epoch, the closest one before it is returned, or a zero epoch checkpoint otherwise.
      */
     function getAtEpoch(Accumulator storage acc, uint256 epochNumber) internal view returns (EpochCheckpoint memory) {
         require(epochNumber < getEpochNumber(), "Checkpoints: epoch not yet finished");
 
+        uint256 epochEnd = getEpochEndTimestamp(epochNumber);
+
         uint256 high = acc.checkpoints.length;
         uint256 low = 0;
         while (low < high) {
             uint256 mid = Math.average(low, high);
-            if (acc.checkpoints[mid].epochNumber > epochNumber) {
+            if (acc.checkpoints[mid].timestamp > epochEnd) {
                 high = mid;
             } else {
                 low = mid + 1;
@@ -81,13 +85,22 @@ library Accumulators {
 
     function zeroEpoch() private view returns (EpochCheckpoint memory) {
         return EpochCheckpoint({
-            epochNumber: getEpochNumber(),
+            timestamp: 0,
             rate: 0,
             value: 0
         });
     }
 
     function getEpochNumber() internal view returns (uint32) {
-        return SafeCast.toUint32(block.timestamp / 1 weeks);
+        return SafeCast.toUint32(block.timestamp / EPOCH_LENGTH);
+    }
+
+    function getEpochEndTimestamp(uint256 epochNumber) internal pure returns (uint256) {
+        return (epochNumber + 1) * EPOCH_LENGTH;
+    }
+
+    function isCurrentEpoch(uint256 timestamp) internal view returns (bool) {
+        uint256 currentEpochStart = (block.timestamp / EPOCH_LENGTH) * EPOCH_LENGTH;
+        return timestamp > currentEpochStart;
     }
 }
