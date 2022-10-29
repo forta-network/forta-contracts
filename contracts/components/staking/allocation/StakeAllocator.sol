@@ -12,8 +12,6 @@ import "../../BaseComponentUpgradeable.sol";
 import "../../../tools/Distributions.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import "hardhat/console.sol";
-
 /**
  * This contract also manages the allocation of stake. See SubjectTypeValidator.sol for in depth explanation of Subject Agency
  *
@@ -233,15 +231,11 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         address allocator,
         uint256 amount
     ) external override onlyRole(STAKING_CONTRACT_ROLE) {
-        console.log("depositAllocation", amount);
         SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
         if (agency != SubjectStakeAgency.DELEGATED && agency != SubjectStakeAgency.DELEGATOR) {
-            console.log("returned");
             return;
         }
         (int256 extra, ) = _allocationIncreaseChecks(subjectType, subject, agency, allocator, amount);
-        console.log("extra");
-        console.logInt(extra);
         if (extra > 0) {
             _allocatedStake.mint(activeSharesId, amount - uint256(extra));
             emit AllocatedStake(subjectType, subject, true, amount - uint256(extra), _allocatedStake.balanceOf(activeSharesId));
