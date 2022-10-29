@@ -25,10 +25,10 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     uint256 public constant DEFAULT_COMISSION_PERCENT = 5;
 
     struct DelegatedAccStake {
-        Accumulators.Accumulator total;
         Accumulators.Accumulator delegated;
-        Accumulators.Accumulator totalDelegators;
-        mapping(address => Accumulators.Accumulator) delegators;
+        Accumulators.Accumulator delegators;
+        Accumulators.Accumulator delegatorsTotal;
+        mapping(address => Accumulators.Accumulator) delegatorsPortions;
     }
     // delegated share id => DelegatedAccStake
     mapping(uint256 => DelegatedAccStake) private _accStakes;
@@ -90,22 +90,34 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
     function availableReward(uint8 subjectType, uint256 subjectId, uint256 epochNumber, address staker) public view returns (uint256) {
         // ignoring comission by now
-        uint256 shareId;
-        if (subjectType == NODE_RUNNER_SUBJECT) {
-            shareId = FortaStakingUtils.subjectToActive(subjectType, subjectId);
-        } else if (subjectType ==  DELEGATOR_NODE_RUNNER_SUBJECT) {
-            shareId = FortaStakingUtils.subjectToActive(getDelegatedSubjectType(subjectType), subjectId);
-        }
+
+        bool delegator = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR;
+
+        uint256 shareId = delegator
+            ? FortaStakingUtils.subjectToActive(getDelegatedSubjectType(subjectType), subjectId)
+            : FortaStakingUtils.subjectToActive(subjectType, subjectId);
+
         if (_claimedRewardsPerEpoch[shareId][epochNumber][staker]) {
             return 0;
         }
-        Accumulators.Accumulator storage acc = _accStakes[shareId].stakers[staker];
 
-        return Math.mulDiv(
-            _rewardsPerEpoch[shareId][epochNumber], // R
-            acc.getAtEpoch(epochNumber), // A,
-            _accStakes[shareId].total.getAtEpoch(epochNumber)// T
-        );
+        DelegatedAccStake storage s = _accStakes[shareId];
+
+        uint256 N = s.delegated.getAtEpoch(epochNumber);
+        uint256 D = s.delegators.getAtEpoch(epochNumber);
+        uint256 T = N + D;
+
+        uint256 A = delegator ? D : N;
+        uint256 R = _rewardsPerEpoch[shareId][epochNumber];
+        uint256 r = Math.mulDiv(R, A, T);
+
+        if (delegator) {
+            uint256 d = s.delegatorsPortions[staker].getAtEpoch(epochNumber);
+            uint256 DT = s.delegatorsTotal.getAtEpoch(epochNumber);
+            r = Math.mulDiv(r, d, DT);
+        }
+
+        return r;
     }
 
     // array de epochNumber
