@@ -72,9 +72,7 @@ describe('Forta Staking General', function () {
         await network.provider.send('evm_setAutomine', [true]);
         await network.provider.send('evm_mine');
 
-        expect(
-            await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID),
-        ).to.be.equal('150');
+        expect(await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('150');
 
         const latestTimestamp = await helpers.time.latest();
         const timeToNextEpoch = EPOCH_LENGTH - (latestTimestamp % EPOCH_LENGTH);
@@ -86,46 +84,66 @@ describe('Forta Staking General', function () {
 
         await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
 
-        expect(
-            await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address),
-        ).to.be.equal('0');
-        expect(
-            await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address),
-        ).to.be.equal('0');
+        expect(await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
+        expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address)).to.be.equal('0');
 
         await this.rewardsDistributor.connect(this.accounts.manager).reward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '2000', epoch);
 
-        expect(
-            await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address),
-        ).to.be.equal('1000');
-        expect(
-            await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address),
-        ).to.be.closeTo('500', '1');
-        expect(
-            await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user3.address),
-        ).to.be.closeTo('500', '1');
+        expect(await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address)).to.be.equal('1000');
+        expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address)).to.be.closeTo('500', '1');
+        expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user3.address)).to.be.closeTo('500', '1');
 
         await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch);
         await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch);
 
-        expect(
-            await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address),
-        ).to.be.equal('0');
-        expect(
-            await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address),
-        ).to.be.equal('0');
+        expect(await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
+        expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address)).to.be.equal('0');
 
-        await expect(
-            this.rewardsDistributor.connect(this.accounts.user1).claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch),
-        ).to.be.revertedWith('AlreadyClaimed()');
-        await expect(
-            this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch),
-        ).to.be.revertedWith('AlreadyClaimed()');
-    })
+        await expect(this.rewardsDistributor.connect(this.accounts.user1).claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch)).to.be.revertedWith('AlreadyClaimed()');
+        await expect(this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch)).to.be.revertedWith('AlreadyClaimed()');
+    });
 
-    it('remove stake')
-    it('slash')
-    it('commission')
+    it.only('remove stake', async function() {
+                // TODO: await this.rewardsDistributor.connect(this.accounts.user1).setCommission(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, 0);
+        // disable automine so deposits are instantaneous to simplify math
+        await network.provider.send('evm_setAutomine', [false]);
+        await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+        await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '50');
+        await network.provider.send('evm_setAutomine', [true]);
+        await network.provider.send('evm_mine');
+
+        expect(await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('150');
+
+        const latestTimestamp = await helpers.time.latest();
+        const timeToNextEpoch = EPOCH_LENGTH - (latestTimestamp % EPOCH_LENGTH);
+        await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
+
+        await this.staking.connect(this.accounts.user1).initiateWithdrawal(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+
+        const epoch = await this.rewardsDistributor.getEpochNumber();
+
+        await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+
+        expect(await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
+        expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address)).to.be.equal('0');
+
+        await this.rewardsDistributor.connect(this.accounts.manager).reward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '2000', epoch);
+
+        expect(await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address)).to.be.equal('500');
+        expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address)).to.be.closeTo('1000', '1');
+        expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user3.address)).to.be.closeTo('1000', '1');
+
+        await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch);
+        await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch);
+
+        expect(await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
+        expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address)).to.be.equal('0');
+
+        await expect(this.rewardsDistributor.connect(this.accounts.user1).claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch)).to.be.revertedWith('AlreadyClaimed()');
+        await expect(this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch)).to.be.revertedWith('AlreadyClaimed()');
+    });
+    it('slash');
+    it('commission');
 
     describe.skip('Rewards', function () {
         it('cannot reward to invalid subjectType', async function () {
@@ -283,6 +301,4 @@ describe('Forta Staking General', function () {
                 .withArgs(this.staking.address, this.accounts.user2.address, '40');
         });
     });
-
-
 });
