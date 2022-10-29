@@ -108,7 +108,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
         address nodeRunner,
         uint256 chainId
     ) private returns (uint256) {
-        uint256 nodeRunnerId = _registerNodeRunner(nodeRunner, inputNodeRunnerId, chainId);
+        uint256 nodeRunnerId = _getNodeRunnerIdOrMint(nodeRunner, inputNodeRunnerId, chainId);
         uint256 total = scanners.length;
         uint256 scannersMigrated = 0;
         for (uint256 i = 0; i < total; i++) {
@@ -136,19 +136,6 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
         return(data, flags);
     }
 
-    function _registerNodeRunner(
-        address nodeRunner,
-        uint256 inputNodeRunnerId,
-        uint256 chainId
-    ) private returns (uint256) {
-        uint256 nodeRunnerId = _getNodeRunnerIdOrMint(nodeRunner, inputNodeRunnerId, chainId);
-        if (nodeRunnerRegistry.balanceOf(nodeRunner) == 0 && nodeRunnerId == NODE_RUNNER_NOT_MIGRATED) {
-            nodeRunnerId = nodeRunnerRegistry.registerMigratedNodeRunner(nodeRunner, chainId);
-        } else if (nodeRunnerRegistry.ownerOf(nodeRunnerId) != nodeRunner) {
-            revert NotOwnerOfNodeRunner(nodeRunner, nodeRunnerId);
-        }
-        return nodeRunnerId;
-    }
 
     function _migrateRegistries(
         address scanner,
