@@ -12,6 +12,8 @@ import "@openzeppelin/contracts/utils/Timers.sol";
 import "./Accumulators.sol";
 import "./IRewardsDistributor.sol";
 
+import "hardhat/console.sol";
+
 contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, IRewardsDistributor {
     
     using Timers for Timers.Timestamp;
@@ -105,6 +107,9 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         // TODO: comission
         // TODO: if subjectType is node runner, check staker is owner of nft
 
+        console.log("epochNumber", epochNumber);
+        console.log("current", EpochCheckpoints.getEpochNumber());
+
         bool delegator = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR;
 
         uint256 shareId = delegator
@@ -120,6 +125,10 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256 N = s.delegated.getValueAtEpoch(epochNumber);
         uint256 D = s.delegators.getValueAtEpoch(epochNumber);
         uint256 T = N + D;
+
+        if (T == 0) {
+            return 0;
+        }
 
         uint256 A = delegator ? D : N;
         uint256 R = _rewardsPerEpoch[shareId][epochNumber];
