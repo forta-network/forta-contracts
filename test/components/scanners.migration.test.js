@@ -82,11 +82,18 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                 unsafeAllow: ['delegatecall'],
             });
             await this.scanners.deployed();
+            await this.subjectGateway.connect(this.accounts.admin).setStakeSubject(0, this.scanners.address);
             await this.scanners.connect(this.accounts.manager).setStakeThreshold({ min: '0', max: '500', activated: true }, chainId);
+            await this.nodeRunners.connect(this.accounts.manager).setManagedStakeThreshold({ min: '0', max: '500', activated: true }, chainId);
+            await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));
+            await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
 
             SCANNERS = [this.accounts.scanner, this.accounts.user1, this.accounts.user2, this.accounts.user3, this.accounts.other];
             for (let i = 0; i < SCANNERS.length; i++) {
                 await this.scanners.connect(SCANNERS[i]).register(this.accounts.user1.address, chainId, `metadata-${i}`);
+                // TODO: test this with previous version of Staking (to enable deposit of SCANNER)
+                // await this.staking.connect(this.accounts.user1).deposit(0, SCANNERS[i].address, '1000');
+                // await this.staking.connect(this.accounts.user1).initiateWithdrawal(0, SCANNERS[i].address, '200');
             }
             // First scanner will be migrated as disabled
             await this.scanners.connect(SCANNERS[0]).disableScanner(SCANNERS[0].address, 1);
@@ -107,7 +114,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
             const ScannerToNodeRunnerMigration = await ethers.getContractFactory('ScannerToNodeRunnerMigration', deployer);
             this.registryMigration = await upgrades.deployProxy(ScannerToNodeRunnerMigration, [this.access.address], {
                 kind: 'uups',
-                constructorArgs: [this.forwarder.address, this.scanners.address, this.nodeRunners.address],
+                constructorArgs: [this.forwarder.address, this.scanners.address, this.nodeRunners.address, this.staking.address],
                 unsafeAllow: 'delegatecall',
             });
 
@@ -156,6 +163,17 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                     expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
                     expect(await this.nodeRunners.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
                     expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(disabled);
+                    /*
+                    expect(await this.staking.sharesOf(0, scannerId, this.accounts.user1.address)).to.be.equal(0);
+                    expect(await this.staking.activeStakeFor(0, scannerId)).to.be.equal(0);
+                    expect(await this.staking.inactiveSharesOf(0, scannerId, this.accounts.user1.address)).to.be.equal('200');
+                    expect(await this.staking.inactiveStakeFor(0, scannerId)).to.be.equal(200);
+
+                    expect(await this.staking.sharesOf(2, 1, this.accounts.user1.address)).to.be.equal(800 * 4);
+                    expect(await this.staking.activeStakeFor(2, 1)).to.be.equal(800 * 4);
+                    expect(await this.staking.inactiveSharesOf(2, 1, this.accounts.user1.address)).to.be.equal('0');
+                    expect(await this.staking.inactiveStakeFor(2, 1)).to.be.equal(0);
+                    */
                 }
                 const scannerId = SCANNERS[SCANNERS.length - 1].address;
                 expect(await this.scanners.isRegistered(scannerId)).to.be.equal(true);
@@ -208,6 +226,17 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                     expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
                     expect(await this.nodeRunners.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
                     expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(disabled);
+                    /*
+                    expect(await this.staking.sharesOf(0, scannerId, this.accounts.user1.address)).to.be.equal(0);
+                    expect(await this.staking.activeStakeFor(0, scannerId)).to.be.equal(0);
+                    expect(await this.staking.inactiveSharesOf(0, scannerId, this.accounts.user1.address)).to.be.equal('200');
+                    expect(await this.staking.inactiveStakeFor(0, scannerId)).to.be.equal(200);
+
+                    expect(await this.staking.sharesOf(2, 1, this.accounts.user1.address)).to.be.equal(800 * 4);
+                    expect(await this.staking.activeStakeFor(2, 1)).to.be.equal(800 * 4);
+                    expect(await this.staking.inactiveSharesOf(2, 1, this.accounts.user1.address)).to.be.equal('0');
+                    expect(await this.staking.inactiveStakeFor(2, 1)).to.be.equal(0);
+                    */
                 }
                 const scannerId = SCANNERS[SCANNERS.length - 1].address;
                 expect(await this.scanners.isRegistered(scannerId)).to.be.equal(true);
