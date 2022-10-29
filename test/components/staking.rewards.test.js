@@ -1,7 +1,9 @@
 const { ethers } = require('hardhat');
+const helpers = require('@nomicfoundation/hardhat-network-helpers');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
+const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRegistration');
 
 const subjects = [
     [ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), 1], // Agent id, agent type
@@ -38,13 +40,75 @@ describe('Forta Staking General', function () {
         const args = [subject1, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
         await this.agents.connect(this.accounts.other).createAgent(...args);
         await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
+
+        this.accounts.getAccount('scanner');
+        this.SCANNER_ID = this.accounts.scanner.address;
+        const { chainId } = await ethers.provider.getNetwork();
+        const verifyingContractInfo = {
+            address: this.contracts.nodeRunners.address,
+            chainId: chainId,
+        };
+        const registration = {
+            scanner: this.SCANNER_ID,
+            nodeRunnerId: 1,
+            chainId: 1,
+            metadata: 'metadata',
+            timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+        };
+        const signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, this.accounts.scanner);
+
+        await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
     });
 
-    it('should apply equal rewards with comission for stakes added at the same time', async function () {
-        await this.rewardsDistributor.setCommission(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, 10);
+    it.only('should apply equal rewards with comission for stakes added at the same time', async function () {
+        // TODO: await this.rewardsDistributor.connect(this.accounts.user1).setCommission(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, 0);
+
+        // disable automine so deposits are instantaneous to simplify math
+        await network.provider.send('evm_setAutomine', [false]);
         await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
         await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '50');
+        await network.provider.send('evm_setAutomine', [true]);
 
+        expect(
+            await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID),
+        ).to.be.equal('150');
+
+        const epoch = await this.rewardsDistributor.getEpochNumber();
+
+        await helpers.time.increase(1 + 7 * 24 * 60 * 60 /* 1 week */);
+
+        expect(
+            await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address),
+        ).to.be.equal('0');
+        expect(
+            await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address),
+        ).to.be.equal('0');
+
+        await this.rewardsDistributor.connect(this.accounts.admin).reward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '1500', epoch);
+
+        expect(
+            await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address),
+        ).to.be.equal('1000');
+        expect(
+            await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address),
+        ).to.be.equal('500');
+
+        await this.rewardsDistributor.claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address);
+        await this.rewardsDistributor.claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address);
+
+        expect(
+            await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address),
+        ).to.be.equal('0');
+        expect(
+            await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address),
+        ).to.be.equal('0');
+
+        await expect(
+            this.rewardsDistributor.claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address)
+        ).to.be.revertedWith('');
+        await expect(
+            this.rewardsDistributor.claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address),
+        ).to.be.revertedWith('');
     })
 
     describe.skip('Rewards', function () {

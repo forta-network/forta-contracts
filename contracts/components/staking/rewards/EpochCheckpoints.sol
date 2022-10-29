@@ -37,7 +37,7 @@ library EpochCheckpoints {
      * before it is returned, or zero otherwise.
      */
     function getAtEpoch(History storage self, uint256 epochNumber) internal view returns (uint256) {
-        require(epochNumber < getEpochNumber(), "Checkpoints: block not yet mined");
+        require(epochNumber < getEpochNumber(), "Checkpoints: epoch not yet finished");
 
         uint256 high = self._checkpoints.length;
         uint256 low = 0;

@@ -9,6 +9,7 @@ require('hardhat-gas-reporter');
 require('@openzeppelin/hardhat-upgrades');
 require('@openzeppelin/hardhat-defender');
 require('hardhat-log-remover');
+require('hardhat-ignore-warnings');
 
 const { task } = require('hardhat/config');
 const { relative } = require('path');
@@ -57,8 +58,8 @@ module.exports = {
         apiKey: argv.etherscan ?? argv.polyscan,
     },
     defender: {
-        apiKey: process.env.DEFENDER_API_KEY,
-        apiSecret: process.env.DEFENDER_API_SECRET,
+        apiKey: process.env.DEFENDER_API_KEY ?? '',
+        apiSecret: process.env.DEFENDER_API_SECRET ?? '',
     },
     gasReporter: {
         currency: 'USD',
@@ -67,6 +68,12 @@ module.exports = {
     docgen: {
         pages: (item, file) => (file.absolutePath.startsWith('contracts') ? relative('contracts', file.absolutePath).replace('.sol', '.md') : undefined),
     },
+    warnings: {
+        '**/_old/**/*': 'off',
+        'contracts/mocks/**/*': 'off',
+        '@ensdomains/ens-contracts/**/*': 'off',
+        '@ensdomains/buffer/**/*': 'off',
+    }
 };
 
 const accountsForNetwork = (name) => [argv[`${name}Mnemonic`] && { mnemonic: argv[`${name}Mnemonic`] }, argv[`${name}PrivateKey`] && [argv[`${name}PrivateKey`]]].find(Boolean);

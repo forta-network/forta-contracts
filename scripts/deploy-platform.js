@@ -148,15 +148,6 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}.1] stake subject gateway: ${contracts.subjectGateway.address}`);
 
-        contracts.stakeAllocator = await ethers.getContractFactory('StakeAllocator', deployer).then((factory) =>
-            utils.tryFetchProxy(CACHE, 'staking-allocator', factory, 'uups', [contracts.access.address], {
-                constructorArgs: [contracts.forwarder.address, contracts.subjectGateway.address],
-                unsafeAllow: ['delegatecall'],
-            })
-        );
-
-        DEBUG(`[${Object.keys(contracts).length}.1] stake allocator: ${contracts.stakeAllocator.address}`);
-
         contracts.rewardsDistributor = await ethers.getContractFactory('RewardsDistributor', deployer).then((factory) =>
             utils.tryFetchProxy(CACHE, 'staking-rewards', factory, 'uups', [contracts.access.address, deployEnv.COMISSION_DELAY(chainId)], {
                 constructorArgs: [contracts.forwarder.address, contracts.token.address, contracts.subjectGateway.address],
@@ -165,6 +156,15 @@ async function migrate(config = {}) {
         );
 
         DEBUG(`[${Object.keys(contracts).length}.1] rewardsDistributor ${contracts.rewardsDistributor.address}`);
+
+        contracts.stakeAllocator = await ethers.getContractFactory('StakeAllocator', deployer).then((factory) =>
+            utils.tryFetchProxy(CACHE, 'staking-allocator', factory, 'uups', [contracts.access.address], {
+                constructorArgs: [contracts.forwarder.address, contracts.subjectGateway.address, contracts.rewardsDistributor.address],
+                unsafeAllow: ['delegatecall'],
+            })
+        );
+
+        DEBUG(`[${Object.keys(contracts).length}.1] stake allocator: ${contracts.stakeAllocator.address}`);
 
         await contracts.staking.configureStakeHelpers(contracts.subjectGateway.address, contracts.stakeAllocator.address, contracts.rewardsDistributor.address);
 

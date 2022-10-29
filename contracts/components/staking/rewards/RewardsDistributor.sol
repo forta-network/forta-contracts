@@ -18,11 +18,14 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     using Accumulators for Accumulators.Accumulator;
     using Distributions for Distributions.Balances;
 
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IERC20 public immutable rewardsToken;
+
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     StakeSubjectGateway private immutable _subjectGateway;
 
     string public constant version = "0.1.0";
-    uint256 public constant DEFAULT_COMISSION_PERCENT = 5;
+    uint256 public constant DEFAULT_COMISSION_PERCENT = 0 ;// 5;
 
     struct DelegatedAccStake {
         Accumulators.Accumulator delegated;
@@ -62,7 +65,9 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         _subjectGateway = StakeSubjectGateway(__subjectGateway);
     }
 
-    function initialize(uint64 _delegationParamsDelay) public initializer {
+    function initialize(address _manager, uint64 _delegationParamsDelay) public initializer {
+        __BaseComponentUpgradeable_init(_manager);
+
         if (_delegationParamsDelay == 0) revert ZeroAmount("_delegationParamsDelay");
         delegationParamsDelay = _delegationParamsDelay;
         emit DelegationParamsDelaySet(_delegationParamsDelay);
@@ -97,7 +102,8 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     }
 
     function availableReward(uint8 subjectType, uint256 subjectId, uint256 epochNumber, address staker) public view returns (uint256) {
-        // ignoring comission by now
+        // TODO: comission
+        // TODO: if subjectType is node runner, check staker is owner of nft
 
         bool delegator = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR;
 
