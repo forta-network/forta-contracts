@@ -95,7 +95,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     event SlashedShareSent(uint8 indexed subjectType, uint256 indexed subject, address indexed by, uint256 value);
     event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
-    event StakeHelpersConfigured(address indexed subjectGateway, address indexed allocator);
+    event StakeHelpersConfigured(address indexed subjectGateway, address indexed allocator, address indexed rewardsDistributor);
     event MaxStakeReached(uint8 indexed subjectType, uint256 indexed subject);
     event TokensSwept(address indexed token, address to, uint256 amount);
     event SlashDelegatorsPercentSet(uint256 percent);
@@ -664,12 +664,14 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     }
 
     // Admin: change staking parameters manager
-    function configureStakeHelpers(IStakeSubjectGateway __subjectGateway, IStakeAllocator __allocator) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function configureStakeHelpers(IStakeSubjectGateway __subjectGateway, IStakeAllocator __allocator, IRewardsDistributor __distributor) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (address(__subjectGateway) == address(0)) revert ZeroAddress("__subjectGateway");
         if (address(__allocator) == address(0)) revert ZeroAddress("__allocator");
+        if (address(__distributor) == address(0)) revert ZeroAddress("__distributor");
         subjectGateway = __subjectGateway;
         _allocator = __allocator;
-        emit StakeHelpersConfigured(address(__subjectGateway), address(__allocator));
+        _rewardsDistributor = __distributor;
+        emit StakeHelpersConfigured(address(__subjectGateway), address(__allocator), address(__distributor));
     }
 
     function setSlashDelegatorsPercent(uint256 percent) external onlyRole(STAKING_ADMIN_ROLE) {
