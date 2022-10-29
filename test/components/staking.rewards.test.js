@@ -11,6 +11,8 @@ const subjects = [
 ];
 const DELEGATOR_SUBJECT_TYPE = 3;
 
+const EPOCH_LENGTH = 7 * 24 * 60 * 60;
+
 const [[subject1, subjectType1, active1, inactive1], [NODE_RUNNER_ID, NODE_RUNNER_SUBJECT_TYPE, active2, inactive2]] = subjects.map((items) => [
     items[0],
     items[1],
@@ -74,9 +76,15 @@ describe('Forta Staking General', function () {
             await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID),
         ).to.be.equal('150');
 
+        const latestTimestamp = await helpers.time.latest();
+        const timeToNextEpoch = EPOCH_LENGTH - (latestTimestamp % EPOCH_LENGTH);
+        await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
+
+        await this.staking.connect(this.accounts.user3).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+
         const epoch = await this.rewardsDistributor.getEpochNumber();
 
-        await helpers.time.increase(1 + 7 * 24 * 60 * 60 /* 1 week */);
+        await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
 
         expect(
             await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address),
@@ -85,14 +93,17 @@ describe('Forta Staking General', function () {
             await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address),
         ).to.be.equal('0');
 
-        await this.rewardsDistributor.connect(this.accounts.manager).reward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '1500', epoch);
+        await this.rewardsDistributor.connect(this.accounts.manager).reward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '2000', epoch);
 
         expect(
             await this.rewardsDistributor.availableReward(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user1.address),
         ).to.be.equal('1000');
         expect(
             await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user2.address),
-        ).to.be.equal('500');
+        ).to.be.closeTo('500', '1');
+        expect(
+            await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user3.address),
+        ).to.be.closeTo('500', '1');
 
         await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, epoch);
         await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch);
@@ -112,7 +123,6 @@ describe('Forta Staking General', function () {
         ).to.be.revertedWith('AlreadyClaimed()');
     })
 
-    it('add stake mid-epoch')
     it('remove stake')
     it('slash')
     it('commission')
