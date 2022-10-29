@@ -501,7 +501,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
         if (stakeValue > maxSlashableStake) revert SlashingOver90Percent();
 
-        slashFromActive = Math.mulDiv(activeStake, stakeValue, activeStake + inactiveStake);
+        uint256 slashFromActive = Math.mulDiv(activeStake, stakeValue, activeStake + inactiveStake);
         uint256 slashFromInactive = stakeValue - slashFromActive;
 
         _activeStake.burn(activeSharesId, slashFromActive);
