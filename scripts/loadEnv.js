@@ -77,6 +77,17 @@ const MIGRATION_DURATION = (chainId) => {
     }
 };
 
+const COMISSION_DELAY = (chainId) => {
+    switch (chainId) {
+        case 5:
+        case 80001:
+        case 31337:
+            return 1000;
+        default:
+            throw new Error('COMISSION_DELAY not configured for chainId: ', chainId);
+    }
+};
+
 async function loadEnv(config = {}) {
     const provider = config?.provider ?? config?.deployer?.provider ?? (await utils.getDefaultProvider());
     const deployer = config?.deployer ?? (await utils.getDefaultDeployer(provider));
