@@ -21,8 +21,8 @@ const [[subject1, subjectType1, active1, inactive1], [NODE_RUNNER_ID, NODE_RUNNE
 ]);
 
 const MAX_STAKE = '10000';
-
-describe.only('Staking Rewards', function () {
+const OFFSET = 4 * 24 * 60 * 60;
+describe('Staking Rewards', function () {
     prepare({
         stake: {
             agents: { min: '1', max: MAX_STAKE, activated: true },
@@ -71,7 +71,7 @@ describe.only('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.admin).setDelegationParams(delay, 0);
         });
 
-        it.only('should apply equal rewards with comission for stakes added at the same time', async function () {
+        it('should apply equal rewards with comission for stakes added at the same time', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
@@ -82,7 +82,7 @@ describe.only('Staking Rewards', function () {
             expect(await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('150');
 
             const latestTimestamp = await helpers.time.latest();
-            const timeToNextEpoch = EPOCH_LENGTH - (latestTimestamp % EPOCH_LENGTH);
+            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
             await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
 
             await this.staking.connect(this.accounts.user3).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
@@ -129,7 +129,7 @@ describe.only('Staking Rewards', function () {
             expect(await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('200');
 
             const latestTimestamp = await helpers.time.latest();
-            const timeToNextEpoch = EPOCH_LENGTH - (latestTimestamp % EPOCH_LENGTH);
+            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
             await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
 
             const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
@@ -163,7 +163,7 @@ describe.only('Staking Rewards', function () {
             expect(await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('200');
 
             const latestTimestamp = await helpers.time.latest();
-            const timeToNextEpoch = EPOCH_LENGTH - (latestTimestamp % EPOCH_LENGTH);
+            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
             await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
 
             const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
@@ -200,7 +200,7 @@ describe.only('Staking Rewards', function () {
             expect(await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('200');
 
             const latestTimestamp = await helpers.time.latest();
-            const timeToNextEpoch = EPOCH_LENGTH - (latestTimestamp % EPOCH_LENGTH);
+            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
             await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
 
             const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
@@ -238,7 +238,7 @@ describe.only('Staking Rewards', function () {
             expect(await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('100');
 
             const latestTimestamp = await helpers.time.latest();
-            const timeToNextEpoch = EPOCH_LENGTH - (latestTimestamp % EPOCH_LENGTH);
+            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
             await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
 
             const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
@@ -276,7 +276,7 @@ describe.only('Staking Rewards', function () {
             expect(await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('150');
 
             const latestTimestamp = await helpers.time.latest();
-            const timeToNextEpoch = EPOCH_LENGTH - (latestTimestamp % EPOCH_LENGTH);
+            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
             await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
 
             const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
@@ -312,7 +312,7 @@ describe.only('Staking Rewards', function () {
             expect(await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('200');
 
             const latestTimestamp = await helpers.time.latest();
-            const timeToNextEpoch = EPOCH_LENGTH - (latestTimestamp % EPOCH_LENGTH);
+            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
             await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
 
             const epoch = await this.rewardsDistributor.getCurrentEpochNumber();

@@ -92,13 +92,6 @@ library Accumulators {
         return getEpochNumber(block.timestamp);
     }
 
-    //beginning first epoch is TIMESTAMP_OFFSET
-    //end of first epoch is TIMESTAMP_OFFSET + EPOCH_LENGTH
-
-    // TIMESTAMP_OFFSET = 10
-    // EPOCH_LENGTH = 1000
-    // current timestamp = 2100
-
     function getEpochNumber(uint256 timestamp) internal pure returns (uint32) {
         return SafeCast.toUint32((timestamp - TIMESTAMP_OFFSET) / EPOCH_LENGTH);
     }
