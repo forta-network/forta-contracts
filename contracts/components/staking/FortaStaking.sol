@@ -550,14 +550,6 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         return amount;
     }
 
-    function releaseReward(
-        uint8 subjectType,
-        uint256 subject,
-        address account
-    ) public onlyValidSubjectType(subjectType) returns (uint256) {
-        // TODO
-    }
-
     /**
      * @dev Relay a ERC2612 permit signature to the staked token. This cal be bundled with a {deposit} or a {reward}
      * operation using Multicall.
