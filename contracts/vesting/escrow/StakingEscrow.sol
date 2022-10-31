@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "../../token/FortaBridgedPolygon.sol";
 import "../../components/staking/FortaStaking.sol";
 import "../../components/utils/ForwardedContext.sol";
+import "../../components/staking/rewards/IRewardReceiver.sol";
 import "../../errors/GeneralErrors.sol";
 
 /**
@@ -148,9 +149,7 @@ contract StakingEscrow is Initializable, ERC165, IRewardReceiver, ForwardedConte
      * @return released amount
      */
     function claimReward(uint8 subjectType, uint256 subject) public returns (uint256) {
-        // return l2staking.releaseReward(subjectType, subject, address(this));
-        // TODO: fix
-        return 0xdeadbeef; 
+        return l2staking.releaseReward(subjectType, subject, address(this));
     }
 
     /**

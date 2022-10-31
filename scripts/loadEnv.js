@@ -77,6 +77,17 @@ const MIGRATION_DURATION = (chainId) => {
     }
 };
 
+const FEE_PARAMS = (chainId) => {
+    switch (chainId) {
+        case 5:
+        case 80001:
+        case 31337:
+            return [2, 1000];
+        default:
+            throw new Error('COMISSION_DELAY not configured for chainId: ', chainId);
+    }
+};
+
 async function loadEnv(config = {}) {
     const provider = config?.provider ?? config?.deployer?.provider ?? (await utils.getDefaultProvider());
     const deployer = config?.deployer ?? (await utils.getDefaultDeployer(provider));
@@ -118,7 +129,7 @@ async function loadEnv(config = {}) {
             DISPATCHER: ethers.utils.id('DISPATCHER_ROLE'),
             SLASHER: ethers.utils.id('SLASHER_ROLE'),
             SWEEPER: ethers.utils.id('SWEEPER_ROLE'),
-            REWARDS_ADMIN: ethers.utils.id('REWARDS_ADMIN_ROLE'),
+            REWARDER: ethers.utils.id('REWARDER_ROLE'),
         }).map((entry) => Promise.all(entry))
     ).then(Object.fromEntries);
 
@@ -152,3 +163,4 @@ module.exports.SLASH_PERCENT_TO_PROPOSER = SLASH_PERCENT_TO_PROPOSER;
 module.exports.SLASHING_DEPOSIT_AMOUNT = SLASHING_DEPOSIT_AMOUNT;
 module.exports.SCANNER_REGISTRATION_DELAY = SCANNER_REGISTRATION_DELAY;
 module.exports.MIGRATION_DURATION = MIGRATION_DURATION;
+module.exports.FEE_PARAMS = FEE_PARAMS;
