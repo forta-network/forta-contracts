@@ -60,12 +60,16 @@ library Accumulators {
         }
     }
 
+    function checkPointLength(Accumulator storage acc) internal view returns (uint256) {
+        return acc.checkpoints.length;
+    }
+
     /**
      * @dev Returns the most recent checkpoint during a given epoch. If a checkpoint is not available at that
      * epoch, the closest one before it is returned, or a zero epoch checkpoint otherwise.
      */
     function getAtEpoch(Accumulator storage acc, uint256 epochNumber) internal view returns (EpochCheckpoint memory) {
-        require(epochNumber < getEpochNumber(), "Checkpoints: epoch not yet finished");
+        require(epochNumber < getCurrentEpochNumber(), "Checkpoints: epoch not yet finished");
 
         uint256 epochEnd = getEpochEndTimestamp(epochNumber);
 
@@ -90,16 +94,24 @@ library Accumulators {
         });
     }
 
-    function getEpochNumber() internal view returns (uint32) {
-        return SafeCast.toUint32(block.timestamp / EPOCH_LENGTH);
+    function getCurrentEpochNumber() internal view returns (uint32) {
+        return getEpochNumber(block.timestamp);
+    }
+
+    function getEpochNumber(uint256 timestamp) internal pure returns (uint32) {
+        return SafeCast.toUint32(timestamp / EPOCH_LENGTH);
     }
 
     function getEpochEndTimestamp(uint256 epochNumber) internal pure returns (uint256) {
         return (epochNumber + 1) * EPOCH_LENGTH;
     }
 
+    function getCurrentEpochTimestamp() internal view returns (uint256) {
+        return (block.timestamp / EPOCH_LENGTH) * EPOCH_LENGTH;
+    }
+
     function isCurrentEpoch(uint256 timestamp) internal view returns (bool) {
-        uint256 currentEpochStart = (block.timestamp / EPOCH_LENGTH) * EPOCH_LENGTH;
+        uint256 currentEpochStart = getCurrentEpochTimestamp();
         return timestamp > currentEpochStart;
     }
 }

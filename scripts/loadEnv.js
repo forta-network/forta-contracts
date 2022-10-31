@@ -77,12 +77,12 @@ const MIGRATION_DURATION = (chainId) => {
     }
 };
 
-const COMISSION_DELAY = (chainId) => {
+const FEE_PARAMS = (chainId) => {
     switch (chainId) {
         case 5:
         case 80001:
         case 31337:
-            return 1000;
+            return [2, 1000];
         default:
             throw new Error('COMISSION_DELAY not configured for chainId: ', chainId);
     }
@@ -163,4 +163,4 @@ module.exports.SLASH_PERCENT_TO_PROPOSER = SLASH_PERCENT_TO_PROPOSER;
 module.exports.SLASHING_DEPOSIT_AMOUNT = SLASHING_DEPOSIT_AMOUNT;
 module.exports.SCANNER_REGISTRATION_DELAY = SCANNER_REGISTRATION_DELAY;
 module.exports.MIGRATION_DURATION = MIGRATION_DURATION;
-module.exports.COMISSION_DELAY = COMISSION_DELAY;
+module.exports.FEE_PARAMS = FEE_PARAMS;

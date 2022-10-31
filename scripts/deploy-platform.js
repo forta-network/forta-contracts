@@ -149,7 +149,7 @@ async function migrate(config = {}) {
         DEBUG(`[${Object.keys(contracts).length}.1] stake subject gateway: ${contracts.subjectGateway.address}`);
 
         contracts.rewardsDistributor = await ethers.getContractFactory('RewardsDistributor', deployer).then((factory) =>
-            utils.tryFetchProxy(CACHE, 'staking-rewards', factory, 'uups', [contracts.access.address, deployEnv.COMISSION_DELAY(chainId)], {
+            utils.tryFetchProxy(CACHE, 'staking-rewards', factory, 'uups', [contracts.access.address, ...deployEnv.FEE_PARAMS(chainId)], {
                 constructorArgs: [contracts.forwarder.address, contracts.token.address, contracts.subjectGateway.address],
                 unsafeAllow: ['delegatecall'],
             })

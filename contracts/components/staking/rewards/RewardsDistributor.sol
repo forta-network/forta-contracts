@@ -3,59 +3,68 @@
 
 pragma solidity ^0.8.9;
 
+import "./Accumulators.sol";
+import "./IRewardsDistributor.sol";
 import "../stake_subjects/StakeSubjectGateway.sol";
 import "../FortaStakingUtils.sol";
 import "../../../tools/Distributions.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
-import "./Accumulators.sol";
-import "./IRewardsDistributor.sol";
+
+import "hardhat/console.sol";
 
 uint256 constant MAX_BPS = 10000;
 
 contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, IRewardsDistributor {
-    
     using Timers for Timers.Timestamp;
     using Accumulators for Accumulators.Accumulator;
     using Distributions for Distributions.Balances;
 
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IERC20 public immutable rewardsToken;
-
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     StakeSubjectGateway private immutable _subjectGateway;
 
     string public constant version = "0.1.0";
-    uint256 public constant DEFAULT_FEE_BPS = 0 ;// 5;
 
-    struct DelegatedAccStake {
+    struct DelegatedAccRewards {
         Accumulators.Accumulator delegated;
         Accumulators.Accumulator delegators;
         Accumulators.Accumulator delegatorsTotal;
         mapping(address => Accumulators.Accumulator) delegatorsPortions;
     }
-    // delegated share id => DelegatedAccStake
-    mapping(uint256 => DelegatedAccStake) private _accStakes;
+
+    uint256 public totalRewardsDistributed;
+    // delegator share id => DelegatedAccRewards
+    mapping(uint256 => DelegatedAccRewards) private _rewardsAccumulators;
     // share => epoch => amount
-    mapping (uint256 => mapping(uint256 => uint256)) private _rewardsPerEpoch;
+    mapping(uint256 => mapping(uint256 => uint256)) private _rewardsPerEpoch;
     // share => epoch => address => claimed
-    mapping (uint256 => mapping(uint256 => mapping(address => bool))) private _claimedRewardsPerEpoch;
+    mapping(uint256 => mapping(uint256 => mapping(address => bool))) private _claimedRewardsPerEpoch;
 
-    // share => epoch => uint256
-    mapping (uint256 => mapping (uint256 => uint256)) public feeBpsPerEpoch;
+    struct DelegationFee {
+        uint16 feeBps;
+        uint240 sinceEpoch;
+    }
+    // share => DelegationFee [prev, curr]
+    mapping(uint256 => DelegationFee[2]) public delegationFees;
 
-    // TODO
-    // mapping(uint256 => Timers.Timestamp) private _delegationParamsTimers;
-    uint64 public delegationParamsDelay;
+    uint256 public delegationParamsEpochDelay;
+    uint256 public defaultFeeBps;
 
-    event Rewarded(uint8 indexed subjectType, uint256 indexed subject, uint32 blockNumber, uint256 value);
-    //event ClaimedRewards(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 value);
-    event DelegationParamsDelaySet(uint64 delay);
+    event DidAccumulateRate(uint8 indexed subjectType, uint256 indexed subject, address indexed staker, uint256 stakeAmount, uint256 sharesAmount);
+    event DidReduceRate(uint8 indexed subjectType, uint256 indexed subject, address indexed staker, uint256 stakeAmount, uint256 sharesAmount);
+    event Rewarded(uint8 indexed subjectType, uint256 indexed subject, uint256 amount, uint256 epochNumber);
+    event ClaimedRewards(uint8 indexed subjectType, uint256 indexed subject, address indexed to, uint256 epochNumber, uint256 value);
+    event DidTransferRewardShares(uint256 indexed sharesId, uint8 subjectType, address indexed from, address indexed to, uint256 sharesAmount);
+    event SetDelegationFee(uint8 indexed subjectType, uint256 indexed subject, uint256 epochNumber, uint256 feeBps);
+    event SetDelegationParams(uint256 epochDelay, uint256 defaultFeeBps);
+    event TokensSwept(address indexed token, address to, uint256 amount);
 
     error RewardingNonRegisteredSubject(uint8 subjectType, uint256 subject);
     error AlreadyClaimed();
-    error SetFeeNotReady();
+    error SetDelegationFeeNotReady();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
@@ -69,102 +78,135 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         _subjectGateway = StakeSubjectGateway(__subjectGateway);
     }
 
-    function initialize(address _manager, uint64 _delegationParamsDelay) public initializer {
+    function initialize(address _manager, uint256 _delegationParamsEpochDelay, uint256 _defaultFeeBps) public initializer {
         __BaseComponentUpgradeable_init(_manager);
 
-        if (_delegationParamsDelay == 0) revert ZeroAmount("_delegationParamsDelay");
-        delegationParamsDelay = _delegationParamsDelay;
-        emit DelegationParamsDelaySet(_delegationParamsDelay);
+        if (_delegationParamsEpochDelay == 0) revert ZeroAmount("_delegationParamsEpochDelay");
+        delegationParamsEpochDelay = _delegationParamsEpochDelay;
+        // defaultFeeBps could be 0;
+        defaultFeeBps = _defaultFeeBps;
     }
 
-    function didAddStake(
+    /********** Epoch number getters **********/
+    function didAllocate(
         uint8 subjectType,
         uint256 subject,
         uint256 stakeAmount,
         uint256 sharesAmount,
         address staker
-    ) onlyRole(ALLOCATOR_CONTRACT_ROLE) external {
-        // TODO: set default fee
+    ) external onlyRole(ALLOCATOR_CONTRACT_ROLE) {
         bool delegated = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED;
         if (delegated) {
-            uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subject);
-            DelegatedAccStake storage s = _accStakes[shareId];
+            uint8 delegatorType = getDelegatorSubjectType(subjectType);
+            uint256 shareId = FortaStakingUtils.subjectToActive(delegatorType, subject);
+            DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
             s.delegated.addRate(stakeAmount);
         } else {
-            uint8 delegatedType = getDelegatedSubjectType(subjectType);
-            uint256 shareId = FortaStakingUtils.subjectToActive(delegatedType, subject);
-            DelegatedAccStake storage s = _accStakes[shareId];
+            uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subject);
+            DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
             s.delegators.addRate(stakeAmount);
-
-            s.delegatorsTotal.addRate(sharesAmount);
-            s.delegatorsPortions[staker].addRate(sharesAmount);
+            if (staker != address(0)) {
+                s.delegatorsTotal.addRate(sharesAmount);
+                s.delegatorsPortions[staker].addRate(sharesAmount);
+            }
         }
+        emit DidAccumulateRate(subjectType, subject, staker, stakeAmount, sharesAmount);
     }
 
-    function didRemoveStake(
+    function didUnallocate(
         uint8 subjectType,
         uint256 subject,
         uint256 stakeAmount,
         uint256 sharesAmount,
         address staker
-    ) onlyRole(ALLOCATOR_CONTRACT_ROLE) external {
+    ) external onlyRole(ALLOCATOR_CONTRACT_ROLE) {
         bool delegated = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED;
         if (delegated) {
-            uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subject);
-            DelegatedAccStake storage s = _accStakes[shareId];
+            uint8 delegatorType = getDelegatorSubjectType(subjectType);
+            uint256 shareId = FortaStakingUtils.subjectToActive(delegatorType, subject);
+            DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
             s.delegated.subRate(stakeAmount);
         } else {
-            uint8 delegatedType = getDelegatedSubjectType(subjectType);
-            uint256 shareId = FortaStakingUtils.subjectToActive(delegatedType, subject);
-            DelegatedAccStake storage s = _accStakes[shareId];
+            uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subject);
+            DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
             s.delegators.subRate(stakeAmount);
-
             if (staker != address(0)) {
                 s.delegatorsTotal.subRate(sharesAmount);
                 s.delegatorsPortions[staker].subRate(sharesAmount);
             }
         }
+        emit DidReduceRate(subjectType, subject, staker, stakeAmount, sharesAmount);
     }
 
-    function reward(uint8 subjectType, uint256 subjectId, uint256 amount, uint256 epochNumber) onlyRole(REWARDER_ROLE) external {
+    function didTransferShares(
+        uint256 sharesId,
+        uint8 subjectType,
+        address from,
+        address to,
+        uint256 sharesAmount
+    ) external onlyRole(ALLOCATOR_CONTRACT_ROLE) onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATOR) {
+        DelegatedAccRewards storage s = _rewardsAccumulators[sharesId];
+        if (s.delegatorsPortions[from].latest().rate > 0) {
+            s.delegatorsPortions[from].subRate(sharesAmount);
+        }
+        s.delegatorsPortions[to].addRate(sharesAmount);
+        emit DidTransferRewardShares(sharesId, subjectType, from, to, sharesAmount);
+    }
+
+    /********** Reward management **********/
+    function reward(
+        uint8 subjectType,
+        uint256 subjectId,
+        uint256 amount,
+        uint256 epochNumber
+    ) external onlyRole(REWARDER_ROLE) {
         if (subjectType != NODE_RUNNER_SUBJECT) revert InvalidSubjectType(subjectType);
         if (!_subjectGateway.isRegistered(subjectType, subjectId)) revert RewardingNonRegisteredSubject(subjectType, subjectId);
-        uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subjectId);
+        uint256 shareId = FortaStakingUtils.subjectToActive(getDelegatorSubjectType(subjectType), subjectId);
         _rewardsPerEpoch[shareId][epochNumber] = amount;
+        totalRewardsDistributed += amount;
+        emit Rewarded(subjectType, subjectId, amount, epochNumber);
     }
 
-    function availableReward(uint8 subjectType, uint256 subjectId, uint256 epochNumber, address staker) public view returns (uint256) {
-        // TODO: if subjectType is node runner, check staker is owner of nft
-
-        bool delegator = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR;
-
-        uint256 shareId = delegator
-            ? FortaStakingUtils.subjectToActive(getDelegatedSubjectType(subjectType), subjectId)
-            : FortaStakingUtils.subjectToActive(subjectType, subjectId);
-
-        return _availableReward(shareId, delegator, epochNumber, staker);
-    }
-
-    function _availableReward(uint256 shareId, bool delegator, uint256 epochNumber, address staker) internal view returns (uint256) {
+    function availableReward(
+        uint8 subjectType,
+        uint256 subjectId,
+        uint256 epochNumber,
+        address staker
+    ) public view returns (uint256) {
+        (uint256 shareId, bool isDelegator) = _getShareId(subjectType, subjectId);
         if (_claimedRewardsPerEpoch[shareId][epochNumber][staker]) {
             return 0;
         }
+        console.log("available reward");
+        console.log(shareId);
+        console.log(isDelegator);
+        console.log(_availableReward(shareId, isDelegator, epochNumber, staker));
+        return _availableReward(shareId, isDelegator, epochNumber, staker);
+    }
 
-        DelegatedAccStake storage s = _accStakes[shareId];
+    function _availableReward(
+        uint256 shareId,
+        bool delegator,
+        uint256 epochNumber,
+        address staker
+    ) internal view returns (uint256) {
+        DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
 
         uint256 N = s.delegated.getValueAtEpoch(epochNumber);
         uint256 D = s.delegators.getValueAtEpoch(epochNumber);
         uint256 T = N + D;
 
         if (T == 0) {
+            console.log("T=0");
             return 0;
         }
 
-        uint256 feeBps = feeBpsPerEpoch[shareId][epochNumber];
+        uint256 feeBps = _getDelegationFee(shareId, epochNumber);
 
         uint256 R = _rewardsPerEpoch[shareId][epochNumber];
         uint256 RD = Math.mulDiv(R, D, T);
-        uint256 fee = RD * feeBps / MAX_BPS; // mulDiv not necessary - feeBps is small
+        uint256 fee = (RD * feeBps) / MAX_BPS; // mulDiv not necessary - feeBps is small
 
         if (delegator) {
             uint256 r = RD - fee;
@@ -177,49 +219,135 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         }
     }
 
-    // TODO: accept an array of multiple epochs to claim
-    function claimRewards(uint8 subjectType, uint256 subjectId, uint256 epochNumber) external {
-        uint256 shareId;
-        if (subjectType == NODE_RUNNER_SUBJECT) {
-            shareId = FortaStakingUtils.subjectToActive(subjectType, subjectId); } else if (subjectType ==  DELEGATOR_NODE_RUNNER_SUBJECT) {
-            shareId = FortaStakingUtils.subjectToActive(getDelegatedSubjectType(subjectType), subjectId);
-        }
-        if (_claimedRewardsPerEpoch[shareId][epochNumber][_msgSender()]) revert AlreadyClaimed();
-        _claimedRewardsPerEpoch[shareId][epochNumber][_msgSender()] = true;
-        uint256 epochRewards = availableReward(subjectType, subjectId, epochNumber, _msgSender());
-        SafeERC20.safeTransfer(rewardsToken, _msgSender(), epochRewards);
-    }
-
-    function setFeeBps(
+    function claimRewards(
         uint8 subjectType,
-        uint256 subject,
-        uint256 feeBps
-    ) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) {
+        uint256 subjectId,
+        uint256[] calldata epochNumbers
+    ) external {
+        (uint256 shareId, bool isDelegator) = _getShareId(subjectType, subjectId);
+        console.log("claimRewards");
+        console.log(shareId);
+        console.log(isDelegator);
+        if (!isDelegator) {
+            if (_subjectGateway.ownerOf(subjectType, subjectId) != _msgSender()) revert SenderNotOwner(_msgSender(), subjectId);
+        }
+        for (uint256 i = 0; i < epochNumbers.length; i++) {
+            if (_claimedRewardsPerEpoch[shareId][epochNumbers[i]][_msgSender()]) revert AlreadyClaimed();
+            _claimedRewardsPerEpoch[shareId][epochNumbers[i]][_msgSender()] = true;
+            console.log(epochNumbers[i]);
+            uint256 epochRewards = _availableReward(shareId, isDelegator, epochNumbers[i], _msgSender());
+            console.log(epochRewards);
+            SafeERC20.safeTransfer(rewardsToken, _msgSender(), epochRewards);
+            emit ClaimedRewards(subjectType, subjectId, _msgSender(), epochNumbers[i], epochRewards);
+        }
+    }
+
+    /********** Delegation parameters **********/
+
+    
+    function setDelegationParams(uint256 _delegationParamsEpochDelay, uint256 _defaultFeeBps) external onlyRole(STAKING_ADMIN_ROLE) {
+        if (_delegationParamsEpochDelay == 0) revert ZeroAmount("_delegationParamsEpochDelay");
+        delegationParamsEpochDelay = delegationParamsEpochDelay;
+        // defaultFeeBps could be 0;
+        defaultFeeBps = _defaultFeeBps;
+        emit SetDelegationParams(delegationParamsEpochDelay, defaultFeeBps);
+    }
+
+    /**
+     * Sets delegation fee for a Node Runner (required to own the NodeRunnerRegistry NFT).
+     * Change in fees will start having an effect in the beginning of the next reward epoch.
+     * After the first time setting the parameter, it cannot be set again until delegationParamsEpochDelay epochs pass.
+     * @param subjectType a DELEGATED subject type.
+     * @param subject the DELEGATED subject id.
+     */
+    function setDelegationFeeBps(uint8 subjectType, uint256 subject, uint16 feeBps) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED)  {
+        if (feeBps > MAX_BPS) revert AmountTooLarge(feeBps, MAX_BPS);
         if (_subjectGateway.ownerOf(subjectType, subject) != _msgSender()) revert SenderNotOwner(_msgSender(), subject);
-
         uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        DelegationFee[2] storage fees = delegationFees[shareId];
 
-        // TODO
-        // Timers.Timestamp storage timer = _delegationParamsTimers[shareId];
-        // if (!timer.isExpired()) revert SetComissionNotReady();
-
-        // TODO: getEpochNumberForTimestamp(block.timestamp + 1.5 weeks) ??
-        feeBpsPerEpoch[shareId][getEpochNumber() + 1] = feeBps;
-
-        // TODO
-        // uint64 deadline = SafeCast.toUint64(block.timestamp) + delegationParamsDelay;
-        // timer.setDeadline(deadline);
+        if (fees[1].sinceEpoch != 0) {
+            if (Accumulators.getCurrentEpochNumber() < fees[1].sinceEpoch + delegationParamsEpochDelay) revert SetDelegationFeeNotReady();
+        }
+        if (fees[1].sinceEpoch != 0) {
+            fees[0] = fees[1];
+        }
+        fees[1] = DelegationFee({ feeBps: feeBps, sinceEpoch: Accumulators.getCurrentEpochNumber() + 1 });
+        
+        emit SetDelegationFee(subjectType, subject, fees[1].sinceEpoch, feeBps);
     }
 
-    function setDelegationsParamDelay(uint64 newDelay) external onlyRole(STAKING_ADMIN_ROLE) {
-        if (newDelay == 0) revert ZeroAmount("newDelay");
-        delegationParamsDelay = newDelay;
-        emit DelegationParamsDelaySet(newDelay);
+
+    /// Returns current delegation fee for an epoch or defaultFeeBps if not set
+    function getDelegationFee(uint8 subjectType, uint256 subjectId, uint256 epochNumber) public view returns(uint256) {
+        (uint256 shareId, ) = _getShareId(subjectType, subjectId);
+        return _getDelegationFee(shareId, epochNumber);
     }
 
-    function getEpochNumber() public view returns(uint256) {
-        return Accumulators.getEpochNumber();
+    function _getDelegationFee(uint256 shareId, uint256 epochNumber) private view returns(uint256) {
+        DelegationFee[2] storage fees = delegationFees[shareId];
+        return _getFee(fees, 1, epochNumber);
     }
 
-    // TODO: function sweep
+    function _getFee(DelegationFee[2] storage fees, uint256 index, uint256 epochNumber) private view returns(uint256) {
+        if (fees[index].feeBps == 0) {
+            // No fees set yet
+            return defaultFeeBps;
+        }
+        if (epochNumber > fees[index].sinceEpoch) {
+            return fees[index].feeBps;
+        } else if (index > 0) {
+            return _getFee(fees, index - 1, epochNumber);
+        } else {
+            return defaultFeeBps;
+        }
+    }
+
+    function _getShareId(uint8 subjectType, uint256 subjectId) private pure returns (uint256 shareId, bool isDelegator) {
+        isDelegator = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR;
+        shareId = isDelegator
+            ? FortaStakingUtils.subjectToActive(subjectType, subjectId)
+            : FortaStakingUtils.subjectToActive(getDelegatorSubjectType(subjectType), subjectId);
+        return (shareId, isDelegator);
+    }
+
+    /**
+     * @notice Sweep all token that might be mistakenly sent to the contract. This covers both unrelated tokens and staked
+     * tokens that would be sent through a direct transfer. Restricted to SWEEPER_ROLE.
+     * If tokens are the same as staked tokens, only the extra tokens (no rewards) will be transferred.
+     * @dev WARNING: thoroughly review the token to sweep.
+     * @param token address of the token to be swept.
+     * @param recipient destination address of the swept tokens
+     * @return amount of tokens swept. For unrelated tokens is RewardDistributor's balance, for stakedToken its
+     * the balance minus total rewards distributed;
+     */
+    function sweep(IERC20 token, address recipient) external onlyRole(SWEEPER_ROLE) returns (uint256) {
+        uint256 amount = token.balanceOf(address(this));
+
+        if (token == rewardsToken) {
+            amount -= totalRewardsDistributed;
+        }
+
+        SafeERC20.safeTransfer(token, recipient, amount);
+        emit TokensSwept(address(token), recipient, amount);
+        return amount;
+    }
+
+    /********** Epoch number getters **********/
+
+    function getCurrentEpochNumber() external view returns (uint32) {
+        return Accumulators.getCurrentEpochNumber();
+    }
+
+    function getEpochNumber(uint256 timestamp) external pure returns (uint32) {
+        return Accumulators.getEpochNumber(timestamp);
+    }
+
+    function getEpochEndTimestamp(uint256 epochNumber) external pure returns (uint256) {
+        return Accumulators.getEpochEndTimestamp(epochNumber);
+    }
+
+    function getCurrentEpochTimestamp() external view returns (uint256) {
+        return Accumulators.getCurrentEpochTimestamp();
+    }  
 }

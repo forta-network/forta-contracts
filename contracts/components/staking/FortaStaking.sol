@@ -21,6 +21,8 @@ import "./rewards/IRewardsDistributor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @dev This is a generic staking contract for the Forta platform. It allows any account to deposit ERC20 tokens to
  * delegate their "power" by staking on behalf of a particular subject. The subject can be scanner, or any other actor
@@ -528,12 +530,12 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     /**
      * @notice Sweep all token that might be mistakenly sent to the contract. This covers both unrelated tokens and staked
      * tokens that would be sent through a direct transfer. Restricted to SWEEPER_ROLE.
-     * If tokens are the same as staked tokens, only the extra tokens (no stake or rewards) will be transferred.
-     * @dev WARNING: thoroughly review the token to b
+     * If tokens are the same as staked tokens, only the extra tokens (no stake) will be transferred.
+     * @dev WARNING: thoroughly review the token to sweep.
      * @param token address of the token to be swept.
      * @param recipient destination address of the swept tokens
      * @return amount of tokens swept. For unrelated tokens is FortaStaking's balance, for stakedToken its
-     * the balance over the active stake + inactive stake + rewards
+     * the balance over the active stake + inactive stake
      */
     function sweep(IERC20 token, address recipient) external onlyRole(SWEEPER_ROLE) returns (uint256) {
         uint256 amount = token.balanceOf(address(this));
@@ -583,10 +585,13 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256[] memory amounts,
         bytes memory data
     ) internal virtual override {
-        // Order is important here, we must do the virtual release, which uses totalSupply(activeSharesId) in
-        // _historicalRewardFraction, BEFORE the super call updates the totalSupply()
         for (uint256 i = 0; i < ids.length; i++) {
-            if (!FortaStakingUtils.isActive(ids[i])) {
+            if (FortaStakingUtils.isActive(ids[i])) {
+                uint8 subjectType = FortaStakingUtils.subjectTypeOfShares(ids[i]);
+                if (subjectType == DELEGATOR_NODE_RUNNER_SUBJECT && to != address(0) && from != address(0)) {
+                    _allocator.didTransferShares(ids[i], subjectType, from, to, amounts[i]);
+                }
+            } else {
                 if (!(from == address(0) || to == address(0))) revert WithdrawalSharesNotTransferible();
             }
         }
