@@ -22,7 +22,7 @@ const [[subject1, subjectType1, active1, inactive1], [NODE_RUNNER_ID, NODE_RUNNE
 
 const MAX_STAKE = '10000';
 
-describe('Staking Rewards', function () {
+describe.only('Staking Rewards', function () {
     prepare({
         stake: {
             agents: { min: '1', max: MAX_STAKE, activated: true },
@@ -71,7 +71,7 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.admin).setDelegationParams(delay, 0);
         });
 
-        it('should apply equal rewards with comission for stakes added at the same time', async function () {
+        it.only('should apply equal rewards with comission for stakes added at the same time', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');

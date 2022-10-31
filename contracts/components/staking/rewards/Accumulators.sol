@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 uint256 constant EPOCH_LENGTH = 1 weeks;
+// Timestamp 0 was in Thursday, 1 January 1970 0:00:00 GMT. We start epochs on Monday 0:00:00 GMT
+uint256 constant TIMESTAMP_OFFSET = 4 days;
 
 library Accumulators {
     struct EpochCheckpoint {
@@ -38,11 +40,7 @@ library Accumulators {
     }
 
     function setRate(Accumulator storage acc, uint256 rate) internal {
-        EpochCheckpoint memory ckpt = EpochCheckpoint({
-            timestamp: SafeCast.toUint32(block.timestamp),
-            rate: SafeCast.toUint224(rate),
-            value: getValue(acc)
-        });
+        EpochCheckpoint memory ckpt = EpochCheckpoint({ timestamp: SafeCast.toUint32(block.timestamp), rate: SafeCast.toUint224(rate), value: getValue(acc) });
         uint256 length = acc.checkpoints.length;
         if (length > 0 && isCurrentEpoch(acc.checkpoints[length - 1].timestamp)) {
             acc.checkpoints[length - 1] = ckpt;
@@ -87,27 +85,30 @@ library Accumulators {
     }
 
     function zeroEpoch() private pure returns (EpochCheckpoint memory) {
-        return EpochCheckpoint({
-            timestamp: 0,
-            rate: 0,
-            value: 0
-        });
+        return EpochCheckpoint({ timestamp: 0, rate: 0, value: 0 });
     }
 
     function getCurrentEpochNumber() internal view returns (uint32) {
         return getEpochNumber(block.timestamp);
     }
 
+    //beginning first epoch is TIMESTAMP_OFFSET
+    //end of first epoch is TIMESTAMP_OFFSET + EPOCH_LENGTH
+
+    // TIMESTAMP_OFFSET = 10
+    // EPOCH_LENGTH = 1000
+    // current timestamp = 2100
+
     function getEpochNumber(uint256 timestamp) internal pure returns (uint32) {
-        return SafeCast.toUint32(timestamp / EPOCH_LENGTH);
+        return SafeCast.toUint32((timestamp - TIMESTAMP_OFFSET) / EPOCH_LENGTH);
     }
 
     function getEpochEndTimestamp(uint256 epochNumber) internal pure returns (uint256) {
-        return (epochNumber + 1) * EPOCH_LENGTH;
+        return ((epochNumber + 1) * EPOCH_LENGTH) + TIMESTAMP_OFFSET;
     }
 
     function getCurrentEpochTimestamp() internal view returns (uint256) {
-        return (block.timestamp / EPOCH_LENGTH) * EPOCH_LENGTH;
+        return ((block.timestamp / EPOCH_LENGTH) * EPOCH_LENGTH) + TIMESTAMP_OFFSET;
     }
 
     function isCurrentEpoch(uint256 timestamp) internal view returns (bool) {
