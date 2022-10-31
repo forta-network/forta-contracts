@@ -22,7 +22,7 @@ const [[subject1, subjectType1, active1, inactive1], [NODE_RUNNER_ID, NODE_RUNNE
 
 const MAX_STAKE = '10000';
 
-describe.only('Staking Rewards', function () {
+describe('Staking Rewards', function () {
     prepare({
         stake: {
             agents: { min: '1', max: MAX_STAKE, activated: true },
@@ -71,7 +71,7 @@ describe.only('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.admin).setDelegationParams(delay, 0);
         });
 
-        it.only('should apply equal rewards with comission for stakes added at the same time', async function () {
+        it('should apply equal rewards with comission for stakes added at the same time', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
@@ -101,7 +101,6 @@ describe.only('Staking Rewards', function () {
             expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, epoch, this.accounts.user3.address)).to.be.closeTo('500', '1');
 
             const balanceBefore1 = await this.token.balanceOf(this.accounts.user1.address);
-            console.log(balanceBefore1.toString());
             const balanceBefore2 = await this.token.balanceOf(this.accounts.user2.address);
 
             await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, [epoch]);
@@ -343,8 +342,13 @@ describe.only('Staking Rewards', function () {
 
     describe('Fee setting', function () {
         it('fee', async function () {
-            await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFee(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '2500');
-            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+            await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '2500');
+            let currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            console.log(await this.rewardsDistributor.getDelegationFee(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, currentEpoch));
+
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
+            currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            console.log(await this.rewardsDistributor.getDelegationFee(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, currentEpoch));
 
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
@@ -375,16 +379,34 @@ describe.only('Staking Rewards', function () {
                 `SenderNotOwner("${this.accounts.user2.address}", ${NODE_RUNNER_ID})`
             );
         });
-        it('fee is in effect next period', async function () {
-            /*
-            const share subjectToActive()
-            expect(await this.rewardsDistributor.feeBpsPerEpoch(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.eq(await this.rewardsDistributor.DEFAULT_FEE_BPS());
-            await this.rewardsDistributor.connect(this.accounts.user1).setFeeBps(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '2500');
-            expect(await this.rewardsDistributor.feeBpsPerEpoch(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.eq(await this.rewardsDistributor.DEFAULT_FEE_BPS());
-*/
+        it('fee is in effect next period after setting', async function () {
+            const defaultRate = await this.rewardsDistributor.defaultFeeBps();
+            let currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '2500');
+            // fee still not in effect
+            expect(await this.rewardsDistributor.getDelegationFee(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, currentEpoch)).to.be.eq(defaultRate);
+
+            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+
+            currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            expect(await this.rewardsDistributor.getDelegationFee(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, currentEpoch)).to.be.eq('2500');
+
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
+            await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '3000');
+            currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            expect(await this.rewardsDistributor.getDelegationFee(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, currentEpoch)).to.be.eq('2500');
+
+            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+
+            currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            expect(await this.rewardsDistributor.getDelegationFee(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, currentEpoch)).to.be.eq('3000');
         });
 
-        it('there is a cooldown period for fees', async function () {});
-        it('if fee is not set, default fee is returned', async function () {});
+        it('there is a cooldown period for fees', async function () {
+            await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '2500');
+            await expect(this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '3000')).to.be.revertedWith(
+                'SetDelegationFeeNotReady()'
+            );
+        });
     });
 });

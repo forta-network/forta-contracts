@@ -12,8 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
 
-import "hardhat/console.sol";
-
 uint256 constant MAX_BPS = 10000;
 
 contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, IRewardsDistributor {
@@ -178,10 +176,6 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         if (_claimedRewardsPerEpoch[shareId][epochNumber][staker]) {
             return 0;
         }
-        console.log("available reward");
-        console.log(shareId);
-        console.log(isDelegator);
-        console.log(_availableReward(shareId, isDelegator, epochNumber, staker));
         return _availableReward(shareId, isDelegator, epochNumber, staker);
     }
 
@@ -198,7 +192,6 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256 T = N + D;
 
         if (T == 0) {
-            console.log("T=0");
             return 0;
         }
 
@@ -225,18 +218,13 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256[] calldata epochNumbers
     ) external {
         (uint256 shareId, bool isDelegator) = _getShareId(subjectType, subjectId);
-        console.log("claimRewards");
-        console.log(shareId);
-        console.log(isDelegator);
         if (!isDelegator) {
             if (_subjectGateway.ownerOf(subjectType, subjectId) != _msgSender()) revert SenderNotOwner(_msgSender(), subjectId);
         }
         for (uint256 i = 0; i < epochNumbers.length; i++) {
             if (_claimedRewardsPerEpoch[shareId][epochNumbers[i]][_msgSender()]) revert AlreadyClaimed();
             _claimedRewardsPerEpoch[shareId][epochNumbers[i]][_msgSender()] = true;
-            console.log(epochNumbers[i]);
             uint256 epochRewards = _availableReward(shareId, isDelegator, epochNumbers[i], _msgSender());
-            console.log(epochRewards);
             SafeERC20.safeTransfer(rewardsToken, _msgSender(), epochRewards);
             emit ClaimedRewards(subjectType, subjectId, _msgSender(), epochNumbers[i], epochRewards);
         }
@@ -258,12 +246,13 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
      * Change in fees will start having an effect in the beginning of the next reward epoch.
      * After the first time setting the parameter, it cannot be set again until delegationParamsEpochDelay epochs pass.
      * @param subjectType a DELEGATED subject type.
-     * @param subject the DELEGATED subject id.
+     * @param subjectId the DELEGATED subject id.
      */
-    function setDelegationFeeBps(uint8 subjectType, uint256 subject, uint16 feeBps) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED)  {
+    function setDelegationFeeBps(uint8 subjectType, uint256 subjectId, uint16 feeBps) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED)  {
         if (feeBps > MAX_BPS) revert AmountTooLarge(feeBps, MAX_BPS);
-        if (_subjectGateway.ownerOf(subjectType, subject) != _msgSender()) revert SenderNotOwner(_msgSender(), subject);
-        uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        (uint256 shareId, bool isDelegator) = _getShareId(subjectType, subjectId);
+        if (!isDelegator && _subjectGateway.ownerOf(subjectType, subjectId) != _msgSender()) revert SenderNotOwner(_msgSender(), subjectId);
+
         DelegationFee[2] storage fees = delegationFees[shareId];
 
         if (fees[1].sinceEpoch != 0) {
@@ -273,8 +262,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
             fees[0] = fees[1];
         }
         fees[1] = DelegationFee({ feeBps: feeBps, sinceEpoch: Accumulators.getCurrentEpochNumber() + 1 });
-        
-        emit SetDelegationFee(subjectType, subject, fees[1].sinceEpoch, feeBps);
+        emit SetDelegationFee(subjectType, subjectId, fees[1].sinceEpoch, feeBps);
     }
 
 
@@ -294,7 +282,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
             // No fees set yet
             return defaultFeeBps;
         }
-        if (epochNumber > fees[index].sinceEpoch) {
+        if (epochNumber >= fees[index].sinceEpoch) {
             return fees[index].feeBps;
         } else if (index > 0) {
             return _getFee(fees, index - 1, epochNumber);
