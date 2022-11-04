@@ -63,13 +63,13 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
     {
         // If migration has started, and scanner has migrated, return ScannerPoolRegistry values
         if (scannerPoolRegistry.isScannerRegistered(address(uint160(scannerId)))) {
-            return _getScannerStateFromNodeRunner(scannerId);
+            return _getScannerStateFromScannerPool(scannerId);
         } else {
             return _getScannerState(scannerId);
         }
     }
 
-    function _getScannerStateFromNodeRunner(uint256 scannerId)
+    function _getScannerStateFromScannerPool(uint256 scannerId)
         private
         view
         returns (
@@ -105,7 +105,7 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         return (registered, owner, chainId, metadata, isEnabled(scannerId), _getDisableFlags(scannerId));
     }
 
-    function _getScannerFromNodeRunner(uint256 scannerId)
+    function _getScannerFromScannerPool(uint256 scannerId)
         private
         view
         returns (
@@ -133,7 +133,7 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
     {
         // If migration has started, and scanner has migrated, return ScannerPoolRegistry values
         if (scannerPoolRegistry.isScannerRegistered(address(uint160(scannerId)))) {
-            return _getScannerFromNodeRunner(scannerId);
+            return _getScannerFromScannerPool(scannerId);
         } else {
             return super.getScanner(scannerId);
         }
@@ -156,7 +156,7 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         return sunsettingTime < block.timestamp;
     }
 
-    function deregisterScannerNode(uint256 scannerId) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) {
+    function deregisterScannerNode(uint256 scannerId) external onlyRole(SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE) {
         if (optingOutOfMigration[scannerId]) revert CannotDeregister(scannerId);
         _burn(scannerId);
         delete _disabled[scannerId];

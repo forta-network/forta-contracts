@@ -16,15 +16,15 @@ async function deploy() {
     console.log(`Network:  ${name} (${chainId})`);
     console.log(`Deployer: ${deployer.address}`);
     console.log('----------------------------------------------------');
-    DEBUG(`Deploying ScannerToNodeRunnerMigration...`);
-    const registryMigration = await ethers.getContractFactory('ScannerToNodeRunnerMigration', deployer).then((factory) =>
+    DEBUG(`Deploying ScannerToScannerPoolMigration...`);
+    const registryMigration = await ethers.getContractFactory('ScannerToScannerPoolMigration', deployer).then((factory) =>
         utils.tryFetchProxy(CACHE, 'node-runner-migration', factory, 'uups', [deployment.access.address], {
             constructorArgs: [deployment.forwarder.address, deployment.scanners.address, deployment['node-runners'].address],
             unsafeAllow: 'delegatecall',
         })
     );
 
-    DEBUG(`[12] scannerToNodeRunnerMigration: ${registryMigration.address}`);
+    DEBUG(`[12] scannerToScannerPoolMigration: ${registryMigration.address}`);
 }
 
 if (require.main === module) {

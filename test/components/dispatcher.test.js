@@ -20,7 +20,7 @@ describe('Dispatcher', function () {
         this.SCANNER_SUBJECT_ID = BigNumber.from(this.SCANNER_ID);
         // Create Agent and Scanner
         await this.agents.createAgent(this.AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]);
-        await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1);
+        await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
         const { chainId } = await ethers.provider.getNetwork();
         verifyingContractInfo = {
             address: this.contracts.scannerPools.address,
@@ -29,7 +29,7 @@ describe('Dispatcher', function () {
 
         const registration = {
             scanner: this.SCANNER_ID,
-            nodeRunnerId: 1,
+            scannerPoolId: 1,
             chainId: 1,
             metadata: 'metadata',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
@@ -39,7 +39,7 @@ describe('Dispatcher', function () {
         await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
 
         // Stake
-        await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.NODE_RUNNER, 1, '100');
+        await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER_POOL, 1, '100');
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, this.AGENT_ID, '100');
     });
 

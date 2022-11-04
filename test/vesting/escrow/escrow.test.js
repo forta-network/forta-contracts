@@ -22,7 +22,7 @@ describe.skip('Staking Escrow', function () {
 
     beforeEach(async function () {
         this.accounts.getAccount('manager');
-        await this.scannerPools.connect(this.accounts.user1).registerNodeRunner();
+        await this.scannerPools.connect(this.accounts.user1).registerScannerPool();
 
         await Promise.all([
             this.token.connect(this.accounts.admin).grantRole(ethers.utils.id('WHITELISTER_ROLE'), this.escrowFactory.address),

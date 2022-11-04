@@ -21,7 +21,7 @@ describe('Node Runner Registry', function () {
         };
         scanner1Registration = {
             scanner: SCANNER_ADDRESS_1,
-            nodeRunnerId: 1,
+            scannerPoolId: 1,
             chainId: 1,
             metadata: 'metadata',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
@@ -31,19 +31,19 @@ describe('Node Runner Registry', function () {
     });
 
     it('register node runner', async function () {
-        await expect(this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1))
+        await expect(this.scannerPools.connect(this.accounts.user1).registerScannerPool(1))
             .to.emit(this.scannerPools, 'Transfer')
             .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, '1')
-            .to.emit(this.scannerPools, 'NodeRunnerRegistered')
+            .to.emit(this.scannerPools, 'ScannerPoolRegistered')
             .withArgs(1, 1);
         expect(await this.scannerPools.isRegistered(1)).to.be.equal(true);
         expect(await this.scannerPools.ownerOf(1)).to.be.equal(this.accounts.user1.address);
         expect(await this.scannerPools.monitoredChainId(1)).to.be.equal(1);
 
-        await expect(this.scannerPools.connect(this.accounts.user2).registerNodeRunner(44))
+        await expect(this.scannerPools.connect(this.accounts.user2).registerScannerPool(44))
             .to.emit(this.scannerPools, 'Transfer')
             .withArgs(ethers.constants.AddressZero, this.accounts.user2.address, '2')
-            .to.emit(this.scannerPools, 'NodeRunnerRegistered')
+            .to.emit(this.scannerPools, 'ScannerPoolRegistered')
             .withArgs(2, 44);
         expect(await this.scannerPools.isRegistered(2)).to.be.equal(true);
         expect(await this.scannerPools.ownerOf(2)).to.be.equal(this.accounts.user2.address);
@@ -54,13 +54,13 @@ describe('Node Runner Registry', function () {
         const SCANNER_ADDRESS = this.accounts.scanner.address;
         const SCANNER_ADDRESS_2 = this.accounts.user2.address;
 
-        await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1);
+        await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
         await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
             .to.emit(this.scannerPools, 'ScannerUpdated')
             .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
         const scanner2Registration = {
             scanner: SCANNER_ADDRESS_2,
-            nodeRunnerId: 1,
+            scannerPoolId: 1,
             chainId: 1,
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
@@ -86,26 +86,26 @@ describe('Node Runner Registry', function () {
 
     describe('migration', function () {
         beforeEach(async function () {
-            await this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR, this.accounts.manager.address);
+            await this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_2_SCANNER_POOL_MIGRATOR, this.accounts.manager.address);
         });
 
         it('migrate node runner', async function () {
-            await expect(this.scannerPools.connect(this.accounts.manager).registerMigratedNodeRunner(this.accounts.user1.address, 1))
+            await expect(this.scannerPools.connect(this.accounts.manager).registerMigratedScannerPool(this.accounts.user1.address, 1))
                 .to.emit(this.scannerPools, 'Transfer')
                 .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, '1');
             expect(await this.scannerPools.isRegistered(1)).to.be.equal(true);
             expect(await this.scannerPools.ownerOf(1)).to.be.equal(this.accounts.user1.address);
         });
 
-        it('should not migrate node runner if not SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE ', async function () {
-            await expect(this.scannerPools.connect(this.accounts.user1).registerMigratedNodeRunner(this.accounts.user1.address, 1)).to.be.revertedWith(
-                `MissingRole("${this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
+        it('should not migrate node runner if not SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE ', async function () {
+            await expect(this.scannerPools.connect(this.accounts.user1).registerMigratedScannerPool(this.accounts.user1.address, 1)).to.be.revertedWith(
+                `MissingRole("${this.roles.SCANNER_2_SCANNER_POOL_MIGRATOR}", "${this.accounts.user1.address}")`
             );
         });
 
         it('migrate scanner', async function () {
             const SCANNER_ADDRESS = this.accounts.scanner.address;
-            await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1);
+            await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
             await expect(this.scannerPools.connect(this.accounts.manager).registerMigratedScannerNode(scanner1Registration, true))
                 .to.emit(this.scannerPools, 'ScannerUpdated')
                 .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
@@ -115,19 +115,19 @@ describe('Node Runner Registry', function () {
             expect(await this.scannerPools.totalScannersRegistered(1)).to.be.equal(1);
         });
 
-        it('should not migrate scanner if not SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE', async function () {
-            await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1);
+        it('should not migrate scanner if not SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE', async function () {
+            await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
             await expect(this.scannerPools.connect(this.accounts.user1).registerMigratedScannerNode(scanner1Registration, false)).to.be.revertedWith(
-                `MissingRole("${this.roles.SCANNER_2_NODE_RUNNER_MIGRATOR}", "${this.accounts.user1.address}")`
+                `MissingRole("${this.roles.SCANNER_2_SCANNER_POOL_MIGRATOR}", "${this.accounts.user1.address}")`
             );
         });
     });
 
     it('should not register scanner after delay', async function () {
-        await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1);
+        await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
         const scanner2Registration = {
             scanner: this.accounts.user2.address,
-            nodeRunnerId: 1,
+            scannerPoolId: 1,
             chainId: 1,
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
@@ -140,10 +140,10 @@ describe('Node Runner Registry', function () {
     });
 
     it('should not register scanner signed by other', async function () {
-        await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(2);
+        await this.scannerPools.connect(this.accounts.user1).registerScannerPool(2);
         const scanner2Registration = {
             scanner: this.accounts.user2.address,
-            nodeRunnerId: 1,
+            scannerPoolId: 1,
             chainId: 2,
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
@@ -153,25 +153,25 @@ describe('Node Runner Registry', function () {
     });
 
     it('should not register scanner if not owner', async function () {
-        await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(2);
+        await this.scannerPools.connect(this.accounts.user1).registerScannerPool(2);
         const scanner2Registration = {
             scanner: this.accounts.user2.address,
-            nodeRunnerId: 1,
+            scannerPoolId: 1,
             chainId: 2,
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
         };
         const scanner2Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner2Registration, this.accounts.user2);
         await expect(this.scannerPools.connect(this.accounts.user2).registerScannerNode(scanner2Registration, scanner2Signature)).to.be.revertedWith(
-            `SenderNotNodeRunner("${this.accounts.user2.address}", 1)`
+            `SenderNotScannerPool("${this.accounts.user2.address}", 1)`
         );
     });
 
     it('should not register scanner if not same chain', async function () {
-        await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1);
+        await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
         const scanner2Registration = {
             scanner: this.accounts.user2.address,
-            nodeRunnerId: 1,
+            scannerPoolId: 1,
             chainId: 2,
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
@@ -183,13 +183,13 @@ describe('Node Runner Registry', function () {
     it('should not register scanner if already registered', async function () {
         const SCANNER_ADDRESS = this.accounts.scanner.address;
 
-        await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1);
+        await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
         await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
             .to.emit(this.scannerPools, 'ScannerUpdated')
             .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
         const scanner2Registration = {
             scanner: SCANNER_ADDRESS,
-            nodeRunnerId: 1,
+            scannerPoolId: 1,
             chainId: 1,
             metadata: 'metadata2',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
@@ -201,7 +201,7 @@ describe('Node Runner Registry', function () {
     it('scanner metadata update', async function () {
         const SCANNER_ADDRESS = this.accounts.scanner.address;
 
-        await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1);
+        await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
         await this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
         await expect(this.scannerPools.connect(this.accounts.user1).updateScannerMetadata(SCANNER_ADDRESS, '333'))
             .to.emit(this.scannerPools, 'ScannerUpdated')
@@ -214,7 +214,7 @@ describe('Node Runner Registry', function () {
     it('scanner metadata update - non registered scanner', async function () {
         const WRONG_SCANNER_ADDRESS = this.accounts.admin.address;
 
-        await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1);
+        await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
         await this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
 
         await expect(this.scannerPools.connect(this.accounts.user1).updateScannerMetadata(WRONG_SCANNER_ADDRESS, '333')).to.be.revertedWith(
@@ -224,63 +224,63 @@ describe('Node Runner Registry', function () {
 
     describe('managers', function () {
         beforeEach(async function () {
-            await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1);
+            await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
         });
 
         it('add manager', async function () {
-            const NODE_RUNNER_ID = 1;
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user1.address)).to.be.equal(false);
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user2.address)).to.be.equal(false);
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user3.address)).to.be.equal(false);
-            expect(await this.scannerPools.getManagerCount(NODE_RUNNER_ID)).to.be.equal(0);
+            const SCANNER_POOL_ID = 1;
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user1.address)).to.be.equal(false);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user2.address)).to.be.equal(false);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user3.address)).to.be.equal(false);
+            expect(await this.scannerPools.getManagerCount(SCANNER_POOL_ID)).to.be.equal(0);
 
-            await expect(this.scannerPools.connect(this.accounts.user1).setManager(NODE_RUNNER_ID, this.accounts.user2.address, true))
+            await expect(this.scannerPools.connect(this.accounts.user1).setManager(SCANNER_POOL_ID, this.accounts.user2.address, true))
                 .to.emit(this.scannerPools, 'ManagerEnabled')
-                .withArgs(NODE_RUNNER_ID, this.accounts.user2.address, true);
+                .withArgs(SCANNER_POOL_ID, this.accounts.user2.address, true);
 
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user1.address)).to.be.equal(false);
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user2.address)).to.be.equal(true);
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user3.address)).to.be.equal(false);
-            expect(await this.scannerPools.getManagerCount(NODE_RUNNER_ID)).to.be.equal(1);
-            expect(await this.scannerPools.getManagerAt(NODE_RUNNER_ID, 0)).to.be.equal(this.accounts.user2.address);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user1.address)).to.be.equal(false);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user2.address)).to.be.equal(true);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user3.address)).to.be.equal(false);
+            expect(await this.scannerPools.getManagerCount(SCANNER_POOL_ID)).to.be.equal(1);
+            expect(await this.scannerPools.getManagerAt(SCANNER_POOL_ID, 0)).to.be.equal(this.accounts.user2.address);
         });
 
         it('remove manager', async function () {
-            const NODE_RUNNER_ID = 1;
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user1.address)).to.be.equal(false);
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user2.address)).to.be.equal(false);
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user3.address)).to.be.equal(false);
-            expect(await this.scannerPools.getManagerCount(NODE_RUNNER_ID)).to.be.equal(0);
+            const SCANNER_POOL_ID = 1;
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user1.address)).to.be.equal(false);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user2.address)).to.be.equal(false);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user3.address)).to.be.equal(false);
+            expect(await this.scannerPools.getManagerCount(SCANNER_POOL_ID)).to.be.equal(0);
 
-            await expect(this.scannerPools.connect(this.accounts.user1).setManager(NODE_RUNNER_ID, this.accounts.user2.address, true))
+            await expect(this.scannerPools.connect(this.accounts.user1).setManager(SCANNER_POOL_ID, this.accounts.user2.address, true))
                 .to.emit(this.scannerPools, 'ManagerEnabled')
-                .withArgs(NODE_RUNNER_ID, this.accounts.user2.address, true);
-            await expect(this.scannerPools.connect(this.accounts.user1).setManager(NODE_RUNNER_ID, this.accounts.user3.address, true))
+                .withArgs(SCANNER_POOL_ID, this.accounts.user2.address, true);
+            await expect(this.scannerPools.connect(this.accounts.user1).setManager(SCANNER_POOL_ID, this.accounts.user3.address, true))
                 .to.emit(this.scannerPools, 'ManagerEnabled')
-                .withArgs(NODE_RUNNER_ID, this.accounts.user3.address, true);
+                .withArgs(SCANNER_POOL_ID, this.accounts.user3.address, true);
 
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user1.address)).to.be.equal(false);
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user2.address)).to.be.equal(true);
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user3.address)).to.be.equal(true);
-            expect(await this.scannerPools.getManagerCount(NODE_RUNNER_ID)).to.be.equal(2);
-            expect(await this.scannerPools.getManagerAt(NODE_RUNNER_ID, 0)).to.be.equal(this.accounts.user2.address);
-            expect(await this.scannerPools.getManagerAt(NODE_RUNNER_ID, 1)).to.be.equal(this.accounts.user3.address);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user1.address)).to.be.equal(false);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user2.address)).to.be.equal(true);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user3.address)).to.be.equal(true);
+            expect(await this.scannerPools.getManagerCount(SCANNER_POOL_ID)).to.be.equal(2);
+            expect(await this.scannerPools.getManagerAt(SCANNER_POOL_ID, 0)).to.be.equal(this.accounts.user2.address);
+            expect(await this.scannerPools.getManagerAt(SCANNER_POOL_ID, 1)).to.be.equal(this.accounts.user3.address);
 
-            await expect(this.scannerPools.connect(this.accounts.user1).setManager(NODE_RUNNER_ID, this.accounts.user2.address, false))
+            await expect(this.scannerPools.connect(this.accounts.user1).setManager(SCANNER_POOL_ID, this.accounts.user2.address, false))
                 .to.emit(this.scannerPools, 'ManagerEnabled')
-                .withArgs(NODE_RUNNER_ID, this.accounts.user2.address, false);
+                .withArgs(SCANNER_POOL_ID, this.accounts.user2.address, false);
 
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user1.address)).to.be.equal(false);
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user2.address)).to.be.equal(false);
-            expect(await this.scannerPools.isManager(NODE_RUNNER_ID, this.accounts.user3.address)).to.be.equal(true);
-            expect(await this.scannerPools.getManagerCount(NODE_RUNNER_ID)).to.be.equal(1);
-            expect(await this.scannerPools.getManagerAt(NODE_RUNNER_ID, 0)).to.be.equal(this.accounts.user3.address);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user1.address)).to.be.equal(false);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user2.address)).to.be.equal(false);
+            expect(await this.scannerPools.isManager(SCANNER_POOL_ID, this.accounts.user3.address)).to.be.equal(true);
+            expect(await this.scannerPools.getManagerCount(SCANNER_POOL_ID)).to.be.equal(1);
+            expect(await this.scannerPools.getManagerAt(SCANNER_POOL_ID, 0)).to.be.equal(this.accounts.user3.address);
         });
     });
 
     describe.skip('enable and disable', async function () {
         beforeEach(async function () {
-            await this.scannerPools.connect(this.accounts.user1).registerNodeRunner();
+            await this.scannerPools.connect(this.accounts.user1).registerScannerPool();
             await this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
             // await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER, SCANNER_ADDRESS, '100');
         });

@@ -8,12 +8,15 @@ import "./ScannerPoolRegistryCore.sol";
 import "./ScannerPoolRegistryManaged.sol";
 
 /**
- * ERC721 Registry of Node Runners. Each node runner controls a number of Scanner Nodes, represented by their EOA address.
- * NodeRunner must register themselves, then register node addresses to be controlled by their NodeRunner ID (incremental uint). Registered NodeRunners can also assign managers to manage the nodes.
- * Each scanner has a single "chainId" and metadata (string that can point to a URL, IPFS…). Node runners and managers can update said metadata.
+ * ERC721 Registry of Scanner Pools. Each scanner node runner EOA controls a number of Scanner Nodes through the ownership of this NFT,
+ * represented by their EOA address.
+ * The Scanner Pool must register themselves, then register scanner addresses to be controlled by their scannerPoolId (incremental uint).
+ * Registered Scanner Pools can also assign managers to manage the scanners.
+ * Each Scanner Pool has a single "chainId" for all the scanners, and each scanner has metadata (string that can point to a URL, IPFS…).
+ * Scanner Pool owners and managers can update said metadata.
  * Scanner Nodes can be enabled or disabled by:
  * - the Scanner itself,
- * - the NodeRunner
+ * - the ScannerPool owner
  * - any of the scanner managers
  * If the scannerId is staked under the minimum stake, it can’t be `enabled()` and `isEnabled()` will return false, regardless of the disabled flag.
  * If the scanner is not registered, `isEnabled()` will return false.
@@ -31,7 +34,7 @@ contract ScannerPoolRegistry is BaseComponentUpgradeable, ScannerPoolRegistryCor
      * @param __name ERC721 token name.
      * @param __symbol ERC721 token symbol.
      * @param __stakeSubjectGateway address of StakeSubjectGateway
-     * @param __registrationDelay amount of time allowed from scanner signing a ScannerNodeRegistration and it's execution by NodeRunner
+     * @param __registrationDelay amount of time allowed from scanner signing a ScannerNodeRegistration request and it's execution
      */
     function initialize(
         address __manager,
@@ -44,11 +47,11 @@ contract ScannerPoolRegistry is BaseComponentUpgradeable, ScannerPoolRegistryCor
         __ScannerPoolRegistryCore_init(__name, __symbol, __stakeSubjectGateway, __registrationDelay);
     }
 
-    function registerMigratedNodeRunner(address nodeRunnerAddress, uint256 chainId) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) returns (uint256 nodeRunnerId) {
-        return _registerNodeRunner(nodeRunnerAddress, chainId);
+    function registerMigratedScannerPool(address scannerPoolAddress, uint256 chainId) external onlyRole(SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE) returns (uint256 scannerPoolId) {
+        return _registerScannerPool(scannerPoolAddress, chainId);
     }
 
-    function registerMigratedScannerNode(ScannerNodeRegistration calldata req, bool disabled) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) {
+    function registerMigratedScannerNode(ScannerNodeRegistration calldata req, bool disabled) external onlyRole(SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE) {
         _registerScannerNode(req);
         if (disabled) {
             _setScannerDisableFlag(req.scanner, true);
@@ -56,11 +59,11 @@ contract ScannerPoolRegistry is BaseComponentUpgradeable, ScannerPoolRegistryCor
     }
 
     /**
-     * @notice disambiguation of _canSetEnableState, adding SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE to the allowed setters.
+     * @notice disambiguation of _canSetEnableState, adding SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE to the allowed setters.
      * @inheritdoc ScannerPoolRegistryManaged
-     */ 
-    function _canSetEnableState(address scanner) internal virtual override(ScannerPoolRegistryCore, ScannerPoolRegistryManaged) view returns (bool) {
-        return super._canSetEnableState(scanner) || hasRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE, _msgSender());
+     */
+    function _canSetEnableState(address scanner) internal view virtual override(ScannerPoolRegistryCore, ScannerPoolRegistryManaged) returns (bool) {
+        return super._canSetEnableState(scanner) || hasRole(SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE, _msgSender());
     }
 
     /**
@@ -80,5 +83,4 @@ contract ScannerPoolRegistry is BaseComponentUpgradeable, ScannerPoolRegistryCor
     }
 
     uint256[50] private __gap;
-
 }

@@ -296,9 +296,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     
 
     /**
-     * deposits active stake from SCANNER to NODE_RUNNER if not frozen. Inactive stake remains for withdrawal in old subject
+     * deposits active stake from SCANNER to SCANNER_POOL if not frozen. Inactive stake remains for withdrawal in old subject
      * Burns active stake and shares for old subject.
-     * @dev No slash has been executed, so new NODE_RUNNER share proportions apply.
+     * @dev No slash has been executed, so new SCANNER_POOL share proportions apply.
      */
     function migrate(
         uint8 oldSubjectType,
@@ -306,9 +306,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint8 newSubjectType,
         uint256 newSubject,
         address staker
-    ) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) {
+    ) external onlyRole(SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE) {
         if (oldSubjectType != SCANNER_SUBJECT) revert InvalidSubjectType(oldSubjectType); 
-        if (newSubjectType != NODE_RUNNER_SUBJECT) revert InvalidSubjectType(newSubjectType); 
+        if (newSubjectType != SCANNER_POOL_SUBJECT) revert InvalidSubjectType(newSubjectType); 
         if (isFrozen(oldSubjectType, oldSubject)) revert FrozenSubject();
 
         uint256 oldSharesId = FortaStakingUtils.subjectToActive(oldSubjectType, oldSubject);
@@ -580,7 +580,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         for (uint256 i = 0; i < ids.length; i++) {
             if (FortaStakingUtils.isActive(ids[i])) {
                 uint8 subjectType = FortaStakingUtils.subjectTypeOfShares(ids[i]);
-                if (subjectType == DELEGATOR_NODE_RUNNER_SUBJECT && to != address(0) && from != address(0)) {
+                if (subjectType == DELEGATOR_SCANNER_POOL_SUBJECT && to != address(0) && from != address(0)) {
                     _allocator.didTransferShares(ids[i], subjectType, from, to, amounts[i]);
                 }
             } else {

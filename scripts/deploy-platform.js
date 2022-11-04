@@ -4,7 +4,7 @@ const DEBUG = require('debug')('forta:migration');
 const utils = require('./utils');
 const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
-const NODE_RUNNER_SUBJECT = 2;
+const SCANNER_POOL_SUBJECT = 2;
 
 const semver = require('semver');
 const deployEnv = require('./loadEnv');
@@ -289,7 +289,7 @@ async function migrate(config = {}) {
         );
         await contracts.subjectGateway.connect(deployer).setStakeSubject(SCANNER_SUBJECT, contracts.scanners.address);
         await contracts.subjectGateway.connect(deployer).setStakeSubject(AGENT_SUBJECT, contracts.agents.address);
-        await contracts.subjectGateway.connect(deployer).setStakeSubject(NODE_RUNNER_SUBJECT, contracts.scannerPools.address);
+        await contracts.subjectGateway.connect(deployer).setStakeSubject(SCANNER_POOL_SUBJECT, contracts.scannerPools.address);
 
         DEBUG(`[${Object.keys(contracts).length}] scannerPools: ${contracts.scannerPools.address}`);
         if (semver.gte(scannersVersion, '0.1.4')) {
@@ -326,7 +326,7 @@ async function migrate(config = {}) {
             UPGRADER: ethers.utils.id('UPGRADER_ROLE'),
             AGENT_ADMIN: ethers.utils.id('AGENT_ADMIN_ROLE'),
             SCANNER_ADMIN: ethers.utils.id('SCANNER_ADMIN_ROLE'),
-            NODE_RUNNER_ADMIN: ethers.utils.id('NODE_RUNNER_ADMIN_ROLE'),
+            SCANNER_POOL_ADMIN: ethers.utils.id('SCANNER_POOL_ADMIN_ROLE'),
             DISPATCHER: ethers.utils.id('DISPATCHER_ROLE'),
             SLASHER: ethers.utils.id('SLASHER_ROLE'),
             SLASHING_ARBITER: ethers.utils.id('SLASHING_ARBITER_ROLE'),
@@ -336,7 +336,7 @@ async function migrate(config = {}) {
             REWARDER: ethers.utils.id('REWARDER_ROLE'),
             SCANNER_VERSION: ethers.utils.id('SCANNER_VERSION_ROLE'),
             SCANNER_BETA_VERSION: ethers.utils.id('SCANNER_BETA_VERSION_ROLE'),
-            SCANNER_2_NODE_RUNNER_MIGRATOR: ethers.utils.id('SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE'),
+            SCANNER_2_SCANNER_POOL_MIGRATOR: ethers.utils.id('SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE'),
             MIGRATION_EXECUTOR: ethers.utils.id('MIGRATION_EXECUTOR_ROLE'),
             ALLOCATOR_CONTRACT: ethers.utils.id('ALLOCATOR_CONTRACT_ROLE'),
         }).map((entry) => Promise.all(entry))
