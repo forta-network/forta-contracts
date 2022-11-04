@@ -5,11 +5,11 @@ pragma solidity ^0.8.9;
 
 import "../BaseComponentUpgradeable.sol";
 import "./ScannerRegistry.sol";
-import "../node_runners/NodeRunnerRegistry.sol";
+import "../scanner_pools/ScannerPoolRegistry.sol";
 import "../staking/IStakeMigrator.sol";
 
 /**
- * Migration of ScannerRegistry to NodeRunnerRegistry
+ * Migration of ScannerRegistry to ScannerPoolRegistry
  */
 contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
     /** Contract version */
@@ -19,7 +19,7 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     ScannerRegistry public immutable scannerNodeRegistry;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    NodeRunnerRegistry public immutable nodeRunnerRegistry;
+    ScannerPoolRegistry public immutable scannerPoolRegistry;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IStakeMigrator public immutable stakeMigrator;
     /// chainId => nodeRunnerAddress => nodeRunnerId
@@ -36,15 +36,15 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
     constructor(
         address _forwarder,
         address _scannerNodeRegistry,
-        address _nodeRunnerRegistry,
+        address _scannerPoolRegistry,
         address _stakeMigrator
     ) initializer ForwardedContext(_forwarder) {
         if (_scannerNodeRegistry == address(0)) revert ZeroAddress("_scannerNodeRegistry");
-        if (_nodeRunnerRegistry == address(0)) revert ZeroAddress("_nodeRunnerRegistry");
+        if (_scannerPoolRegistry == address(0)) revert ZeroAddress("_scannerPoolRegistry");
         if (_stakeMigrator == address(0)) revert ZeroAddress("_stakeMigrator");
 
         scannerNodeRegistry = ScannerRegistry(_scannerNodeRegistry);
-        nodeRunnerRegistry = NodeRunnerRegistry(_nodeRunnerRegistry);
+        scannerPoolRegistry = ScannerPoolRegistry(_scannerPoolRegistry);
         stakeMigrator = IStakeMigrator(_stakeMigrator);
     }
 
@@ -57,18 +57,18 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
     }
 
     /**
-     * @notice Method to self migrate from the old ScannerRegistry NFTs to a single NodeRunnerRegistry NFT, per chain.
-     * WARNING: ScannerNodeRegistry's manager addresses will not be migrated, please user NodeRunnerRegistry's methods to set them again.
+     * @notice Method to self migrate from the old ScannerRegistry NFTs to a single ScannerPoolRegistry NFT, per chain.
+     * WARNING: ScannerNodeRegistry's manager addresses will not be migrated, please user ScannerPoolRegistry's methods to set them again.
      * @param scanners array of scanner addresses to be migrated.
      * All the scanners willing to migrate (optingOutOfMigration flags set to false) ScannerRegistry ERC721 identified by the uint256(address)
      * in the input array will be:
-     * - Registered in NodeRunnerRegistry to the nodeRunnerId either indicated or generated, with the same chainId and metadata.
+     * - Registered in ScannerPoolRegistry to the nodeRunnerId either indicated or generated, with the same chainId and metadata.
      * - Deleted in ScannerNodeRegistry. The ERC721 will be burned, disabled flags and managers deleted from storage.
      * Scanners with optingOutOfMigration flags == true will be ignored (opted out), and will stay in ScannerNodeRegistry.
      * At migration end, they will stop receiving work and rewards.
-     * @param nodeRunnerId If set as 0, a new NodeRunnerRegistry ERC721 will be minted to nodeRunner (but it must not own any prior),
-     * otherwise must be set as a valid NodeRunnerRegistry ERC721 id owned by nodeRunner.
-     * @return NodeRunnerRegistry ERC721 id the scanners are migrated to.
+     * @param nodeRunnerId If set as 0, a new ScannerPoolRegistry ERC721 will be minted to nodeRunner (but it must not own any prior),
+     * otherwise must be set as a valid ScannerPoolRegistry ERC721 id owned by nodeRunner.
+     * @return ScannerPoolRegistry ERC721 id the scanners are migrated to.
      */
     function selfMigrate(
         address[] calldata scanners,
@@ -79,19 +79,19 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
     }
 
     /**
-     * @notice Method to migrate from the old ScannerRegistry NFTs to a single NodeRunnerRegistry NFT, executed by an address with the role
+     * @notice Method to migrate from the old ScannerRegistry NFTs to a single ScannerPoolRegistry NFT, executed by an address with the role
      * MIGRATION_EXECUTOR_ROLE.
-     * WARNING: ScannerNodeRegistry's manager addresses will not be migrated, please user NodeRunnerRegistry's methods to set them again.
+     * WARNING: ScannerNodeRegistry's manager addresses will not be migrated, please user ScannerPoolRegistry's methods to set them again.
      * @param scanners array of scanner addresses to be migrated.
      * All the scanners willing to migrate (optingOutOfMigration flags set to false) ScannerRegistry ERC721 identified by the uint256(address)
      * in the input array will be:
-     * - Registered in NodeRunnerRegistry to the nodeRunnerId either indicated or generated, with the same chainId and metadata.
+     * - Registered in ScannerPoolRegistry to the nodeRunnerId either indicated or generated, with the same chainId and metadata.
      * - Deleted in ScannerNodeRegistry. The ERC721 will be burned, disabled flags and managers deleted from storage.
      * Scanners with with optingOutOfMigration flags == true will be ignored (opted out), and will stay in ScannerNodeRegistry.
-     * @param nodeRunnerId If set as 0, a new NodeRunnerRegistry ERC721 will be minted to nodeRunner (but it must not own any prior),
-     * otherwise must be set as a valid NodeRunnerRegistry ERC721 id owned by nodeRunner.
-     * @param nodeRunner address that owns the scanners and will own the NodeRunnerRegistry ERC721
-     * @return NodeRunnerRegistry ERC721 id the scanners are migrated to.
+     * @param nodeRunnerId If set as 0, a new ScannerPoolRegistry ERC721 will be minted to nodeRunner (but it must not own any prior),
+     * otherwise must be set as a valid ScannerPoolRegistry ERC721 id owned by nodeRunner.
+     * @param nodeRunner address that owns the scanners and will own the ScannerPoolRegistry ERC721
+     * @return ScannerPoolRegistry ERC721 id the scanners are migrated to.
      */
     function migrate(
         address[] calldata scanners,
@@ -144,8 +144,8 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
         uint256 chainId,
         string memory metadata
     ) private {
-        nodeRunnerRegistry.registerMigratedScannerNode(
-            NodeRunnerRegistryCore.ScannerNodeRegistration({ scanner: scanner, nodeRunnerId: nodeRunnerId, chainId: chainId, metadata: metadata, timestamp: block.timestamp }),
+        scannerPoolRegistry.registerMigratedScannerNode(
+            ScannerPoolRegistryCore.ScannerNodeRegistration({ scanner: scanner, nodeRunnerId: nodeRunnerId, chainId: chainId, metadata: metadata, timestamp: block.timestamp }),
             disabledFlags != 0
         );
         scannerNodeRegistry.deregisterScannerNode(scannerNodeRegistry.scannerAddressToId(scanner));
@@ -161,14 +161,14 @@ contract ScannerToNodeRunnerMigration is BaseComponentUpgradeable {
             if (_migratedNodeRunners[chainId][nodeRunner] != 0) {
                 revert NodeRunnerAlreadyMigrated(_migratedNodeRunners[chainId][nodeRunner]);
             } else {
-                uint256 newNodeRunnerId = nodeRunnerRegistry.registerMigratedNodeRunner(nodeRunner, chainId);
+                uint256 newNodeRunnerId = scannerPoolRegistry.registerMigratedNodeRunner(nodeRunner, chainId);
                 _migratedNodeRunners[chainId][nodeRunner] = newNodeRunnerId;
                 return newNodeRunnerId;
             }
-        } else if (nodeRunnerRegistry.ownerOf(nodeRunnerId) != nodeRunner) {
+        } else if (scannerPoolRegistry.ownerOf(nodeRunnerId) != nodeRunner) {
             revert NotOwnerOfNodeRunner(nodeRunner, nodeRunnerId);
-        } else if (nodeRunnerRegistry.monitoredChainId(nodeRunnerId) != chainId) {
-            revert WrongNodeRunnerChainId(chainId, nodeRunnerRegistry.monitoredChainId(nodeRunnerId), nodeRunnerId);
+        } else if (scannerPoolRegistry.monitoredChainId(nodeRunnerId) != chainId) {
+            revert WrongNodeRunnerChainId(chainId, scannerPoolRegistry.monitoredChainId(nodeRunnerId), nodeRunnerId);
         }
         return nodeRunnerId;
     }

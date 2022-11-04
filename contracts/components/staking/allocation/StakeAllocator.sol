@@ -310,14 +310,14 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         uint256 maxPerManaged = 0;
         uint256 currentlyAllocated = 0;
         if (agency == SubjectStakeAgency.DELEGATED) {
-            // i.e NodeRunnerRegistry
+            // i.e ScannerPoolRegistry
             if (!_subjectGateway.canManageAllocation(subjectType, subject, allocator)) revert SenderCannotAllocateFor(subjectType, subject);
 
             subjects = _subjectGateway.totalManagedSubjects(subjectType, subject);
             maxPerManaged = _subjectGateway.maxManagedStakeFor(subjectType, subject);
             currentlyAllocated = allocatedManagedStake(subjectType, subject);
         } else if (agency == SubjectStakeAgency.DELEGATOR) {
-            // i.e Delegator to NodeRunnerRegistry
+            // i.e Delegator to ScannerPoolRegistry
             uint8 delegatedSubjectType = getDelegatedSubjectType(subjectType);
             subjects = _subjectGateway.totalManagedSubjects(delegatedSubjectType, subject);
             if (subjects == 0) {

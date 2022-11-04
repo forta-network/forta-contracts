@@ -49,7 +49,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
             unsafeSkipStorageCheck: true,
             call: {
                 fn: 'configureMigration(uint256, address)',
-                args: [(await this.contracts.scanners.sunsettingTime()).toNumber() + 5000, await this.nodeRunners.address],
+                args: [(await this.contracts.scanners.sunsettingTime()).toNumber() + 5000, await this.scannerPools.address],
             },
         });
 
@@ -84,7 +84,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
             await this.scanners.deployed();
             await this.subjectGateway.connect(this.accounts.admin).setStakeSubject(0, this.scanners.address);
             await this.scanners.connect(this.accounts.manager).setStakeThreshold({ min: '0', max: '500', activated: true }, chainId);
-            await this.nodeRunners.connect(this.accounts.manager).setManagedStakeThreshold({ min: '0', max: '500', activated: true }, chainId);
+            await this.scannerPools.connect(this.accounts.manager).setManagedStakeThreshold({ min: '0', max: '500', activated: true }, chainId);
             await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));
             await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
 
@@ -105,7 +105,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                 unsafeSkipStorageCheck: true,
             });
             const { timestamp } = await this.accounts.user1.provider.getBlock('latest');
-            await this.scanners.connect(this.accounts.admin).configureMigration(timestamp + 5000, await this.nodeRunners.address);
+            await this.scanners.connect(this.accounts.admin).configureMigration(timestamp + 5000, await this.scannerPools.address);
             // last scanner won't be migrated
             await this.scanners.connect(this.accounts.user1).setMigrationPrefrence(SCANNERS[SCANNERS.length - 1].address, true);
 
@@ -114,7 +114,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
             const ScannerToNodeRunnerMigration = await ethers.getContractFactory('ScannerToNodeRunnerMigration', deployer);
             this.registryMigration = await upgrades.deployProxy(ScannerToNodeRunnerMigration, [this.access.address], {
                 kind: 'uups',
-                constructorArgs: [this.forwarder.address, this.scanners.address, this.nodeRunners.address, this.staking.address],
+                constructorArgs: [this.forwarder.address, this.scanners.address, this.scannerPools.address, this.staking.address],
                 unsafeAllow: 'delegatecall',
             });
 
@@ -143,10 +143,10 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                     .to.emit(this.registryMigration, 'MigrationExecuted')
                     .withArgs(4, 1, 1, true);
                 let nodeRunnerId = 1;
-                expect(await this.nodeRunners.balanceOf(this.accounts.user1.address)).to.eq(1);
-                expect(await this.nodeRunners.isRegistered(nodeRunnerId)).to.eq(true);
-                expect(await this.nodeRunners.ownerOf(1)).to.eq(this.accounts.user1.address);
-                expect(await this.nodeRunners.totalScannersRegistered(1)).to.eq(SCANNERS.length - 1);
+                expect(await this.scannerPools.balanceOf(this.accounts.user1.address)).to.eq(1);
+                expect(await this.scannerPools.isRegistered(nodeRunnerId)).to.eq(true);
+                expect(await this.scannerPools.ownerOf(1)).to.eq(this.accounts.user1.address);
+                expect(await this.scannerPools.totalScannersRegistered(1)).to.eq(SCANNERS.length - 1);
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(1);
 
                 for (let i = 0; i < SCANNERS.length - 1; i++) {
@@ -155,14 +155,14 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                     expect(await this.scanners.isRegistered(scannerId)).to.be.equal(false);
                     expect(await this.scanners.getManagerCount(scannerId)).to.be.equal(0);
                     expect(
-                        await this.nodeRunners
+                        await this.scannerPools
                             .getScannerState(scannerId)
                             .then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata, scanner.operational, scanner.disabled])
                     ).to.be.deep.equal([true, this.accounts.user1.address, chainId, `metadata-${i}`, !disabled, disabled]);
-                    expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(true);
-                    expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
-                    expect(await this.nodeRunners.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
-                    expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(disabled);
+                    expect(await this.scannerPools.isScannerRegistered(scannerId)).to.be.equal(true);
+                    expect(await this.scannerPools.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
+                    expect(await this.scannerPools.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
+                    expect(await this.scannerPools.isScannerDisabled(scannerId)).to.be.equal(disabled);
                     /*
                     expect(await this.staking.sharesOf(0, scannerId, this.accounts.user1.address)).to.be.equal(0);
                     expect(await this.staking.activeStakeFor(0, scannerId)).to.be.equal(0);
@@ -180,19 +180,19 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                 expect(await this.scanners.getManagerCount(scannerId)).to.be.equal(0);
 
                 expect(
-                    await this.nodeRunners
+                    await this.scannerPools
                         .getScannerState(scannerId)
                         .then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata, scanner.operational, scanner.disabled])
                 ).to.be.deep.equal([false, ethers.constants.AddressZero, 0, ``, false, false]);
 
-                expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(false);
-                expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, 1)).to.be.equal(false);
-                expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(false);
+                expect(await this.scannerPools.isScannerRegistered(scannerId)).to.be.equal(false);
+                expect(await this.scannerPools.isScannerRegisteredTo(scannerId, 1)).to.be.equal(false);
+                expect(await this.scannerPools.isScannerDisabled(scannerId)).to.be.equal(false);
             });
 
             it('registered node runner - 1 disabled scanner', async function () {
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
-                await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(chainId);
+                await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(chainId);
                 const inputNodeRunnerId = 1;
                 await expect(
                     this.registryMigration.connect(this.accounts.manager).migrate(
@@ -205,10 +205,10 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                     .to.emit(this.registryMigration, 'MigrationExecuted')
                     .withArgs(4, 1, 1, false);
                 let nodeRunnerId = 1;
-                expect(await this.nodeRunners.balanceOf(this.accounts.user1.address)).to.eq(1);
-                expect(await this.nodeRunners.isRegistered(nodeRunnerId)).to.eq(true);
-                expect(await this.nodeRunners.ownerOf(1)).to.eq(this.accounts.user1.address);
-                expect(await this.nodeRunners.totalScannersRegistered(1)).to.eq(SCANNERS.length - 1);
+                expect(await this.scannerPools.balanceOf(this.accounts.user1.address)).to.eq(1);
+                expect(await this.scannerPools.isRegistered(nodeRunnerId)).to.eq(true);
+                expect(await this.scannerPools.ownerOf(1)).to.eq(this.accounts.user1.address);
+                expect(await this.scannerPools.totalScannersRegistered(1)).to.eq(SCANNERS.length - 1);
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(1);
 
                 for (let i = 0; i < SCANNERS.length - 1; i++) {
@@ -218,14 +218,14 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                     expect(await this.scanners.isRegistered(scannerId)).to.be.equal(false);
                     expect(await this.scanners.getManagerCount(scannerId)).to.be.equal(0);
                     expect(
-                        await this.nodeRunners
+                        await this.scannerPools
                             .getScannerState(scannerId)
                             .then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata, scanner.operational, scanner.disabled])
                     ).to.be.deep.equal([true, this.accounts.user1.address, chainId, `metadata-${i}`, !disabled, disabled]);
-                    expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(true);
-                    expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
-                    expect(await this.nodeRunners.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
-                    expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(disabled);
+                    expect(await this.scannerPools.isScannerRegistered(scannerId)).to.be.equal(true);
+                    expect(await this.scannerPools.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
+                    expect(await this.scannerPools.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
+                    expect(await this.scannerPools.isScannerDisabled(scannerId)).to.be.equal(disabled);
                     /*
                     expect(await this.staking.sharesOf(0, scannerId, this.accounts.user1.address)).to.be.equal(0);
                     expect(await this.staking.activeStakeFor(0, scannerId)).to.be.equal(0);
@@ -243,19 +243,19 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                 expect(await this.scanners.getManagerCount(scannerId)).to.be.equal(0);
 
                 expect(
-                    await this.nodeRunners
+                    await this.scannerPools
                         .getScannerState(scannerId)
                         .then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata, scanner.operational, scanner.disabled])
                 ).to.be.deep.equal([false, ethers.constants.AddressZero, 0, ``, false, false]);
 
-                expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(false);
-                expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, 1)).to.be.equal(false);
-                expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(false);
+                expect(await this.scannerPools.isScannerRegistered(scannerId)).to.be.equal(false);
+                expect(await this.scannerPools.isScannerRegisteredTo(scannerId, 1)).to.be.equal(false);
+                expect(await this.scannerPools.isScannerDisabled(scannerId)).to.be.equal(false);
             });
 
             it('should not migrate if not MIGRATION_EXECUTOR_ROLE', async function () {
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
-                await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(chainId);
+                await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(chainId);
                 const inputNodeRunnerId = 1;
                 await expect(
                     this.registryMigration.connect(this.accounts.user1).migrate(
@@ -269,7 +269,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
 
             it('should not migrate if not owner of the scanners', async function () {
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
-                await this.nodeRunners.connect(this.accounts.user2).registerNodeRunner(chainId);
+                await this.scannerPools.connect(this.accounts.user2).registerNodeRunner(chainId);
                 const inputNodeRunnerId = 1;
                 await expect(
                     this.registryMigration.connect(this.accounts.manager).migrate(
@@ -283,7 +283,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
 
             it('should not migrate if not owner of node runner', async function () {
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
-                await this.nodeRunners.connect(this.accounts.user2).registerNodeRunner(chainId);
+                await this.scannerPools.connect(this.accounts.user2).registerNodeRunner(chainId);
                 const inputNodeRunnerId = 1;
                 await expect(
                     this.registryMigration.connect(this.accounts.manager).migrate(
@@ -311,10 +311,10 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                     .to.emit(this.registryMigration, 'MigrationExecuted')
                     .withArgs(4, 1, 1, true);
                 let nodeRunnerId = 1;
-                expect(await this.nodeRunners.balanceOf(this.accounts.user1.address)).to.eq(1);
-                expect(await this.nodeRunners.isRegistered(nodeRunnerId)).to.eq(true);
-                expect(await this.nodeRunners.ownerOf(1)).to.eq(this.accounts.user1.address);
-                expect(await this.nodeRunners.totalScannersRegistered(1)).to.eq(SCANNERS.length - 1);
+                expect(await this.scannerPools.balanceOf(this.accounts.user1.address)).to.eq(1);
+                expect(await this.scannerPools.isRegistered(nodeRunnerId)).to.eq(true);
+                expect(await this.scannerPools.ownerOf(1)).to.eq(this.accounts.user1.address);
+                expect(await this.scannerPools.totalScannersRegistered(1)).to.eq(SCANNERS.length - 1);
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(1);
 
                 for (let i = 0; i < SCANNERS.length - 1; i++) {
@@ -323,33 +323,33 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                     expect(await this.scanners.isRegistered(scannerId)).to.be.equal(false);
                     expect(await this.scanners.getManagerCount(scannerId)).to.be.equal(0);
                     expect(
-                        await this.nodeRunners
+                        await this.scannerPools
                             .getScannerState(scannerId)
                             .then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata, scanner.operational, scanner.disabled])
                     ).to.be.deep.equal([true, this.accounts.user1.address, chainId, `metadata-${i}`, !disabled, disabled]);
-                    expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(true);
-                    expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
-                    expect(await this.nodeRunners.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
-                    expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(disabled);
+                    expect(await this.scannerPools.isScannerRegistered(scannerId)).to.be.equal(true);
+                    expect(await this.scannerPools.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
+                    expect(await this.scannerPools.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
+                    expect(await this.scannerPools.isScannerDisabled(scannerId)).to.be.equal(disabled);
                 }
                 const scannerId = SCANNERS[SCANNERS.length - 1].address;
                 expect(await this.scanners.isRegistered(scannerId)).to.be.equal(true);
                 expect(await this.scanners.getManagerCount(scannerId)).to.be.equal(0);
 
                 expect(
-                    await this.nodeRunners
+                    await this.scannerPools
                         .getScannerState(scannerId)
                         .then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata, scanner.operational, scanner.disabled])
                 ).to.be.deep.equal([false, ethers.constants.AddressZero, 0, ``, false, false]);
 
-                expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(false);
-                expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, 1)).to.be.equal(false);
-                expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(false);
+                expect(await this.scannerPools.isScannerRegistered(scannerId)).to.be.equal(false);
+                expect(await this.scannerPools.isScannerRegisteredTo(scannerId, 1)).to.be.equal(false);
+                expect(await this.scannerPools.isScannerDisabled(scannerId)).to.be.equal(false);
             });
 
             it('registered node runner - 1 disabled scanner', async function () {
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
-                await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(chainId);
+                await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(chainId);
                 const inputNodeRunnerId = 1;
                 await expect(
                     this.registryMigration.connect(this.accounts.user1).selfMigrate(
@@ -361,10 +361,10 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                     .to.emit(this.registryMigration, 'MigrationExecuted')
                     .withArgs(4, 1, 1, false);
                 let nodeRunnerId = 1;
-                expect(await this.nodeRunners.balanceOf(this.accounts.user1.address)).to.eq(1);
-                expect(await this.nodeRunners.isRegistered(nodeRunnerId)).to.eq(true);
-                expect(await this.nodeRunners.ownerOf(1)).to.eq(this.accounts.user1.address);
-                expect(await this.nodeRunners.totalScannersRegistered(1)).to.eq(SCANNERS.length - 1);
+                expect(await this.scannerPools.balanceOf(this.accounts.user1.address)).to.eq(1);
+                expect(await this.scannerPools.isRegistered(nodeRunnerId)).to.eq(true);
+                expect(await this.scannerPools.ownerOf(1)).to.eq(this.accounts.user1.address);
+                expect(await this.scannerPools.totalScannersRegistered(1)).to.eq(SCANNERS.length - 1);
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(1);
 
                 for (let i = 0; i < SCANNERS.length - 1; i++) {
@@ -373,33 +373,33 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                     expect(await this.scanners.isRegistered(scannerId)).to.be.equal(false);
                     expect(await this.scanners.getManagerCount(scannerId)).to.be.equal(0);
                     expect(
-                        await this.nodeRunners
+                        await this.scannerPools
                             .getScannerState(scannerId)
                             .then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata, scanner.operational, scanner.disabled])
                     ).to.be.deep.equal([true, this.accounts.user1.address, chainId, `metadata-${i}`, !disabled, disabled]);
-                    expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(true);
-                    expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
-                    expect(await this.nodeRunners.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
-                    expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(disabled);
+                    expect(await this.scannerPools.isScannerRegistered(scannerId)).to.be.equal(true);
+                    expect(await this.scannerPools.isScannerRegisteredTo(scannerId, nodeRunnerId)).to.be.equal(true);
+                    expect(await this.scannerPools.registeredScannerAddressAtIndex(nodeRunnerId, i)).to.be.equal(scannerId);
+                    expect(await this.scannerPools.isScannerDisabled(scannerId)).to.be.equal(disabled);
                 }
                 const scannerId = SCANNERS[SCANNERS.length - 1].address;
                 expect(await this.scanners.isRegistered(scannerId)).to.be.equal(true);
                 expect(await this.scanners.getManagerCount(scannerId)).to.be.equal(0);
 
                 expect(
-                    await this.nodeRunners
+                    await this.scannerPools
                         .getScannerState(scannerId)
                         .then((scanner) => [scanner.registered, scanner.owner, scanner.chainId.toNumber(), scanner.metadata, scanner.operational, scanner.disabled])
                 ).to.be.deep.equal([false, ethers.constants.AddressZero, 0, ``, false, false]);
 
-                expect(await this.nodeRunners.isScannerRegistered(scannerId)).to.be.equal(false);
-                expect(await this.nodeRunners.isScannerRegisteredTo(scannerId, 1)).to.be.equal(false);
-                expect(await this.nodeRunners.isScannerDisabled(scannerId)).to.be.equal(false);
+                expect(await this.scannerPools.isScannerRegistered(scannerId)).to.be.equal(false);
+                expect(await this.scannerPools.isScannerRegisteredTo(scannerId, 1)).to.be.equal(false);
+                expect(await this.scannerPools.isScannerDisabled(scannerId)).to.be.equal(false);
             });
 
             it('should not migrate if not owner of the scanners', async function () {
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
-                await this.nodeRunners.connect(this.accounts.user2).registerNodeRunner(chainId);
+                await this.scannerPools.connect(this.accounts.user2).registerNodeRunner(chainId);
                 const inputNodeRunnerId = 1;
                 await expect(
                     this.registryMigration.connect(this.accounts.user2).selfMigrate(
@@ -412,7 +412,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
 
             it('should not migrate if not owner of node runner', async function () {
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
-                await this.nodeRunners.connect(this.accounts.user2).registerNodeRunner(chainId);
+                await this.scannerPools.connect(this.accounts.user2).registerNodeRunner(chainId);
                 const inputNodeRunnerId = 1;
                 await expect(
                     this.registryMigration.connect(this.accounts.user1).selfMigrate(
@@ -438,8 +438,8 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                     1
                 );
 
-                await this.nodeRunners.connect(this.accounts.user1).updateScannerMetadata(migrated, 'migrated');
-                await this.nodeRunners.connect(this.accounts.user1).disableScanner(migrated);
+                await this.scannerPools.connect(this.accounts.user1).updateScannerMetadata(migrated, 'migrated');
+                await this.scannerPools.connect(this.accounts.user1).disableScanner(migrated);
             });
 
             describe('should return correct data', function () {

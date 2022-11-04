@@ -101,7 +101,7 @@ async function migrate(config = {}) {
     const slashParams = {};
 
     const hardhatDeployment = chainId === 31337;
-    
+
     contracts.forwarder = await ethers.getContractFactory('Forwarder', deployer).then((factory) => utils.tryFetchContract(CACHE, 'forwarder', factory, []));
 
     DEBUG(`[${Object.keys(contracts).length}] forwarder: ${contracts.forwarder.address}`);
@@ -274,13 +274,13 @@ async function migrate(config = {}) {
 
         DEBUG(`Deploying node runner registry...`);
 
-        contracts.nodeRunners = await ethers.getContractFactory('NodeRunnerRegistry', deployer).then((factory) =>
+        contracts.scannerPools = await ethers.getContractFactory('ScannerPoolRegistry', deployer).then((factory) =>
             utils.tryFetchProxy(
                 CACHE,
-                'node-runners',
+                'scanner-pools',
                 factory,
                 'uups',
-                [contracts.access.address, 'Forta Node Runners', 'FNodeRunners', contracts.subjectGateway.address, deployEnv.SCANNER_REGISTRATION_DELAY(chainId)],
+                [contracts.access.address, 'Forta Scanner Pools', 'FScannerPools', contracts.subjectGateway.address, deployEnv.SCANNER_REGISTRATION_DELAY(chainId)],
                 {
                     constructorArgs: [contracts.forwarder.address, contracts.stakeAllocator.address],
                     unsafeAllow: 'delegatecall',
@@ -289,13 +289,13 @@ async function migrate(config = {}) {
         );
         await contracts.subjectGateway.connect(deployer).setStakeSubject(SCANNER_SUBJECT, contracts.scanners.address);
         await contracts.subjectGateway.connect(deployer).setStakeSubject(AGENT_SUBJECT, contracts.agents.address);
-        await contracts.subjectGateway.connect(deployer).setStakeSubject(NODE_RUNNER_SUBJECT, contracts.nodeRunners.address);
+        await contracts.subjectGateway.connect(deployer).setStakeSubject(NODE_RUNNER_SUBJECT, contracts.scannerPools.address);
 
-        DEBUG(`[${Object.keys(contracts).length}] nodeRunners: ${contracts.nodeRunners.address}`);
+        DEBUG(`[${Object.keys(contracts).length}] scannerPools: ${contracts.scannerPools.address}`);
         if (semver.gte(scannersVersion, '0.1.4')) {
             await contracts.scanners.configureMigration(
                 deployEnv.MIGRATION_DURATION(chainId) + (await ethers.provider.getBlock('latest')).timestamp,
-                contracts.nodeRunners.address
+                contracts.scannerPools.address
             );
         }
 
@@ -306,7 +306,7 @@ async function migrate(config = {}) {
                 'dispatch',
                 factory,
                 'uups',
-                [contracts.access.address, contracts.agents.address, contracts.scanners.address, contracts.nodeRunners.address],
+                [contracts.access.address, contracts.agents.address, contracts.scanners.address, contracts.scannerPools.address],
                 {
                     constructorArgs: [contracts.forwarder.address],
                     unsafeAllow: 'delegatecall',
@@ -388,7 +388,7 @@ async function migrate(config = {}) {
                     registerNode('staking-subjects.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.subjectGateway.address, chainId: chainId }),
                     registerNode('agents.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.agents.address, chainId: chainId }),
                     registerNode('scanners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scanners.address, chainId: chainId }),
-                    registerNode('node-runners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.nodeRunners.address, chainId: chainId }),
+                    registerNode('node-runners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scannerPools.address, chainId: chainId }),
                     registerNode('scanner-node-version.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scannerNodeVersion.address, chainId: chainId }),
                     registerNode('escrow.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.escrowFactory.address, chainId: chainId }),
                 ]);
@@ -413,7 +413,7 @@ async function migrate(config = {}) {
                 reverseRegister(contracts.subjectGateway, 'staking-params.forta.eth'),
                 reverseRegister(contracts.agents, 'agents.registries.forta.eth'),
                 reverseRegister(contracts.scanners, 'scanners.registries.forta.eth'),
-                reverseRegister(contracts.nodeRunners, 'node-runners.registries.forta.eth'),
+                reverseRegister(contracts.scannerPools, 'node-runners.registries.forta.eth'),
                 reverseRegister(contracts.scannerNodeVersion, 'scanner-node-version.forta.eth'),
                 // contract.escrow doesn't support reverse registration (not a component)
             ]);

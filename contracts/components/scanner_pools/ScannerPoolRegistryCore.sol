@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
 
-abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, DelegatedStakeSubjectUpgradeable, EIP712Upgradeable {
+abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, DelegatedStakeSubjectUpgradeable, EIP712Upgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -73,7 +73,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     error ChainIdMismatch(uint256 expected, uint256 provided);
 
     /**
-     * @notice Checks sender (or metatx signer) is owner of the NodeRunnerRegistry ERC721 with ID nodeRunnerId.
+     * @notice Checks sender (or metatx signer) is owner of the ScannerPoolRegistry ERC721 with ID nodeRunnerId.
      * @param nodeRunnerId ERC721 token id of the Node Runner.
      */
     modifier onlyNodeRunner(uint256 nodeRunnerId) {
@@ -99,7 +99,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * @param __stakeSubjectGateway address of StakeSubjectGateway
      * @param __registrationDelay amount of time allowed from scanner signing a ScannerNodeRegistration and it's execution by NodeRunner
      */
-    function __NodeRunnerRegistryCore_init(
+    function __ScannerPoolRegistryCore_init(
         string calldata __name,
         string calldata __symbol,
         address __stakeSubjectGateway,
@@ -107,7 +107,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     ) internal initializer {
         __ERC721_init(__name, __symbol);
         __ERC721Enumerable_init();
-        __EIP712_init("NodeRunnerRegistry", "1");
+        __EIP712_init("ScannerPoolRegistry", "1");
         __StakeSubjectUpgradeable_init(__stakeSubjectGateway);
 
         _setRegistrationDelay(__registrationDelay);
@@ -125,8 +125,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     }
 
     /**
-     * @notice mints a NodeRunnerRegistry ERC721 NFT to sender
-     * Transferring ownership of a NodeRunnerRegistry NFT will transfer ownership of all its registered
+     * @notice mints a ScannerPoolRegistry ERC721 NFT to sender
+     * Transferring ownership of a ScannerPoolRegistry NFT will transfer ownership of all its registered
      * Scanner Node addresses
      * @return nodeRunnerId (autoincremented uint)
      */

@@ -41,7 +41,7 @@ describe('Staking Rewards', function () {
 
         const args = [subject1, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
         await this.agents.connect(this.accounts.other).createAgent(...args);
-        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
+        await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1);
 
         this.accounts.getAccount('slasher');
         await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
@@ -50,7 +50,7 @@ describe('Staking Rewards', function () {
         this.SCANNER_ID = this.accounts.scanner.address;
         const { chainId } = await ethers.provider.getNetwork();
         const verifyingContractInfo = {
-            address: this.contracts.nodeRunners.address,
+            address: this.contracts.scannerPools.address,
             chainId: chainId,
         };
         const registration = {
@@ -62,7 +62,7 @@ describe('Staking Rewards', function () {
         };
         const signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, this.accounts.scanner);
 
-        await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
+        await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
     });
 
     describe('Rewards tracking stake allocation', function () {

@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../agents/AgentRegistry.sol";
 import "../scanners/ScannerRegistry.sol";
-import "../node_runners/NodeRunnerRegistry.sol";
+import "../scanner_pools/ScannerPoolRegistry.sol";
 
 contract Dispatch is BaseComponentUpgradeable {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -16,7 +16,7 @@ contract Dispatch is BaseComponentUpgradeable {
     AgentRegistry private _agents;
     /// @custom:oz-renamed-from _scanners
     ScannerRegistry private _scanners_deprecated;
-    NodeRunnerRegistry private _nodeRunners;
+    ScannerPoolRegistry private _scannerPools;
 
     string public constant version = "0.1.4";
 
@@ -28,7 +28,7 @@ contract Dispatch is BaseComponentUpgradeable {
 
     event SetAgentRegistry(address registry);
     event SetScannerRegistry(address registry);
-    event SetNodeRunnerRegistry(address registry);
+    event SetScannerPoolRegistry(address registry);
     event AlreadyLinked(uint256 agentId, uint256 scannerId, bool enable);
     event Link(uint256 agentId, uint256 scannerId, bool enable);
 
@@ -45,12 +45,12 @@ contract Dispatch is BaseComponentUpgradeable {
         address __manager,
         address __agents,
         address __scanners,
-        address __nodeRunners
+        address __scannerPools
     ) public initializer {
         __BaseComponentUpgradeable_init(__manager);
         _setAgentRegistry(__agents);
         _setScannerRegistry(__scanners);
-        _setNodeRunnerRegistry(__nodeRunners);
+        _setScannerPoolRegistry(__scannerPools);
     }
 
     function agentRegistry() public view returns (AgentRegistry) {
@@ -61,8 +61,8 @@ contract Dispatch is BaseComponentUpgradeable {
         return _scanners_deprecated;
     }
 
-    function nodeRunnerRegistry() public view returns (NodeRunnerRegistry) {
-        return _nodeRunners;
+    function scannerPoolRegistry() public view returns (ScannerPoolRegistry) {
+        return _scannerPools;
     }
 
     /**
@@ -245,16 +245,16 @@ contract Dispatch is BaseComponentUpgradeable {
     /**
      * @notice Sets node runner registry address.
      * @dev only DEFAULT_ADMIN_ROLE (governance).
-     * @param newNodeRunnerRegistry agent of the new ScannerRegistry.
+     * @param newScannerPoolRegistry agent of the new ScannerRegistry.
      */
-    function setNodeRunnerRegistry(address newNodeRunnerRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setNodeRunnerRegistry(newNodeRunnerRegistry);
+    function setScannerPoolRegistry(address newScannerPoolRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setScannerPoolRegistry(newScannerPoolRegistry);
     }
 
-    function _setNodeRunnerRegistry(address newNodeRunnerRegistry) private {
-        if (newNodeRunnerRegistry == address(0)) revert ZeroAddress("newNodeRunnerRegistry");
-        _nodeRunners = NodeRunnerRegistry(newNodeRunnerRegistry);
-        emit SetNodeRunnerRegistry(newNodeRunnerRegistry);
+    function _setScannerPoolRegistry(address newScannerPoolRegistry) private {
+        if (newScannerPoolRegistry == address(0)) revert ZeroAddress("newScannerPoolRegistry");
+        _scannerPools = ScannerPoolRegistry(newScannerPoolRegistry);
+        emit SetScannerPoolRegistry(newScannerPoolRegistry);
     }
 
     /**
@@ -295,7 +295,7 @@ contract Dispatch is BaseComponentUpgradeable {
 
     function _isScannerOperational(uint256 scannerId) internal view returns (bool) {
         if (_scanners_deprecated.hasMigrationEnded()) {
-            return _nodeRunners.isScannerOperational(address(uint160(scannerId)));
+            return _scannerPools.isScannerOperational(address(uint160(scannerId)));
         } else {
             return _scanners_deprecated.isEnabled(scannerId);
         }
@@ -303,7 +303,7 @@ contract Dispatch is BaseComponentUpgradeable {
 
     function _isScannerRegistered(uint256 scannerId) internal view returns (bool) {
         if (_scanners_deprecated.hasMigrationEnded()) {
-            return _nodeRunners.isScannerRegistered(address(uint160(scannerId)));
+            return _scannerPools.isScannerRegistered(address(uint160(scannerId)));
         } else {
             return _scanners_deprecated.isRegistered(scannerId);
         }
@@ -322,7 +322,7 @@ contract Dispatch is BaseComponentUpgradeable {
         )
     {
         if (_scanners_deprecated.hasMigrationEnded()) {
-            return _nodeRunners.getScannerState(address(uint160(scannerId)));
+            return _scannerPools.getScannerState(address(uint160(scannerId)));
         } else {
             uint256 disabledFlags;
             (registered, owner, chainId, metadata, operational, disabledFlags) = _scanners_deprecated.getScannerState(scannerId);

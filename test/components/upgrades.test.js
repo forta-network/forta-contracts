@@ -179,7 +179,7 @@ describe.skip('Upgrades testing', function () {
 
             await scannerRegistry
                 .connect(this.accounts.admin)
-                .configureMigration(loadEnv.MIGRATION_DURATION(network.chainId) + (await ethers.provider.getBlock('latest')).timestamp, this.contracts.nodeRunners.address);
+                .configureMigration(loadEnv.MIGRATION_DURATION(network.chainId) + (await ethers.provider.getBlock('latest')).timestamp, this.contracts.scannerPools.address);
             await this.contracts.access.grantRole(this.roles.SCANNER_ADMIN, this.accounts.admin.address);
             expect(await scannerRegistry.getSubjectHandler()).to.be.equal(this.contracts.subjectGateway.address);
             expect(await scannerRegistry.version()).to.be.equal('0.1.4');

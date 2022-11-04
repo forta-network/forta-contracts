@@ -20,10 +20,10 @@ describe('Dispatcher', function () {
         this.SCANNER_SUBJECT_ID = BigNumber.from(this.SCANNER_ID);
         // Create Agent and Scanner
         await this.agents.createAgent(this.AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]);
-        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(1);
+        await this.scannerPools.connect(this.accounts.user1).registerNodeRunner(1);
         const { chainId } = await ethers.provider.getNetwork();
         verifyingContractInfo = {
-            address: this.contracts.nodeRunners.address,
+            address: this.contracts.scannerPools.address,
             chainId: chainId,
         };
 
@@ -36,7 +36,7 @@ describe('Dispatcher', function () {
         };
         const signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, this.accounts.scanner);
 
-        await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
+        await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
 
         // Stake
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.NODE_RUNNER, 1, '100');
@@ -62,13 +62,13 @@ describe('Dispatcher', function () {
     });
 
     it('link fails if scanner not staked over minimum', async function () {
-        await this.nodeRunners.connect(this.accounts.manager).setManagedStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
+        await this.scannerPools.connect(this.accounts.manager).setManagedStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
         await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.be.revertedWith('Disabled("Scanner")');
     });
 
     it('link fails if scanner is disabled', async function () {
         // await this.scanners.connect(this.accounts.user1).disableScanner(this.SCANNER_ID, 2);
-        await this.nodeRunners.connect(this.accounts.user1).disableScanner(this.SCANNER_ID);
+        await this.scannerPools.connect(this.accounts.user1).disableScanner(this.SCANNER_ID);
         await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.be.revertedWith('Disabled("Scanner")');
     });
 

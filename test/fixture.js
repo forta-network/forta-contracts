@@ -84,7 +84,7 @@ function prepare(config = {}) {
                 await this.scanners
                     .connect(this.accounts.manager)
                     .setStakeThreshold({ max: config.stake.scanners.max, min: config.stake.scanners.min, activated: config.stake.scanners.activated }, 1);
-                await this.nodeRunners
+                await this.scannerPools
                     .connect(this.accounts.manager)
                     .setManagedStakeThreshold({ max: config.stake.scanners.max, min: config.stake.scanners.min, activated: config.stake.scanners.activated }, 1);
             }

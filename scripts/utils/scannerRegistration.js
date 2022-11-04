@@ -1,6 +1,6 @@
 const signERC712ScannerRegistration = (verifyingContractInfo, registration, signer) => {
     const domain = {
-        name: 'NodeRunnerRegistry',
+        name: 'ScannerPoolRegistry',
         version: '1',
         chainId: verifyingContractInfo.chainId,
         verifyingContract: verifyingContractInfo.address,

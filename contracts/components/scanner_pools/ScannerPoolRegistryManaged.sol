@@ -5,9 +5,9 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import "./NodeRunnerRegistryCore.sol";
+import "./ScannerPoolRegistryCore.sol";
 
-abstract contract NodeRunnerRegistryManaged is NodeRunnerRegistryCore {
+abstract contract ScannerPoolRegistryManaged is ScannerPoolRegistryCore {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     mapping(uint256 => EnumerableSet.AddressSet) private _managers;

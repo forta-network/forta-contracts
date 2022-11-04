@@ -4,8 +4,8 @@
 pragma solidity ^0.8.9;
 
 import "../BaseComponentUpgradeable.sol";
-import "./NodeRunnerRegistryCore.sol";
-import "./NodeRunnerRegistryManaged.sol";
+import "./ScannerPoolRegistryCore.sol";
+import "./ScannerPoolRegistryManaged.sol";
 
 /**
  * ERC721 Registry of Node Runners. Each node runner controls a number of Scanner Nodes, represented by their EOA address.
@@ -19,11 +19,11 @@ import "./NodeRunnerRegistryManaged.sol";
  * If the scanner is not registered, `isEnabled()` will return false.
  * A Scanner Node that is not enabled will not receive work (bot assignments)
  */
-contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore, NodeRunnerRegistryManaged {
+contract ScannerPoolRegistry is BaseComponentUpgradeable, ScannerPoolRegistryCore, ScannerPoolRegistryManaged {
     string public constant version = "0.1.0";
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder, address stakeAllocator) initializer ForwardedContext(forwarder) NodeRunnerRegistryCore(stakeAllocator) {}
+    constructor(address forwarder, address stakeAllocator) initializer ForwardedContext(forwarder) ScannerPoolRegistryCore(stakeAllocator) {}
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
@@ -41,7 +41,7 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
         uint256 __registrationDelay
     ) public initializer {
         __BaseComponentUpgradeable_init(__manager);
-        __NodeRunnerRegistryCore_init(__name, __symbol, __stakeSubjectGateway, __registrationDelay);
+        __ScannerPoolRegistryCore_init(__name, __symbol, __stakeSubjectGateway, __registrationDelay);
     }
 
     function registerMigratedNodeRunner(address nodeRunnerAddress, uint256 chainId) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) returns (uint256 nodeRunnerId) {
@@ -57,9 +57,9 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
 
     /**
      * @notice disambiguation of _canSetEnableState, adding SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE to the allowed setters.
-     * @inheritdoc NodeRunnerRegistryManaged
+     * @inheritdoc ScannerPoolRegistryManaged
      */ 
-    function _canSetEnableState(address scanner) internal virtual override(NodeRunnerRegistryCore, NodeRunnerRegistryManaged) view returns (bool) {
+    function _canSetEnableState(address scanner) internal virtual override(ScannerPoolRegistryCore, ScannerPoolRegistryManaged) view returns (bool) {
         return super._canSetEnableState(scanner) || hasRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE, _msgSender());
     }
 
@@ -67,7 +67,7 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
      * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.
      * @inheritdoc ForwardedContext
      */
-    function _msgSender() internal view virtual override(BaseComponentUpgradeable, NodeRunnerRegistryCore) returns (address sender) {
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, ScannerPoolRegistryCore) returns (address sender) {
         return super._msgSender();
     }
 
@@ -75,7 +75,7 @@ contract NodeRunnerRegistry is BaseComponentUpgradeable, NodeRunnerRegistryCore,
      * @notice Helper to get msg.data if not a meta transaction, forwarder data in metatx if it is.
      * @inheritdoc ForwardedContext
      */
-    function _msgData() internal view virtual override(BaseComponentUpgradeable, NodeRunnerRegistryCore) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, ScannerPoolRegistryCore) returns (bytes calldata) {
         return super._msgData();
     }
 
