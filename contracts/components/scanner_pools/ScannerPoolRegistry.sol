@@ -8,7 +8,7 @@ import "./ScannerPoolRegistryCore.sol";
 import "./ScannerPoolRegistryManaged.sol";
 
 /**
- * ERC721 Registry of Scanner Pools. Each scanner node runner EOA controls a number of Scanner Nodes through the ownership of this NFT,
+ * ERC721 Registry of Scanner Pools. Each scanner ScannerPool EOA controls a number of Scanner Nodes through the ownership of this NFT,
  * represented by their EOA address.
  * The Scanner Pool must register themselves, then register scanner addresses to be controlled by their scannerPoolId (incremental uint).
  * Registered Scanner Pools can also assign managers to manage the scanners.

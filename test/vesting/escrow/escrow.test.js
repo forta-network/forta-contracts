@@ -5,7 +5,7 @@ const utils = require('../../../scripts/utils');
 const { subjectToActive, subjectToInactive } = require('../../../scripts/utils/staking.js');
 
 const subjects = [
-    [1, 3], // node runner id, node runner type
+    [1, 3], // ScannerPool id, ScannerPool type
 ];
 const [[subject, subjectType, active, inactive]] = subjects.map((items) => [items[0], items[1], subjectToActive(items[1], items[0]), subjectToInactive(items[1], items[0])]);
 const txTimestamp = (tx) =>

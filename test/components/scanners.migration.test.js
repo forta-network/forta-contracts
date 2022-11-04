@@ -128,7 +128,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
         });
 
         describe('migrate scanners - privileged path', function () {
-            it('non-registered node runner - 1 opted out scanner', async function () {
+            it('non-registered ScannerPool - 1 opted out scanner', async function () {
                 const inputScannerPoolId = await this.registryMigration.SCANNER_POOL_NOT_MIGRATED();
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
 
@@ -190,7 +190,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                 expect(await this.scannerPools.isScannerDisabled(scannerId)).to.be.equal(false);
             });
 
-            it('registered node runner - 1 disabled scanner', async function () {
+            it('registered ScannerPool - 1 disabled scanner', async function () {
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
                 await this.scannerPools.connect(this.accounts.user1).registerScannerPool(chainId);
                 const inputScannerPoolId = 1;
@@ -281,7 +281,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                 ).to.be.revertedWith(`SenderNotOwner("${this.accounts.user2.address}", 201990263407130541861732429012178345511141645967)`);
             });
 
-            it('should not migrate if not owner of node runner', async function () {
+            it('should not migrate if not owner of ScannerPool', async function () {
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
                 await this.scannerPools.connect(this.accounts.user2).registerScannerPool(chainId);
                 const inputScannerPoolId = 1;
@@ -297,7 +297,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
         });
 
         describe('migrate scanners - self migration path', function () {
-            it('non-registered node runner - 1 disabled scanner', async function () {
+            it('non-registered ScannerPool - 1 disabled scanner', async function () {
                 const inputScannerPoolId = await this.registryMigration.SCANNER_POOL_NOT_MIGRATED();
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
 
@@ -347,7 +347,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                 expect(await this.scannerPools.isScannerDisabled(scannerId)).to.be.equal(false);
             });
 
-            it('registered node runner - 1 disabled scanner', async function () {
+            it('registered ScannerPool - 1 disabled scanner', async function () {
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
                 await this.scannerPools.connect(this.accounts.user1).registerScannerPool(chainId);
                 const inputScannerPoolId = 1;
@@ -410,7 +410,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
                 ).to.be.revertedWith(`SenderNotOwner("${this.accounts.user2.address}", 201990263407130541861732429012178345511141645967)`);
             });
 
-            it('should not migrate if not owner of node runner', async function () {
+            it('should not migrate if not owner of ScannerPool', async function () {
                 expect(await this.scanners.balanceOf(this.accounts.user1.address)).to.eq(SCANNERS.length);
                 await this.scannerPools.connect(this.accounts.user2).registerScannerPool(chainId);
                 const inputScannerPoolId = 1;

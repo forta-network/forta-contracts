@@ -6,7 +6,7 @@ const { BigNumber } = require('@ethersproject/bignumber');
 const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRegistration');
 
 let SCANNER_ADDRESS_1, scanner1Registration, scanner1Signature, verifyingContractInfo;
-describe('Node Runner Registry', function () {
+describe('ScannerPool Registry', function () {
     // TODO Stake related stuff
     prepare({ stake: { scanners: { min: '100', max: '500', activated: true } } });
 
@@ -30,7 +30,7 @@ describe('Node Runner Registry', function () {
         scanner1Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner1Registration, this.accounts.scanner);
     });
 
-    it('register node runner', async function () {
+    it('register ScannerPool', async function () {
         await expect(this.scannerPools.connect(this.accounts.user1).registerScannerPool(1))
             .to.emit(this.scannerPools, 'Transfer')
             .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, '1')
@@ -89,7 +89,7 @@ describe('Node Runner Registry', function () {
             await this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_2_SCANNER_POOL_MIGRATOR, this.accounts.manager.address);
         });
 
-        it('migrate node runner', async function () {
+        it('migrate ScannerPool', async function () {
             await expect(this.scannerPools.connect(this.accounts.manager).registerMigratedScannerPool(this.accounts.user1.address, 1))
                 .to.emit(this.scannerPools, 'Transfer')
                 .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, '1');
@@ -97,7 +97,7 @@ describe('Node Runner Registry', function () {
             expect(await this.scannerPools.ownerOf(1)).to.be.equal(this.accounts.user1.address);
         });
 
-        it('should not migrate node runner if not SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE ', async function () {
+        it('should not migrate ScannerPool if not SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE ', async function () {
             await expect(this.scannerPools.connect(this.accounts.user1).registerMigratedScannerPool(this.accounts.user1.address, 1)).to.be.revertedWith(
                 `MissingRole("${this.roles.SCANNER_2_SCANNER_POOL_MIGRATOR}", "${this.accounts.user1.address}")`
             );
@@ -353,7 +353,7 @@ describe('Node Runner Registry', function () {
             });
         });
 
-        describe('node runner', async function () {
+        describe('ScannerPool', async function () {
             it('disable', async function () {
                 const SCANNER_ADDRESS = this.accounts.scanner.address;
 

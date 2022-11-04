@@ -47,7 +47,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
     mapping(uint256 => EnumerableSet.AddressSet) private _scannerNodeOwnership;
     /// Count of enabled scanners per scannerPoolId (scannerPoolId => total Enabled Scanners)
     mapping(uint256 => uint256) private _enabledScanners;
-    /// StakeThreshold of node runners
+    /// StakeThreshold of ScannerPools
     mapping(uint256 => StakeThreshold) private _scannerStakeThresholds;
     /// scannerPoolId => chainId. Limitation necessary to calculate stake allocations.
     mapping(uint256 => uint256) private _scannerPoolChainId;
@@ -74,7 +74,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
 
     /**
      * @notice Checks sender (or metatx signer) is owner of the ScannerPoolRegistry ERC721 with ID scannerPoolId.
-     * @param scannerPoolId ERC721 token id of the Node Runner.
+     * @param scannerPoolId ERC721 token id of the ScannerPool.
      */
     modifier onlyScannerPool(uint256 scannerPoolId) {
         if (_msgSender() != ownerOf(scannerPoolId)) revert SenderNotScannerPool(_msgSender(), scannerPoolId);
@@ -113,11 +113,11 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         _setRegistrationDelay(__registrationDelay);
     }
 
-    // ************* Node Runner Ownership *************
+    // ************* ScannerPool Ownership *************
 
     /**
      * @notice Checks if scannerPoolId has been registered (minted).
-     * @param scannerPoolId ERC721 token id of the Node Runner.
+     * @param scannerPoolId ERC721 token id of the ScannerPool.
      * @return true if scannerPoolId exists, false otherwise.
      */
     function isRegistered(uint256 scannerPoolId) public view override returns (bool) {
@@ -163,7 +163,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
     /**
      * @notice Checks if scanner address has been registered to a specific scannerPoolId
      * @param scanner address.
-     * @param scannerPoolId ERC721 token id of the Node Runner.
+     * @param scannerPoolId ERC721 token id of the ScannerPool.
      * @return true if scanner is registered to scannerPoolId, false otherwise.
      */
     function isScannerRegisteredTo(address scanner, uint256 scannerPoolId) public view returns (bool) {
@@ -205,7 +205,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
     }
 
     /**
-     * @notice Method to update a registered Scanner Node metadata string. Only the Node Runner that owns the scanner can update.
+     * @notice Method to update a registered Scanner Node metadata string. Only the ScannerPool that owns the scanner can update.
      * @param scanner address.
      * @param metadata IPFS string pointing to Scanner Node metadata.
      */
@@ -221,9 +221,9 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
     }
 
     /**
-     * @notice gets the amount of Scanner Nodes ever registered to a Node Runner Id.
+     * @notice gets the amount of Scanner Nodes ever registered to a ScannerPool Id.
      * Useful for external iteration.
-     * @param scannerPoolId ERC721 token id of the Node Runner.
+     * @param scannerPoolId ERC721 token id of the ScannerPool.
      */
     function totalScannersRegistered(uint256 scannerPoolId) public view returns (uint256) {
         return _scannerNodeOwnership[scannerPoolId].length();
@@ -232,7 +232,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
     /**
      * @notice gets the Scanner Node address at index registered to scannerPoolId
      * Useful for external iteration.
-     * @param scannerPoolId ERC721 token id of the Node Runner.
+     * @param scannerPoolId ERC721 token id of the ScannerPool.
      * @param index of the registered Scanner Node. Must be lower than totalScannersRegistered(scannerPoolId)
      */
     function registeredScannerAtIndex(uint256 scannerPoolId, uint256 index) external view returns (ScannerNode memory) {
@@ -242,7 +242,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
     /**
      * @notice gets the Scanner Node data struct at index registered to scannerPoolId
      * Useful for external iteration.
-     * @param scannerPoolId ERC721 token id of the Node Runner.
+     * @param scannerPoolId ERC721 token id of the ScannerPool.
      * @param index of the registered Scanner Node. Must be lower than totalScannersRegistered(scannerPoolId)
      */
     function registeredScannerAddressAtIndex(uint256 scannerPoolId, uint256 index) external view returns (address) {
@@ -393,7 +393,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         return _scannerStakeThresholds[managedId];
     }
 
-    /// Total scanners registered to a Node Runner
+    /// Total scanners registered to a ScannerPool
     function getTotalManagedSubjects(uint256 subject) public view virtual override returns (uint256) {
         return _enabledScanners[subject];
     }

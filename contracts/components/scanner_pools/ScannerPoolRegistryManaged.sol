@@ -17,8 +17,8 @@ abstract contract ScannerPoolRegistryManaged is ScannerPoolRegistryCore {
     error SenderNotManager(address sender, uint256 scannerPoolId);
 
     /**
-     * @notice Checks sender (or metatx signer) is manager of the scanner token.
-     * @param scannerPoolId ERC721 token id of the Node Runner
+     * @notice Checks sender (or metatx signer) is manager of the scanner pool token.
+     * @param scannerPoolId ERC721 token id of the ScannerPool
      */
     modifier onlyManagerOf(uint256 scannerPoolId) {
         if (!isManager(scannerPoolId, _msgSender())) revert SenderNotManager(_msgSender(), scannerPoolId);
@@ -26,29 +26,29 @@ abstract contract ScannerPoolRegistryManaged is ScannerPoolRegistryCore {
     }
 
     /**
-     * @notice Checks if address is defined as a manager for a Node Runner's registered Scanner Nodes.
-     * @param scannerPoolId ERC721 token id of the Node Runner
+     * @notice Checks if address is defined as a manager for a ScannerPool's registered Scanner Nodes.
+     * @param scannerPoolId ERC721 token id of the ScannerPool
      * @param manager address to check.
-     * @return true if defined as manager for Node Runner, false otherwise.
+     * @return true if defined as manager for ScannerPool, false otherwise.
      */
     function isManager(uint256 scannerPoolId, address manager) public view returns (bool) {
         return _managers[scannerPoolId].contains(manager);
     }
 
     /**
-     * @notice Gets total managers defined for a Node Runner's registered Scanner Nodes.
+     * @notice Gets total managers defined for a ScannerPool's registered Scanner Nodes.
      * @dev helper for external iteration.
-     * @param scannerPoolId ERC721 token id of the Node Runner
-     * @return total managers defined for a Node Runner.
+     * @param scannerPoolId ERC721 token id of the ScannerPool
+     * @return total managers defined for a ScannerPool.
      */
     function getManagerCount(uint256 scannerPoolId) public view virtual returns (uint256) {
         return _managers[scannerPoolId].length();
     }
 
     /**
-     * @notice Gets manager address at certain position of the Node Runner's registered Scanner Nodes.
+     * @notice Gets manager address at certain position of the ScannerPool's registered Scanner Nodes.
      * @dev helper for external iteration.
-     * @param scannerPoolId ERC721 token id of the Node Runner
+     * @param scannerPoolId ERC721 token id of the ScannerPool
      * @param index position in the set.
      * @return address of the manager at index.
      */
@@ -57,9 +57,9 @@ abstract contract ScannerPoolRegistryManaged is ScannerPoolRegistryCore {
     }
 
     /**
-     * @notice Adds or removes a manager to a certain Node Runner's registered Scanner Nodes. Restricted to NodeRunerRegistry owner.
-     * @param scannerPoolId ERC721 token id of the Node Runner
-     * @param manager address to be added or removed from manager list for the Node Runner.
+     * @notice Adds or removes a manager to a certain ScannerPool's registered Scanner Nodes. Restricted to ScannerPoolRegistry owner.
+     * @param scannerPoolId ERC721 token id of the ScannerPool
+     * @param manager address to be added or removed from manager list for the ScannerPool.
      * @param enable true for adding, false for removing.
      */
     function setManager(uint256 scannerPoolId, address manager, bool enable) public onlyScannerPool(scannerPoolId) {

@@ -7,7 +7,7 @@ const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRe
 
 const subjects = [
     [ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), 1], // Agent id, agent type
-    [ethers.BigNumber.from('1'), 2], // Node Runner id, Node Runner Type
+    [ethers.BigNumber.from('1'), 2], // ScannerPool id, ScannerPool Type
 ];
 const DELEGATOR_SUBJECT_TYPE = 3;
 
@@ -263,7 +263,7 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
         });
 
-        it('allocate stake node runner', async function () {
+        it('allocate stake ScannerPool', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
@@ -374,7 +374,7 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
         });
-        it('fee can only be set by node runner', async function () {
+        it('fee can only be set by ScannerPool', async function () {
             await expect(this.rewardsDistributor.connect(this.accounts.user2).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2500')).to.be.revertedWith(
                 `SenderNotOwner("${this.accounts.user2.address}", ${SCANNER_POOL_ID})`
             );

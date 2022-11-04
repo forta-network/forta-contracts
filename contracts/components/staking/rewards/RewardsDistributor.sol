@@ -243,7 +243,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     }
 
     /**
-     * Sets delegation fee for a Node Runner (required to own the ScannerPoolRegistry NFT).
+     * Sets delegation fee for a ScannerPool (required to own the ScannerPoolRegistry NFT).
      * Change in fees will start having an effect in the beginning of the next reward epoch.
      * After the first time setting the parameter, it cannot be set again until delegationParamsEpochDelay epochs pass.
      * @param subjectType a DELEGATED subject type.

@@ -272,7 +272,7 @@ async function migrate(config = {}) {
         slashParams.penalties = penalties;
         DEBUG(`[${Object.keys(contracts).length}] slashing controller: ${contracts.slashing.address}`);
 
-        DEBUG(`Deploying node runner registry...`);
+        DEBUG(`Deploying ScannerPool registry...`);
 
         contracts.scannerPools = await ethers.getContractFactory('ScannerPoolRegistry', deployer).then((factory) =>
             utils.tryFetchProxy(
