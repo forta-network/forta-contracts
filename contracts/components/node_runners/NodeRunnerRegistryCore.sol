@@ -8,6 +8,7 @@ import "../staking/allocation/IStakeAllocator.sol";
 import "../staking/stake_subjects/DelegatedStakeSubject.sol";
 import "../../errors/GeneralErrors.sol";
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
@@ -71,6 +72,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     error CannotSetScannerActivation();
     error SenderNotNodeRunner(address sender, uint256 nodeRunnerId);
     error ChainIdMismatch(uint256 expected, uint256 provided);
+    error AddingScannerShutsDownPool();
 
     /**
      * @notice Checks sender (or metatx signer) is owner of the NodeRunnerRegistry ERC721 with ID nodeRunnerId.
@@ -172,8 +174,10 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     /**
      * @notice Method to register a Scanner Node and associate it with a nodeRunnerId. Before executing this method,
-     * register a scanner with Forta Scan Node CLI and obtain the parameters for this methods by executing forta auth.
+     * make sure to have enough FORT staked by the owner of the Scanner Pool to be allocated to the new scanner,
+     * then register a scanner with Forta Scan Node CLI and obtain the parameters for this methods by executing forta auth.
      * Follow the instructions here https://docs.forta.network/en/latest/scanner-quickstart/
+     * This method will try to allocate stake from unallocated stake if necessary.
      * Individual ownership of a scaner node is not transferrable.
      * A scanner node can be disabled, but not unregistered
      * @param req ScannerNodeRegistration struct with the Scanner Node data.
@@ -191,12 +195,30 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             )
         ) revert SignatureDoesNotMatch();
         _registerScannerNode(req);
+        if (willNewScannerShutdownPool(req.nodeRunnerId)) {
+            // allocated = min * scanners
+            // new allocated = allocated + some unallocated
+            // some = min * (scanners +1) - allocated
+            // x = min *scanners + min - allocated
+            _stakeAllocator.allocateOwnStake(NODE_RUNNER_SUBJECT, req.nodeRunnerId, _getMinStakeNewScanner(req.nodeRunnerId));
+        }
+    }
+
+    function _getMinStakeNewScanner(uint256 nodeRunnerId) private view returns (uint256) {
+        uint256 allocatedStake = _stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT, nodeRunnerId);
+        uint256 min = _scannerStakeThresholds[_nodeRunnerChainId[nodeRunnerId]].min;
+        uint256 allocationNeeds = min * (_enabledScanners[nodeRunnerId] + 1);
+        
+        if (allocatedStake > allocationNeeds + min) {
+            return 0;
+        } else {
+            return Math.min(min, allocationNeeds - allocatedStake);
+        }
     }
 
     function _registerScannerNode(ScannerNodeRegistration calldata req) internal {
         if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
-        if (_nodeRunnerChainId[req.nodeRunnerId] != req.chainId)
-            revert ChainIdMismatch(_nodeRunnerChainId[req.nodeRunnerId], req.chainId);
+        if (_nodeRunnerChainId[req.nodeRunnerId] != req.chainId) revert ChainIdMismatch(_nodeRunnerChainId[req.nodeRunnerId], req.chainId);
         _scannerNodes[req.scanner] = ScannerNode({ registered: true, disabled: false, nodeRunnerId: req.nodeRunnerId, chainId: req.chainId, metadata: req.metadata });
         // It is safe to ignore add()'s returned bool, since isScannerRegistered() already checks for duplicates.
         !_scannerNodeOwnership[req.nodeRunnerId].add(req.scanner);
@@ -279,12 +301,14 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     function isScannerOperational(address scanner) public view returns (bool) {
         ScannerNode storage node = _scannerNodes[scanner];
         StakeThreshold storage stake = _scannerStakeThresholds[node.chainId];
-        return (
-            node.registered &&
-            !node.disabled &&
-            (!stake.activated || _isScannerStakedOverMin(scanner)) &&
-            _exists(node.nodeRunnerId)
-        );
+        return (node.registered && !node.disabled && (!stake.activated || _isScannerStakedOverMin(scanner)) && _exists(node.nodeRunnerId));
+    }
+
+    /// returns true if one more enabled scanner (or one registration) would put ALL scanners under min threshold, (not operational)
+    function willNewScannerShutdownPool(uint256 nodeRunnerId) public view returns (bool) {
+        return
+            _stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT, nodeRunnerId) / (_enabledScanners[nodeRunnerId] + 1) <
+            _scannerStakeThresholds[_nodeRunnerChainId[nodeRunnerId]].min;
     }
 
     /// Returns true if the owner of NodeRegistry (DELEGATED) has staked over min for scanner, false otherwise.

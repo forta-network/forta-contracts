@@ -151,6 +151,7 @@ contract StakeSubjectGateway is BaseComponentUpgradeable, SubjectTypeValidator, 
         return IStakeSubject(_stakeSubjects[subjectType]).isRegistered(subject);
     }
 
+    /// Returns true if allocator owns the subject, or is the subject contract itself
     function canManageAllocation(uint8 subjectType, uint256 subject, address allocator) external view returns (bool) {
         SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
         if (agency != SubjectStakeAgency.DELEGATOR && agency != SubjectStakeAgency.DELEGATED) {
@@ -159,7 +160,7 @@ contract StakeSubjectGateway is BaseComponentUpgradeable, SubjectTypeValidator, 
         if (address(0) == _stakeSubjects[subjectType]) {
             return false;
         }
-        return IStakeSubject(_stakeSubjects[subjectType]).ownerOf(subject) == allocator;
+        return IStakeSubject(_stakeSubjects[subjectType]).ownerOf(subject) == allocator || _stakeSubjects[subjectType] == allocator;
     }
 
     function ownerOf(uint8 subjectType, uint256 subject) external view returns (address) {

@@ -26,7 +26,8 @@ const MIN_STAKE_MANAGED = '100';
 const STAKE = '10000';
 const chainId = 1;
 let SCANNERS;
-describe('Staking - Delegation', function () {
+let initiallyAllocated;
+describe.only('Staking - Delegation', function () {
     prepare({
         stake: {
             scanners: { min: MIN_STAKE_MANAGED, max: MAX_STAKE_MANAGED, activated: true },
@@ -46,7 +47,8 @@ describe('Staking - Delegation', function () {
         await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner(chainId);
         expect(await this.nodeRunners.ownerOf('1')).to.eq(this.accounts.user1.address);
         const network = await ethers.provider.getNetwork();
-
+        initiallyAllocated = MIN_STAKE_MANAGED * SCANNERS.length;
+        await this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, initiallyAllocated);
         const verifyingContractInfo = {
             address: this.nodeRunners.address,
             chainId: network.chainId,
@@ -61,7 +63,7 @@ describe('Staking - Delegation', function () {
             };
             const signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, scanner);
             await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
-            expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
+            expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(true);
         }
     });
 
@@ -80,49 +82,29 @@ describe('Staking - Delegation', function () {
             it('should allocate between all managed subjects', async function () {
                 await expect(this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, '100'))
                     .to.emit(this.stakeAllocator, 'AllocatedStake')
-                    .withArgs(nodeRunnerSubjectType, nodeRunnerId, true, '100', '100');
+                    .withArgs(nodeRunnerSubjectType, nodeRunnerId, true, '100', 100 + initiallyAllocated);
 
-                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('100');
-                expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('100');
+                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(100 + initiallyAllocated);
+                expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(100 + initiallyAllocated);
                 expect(await this.stakeAllocator.unallocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('0');
 
-                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('33');
-                expect(33).to.be.lt((await this.nodeRunners.getManagedStakeThreshold(1)).min);
-                for (const scanner of SCANNERS) {
-                    expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
-                }
-                await expect(this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, '200'))
-                    .to.emit(this.stakeAllocator, 'AllocatedStake')
-                    .withArgs(nodeRunnerSubjectType, nodeRunnerId, true, '200', '300');
-                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('300');
-                expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('300');
-                expect(await this.stakeAllocator.unallocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('0');
-                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('100');
+                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('133');
+                expect(133).to.be.gt((await this.nodeRunners.getManagedStakeThreshold(1)).min);
                 for (const scanner of SCANNERS) {
                     expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(true);
                 }
-
-                await expect(this.staking.connect(this.accounts.user1).deposit(delegatorSubjectType, nodeRunnerId, '100'))
-                    .to.emit(this.stakeAllocator, 'AllocatedStake')
-                    .withArgs(delegatorSubjectType, nodeRunnerId, true, '100', '100');
-                expect(await this.staking.activeStakeFor(delegatorSubjectType, nodeRunnerId)).to.eq('100');
-                expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('300');
-                expect(await this.stakeAllocator.allocatedStakeFor(delegatorSubjectType, nodeRunnerId)).to.eq('100');
-                expect(await this.stakeAllocator.unallocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('0');
-                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('133');
-                expect(await this.stakeAllocator.allocatedOwnStakePerManaged(2, 1)).to.eq('100');
-                expect(await this.stakeAllocator.allocatedDelegatorsStakePerManaged(2, 1)).to.eq('33');
             });
 
             it('delegating over max goes to unallocated', async function () {
-                const staked = MAX_STAKE_MANAGED * 3;
+                const maxAllocated = MAX_STAKE_MANAGED * 3;
+                const staked = maxAllocated - initiallyAllocated;
                 await expect(this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, staked))
                     .to.emit(this.stakeAllocator, 'AllocatedStake')
-                    .withArgs(nodeRunnerSubjectType, nodeRunnerId, true, staked, staked);
+                    .withArgs(nodeRunnerSubjectType, nodeRunnerId, true, staked, maxAllocated);
 
-                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(staked);
+                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(maxAllocated);
                 expect(await this.staking.activeStakeFor(delegatorSubjectType, nodeRunnerId)).to.eq('0');
-                expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(staked);
+                expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(maxAllocated);
                 expect(await this.stakeAllocator.unallocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('0');
                 expect(await this.stakeAllocator.allocatedStakeFor(delegatorSubjectType, nodeRunnerId)).to.eq('0');
                 expect(await this.stakeAllocator.unallocatedStakeFor(delegatorSubjectType, nodeRunnerId)).to.eq('0');
@@ -133,9 +115,9 @@ describe('Staking - Delegation', function () {
                 await expect(this.staking.connect(this.accounts.user1).deposit(delegatorSubjectType, nodeRunnerId, '200'))
                     .to.emit(this.stakeAllocator, 'UnallocatedStake')
                     .withArgs(delegatorSubjectType, nodeRunnerId, true, '200', '200');
-                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(staked);
+                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(maxAllocated);
                 expect(await this.staking.activeStakeFor(delegatorSubjectType, nodeRunnerId)).to.eq('200');
-                expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(staked);
+                expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(maxAllocated);
                 expect(await this.stakeAllocator.unallocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('0');
                 expect(await this.stakeAllocator.allocatedStakeFor(delegatorSubjectType, nodeRunnerId)).to.eq('0');
                 expect(await this.stakeAllocator.unallocatedStakeFor(delegatorSubjectType, nodeRunnerId)).to.eq('200');
@@ -147,16 +129,15 @@ describe('Staking - Delegation', function () {
             it('allocation should be sensitive to managed subject disabling', async function () {
                 await expect(this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, '200'))
                     .to.emit(this.stakeAllocator, 'AllocatedStake')
-                    .withArgs(nodeRunnerSubjectType, nodeRunnerId, true, '200', '200');
-                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('200');
-                expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('200');
+                    .withArgs(nodeRunnerSubjectType, nodeRunnerId, true, '200', initiallyAllocated + 200);
+                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(initiallyAllocated + 200);
+                expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(initiallyAllocated + 200);
                 expect(await this.stakeAllocator.unallocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('0');
-                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('66');
+                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('166');
                 for (const scanner of SCANNERS) {
                     expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
                 }
                 await this.nodeRunners.connect(this.accounts.user1).disableScanner(SCANNERS[0].address);
-                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('100');
                 for (const scanner of SCANNERS) {
                     if (scanner === SCANNERS[0]) {
                         expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
@@ -164,26 +145,27 @@ describe('Staking - Delegation', function () {
                         expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(true);
                     }
                 }
+                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('250');
                 await this.nodeRunners.connect(this.accounts.user1).enableScanner(SCANNERS[0].address);
-                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('66');
+                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('166');
                 for (const scanner of SCANNERS) {
-                    expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
+                    expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(true);
                 }
             });
 
-            it('allocation should be sensitive to managed subject disabling - with delegation', async function () {
+            it.only('allocation should be sensitive to managed subject disabling - with delegation', async function () {
                 await expect(this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, '200'))
                     .to.emit(this.stakeAllocator, 'AllocatedStake')
-                    .withArgs(nodeRunnerSubjectType, nodeRunnerId, true, '200', '200');
+                    .withArgs(nodeRunnerSubjectType, nodeRunnerId, true, '200', initiallyAllocated + 200);
                 expect(await this.subjectGateway.minManagedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('100');
                 expect(await this.subjectGateway.totalManagedSubjects(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3');
 
-                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('66');
+                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('166');
                 for (const scanner of SCANNERS) {
-                    expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
+                    expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(true);
                 }
                 await this.nodeRunners.connect(this.accounts.user1).disableScanner(SCANNERS[0].address);
-                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('100');
+                expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('250');
                 for (const scanner of SCANNERS) {
                     if (scanner === SCANNERS[0]) {
                         expect(await this.nodeRunners.isScannerOperational(scanner.address)).to.eq(false);
@@ -194,12 +176,12 @@ describe('Staking - Delegation', function () {
                 await expect(this.staking.connect(this.accounts.user1).deposit(delegatorSubjectType, nodeRunnerId, '100'))
                     .to.emit(this.stakeAllocator, 'AllocatedStake')
                     .withArgs(delegatorSubjectType, nodeRunnerId, true, '100', '100');
-                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('200');
+                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(initiallyAllocated + 200);
                 expect(await this.staking.activeStakeFor(delegatorSubjectType, nodeRunnerId)).to.eq('100');
 
-                expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('200');
+                expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq(initiallyAllocated + 200);
                 expect(await this.stakeAllocator.allocatedStakeFor(delegatorSubjectType, nodeRunnerId)).to.eq('100');
-                expect(await this.stakeAllocator.allocatedManagedStake(nodeRunnerSubjectType, nodeRunnerId)).to.eq('300');
+                expect(await this.stakeAllocator.allocatedManagedStake(nodeRunnerSubjectType, nodeRunnerId)).to.eq(initiallyAllocated + 300);
 
                 await this.nodeRunners.connect(this.accounts.user1).enableScanner(SCANNERS[0].address);
                 expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('100');
@@ -208,8 +190,8 @@ describe('Staking - Delegation', function () {
                 }
             });
 
-            it('active stake = allocated + unallocated', async function () {
-                const staked = Number(STAKE);
+            it.only('active stake = allocated + unallocated', async function () {
+                const staked = Number(STAKE) - initiallyAllocated;
 
                 await expect(this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, staked))
                     .to.emit(this.staking, 'StakeDeposited')
@@ -222,7 +204,7 @@ describe('Staking - Delegation', function () {
                 expect(active).to.eq(staked);
                 const maxAllocated = Number(MAX_STAKE_MANAGED) * SCANNERS.length;
                 const allocated = await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId);
-                expect(allocated).to.eq(`${maxAllocated}`);
+                expect(allocated).to.eq(`${Number(STAKE)}`);
                 const unallocated = await this.stakeAllocator.unallocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId);
                 const expectedUnallocated = staked - maxAllocated;
                 expect(unallocated).to.eq(`${expectedUnallocated}`);
@@ -246,8 +228,9 @@ describe('Staking - Delegation', function () {
                 }
             });
 
-            it('should not allow delegation if DELEGATE delegation under min', async function () {
+            it.only('should not allow delegation if DELEGATE delegation under min', async function () {
                 const staked = '2000';
+                await this.stakeAllocator.connect(this.accounts.user1).unallocateOwnStake(nodeRunnerSubjectType, nodeRunnerId, 200);
                 await expect(this.staking.connect(this.accounts.user2).deposit(delegatorSubjectType, nodeRunnerId, staked)).to.be.revertedWith('CannotDelegateStakeUnderMin(2, 1)');
             });
 
@@ -261,7 +244,7 @@ describe('Staking - Delegation', function () {
 
         describe('Unallocation and Manual Allocation', function () {
             it('should unallocate allocated stake', async function () {
-                const staked = '3000';
+                const staked = 3000 - initiallyAllocated;
                 await this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, staked);
                 expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3000');
                 expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3000');
@@ -286,12 +269,12 @@ describe('Staking - Delegation', function () {
                 }
             });
 
-            it('should revert if unallocating more than allocated', async function () {
-                const staked = '3000';
+            it.only('should revert if unallocating more than allocated', async function () {
+                const staked = 3000 - initiallyAllocated;
                 await this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, staked);
                 const unallocated = '4000';
                 await expect(this.stakeAllocator.connect(this.accounts.user1).unallocateOwnStake(nodeRunnerSubjectType, nodeRunnerId, unallocated)).to.be.revertedWith(
-                    `AmountTooLarge(${unallocated}, ${staked})`
+                    `AmountTooLarge(${unallocated}, ${3000})`
                 );
 
                 await this.stakeAllocator.connect(this.accounts.user1).unallocateOwnStake(nodeRunnerSubjectType, nodeRunnerId, '1000');
@@ -302,7 +285,7 @@ describe('Staking - Delegation', function () {
 
             it('should disable managed subjects if unallocate under min managed', async function () {
                 await this.nodeRunners.connect(this.accounts.manager).setManagedStakeThreshold({ max: '10000', min: '1000', activated: true }, 1);
-                const staked = '3000';
+                const staked = 3000 - initiallyAllocated;
                 await this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, staked);
                 expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3000');
                 expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3000');
@@ -326,7 +309,7 @@ describe('Staking - Delegation', function () {
                 }
             });
             it('should allocate after unallocate', async function () {
-                const staked = '3000';
+                const staked = 3000 - initiallyAllocated;
                 await this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, staked);
                 expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3000');
                 expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3000');
@@ -366,7 +349,7 @@ describe('Staking - Delegation', function () {
 
         describe('On Init Withdraw', function () {
             it('burns from allocated', async function () {
-                const staked = '3000';
+                const staked = 3000 - initiallyAllocated;
                 await this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, staked);
                 expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3000');
                 expect(await this.stakeAllocator.allocatedStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3000');
@@ -382,7 +365,7 @@ describe('Staking - Delegation', function () {
             });
 
             it('burns from unallocated and allocated', async function () {
-                const staked = '3000';
+                const staked = 3000 - initiallyAllocated;
                 await this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, staked);
                 await this.stakeAllocator.connect(this.accounts.user1).unallocateOwnStake(nodeRunnerSubjectType, nodeRunnerId, '2000');
                 expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3000');
@@ -399,7 +382,7 @@ describe('Staking - Delegation', function () {
             });
 
             it('burns from unallocated', async function () {
-                const staked = '3000';
+                const staked = 3000 - initiallyAllocated;
                 await this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, staked);
                 await this.stakeAllocator.connect(this.accounts.user1).unallocateOwnStake(nodeRunnerSubjectType, nodeRunnerId, '3000');
                 expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.eq('3000');
@@ -416,7 +399,7 @@ describe('Staking - Delegation', function () {
 
         describe('On Slashing', function () {
             it('burns from unallocated and allocated', async function () {
-                const staked = '3000';
+                const staked = 3000 - initiallyAllocated;
                 await this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, staked);
                 await this.stakeAllocator.connect(this.accounts.user1).unallocateOwnStake(nodeRunnerSubjectType, nodeRunnerId, '2000');
                 await this.nodeRunners.connect(this.accounts.manager).setManagedStakeThreshold({ max: '100000', min: '333', activated: true }, 1);
@@ -445,11 +428,11 @@ describe('Staking - Delegation', function () {
                 await expect(this.staking.setDelay(DELAY)).to.emit(this.staking, 'DelaySet').withArgs(DELAY);
             });
 
-            it('happy path', async function () {
-                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.be.equal('0');
-                expect(await this.staking.totalActiveStake()).to.be.equal('0');
-                expect(await this.staking.sharesOf(nodeRunnerSubjectType, nodeRunnerId, this.accounts.user1.address)).to.be.equal('0');
-                expect(await this.staking.totalShares(nodeRunnerSubjectType, nodeRunnerId)).to.be.equal('0');
+            it.only('happy path', async function () {
+                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.be.equal(initiallyAllocated);
+                expect(await this.staking.totalActiveStake()).to.be.equal(initiallyAllocated);
+                expect(await this.staking.sharesOf(nodeRunnerSubjectType, nodeRunnerId, this.accounts.user1.address)).to.be.equal(initiallyAllocated);
+                expect(await this.staking.totalShares(nodeRunnerSubjectType, nodeRunnerId)).to.be.equal(initiallyAllocated);
 
                 await expect(this.staking.connect(this.accounts.user1).deposit(nodeRunnerSubjectType, nodeRunnerId, '100'))
                     .to.emit(this.token, 'Transfer')
@@ -459,10 +442,10 @@ describe('Staking - Delegation', function () {
                     .to.emit(this.staking, 'StakeDeposited')
                     .withArgs(nodeRunnerSubjectType, nodeRunnerId, this.accounts.user1.address, '100');
 
-                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.be.equal('100');
-                expect(await this.staking.totalActiveStake()).to.be.equal('100');
-                expect(await this.staking.sharesOf(nodeRunnerSubjectType, nodeRunnerId, this.accounts.user1.address)).to.be.equal('100');
-                expect(await this.staking.totalShares(nodeRunnerSubjectType, nodeRunnerId)).to.be.equal('100');
+                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.be.equal('100' + initiallyAllocated);
+                expect(await this.staking.totalActiveStake()).to.be.equal('100' + initiallyAllocated);
+                expect(await this.staking.sharesOf(nodeRunnerSubjectType, nodeRunnerId, this.accounts.user1.address)).to.be.equal('100' + initiallyAllocated);
+                expect(await this.staking.totalShares(nodeRunnerSubjectType, nodeRunnerId)).to.be.equal('100' + initiallyAllocated);
 
                 await expect(this.staking.connect(this.accounts.user1).withdraw(nodeRunnerSubjectType, nodeRunnerId)).to.be.reverted;
 
@@ -484,13 +467,11 @@ describe('Staking - Delegation', function () {
                     .to.emit(this.staking, 'WithdrawalExecuted')
                     .withArgs(nodeRunnerSubjectType, nodeRunnerId, this.accounts.user1.address);
 
-                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.be.equal('50');
-                expect(await this.staking.totalActiveStake()).to.be.equal('50');
-                expect(await this.staking.sharesOf(nodeRunnerSubjectType, nodeRunnerId, this.accounts.user1.address)).to.be.equal('50');
-                expect(await this.staking.totalShares(nodeRunnerSubjectType, nodeRunnerId)).to.be.equal('50');
+                expect(await this.staking.activeStakeFor(nodeRunnerSubjectType, nodeRunnerId)).to.be.equal('50' + initiallyAllocated);
+                expect(await this.staking.totalActiveStake()).to.be.equal('50' + initiallyAllocated);
+                expect(await this.staking.sharesOf(nodeRunnerSubjectType, nodeRunnerId, this.accounts.user1.address)).to.be.equal('50' + initiallyAllocated);
+                expect(await this.staking.totalShares(nodeRunnerSubjectType, nodeRunnerId)).to.be.equal('50' + initiallyAllocated);
             });
         });
-
-        describe('Delegator', function () {});
     });
 });
