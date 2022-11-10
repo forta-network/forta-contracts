@@ -72,7 +72,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     error CannotSetScannerActivation();
     error SenderNotNodeRunner(address sender, uint256 nodeRunnerId);
     error ChainIdMismatch(uint256 expected, uint256 provided);
-    error AddingScannerShutsDownPool();
+    error ActionShutsDownPool();
 
     /**
      * @notice Checks sender (or metatx signer) is owner of the NodeRunnerRegistry ERC721 with ID nodeRunnerId.
@@ -195,25 +195,27 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
             )
         ) revert SignatureDoesNotMatch();
         _registerScannerNode(req);
-        if (willNewScannerShutdownPool(req.nodeRunnerId)) {
-            // allocated = min * scanners
-            // new allocated = allocated + some unallocated
-            // some = min * (scanners +1) - allocated
-            // x = min *scanners + min - allocated
-            _stakeAllocator.allocateOwnStake(NODE_RUNNER_SUBJECT, req.nodeRunnerId, _getMinStakeNewScanner(req.nodeRunnerId));
-        }
+        // Not called inside _registerScannerNode because it would break registerMigratedScannerNode()
+        _allocationOnAddedEnabledScanner(req.nodeRunnerId);
     }
 
-    function _getMinStakeNewScanner(uint256 nodeRunnerId) private view returns (uint256) {
-        uint256 allocatedStake = _stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT, nodeRunnerId);
+    /**
+     * @notice Allocates unallocated stake if a there is a new scanner enabled on the pool and not enough allocated stake.
+     * If there is not enough unallocated stake, the method will revert.
+     * @dev this MUST be called after incrementing _enabledScanners
+     * @param nodeRunnerId ERC721 id of the node runner
+     */
+    function _allocationOnAddedEnabledScanner(uint256 nodeRunnerId) private {
+        uint256 unallocatedStake = _stakeAllocator.unallocatedStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId);
+        uint256 allocatedStake = _stakeAllocator.allocatedStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId);
         uint256 min = _scannerStakeThresholds[_nodeRunnerChainId[nodeRunnerId]].min;
-        uint256 allocationNeeds = min * (_enabledScanners[nodeRunnerId] + 1);
-        
-        if (allocatedStake > allocationNeeds + min) {
-            return 0;
-        } else {
-            return Math.min(min, allocationNeeds - allocatedStake);
+        if (allocatedStake / _enabledScanners[nodeRunnerId] >  min) {
+            return;
         }
+        if ((unallocatedStake + allocatedStake) / _enabledScanners[nodeRunnerId] < min) {
+            revert ActionShutsDownPool();
+        }
+        _stakeAllocator.allocateOwnStake(NODE_RUNNER_SUBJECT, nodeRunnerId, unallocatedStake);
     }
 
     function _registerScannerNode(ScannerNodeRegistration calldata req) internal {
@@ -306,9 +308,10 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
 
     /// returns true if one more enabled scanner (or one registration) would put ALL scanners under min threshold, (not operational)
     function willNewScannerShutdownPool(uint256 nodeRunnerId) public view returns (bool) {
-        return
-            _stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT, nodeRunnerId) / (_enabledScanners[nodeRunnerId] + 1) <
-            _scannerStakeThresholds[_nodeRunnerChainId[nodeRunnerId]].min;
+        uint256 unallocatedStake = _stakeAllocator.unallocatedStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId);
+        uint256 allocatedStake = _stakeAllocator.allocatedStakeFor(NODE_RUNNER_SUBJECT, nodeRunnerId);
+        uint256 min = _scannerStakeThresholds[_nodeRunnerChainId[nodeRunnerId]].min;
+        return (allocatedStake + unallocatedStake) / (_enabledScanners[nodeRunnerId] + 1) < min;
     }
 
     /// Returns true if the owner of NodeRegistry (DELEGATED) has staked over min for scanner, false otherwise.
@@ -328,15 +331,16 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     }
 
     /**
-     * @notice Sets Scanner Node disabled flag to false. It's not possible to re-enable a Scanner Node
-     * if the active stake allocated to it is below minimum for the scanned chainId.
-     * If that happens, allocate more stake to it, then try enableScanner again.
+     * @notice Sets Scanner Node disabled flag to false.
+     * It's not possible to re-enable a Scanner Node if allocatedStake / enabled scanners < min.
+     * If there is enough unallocated stake, this method will allocate it. If not, it will revert.
      * @param scanner address
      */
     function enableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
-        _setScannerDisableFlag(scanner, false);
         _addEnabledScanner(_scannerNodes[scanner].nodeRunnerId);
+        _allocationOnAddedEnabledScanner(_scannerNodes[scanner].nodeRunnerId);
+        _setScannerDisableFlag(scanner, false);
     }
 
     /**
@@ -346,8 +350,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      */
     function disableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
-        _setScannerDisableFlag(scanner, true);
         _removeEnabledScanner(_scannerNodes[scanner].nodeRunnerId);
+        _setScannerDisableFlag(scanner, true);
     }
 
     function _setScannerDisableFlag(address scanner, bool value) internal {

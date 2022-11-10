@@ -71,13 +71,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
     /// Total allocated stake in all managed subjects, both from delegated and delegator. Only returns values from
     /// DELEGATED types, else 0.
     function allocatedManagedStake(uint8 subjectType, uint256 subject) public view returns (uint256) {
-        //console.log("---------allocatedManagedStake subjectType %d shareId %s", subjectType, FortaStakingUtils.subjectToActive(subjectType, subject));
         if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
-            //console.log(
-            //    "%d + %d",
-            //    _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject)),
-            //    _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(getDelegatorSubjectType(subjectType), subject))
-            //);
             return
                 _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(subjectType, subject)) +
                 _allocatedStake.balanceOf(FortaStakingUtils.subjectToActive(getDelegatorSubjectType(subjectType), subject));
@@ -88,7 +82,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
 
     /// Returns allocatedManagedStake (own + delegator's) in DELEGATED / total managed subjects, or 0 if not DELEGATED
     function allocatedStakePerManaged(uint8 subjectType, uint256 subject) external view returns (uint256) {
-        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED) {
+        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED || _subjectGateway.totalManagedSubjects(subjectType, subject) == 0) {
             return 0;
         }
         return allocatedManagedStake(subjectType, subject) / _subjectGateway.totalManagedSubjects(subjectType, subject);
