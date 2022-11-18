@@ -5,8 +5,8 @@ const { prepare } = require('../fixture');
 const { BigNumber } = require('@ethersproject/bignumber');
 const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRegistration');
 
-let SCANNER_ADDRESS_1, scanner1Registration, scanner1Signature, verifyingContractInfo;
-describe('ScannerPool Registry', function () {
+let SCANNER_ADDRESS_1, scanner1Registration, scanner1Signature, SCANNER_ADDRESS_2, scanner2Registration, scanner2Signature, verifyingContractInfo;
+describe('Scanner Pool Registry', function () {
     // TODO Stake related stuff
     prepare({ stake: { scanners: { min: '100', max: '500', activated: true } } });
 
@@ -28,6 +28,15 @@ describe('ScannerPool Registry', function () {
         };
 
         scanner1Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner1Registration, this.accounts.scanner);
+        SCANNER_ADDRESS_2 = this.accounts.user2.address;
+        scanner2Registration = {
+            scanner: SCANNER_ADDRESS_2,
+            scannerPoolId: 1,
+            chainId: 1,
+            metadata: 'metadata2',
+            timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+        };
+        scanner2Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner2Registration, this.accounts.user2);
     });
 
     it('register ScannerPool', async function () {
@@ -50,38 +59,51 @@ describe('ScannerPool Registry', function () {
         expect(await this.scannerPools.monitoredChainId(2)).to.be.equal(44);
     });
 
-    it('register scanner', async function () {
-        const SCANNER_ADDRESS = this.accounts.scanner.address;
-        const SCANNER_ADDRESS_2 = this.accounts.user2.address;
+    describe('Register scanner', function () {
+        it('registers scanners', async function () {
+            const SCANNER_ADDRESS = this.accounts.scanner.address;
+            await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
 
-        await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
-        await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
-            .to.emit(this.scannerPools, 'ScannerUpdated')
-            .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
-        const scanner2Registration = {
-            scanner: SCANNER_ADDRESS_2,
-            scannerPoolId: 1,
-            chainId: 1,
-            metadata: 'metadata2',
-            timestamp: (await ethers.provider.getBlock('latest')).timestamp,
-        };
-        const scanner2Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner2Registration, this.accounts.user2);
-        await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
-            .to.emit(this.scannerPools, 'ScannerUpdated')
-            .withArgs(SCANNER_ADDRESS_2, 1, 'metadata2', 1);
+            await this.staking.connect(this.accounts.user1).deposit(2, 1, '200');
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('200');
+            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('0');
+            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('0');
+            await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
+                .to.emit(this.scannerPools, 'ScannerUpdated')
+                .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('0');
+            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('200');
+            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('200');
 
-        expect(await this.scannerPools.getScanner(SCANNER_ADDRESS)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), 'metadata']);
+            await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
+                .to.emit(this.scannerPools, 'ScannerUpdated')
+                .withArgs(SCANNER_ADDRESS_2, 1, 'metadata2', 1);
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('0');
+            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('200');
+            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('100');
 
-        expect(await this.scannerPools.isScannerRegistered(SCANNER_ADDRESS)).to.be.equal(true);
-        expect(await this.scannerPools.registeredScannerAddressAtIndex(1, 0)).to.be.equal(SCANNER_ADDRESS);
+            expect(await this.scannerPools.getScanner(SCANNER_ADDRESS)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), 'metadata']);
+            expect(await this.scannerPools.isScannerRegistered(SCANNER_ADDRESS)).to.be.equal(true);
+            expect(await this.scannerPools.registeredScannerAddressAtIndex(1, 0)).to.be.equal(SCANNER_ADDRESS);
+            expect(await this.scannerPools.getScanner(SCANNER_ADDRESS_2)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), 'metadata2']);
+            expect(await this.scannerPools.isScannerRegistered(SCANNER_ADDRESS_2)).to.be.equal(true);
+            expect(await this.scannerPools.registeredScannerAddressAtIndex(1, 1)).to.be.equal(SCANNER_ADDRESS_2);
+            expect(await this.scannerPools.isScannerRegistered(this.accounts.user3.address)).to.be.equal(false);
+            expect(await this.scannerPools.totalScannersRegistered(1)).to.be.equal(2);
+        });
 
-        expect(await this.scannerPools.getScanner(SCANNER_ADDRESS_2)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), 'metadata2']);
-        expect(await this.scannerPools.isScannerRegistered(SCANNER_ADDRESS_2)).to.be.equal(true);
-        expect(await this.scannerPools.registeredScannerAddressAtIndex(1, 1)).to.be.equal(SCANNER_ADDRESS_2);
+        it('fails to register scanner if not enough allocated stake', async function () {
+            const SCANNER_ADDRESS = this.accounts.scanner.address;
 
-        expect(await this.scannerPools.isScannerRegistered(this.accounts.user3.address)).to.be.equal(false);
+            await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
+            await this.staking.connect(this.accounts.user1).deposit(2, 1, '100');
 
-        expect(await this.scannerPools.totalScannersRegistered(1)).to.be.equal(2);
+            await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
+                .to.emit(this.scannerPools, 'ScannerUpdated')
+                .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
+
+            await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature)).to.be.revertedWith('ActionShutsDownPool');
+        });
     });
 
     describe('migration', function () {
@@ -184,6 +206,8 @@ describe('ScannerPool Registry', function () {
         const SCANNER_ADDRESS = this.accounts.scanner.address;
 
         await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
+        await this.staking.connect(this.accounts.user1).deposit(2, 1, '100');
+
         await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
             .to.emit(this.scannerPools, 'ScannerUpdated')
             .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
@@ -202,6 +226,8 @@ describe('ScannerPool Registry', function () {
         const SCANNER_ADDRESS = this.accounts.scanner.address;
 
         await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
+        await this.staking.connect(this.accounts.user1).deposit(2, 1, '200');
+
         await this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
         await expect(this.scannerPools.connect(this.accounts.user1).updateScannerMetadata(SCANNER_ADDRESS, '333'))
             .to.emit(this.scannerPools, 'ScannerUpdated')
@@ -215,6 +241,8 @@ describe('ScannerPool Registry', function () {
         const WRONG_SCANNER_ADDRESS = this.accounts.admin.address;
 
         await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
+        await this.staking.connect(this.accounts.user1).deposit(2, 1, '200');
+
         await this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
 
         await expect(this.scannerPools.connect(this.accounts.user1).updateScannerMetadata(WRONG_SCANNER_ADDRESS, '333')).to.be.revertedWith(
@@ -278,11 +306,11 @@ describe('ScannerPool Registry', function () {
         });
     });
 
-    describe.skip('enable and disable', async function () {
+    describe('enable and disable', async function () {
         beforeEach(async function () {
-            await this.scannerPools.connect(this.accounts.user1).registerScannerPool();
+            await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
+            await this.staking.connect(this.accounts.user1).deposit(2, 1, '100');
             await this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
-            // await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER, SCANNER_ADDRESS, '100');
         });
 
         describe('manager', async function () {
@@ -302,21 +330,28 @@ describe('ScannerPool Registry', function () {
 
             it('re-enable', async function () {
                 const SCANNER_ADDRESS = this.accounts.scanner.address;
-
+                expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);
                 await expect(this.scannerPools.connect(this.accounts.manager).disableScanner(SCANNER_ADDRESS))
                     .to.emit(this.scannerPools, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, false, this.accounts.manager.address, true);
-
+                expect(await this.scannerPools.getScanner(SCANNER_ADDRESS).then((scanner) => scanner.disabled)).to.be.equal(true);
+                expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
                 await expect(this.scannerPools.connect(this.accounts.manager).enableScanner(SCANNER_ADDRESS))
                     .to.emit(this.scannerPools, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, true, this.accounts.manager.address, false);
-
+                expect(await this.scannerPools.getScanner(SCANNER_ADDRESS).then((scanner) => scanner.disabled)).to.be.equal(false);
                 expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);
+            });
+            it('should fail to enable if new scanners shutdowns pool', async function () {
+                await this.staking.connect(this.accounts.user1).deposit(2, 1, '100');
+                await this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature);
+                await this.scannerPools.connect(this.accounts.user1).disableScanner(SCANNER_ADDRESS_2);
+                await this.staking.connect(this.accounts.user1).initiateWithdrawal(2, 1, '100');
+                await expect(this.scannerPools.connect(this.accounts.manager).enableScanner(SCANNER_ADDRESS_2)).to.be.revertedWith('ActionShutsDownPool()');
             });
 
             it('restricted', async function () {
                 const SCANNER_ADDRESS = this.accounts.scanner.address;
-
                 await expect(this.scannerPools.connect(this.accounts.other).disableScanner(SCANNER_ADDRESS)).to.be.reverted;
             });
         });
@@ -382,31 +417,6 @@ describe('ScannerPool Registry', function () {
                 const SCANNER_ADDRESS = this.accounts.scanner.address;
 
                 await expect(this.scannerPools.connect(this.accounts.other).disableScanner(SCANNER_ADDRESS)).to.be.reverted;
-            });
-        });
-
-        describe('stake', async function () {
-            it.skip('re-enable', async function () {
-                const SCANNER_ADDRESS = this.accounts.scanner.address;
-
-                await expect(this.scannerPools.connect(this.accounts.scanner).disableScanner(SCANNER_ADDRESS))
-                    .to.emit(this.scannerPools, 'ScannerEnabled')
-                    .withArgs(SCANNER_ADDRESS, false, 1, true);
-
-                await expect(this.scannerPools.connect(this.accounts.scanner).enableScanner(SCANNER_ADDRESS))
-                    .to.emit(this.scannerPools, 'ScannerEnabled')
-                    .withArgs(SCANNER_ADDRESS, true, 1, false);
-
-                expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);
-            });
-            it.skip('isScannerOperational reacts to stake changes', async function () {
-                const SCANNER_ADDRESS = this.accounts.scanner.address;
-                const SCANNER_SUBJECT_ID = ethers.BigNumber.from(SCANNER_ADDRESS);
-                expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);
-                await this.scannerPools.connect(this.accounts.manager).setStakeThreshold({ max: '100000', min: '10000', activated: true }, 1);
-                expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
-                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.SCANNER, SCANNER_SUBJECT_ID, '10000');
-                expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);
             });
         });
     });

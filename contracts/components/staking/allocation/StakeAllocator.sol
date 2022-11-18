@@ -78,10 +78,11 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         }
         return 0;
     }
+    
 
     /// Returns allocatedManagedStake (own + delegator's) in DELEGATED / total managed subjects, or 0 if not DELEGATED
     function allocatedStakePerManaged(uint8 subjectType, uint256 subject) external view returns (uint256) {
-        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED) {
+        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED || _subjectGateway.totalManagedSubjects(subjectType, subject) == 0) {
             return 0;
         }
         return allocatedManagedStake(subjectType, subject) / _subjectGateway.totalManagedSubjects(subjectType, subject);
@@ -192,7 +193,6 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         _allocatedStake.mint(activeSharesId, amount);
         _unallocatedStake.burn(activeSharesId, amount);
         _rewardsDistributor.didAllocate(subjectType, subject, amount, 0, address(0));
-
         emit AllocatedStake(subjectType, subject, true, amount, _allocatedStake.balanceOf(activeSharesId));
         emit UnallocatedStake(subjectType, subject, false, amount, _unallocatedStake.balanceOf(activeSharesId));
     }
@@ -210,9 +210,11 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
     ) private {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         if (_allocatedStake.balanceOf(activeSharesId) < amount) revert AmountTooLarge(amount, _allocatedStake.balanceOf(activeSharesId));
+
         _allocatedStake.burn(activeSharesId, amount);
         _unallocatedStake.mint(activeSharesId, amount);
         _rewardsDistributor.didUnallocate(subjectType, subject, amount, 0, address(0));
+
         emit AllocatedStake(subjectType, subject, false, amount, _allocatedStake.balanceOf(activeSharesId));
         emit UnallocatedStake(subjectType, subject, true, amount, _unallocatedStake.balanceOf(activeSharesId));
     }
@@ -241,6 +243,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         if (agency != SubjectStakeAgency.DELEGATED && agency != SubjectStakeAgency.DELEGATOR) {
             return;
         }
+
         (int256 extra, ) = _allocationIncreaseChecks(subjectType, subject, agency, allocator, stakeAmount);
         if (extra > 0) {
             _allocatedStake.mint(activeSharesId, stakeAmount - uint256(extra));
@@ -253,6 +256,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
             _rewardsDistributor.didAllocate(subjectType, subject, stakeAmount, sharesAmount, allocator);
             emit AllocatedStake(subjectType, subject, true, stakeAmount, _allocatedStake.balanceOf(activeSharesId));
         }
+
     }
 
     /**

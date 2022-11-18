@@ -21,8 +21,6 @@ import "./rewards/IRewardsDistributor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @dev This is a generic staking contract for the Forta platform. It allows any account to deposit ERC20 tokens to
  * delegate their "power" by staking on behalf of a particular subject. The subject can be scanner, or any other actor
