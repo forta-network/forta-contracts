@@ -22,6 +22,7 @@ const [[subject1, subjectType1, active1, inactive1], [NODE_RUNNER_ID, NODE_RUNNE
 
 const MAX_STAKE = '10000';
 const OFFSET = 4 * 24 * 60 * 60;
+let registration, signature, verifyingContractInfo;
 describe('Staking Rewards', function () {
     prepare({
         stake: {
@@ -49,20 +50,19 @@ describe('Staking Rewards', function () {
         this.accounts.getAccount('scanner');
         this.SCANNER_ID = this.accounts.scanner.address;
         const { chainId } = await ethers.provider.getNetwork();
-        const verifyingContractInfo = {
+        verifyingContractInfo = {
             address: this.contracts.nodeRunners.address,
             chainId: chainId,
         };
-        const registration = {
+        registration = {
             scanner: this.SCANNER_ID,
             nodeRunnerId: 1,
             chainId: 1,
             metadata: 'metadata',
             timestamp: (await ethers.provider.getBlock('latest')).timestamp,
         };
-        const signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, this.accounts.scanner);
+        signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, this.accounts.scanner);
 
-        await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
     });
 
     describe('Rewards tracking stake allocation', function () {
@@ -75,6 +75,7 @@ describe('Staking Rewards', function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+            await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
             await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '50');
             await network.provider.send('evm_setAutomine', [true]);
             await network.provider.send('evm_mine');
@@ -122,6 +123,7 @@ describe('Staking Rewards', function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+            await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
             await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
             await network.provider.send('evm_setAutomine', [true]);
             await network.provider.send('evm_mine');
@@ -156,6 +158,7 @@ describe('Staking Rewards', function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+            await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
             await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
             await network.provider.send('evm_setAutomine', [true]);
             await network.provider.send('evm_mine');
@@ -193,6 +196,7 @@ describe('Staking Rewards', function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+            await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
             await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
             await network.provider.send('evm_setAutomine', [true]);
             await network.provider.send('evm_mine');
@@ -229,12 +233,14 @@ describe('Staking Rewards', function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+            await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
             await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
-            await this.stakeAllocator.connect(this.accounts.user1).unallocateDelegatorStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
-
             await network.provider.send('evm_setAutomine', [true]);
             await network.provider.send('evm_mine');
+            await this.stakeAllocator.connect(this.accounts.user1).unallocateDelegatorStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
 
+            expect(await this.stakeAllocator.allocatedStakeFor(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('100');
+            expect(await this.stakeAllocator.allocatedStakeFor(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('0');
             expect(await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('100');
 
             const latestTimestamp = await helpers.time.latest();
@@ -267,11 +273,12 @@ describe('Staking Rewards', function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+            await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
             await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
-            await this.stakeAllocator.connect(this.accounts.user1).unallocateOwnStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '50');
 
             await network.provider.send('evm_setAutomine', [true]);
             await network.provider.send('evm_mine');
+            await this.stakeAllocator.connect(this.accounts.user1).unallocateOwnStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '50');
 
             expect(await this.stakeAllocator.allocatedManagedStake(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID)).to.be.equal('150');
 
@@ -305,6 +312,7 @@ describe('Staking Rewards', function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+            await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
             await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
             await network.provider.send('evm_setAutomine', [true]);
             await network.provider.send('evm_mine');
@@ -349,11 +357,20 @@ describe('Staking Rewards', function () {
             await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
             currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
             console.log(await this.rewardsDistributor.getDelegationFee(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, currentEpoch));
-
+            const registration = {
+                scanner: this.SCANNER_ID,
+                nodeRunnerId: 1,
+                chainId: 1,
+                metadata: 'metadata',
+                timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+            };
+            const signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, this.accounts.scanner);
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(NODE_RUNNER_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+            await this.nodeRunners.connect(this.accounts.user1).registerScannerNode(registration, signature);
             await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, NODE_RUNNER_ID, '100');
+
             await network.provider.send('evm_setAutomine', [true]);
             await network.provider.send('evm_mine');
 

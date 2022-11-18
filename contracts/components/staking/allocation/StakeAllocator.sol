@@ -11,6 +11,7 @@ import "../stake_subjects/IStakeSubjectGateway.sol";
 import "../../BaseComponentUpgradeable.sol";
 import "../../../tools/Distributions.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "hardhat/console.sol";
 
 /**
  * This contract also manages the allocation of stake. See SubjectTypeValidator.sol for in depth explanation of Subject Agency
@@ -78,10 +79,11 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         }
         return 0;
     }
+    
 
     /// Returns allocatedManagedStake (own + delegator's) in DELEGATED / total managed subjects, or 0 if not DELEGATED
     function allocatedStakePerManaged(uint8 subjectType, uint256 subject) external view returns (uint256) {
-        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED) {
+        if (getSubjectTypeAgency(subjectType) != SubjectStakeAgency.DELEGATED || _subjectGateway.totalManagedSubjects(subjectType, subject) == 0) {
             return 0;
         }
         return allocatedManagedStake(subjectType, subject) / _subjectGateway.totalManagedSubjects(subjectType, subject);
@@ -189,10 +191,11 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         if (_unallocatedStake.balanceOf(activeSharesId) < amount) revert AmountTooLarge(amount, _unallocatedStake.balanceOf(activeSharesId));
         (int256 extra, uint256 max) = _allocationIncreaseChecks(subjectType, subject, getSubjectTypeAgency(subjectType), allocator, amount);
         if (extra > 0) revert AmountTooLarge(amount, max);
+        console.log("allocate before subjectType %d , allocated %d, unallocated %d", subjectType, _allocatedStake.balanceOf(activeSharesId), _unallocatedStake.balanceOf(activeSharesId));
         _allocatedStake.mint(activeSharesId, amount);
         _unallocatedStake.burn(activeSharesId, amount);
         _rewardsDistributor.didAllocate(subjectType, subject, amount, 0, address(0));
-
+        console.log("allocate after subjectType %d , allocated %d, unallocated %d", subjectType, _allocatedStake.balanceOf(activeSharesId), _unallocatedStake.balanceOf(activeSharesId));
         emit AllocatedStake(subjectType, subject, true, amount, _allocatedStake.balanceOf(activeSharesId));
         emit UnallocatedStake(subjectType, subject, false, amount, _unallocatedStake.balanceOf(activeSharesId));
     }
@@ -210,9 +213,12 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
     ) private {
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         if (_allocatedStake.balanceOf(activeSharesId) < amount) revert AmountTooLarge(amount, _allocatedStake.balanceOf(activeSharesId));
+        console.log("unallocate bdefore subjectType %d , allocated %d, unallocated %d", subjectType, _allocatedStake.balanceOf(activeSharesId), _unallocatedStake.balanceOf(activeSharesId));
+
         _allocatedStake.burn(activeSharesId, amount);
         _unallocatedStake.mint(activeSharesId, amount);
         _rewardsDistributor.didUnallocate(subjectType, subject, amount, 0, address(0));
+        console.log("unallocate after subjectType %d , allocated %d, unallocated %d", subjectType, _allocatedStake.balanceOf(activeSharesId), _unallocatedStake.balanceOf(activeSharesId));
         emit AllocatedStake(subjectType, subject, false, amount, _allocatedStake.balanceOf(activeSharesId));
         emit UnallocatedStake(subjectType, subject, true, amount, _unallocatedStake.balanceOf(activeSharesId));
     }
@@ -241,6 +247,8 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         if (agency != SubjectStakeAgency.DELEGATED && agency != SubjectStakeAgency.DELEGATOR) {
             return;
         }
+        console.log("deposit before subjectType %d , allocated %d, unallocated %d", subjectType, _allocatedStake.balanceOf(activeSharesId), _unallocatedStake.balanceOf(activeSharesId));
+
         (int256 extra, ) = _allocationIncreaseChecks(subjectType, subject, agency, allocator, stakeAmount);
         if (extra > 0) {
             _allocatedStake.mint(activeSharesId, stakeAmount - uint256(extra));
@@ -253,6 +261,8 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
             _rewardsDistributor.didAllocate(subjectType, subject, stakeAmount, sharesAmount, allocator);
             emit AllocatedStake(subjectType, subject, true, stakeAmount, _allocatedStake.balanceOf(activeSharesId));
         }
+        console.log("deposit after subjectType %d , allocated %d, unallocated %d", subjectType, _allocatedStake.balanceOf(activeSharesId), _unallocatedStake.balanceOf(activeSharesId));
+
     }
 
     /**
