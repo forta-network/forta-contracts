@@ -121,7 +121,7 @@ contract StakeSubjectGateway is BaseComponentUpgradeable, SubjectTypeValidator, 
 
     /// Get if staking is activated for that `subjectType` and `subject`. If not set, will return false.
     function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns (bool) {
-        if (subjectType == NODE_RUNNER_SUBJECT || subjectType == DELEGATOR_NODE_RUNNER_SUBJECT) {
+        if (subjectType == SCANNER_POOL_SUBJECT || subjectType == DELEGATOR_SCANNER_POOL_SUBJECT) {
             return true;
         }
         if (address(0) == _stakeSubjects[subjectType]) {

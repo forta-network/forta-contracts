@@ -6,8 +6,8 @@ pragma solidity ^0.8.9;
 uint8 constant UNDEFINED_SUBJECT = 255;
 uint8 constant SCANNER_SUBJECT = 0;
 uint8 constant AGENT_SUBJECT = 1;
-uint8 constant NODE_RUNNER_SUBJECT = 2;
-uint8 constant DELEGATOR_NODE_RUNNER_SUBJECT = 3;
+uint8 constant SCANNER_POOL_SUBJECT = 2;
+uint8 constant DELEGATOR_SCANNER_POOL_SUBJECT = 3;
 
 /**
  * Defines the types of staking Subject Types, their agency and relationships.
@@ -20,7 +20,7 @@ uint8 constant DELEGATOR_NODE_RUNNER_SUBJECT = 3;
  * The current Subject Types and their Agency:
  * - SCANNER_SUBJECT --> DIRECT
  * - AGENT_SUBJECT (detection bots) --> DIRECT
- * - NODE_RUNNER_SUBJECT --> DELEGATED
+ * - SCANNER_POOL_SUBJECT --> DELEGATED
  *
  */
 contract SubjectTypeValidator {
@@ -41,7 +41,7 @@ contract SubjectTypeValidator {
      * upgradeable (StakingEscrow)
      */
     modifier onlyValidSubjectType(uint8 subjectType) {
-        if (subjectType != SCANNER_SUBJECT && subjectType != AGENT_SUBJECT && subjectType != NODE_RUNNER_SUBJECT && subjectType != DELEGATOR_NODE_RUNNER_SUBJECT)
+        if (subjectType != SCANNER_SUBJECT && subjectType != AGENT_SUBJECT && subjectType != SCANNER_POOL_SUBJECT && subjectType != DELEGATOR_SCANNER_POOL_SUBJECT)
             revert InvalidSubjectType(subjectType);
         _;
     }
@@ -59,9 +59,9 @@ contract SubjectTypeValidator {
     function getSubjectTypeAgency(uint8 subjectType) public pure returns (SubjectStakeAgency) {
         if (subjectType == AGENT_SUBJECT) {
             return SubjectStakeAgency.DIRECT;
-        } else if (subjectType == NODE_RUNNER_SUBJECT) {
+        } else if (subjectType == SCANNER_POOL_SUBJECT) {
             return SubjectStakeAgency.DELEGATED;
-        } else if (subjectType == DELEGATOR_NODE_RUNNER_SUBJECT) {
+        } else if (subjectType == DELEGATOR_SCANNER_POOL_SUBJECT) {
             return SubjectStakeAgency.DELEGATOR;
         } else if (subjectType == SCANNER_SUBJECT) {
             return SubjectStakeAgency.MANAGED;
@@ -70,15 +70,15 @@ contract SubjectTypeValidator {
     }
 
     function getDelegatorSubjectType(uint8 subjectType) public pure returns (uint8) {
-        if (subjectType == NODE_RUNNER_SUBJECT) {
-            return DELEGATOR_NODE_RUNNER_SUBJECT;
+        if (subjectType == SCANNER_POOL_SUBJECT) {
+            return DELEGATOR_SCANNER_POOL_SUBJECT;
         }
         return UNDEFINED_SUBJECT;
     }
 
     function getDelegatedSubjectType(uint8 subjectType) public pure returns (uint8) {
-        if (subjectType == DELEGATOR_NODE_RUNNER_SUBJECT) {
-            return NODE_RUNNER_SUBJECT;
+        if (subjectType == DELEGATOR_SCANNER_POOL_SUBJECT) {
+            return SCANNER_POOL_SUBJECT;
         }
         return UNDEFINED_SUBJECT;
     }

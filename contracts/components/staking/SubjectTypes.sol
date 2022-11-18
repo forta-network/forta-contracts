@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 
 uint8 constant SCANNER_SUBJECT = 0;
 uint8 constant AGENT_SUBJECT = 1;
-uint8 constant NODE_RUNNER_SUBJECT = 3;
+uint8 constant SCANNER_POOL_SUBJECT = 3;
 
 contract SubjectTypeValidator {
 
@@ -20,7 +20,7 @@ contract SubjectTypeValidator {
         if (
             subjectType != SCANNER_SUBJECT &&
             subjectType != AGENT_SUBJECT &&
-            subjectType != NODE_RUNNER_SUBJECT
+            subjectType != SCANNER_POOL_SUBJECT
         ) revert InvalidSubjectType(subjectType);
         _;
     }

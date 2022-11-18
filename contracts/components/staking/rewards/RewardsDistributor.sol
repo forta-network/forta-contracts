@@ -158,7 +158,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256 amount,
         uint256 epochNumber
     ) external onlyRole(REWARDER_ROLE) {
-        if (subjectType != NODE_RUNNER_SUBJECT) revert InvalidSubjectType(subjectType);
+        if (subjectType != SCANNER_POOL_SUBJECT) revert InvalidSubjectType(subjectType);
         if (!_subjectGateway.isRegistered(subjectType, subjectId)) revert RewardingNonRegisteredSubject(subjectType, subjectId);
         uint256 shareId = FortaStakingUtils.subjectToActive(getDelegatorSubjectType(subjectType), subjectId);
         _rewardsPerEpoch[shareId][epochNumber] = amount;
@@ -243,7 +243,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     }
 
     /**
-     * Sets delegation fee for a Node Runner (required to own the NodeRunnerRegistry NFT).
+     * Sets delegation fee for a ScannerPool (required to own the ScannerPoolRegistry NFT).
      * Change in fees will start having an effect in the beginning of the next reward epoch.
      * After the first time setting the parameter, it cannot be set again until delegationParamsEpochDelay epochs pass.
      * @param subjectType a DELEGATED subject type.
