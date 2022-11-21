@@ -1,4 +1,5 @@
-const { ethers } = require('hardhat');
+const hre = require('hardhat');
+const { ethers } = hre;
 const utils = require('./utils');
 
 const ROOT_CHAIN_MANAGER = {
@@ -93,28 +94,26 @@ async function loadEnv(config = {}) {
     const deployer = config?.deployer ?? (await utils.getDefaultDeployer(provider));
 
     const { name, chainId } = await provider.getNetwork();
-    const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: `.cache-${chainId}` });
 
     const chainType = ROOT_CHAIN_MANAGER[chainId] ? CHAIN_TYPE.ROOT : CHILD_CHAIN_MANAGER_PROXY[chainId] ? CHAIN_TYPE.CHILD : CHAIN_TYPE.DEV;
+    const deploymentFileName = `.cache-${chainId}${chainId === 5 ? '-components' : ''}`;
+    const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: deploymentFileName });
+    const deployment = require(`./${deploymentFileName}.json`);
+    provider.network.ensAddress = deployment['ens-registry']?.address || provider.network.ensAddress;
 
-    provider.network.ensAddress = (await CACHE.get('ens-registry')) || provider.network.ensAddress;
+    const keys = Object.keys(deployment).filter((key) => !key.includes('pending') && !key.startsWith('vesting-') && !key.includes('ens-') && key !== 'contracts');
+    const contracts = {};
+    for (const key of keys) {
+        console.log(key);
+        const dep = deployment[key];
+        const contractName = dep.impl ? dep.impl.name : dep.name;
+        if (!contractName) continue;
+        console.log(contractName);
+        contracts[utils.camelize(key)] = await utils.attach(contractName, dep.address).then((contract) => contract.connect(deployer));
+    }
+    contracts.token = contracts.forta;
 
-    const contracts = await Promise.all(
-        Object.entries({
-            token: chainType && utils.attach(chainType & CHAIN_TYPE.ROOT ? 'Forta' : 'FortaBridgedPolygon', 'forta.eth').then((contract) => contract.connect(deployer)),
-            access: chainType & CHAIN_TYPE.CHILD && utils.attach('AccessManager', 'access.forta.eth').then((contract) => contract.connect(deployer)),
-            dispatch: chainType & CHAIN_TYPE.CHILD && utils.attach('Dispatch', 'dispatch.forta.eth').then((contract) => contract.connect(deployer)),
-            router: chainType & CHAIN_TYPE.CHILD && utils.attach('Router', 'router.forta.eth').then((contract) => contract.connect(deployer)),
-            staking: chainType & CHAIN_TYPE.CHILD && utils.attach('FortaStaking', 'staking.forta.eth').then((contract) => contract.connect(deployer)),
-            forwarder: chainType & CHAIN_TYPE.CHILD && utils.attach('Forwarder', 'forwarder.forta.eth').then((contract) => contract.connect(deployer)),
-            agents: chainType & CHAIN_TYPE.CHILD && utils.attach('AgentRegistry', 'agents.registries.forta.eth').then((contract) => contract.connect(deployer)),
-            scanners: chainType & CHAIN_TYPE.CHILD && utils.attach('ScannerRegistry', 'scanners.registries.forta.eth').then((contract) => contract.connect(deployer)),
-            escrow: chainType & CHAIN_TYPE.CHILD && utils.attach('StakingEscrowFactory', 'escrow.forta.eth').then((contract) => contract.connect(deployer)),
-        })
-            .filter((entry) => entry.every(Boolean))
-            .map((entry) => Promise.all(entry))
-    ).then(Object.fromEntries);
-
+    // TODO update this
     const roles = await Promise.all(
         Object.entries({
             DEFAULT_ADMIN: ethers.constants.HashZero,

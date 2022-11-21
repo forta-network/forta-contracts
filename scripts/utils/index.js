@@ -93,17 +93,29 @@ function deployUpgradeable(factory, kind, params = [], opts = {}) {
 }
 
 async function performUpgrade(proxy, factory, opts = {}, cache, key) {
-    const contract = typeof factory === 'string' ? await getFactory(factory) : factory;
+    let contract, name;
+    if (typeof factory === 'string') {
+        contract = await getFactory(factory);
+        name = factory;
+    } else {
+        contract = factory;
+    }
     const afterUpgradeContract = await upgrades.upgradeProxy(proxy.address, contract, opts);
-    if (cache) await saveImplementationParams(cache, key, opts, afterUpgradeContract);
+    if (cache) await saveImplementationParams(cache, key, opts, afterUpgradeContract, name);
     return afterUpgradeContract;
 }
 
 // eslint-disable-next-line no-unused-vars
 async function tryFetchContract(cache, key, contract, args = [], opts = {}) {
+    let name;
+    if (typeof contract === 'string') {
+        name = contract;
+        contract = await ethers.getContractFactory(name);
+    }
     const deployed = await resumeOrDeploy(cache, key, () => contract.deploy(...args)).then((address) => contract.attach(address));
     DEBUG(`${key}.args`, args);
     await cache.set(`${key}.args`, args);
+    await cache.set(`${key}.name`, name);
     await saveVersion(key, cache, deployed, false);
     return deployed;
 }
@@ -119,15 +131,21 @@ async function migrateAddress(cache, key) {
 }
 
 async function tryFetchProxy(cache, key, contract, kind = 'uups', args = [], opts = {}) {
+    let name;
+    if (typeof contract === 'string') {
+        name = contract;
+        contract = await ethers.getContractFactory(name);
+    }
     const deployed = await resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind, ...opts })).then((address) => contract.attach(address));
-    if (cache) await saveImplementationParams(cache, key, opts, deployed);
+    if (cache) await saveImplementationParams(cache, key, opts, deployed, name);
     return deployed;
 }
 
-async function saveImplementationParams(cache, key, opts, contract) {
+async function saveImplementationParams(cache, key, opts, contract, name) {
     const implAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
     await cache.set(`${key}.impl.args`, opts.constructorArgs ?? []);
     await cache.set(`${key}.impl.address`, implAddress);
+    await cache.set(`${key}.impl.name`, name);
     await saveVersion(key, cache, contract, true);
 }
 
