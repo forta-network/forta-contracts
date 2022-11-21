@@ -1,5 +1,5 @@
 const { ethers } = require('hardhat');
-const migrate = require('../scripts/deploy-platform');
+const migrate = require('../scripts/deployments/platform');
 const utils = require('../scripts/utils');
 const DEBUG = require('debug')('forta:migration');
 

@@ -104,14 +104,15 @@ async function loadEnv(config = {}) {
     const keys = Object.keys(deployment).filter((key) => !key.includes('pending') && !key.startsWith('vesting-') && !key.includes('ens-') && key !== 'contracts');
     const contracts = {};
     for (const key of keys) {
-        console.log(key);
         const dep = deployment[key];
         const contractName = dep.impl ? dep.impl.name : dep.name;
         if (!contractName) continue;
-        console.log(contractName);
         contracts[utils.camelize(key)] = await utils.attach(contractName, dep.address).then((contract) => contract.connect(deployer));
     }
-    contracts.token = contracts.forta;
+    deployment.token = Object.assign({}, deployment.forta);
+    contracts.token = Object.assign({}, contracts.forta);
+    deployment['subject-gateway'] = Object.assign({}, deployment['staking-parameters']);
+    contracts.subjectGateway = Object.assign({}, contracts.stakingParameters);
 
     // TODO update this
     const roles = await Promise.all(
@@ -140,6 +141,7 @@ async function loadEnv(config = {}) {
         network: { name, chainId },
         contracts,
         roles,
+        deployment,
     };
 }
 
@@ -152,7 +154,7 @@ if (require.main === module) {
         });
 }
 
-module.exports = loadEnv;
+module.exports.loadEnv = loadEnv;
 module.exports.ROOT_CHAIN_MANAGER = ROOT_CHAIN_MANAGER;
 module.exports.CHILD_CHAIN_MANAGER_PROXY = CHILD_CHAIN_MANAGER_PROXY;
 module.exports.CHAIN_TYPE = CHAIN_TYPE;

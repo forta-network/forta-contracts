@@ -1,13 +1,13 @@
 /* eslint-disable no-unexpected-multiline */
 const { ethers, upgrades } = require('hardhat');
 const DEBUG = require('debug')('forta:migration');
-const utils = require('./utils');
+const utils = require('../utils');
 const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
 const SCANNER_POOL_SUBJECT = 2;
 
 const semver = require('semver');
-const deployEnv = require('./loadEnv');
+const deployEnv = require('../loadEnv');
 
 upgrades.silenceWarnings();
 
@@ -387,6 +387,7 @@ async function migrate(config = {}) {
                     registerNode('scanners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scanners.address, chainId: chainId }),
                     registerNode('scanner-pools.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scannerPools.address, chainId: chainId }),
                     registerNode('scanner-node-version.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scannerNodeVersion.address, chainId: chainId }),
+                    registerNode('rewards.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.rewardsDistributor.address, chainId: chainId }),
                     registerNode('escrow.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.escrowFactory.address, chainId: chainId }),
                 ]);
             }
@@ -412,6 +413,8 @@ async function migrate(config = {}) {
                 reverseRegister(contracts.scanners, 'scanners.registries.forta.eth'),
                 reverseRegister(contracts.scannerPools, 'scanner-pools.registries.forta.eth'),
                 reverseRegister(contracts.scannerNodeVersion, 'scanner-node-version.forta.eth'),
+                reverseRegister(contracts.rewardsDistributor, 'rewards.forta.eth'),
+
                 // contract.escrow doesn't support reverse registration (not a component)
             ]);
         }
