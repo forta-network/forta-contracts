@@ -18,7 +18,7 @@ contract Dispatch is BaseComponentUpgradeable {
     ScannerRegistry private _scanners_deprecated;
     ScannerPoolRegistry private _scannerPools;
 
-    string public constant version = "0.1.4";
+    string public constant version = "0.1.5";
 
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
