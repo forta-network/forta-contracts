@@ -7,7 +7,7 @@ const loadEnv = require('../../scripts/loadEnv');
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
 
 let originalScanners, agents, mockRouter;
-describe.skip('Upgrades testing', function () {
+describe('Upgrades testing', function () {
     prepare();
     before(async () => {
         mockRouter = await deploy(await ethers.getContractFactory('MockRouter'));
@@ -206,8 +206,8 @@ describe.skip('Upgrades testing', function () {
         });
     });
 
-    describe('FortaStaking', async function () {
-        it('0.1.0 -> 0.1.1', async function () {
+    describe.only('FortaStaking', async function () {
+        it('0.1.0 -> 0.1.2', async function () {
             this.accounts.getAccount('scanner');
             const STAKING_PARAMS = { max: '1000', min: '100', activated: true };
 
@@ -221,8 +221,8 @@ describe.skip('Upgrades testing', function () {
             });
             await this.staking.deployed();
 
-            const StakeSubjectGateway_0_1_0 = await ethers.getContractFactory('StakeSubjectGateway_0_1_0');
-            this.subjectGateway = await upgrades.deployProxy(StakeSubjectGateway_0_1_0, [this.access.address, mockRouter.address, this.staking.address], {
+            const FortaStakingParameters_0_1_1 = await ethers.getContractFactory('FortaStakingParameters_0_1_1');
+            this.subjectGateway = await upgrades.deployProxy(FortaStakingParameters_0_1_1, [this.access.address, mockRouter.address, this.staking.address], {
                 kind: 'uups',
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
@@ -235,9 +235,9 @@ describe.skip('Upgrades testing', function () {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             });
-            await originalScanners.deployed();
-            await this.subjectGateway.setStakeSubject(0, this.scanners.address);
-            await this.subjectGateway.setStakeSubject(1, this.agents.address);
+            await this.scanners.deployed();
+            await this.subjectGateway.setStakeSubjectHandler(0, this.scanners.address);
+            await this.subjectGateway.setStakeSubjectHandler(1, this.agents.address);
             await this.agents.connect(this.accounts.manager).setStakeThreshold(STAKING_PARAMS);
             await this.scanners.connect(this.accounts.manager).setStakeThreshold(STAKING_PARAMS, 1);
 
@@ -255,7 +255,7 @@ describe.skip('Upgrades testing', function () {
             const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
             await this.agents.createAgent(...args);
 
-            await this.staking.setSubjectHandler(this.subjectGateway.address);
+            await this.staking.setStakingParametersManager(this.subjectGateway.address);
             await this.staking.connect(this.accounts.user1).deposit(0, this.accounts.scanner.address, '100');
 
             await this.staking.connect(this.accounts.user1).initiateWithdrawal(0, this.accounts.scanner.address, '50');
@@ -295,6 +295,13 @@ describe.skip('Upgrades testing', function () {
                 unsafeAllow: ['delegatecall'],
             });
 
+            const StakeSubjectGateway = await ethers.getContractFactory('StakeSubjectGateway');
+            this.subjectGateway = await upgrades.upgradeProxy(this.subjectGateway.address, StakeSubjectGateway, {
+                constructorArgs: [this.contracts.forwarder.address],
+                unsafeAllow: ['delegatecall'],
+                // unsafeSkipStorageCheck: true,
+            });
+
             expect(await this.staking.activeStakeFor(0, this.accounts.scanner.address)).to.be.equal('50');
             expect(await this.staking.inactiveStakeFor(0, this.accounts.scanner.address)).to.be.equal('50');
 
@@ -316,6 +323,64 @@ describe.skip('Upgrades testing', function () {
 
             expect(await this.staking.totalActiveStake()).to.be.equal('75');
             expect(await this.staking.totalInactiveStake()).to.be.equal('75');
+
+            expect(await this.staking.stakeToActiveShares(subjectToActive(0, this.accounts.scanner.address), '10')).to.be.equal('10');
+            expect(await this.staking.stakeToInactiveShares(subjectToInactive(0, this.accounts.scanner.address), '10')).to.be.equal('10');
+            expect(await this.staking.activeSharesToStake(subjectToActive(0, this.accounts.scanner.address), '10')).to.be.equal('10');
+            expect(await this.staking.inactiveSharesToStake(subjectToInactive(0, this.accounts.scanner.address), '10')).to.be.equal('10');
+
+            expect(await this.staking.stakeToActiveShares(subjectToActive(1, AGENT_ID), '10')).to.be.equal('20');
+            expect(await this.staking.stakeToInactiveShares(subjectToInactive(1, AGENT_ID), '10')).to.be.equal('10');
+            expect(await this.staking.activeSharesToStake(subjectToActive(1, AGENT_ID), '10')).to.be.equal('5');
+            expect(await this.staking.inactiveSharesToStake(subjectToInactive(1, AGENT_ID), '10')).to.be.equal('10');
+
+            const FortaStaking = await ethers.getContractFactory('FortaStaking');
+            this.staking = await upgrades.upgradeProxy(this.staking.address, FortaStaking, {
+                constructorArgs: [this.contracts.forwarder.address],
+                unsafeAllow: ['delegatecall'],
+                unsafeSkipStorageCheck: true,
+            });
+            let i = 0;
+            console.log(++i);
+            await this.staking.configureStakeHelpers(this.subjectGateway.address, this.stakeAllocator.address, this.rewardsDistributor.address);
+            console.log(++i);
+            await this.subjectGateway.setStakeSubject(2, this.scannerPools.address);
+            console.log(++i);
+            await this.scannerPools.registerScannerPool(1);
+            await this.access.grantRole(this.roles.STAKING_CONTRACT, this.staking.address);
+            console.log(++i);
+            await this.staking.deposit(2, 1, '100');
+            console.log(++i);
+            await this.staking.initiateWithdrawal(2, 1, '50');
+
+            expect(await this.staking.subjectGateway()).to.be.equal(this.subjectGateway.address);
+
+            expect(await this.staking.activeStakeFor(2, 1)).to.be.equal('50');
+            // expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.be.equal('50');
+
+            expect(await this.staking.inactiveStakeFor(2, 1)).to.be.equal('50');
+
+            expect(await this.staking.activeStakeFor(0, this.accounts.scanner.address)).to.be.equal('50');
+            expect(await this.staking.inactiveStakeFor(0, this.accounts.scanner.address)).to.be.equal('50');
+
+            expect(await this.staking.sharesOf(0, this.accounts.scanner.address, this.accounts.user1.address)).to.be.equal('50');
+            expect(await this.staking.inactiveSharesOf(0, this.accounts.scanner.address, this.accounts.user1.address)).to.be.equal('50');
+            expect(await this.staking.totalShares(0, this.accounts.scanner.address)).to.be.equal('50');
+            expect(await this.staking.totalInactiveShares(0, this.accounts.scanner.address)).to.be.equal('50');
+            expect(await this.staking.isFrozen(0, this.accounts.scanner.address)).to.be.equal(true);
+            // expect(await this.staking.availableReward(0, this.accounts.scanner.address, this.accounts.user1.address)).to.be.equal('100');
+
+            expect(await this.staking.activeStakeFor(1, AGENT_ID)).to.be.equal('25');
+            expect(await this.staking.inactiveStakeFor(1, AGENT_ID)).to.be.equal('25');
+            expect(await this.staking.sharesOf(1, AGENT_ID, this.accounts.user1.address)).to.be.equal('50');
+            expect(await this.staking.inactiveSharesOf(1, AGENT_ID, this.accounts.user1.address)).to.be.equal('25');
+            expect(await this.staking.totalShares(1, AGENT_ID)).to.be.equal('50');
+            expect(await this.staking.totalInactiveShares(1, AGENT_ID)).to.be.equal('25');
+            expect(await this.staking.isFrozen(1, AGENT_ID)).to.be.equal(false);
+            // expect(await this.staking.availableReward(1, AGENT_ID, this.accounts.user1.address)).to.be.equal('200');
+
+            expect(await this.staking.totalActiveStake()).to.be.equal('125');
+            expect(await this.staking.totalInactiveStake()).to.be.equal('125');
 
             expect(await this.staking.stakeToActiveShares(subjectToActive(0, this.accounts.scanner.address), '10')).to.be.equal('10');
             expect(await this.staking.stakeToInactiveShares(subjectToInactive(0, this.accounts.scanner.address), '10')).to.be.equal('10');

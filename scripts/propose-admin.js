@@ -68,7 +68,7 @@ async function main() {
     console.log(config);
     const multicall = config.params.length > 1;
     let functionInterface, functionInputs, forceMulticall;
-    //console.log(contract.interface.functions)
+
     if (!multicall) {
         const fragment = contract.interface.fragments.find((fragment) => fragment.name === config.methodName);
         functionInterface = JSON.parse(fragment.format(ethers.utils.FormatTypes.json));

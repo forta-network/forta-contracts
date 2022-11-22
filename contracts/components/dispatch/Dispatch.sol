@@ -13,15 +13,15 @@ import "../scanner_pools/ScannerPoolRegistry.sol";
 contract Dispatch is BaseComponentUpgradeable {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    string public constant version = "0.1.5";
+
     AgentRegistry private _agents;
     /// @custom:oz-renamed-from _scanners
     ScannerRegistry private _scanners_deprecated;
-    ScannerPoolRegistry private _scannerPools;
-
-    string public constant version = "0.1.5";
-
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
+
+    ScannerPoolRegistry private _scannerPools;
 
     error Disabled(string name);
     error InvalidId(string name, uint256 id);

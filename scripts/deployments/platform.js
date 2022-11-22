@@ -171,7 +171,7 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}.1] stake allocator: ${contracts.stakeAllocator.address}`);
 
-        const stakingVersion = await utils.getContractVersion(contracts.agents);
+        const stakingVersion = await utils.getContractVersion(contracts.staking);
         DEBUG('agentVersion', stakingVersion);
 
         if (semver.gt(stakingVersion, '0.1.1')) {

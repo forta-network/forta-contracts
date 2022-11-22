@@ -11,13 +11,14 @@ const process = require('process');
 Object.assign(process.env, require('dotenv').config().parsed);
 
 const DEFAULT_FEE_DATA = {
-    maxFeePerGas: ethers.utils.parseUnits('500', 'gwei'),
-    maxPriorityFeePerGas: ethers.utils.parseUnits('30', 'gwei'),
+    maxFeePerGas: ethers.utils.parseUnits('400', 'gwei'),
+    maxPriorityFeePerGas: ethers.utils.parseUnits('20', 'gwei'),
 };
 
 const getDefaultProvider = async (baseProvider = ethers.provider, feeData = {}) => {
     const provider = new ethers.providers.FallbackProvider([baseProvider], 1);
     provider.getFeeData = () => Promise.resolve(Object.assign(DEFAULT_FEE_DATA, feeData));
+    console.log(await provider.getFeeData());
     return provider;
 };
 
@@ -168,7 +169,7 @@ async function getContractVersion(contract, deployParams = {}) {
             return '0.0.0';
         }
     }
-    throw new Error('Cannot get contract version. Provide contract object or deployParams');
+    throw new Error(`Cannot get contract version for ${contract} or ${deployParams}. Provide contract object or deployParams`);
 }
 
 async function saveVersion(key, cache, contract, isProxy) {

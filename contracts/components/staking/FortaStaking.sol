@@ -76,6 +76,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     // treasury for slashing
     address private _treasury;
+    /// @custom:oz-retyped-from IStakeController
+    /// @custom:oz-renamed-from _stakingParameters
     IStakeSubjectGateway public subjectGateway;
 
     uint256 public slashDelegatorsPercent;
@@ -700,5 +702,5 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         return super._msgData();
     }
 
-    uint256[42] private __gap;
+    uint256[37] private __gap;
 }
