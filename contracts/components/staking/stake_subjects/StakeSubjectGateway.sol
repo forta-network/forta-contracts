@@ -17,7 +17,7 @@ contract StakeSubjectGateway is BaseComponentUpgradeable, SubjectTypeValidator, 
     FortaStaking private _fortaStaking; // Should be immutable but already deployed.
     // stake subject parameters for each subject
     /// @custom:oz-renamed-from _stakeSubjectHandlers
-    /// @custom:oz-retyped-from mapping(uint8 => IStakeSubject)
+    /// @custom:oz-retyped-from mapping(uint8 => contract IStakeSubject)
     mapping(uint8 => address) private _stakeSubjects;
 
     error NonIDelegatedSubjectHandler(uint8 subjectType, address stakeSubject);

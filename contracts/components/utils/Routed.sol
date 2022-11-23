@@ -11,7 +11,7 @@ import "./AccessManaged.sol";
  */
 abstract contract RoutedUpgradeable is AccessManagedUpgradeable {
 
-    /// @custom:oz-retyped-from IRouter
+    /// @custom:oz-retyped-from contract IRouter
     /// @custom:oz-renamed-from _router
     address private _deprecated_router;
 

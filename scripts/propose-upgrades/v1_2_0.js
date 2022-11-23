@@ -18,7 +18,7 @@ async function main() {
     if (name !== 'hardhat' && deployer.address === '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266') {
         throw new Error('using hardhat key for other network');
     }
-    
+
     console.log('upgrading FortaStaking...');
     console.log(
         await proposeUpgrade(
@@ -27,14 +27,13 @@ async function main() {
                 unsafeAllow: ['delegatecall'],
                 multisig: MULTISIG_ADDRESS,
                 constructorArgs: [deployment.forwarder.address],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'staking'
         )
     );
     console.log('FortaStaking proposed!');
-    /*
+
     console.log('upgrading StakeSubjectGateway...');
     console.log(
         await proposeUpgrade(
@@ -43,7 +42,6 @@ async function main() {
                 unsafeAllow: ['delegatecall'],
                 multisig: MULTISIG_ADDRESS,
                 constructorArgs: [deployment.forwarder.address],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'staking-parameters'
@@ -59,7 +57,6 @@ async function main() {
                 unsafeAllow: ['delegatecall'],
                 multisig: MULTISIG_ADDRESS,
                 constructorArgs: [deployment.forwarder.address],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'dispatch'
@@ -75,14 +72,12 @@ async function main() {
                 unsafeAllow: ['delegatecall'],
                 multisig: MULTISIG_ADDRESS,
                 constructorArgs: [deployment.forwarder.address],
-                unsafeSkipStorageCheck: true,
             },
             CACHE,
             'scanners'
         )
     );
     console.log('ScannerRegistry proposed!');
-    */
 }
 
 main()
