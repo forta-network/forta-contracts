@@ -154,6 +154,7 @@ async function saveImplementationParams(cache, key, opts, contract, name) {
     await cache.set(`${key}.impl.args`, opts.constructorArgs ?? []);
     await cache.set(`${key}.impl.address`, implAddress);
     await cache.set(`${key}.impl.name`, name);
+    await cache.set(`${key}.impl.verified`, false);
     await saveVersion(key, cache, contract, true);
 }
 
@@ -161,6 +162,7 @@ async function saveProposedImplementationParams(cache, key, opts, implAddress, n
     await cache.set(`${key}.proposedImpl.args`, opts.constructorArgs ?? []);
     await cache.set(`${key}.proposedImpl.address`, implAddress);
     await cache.set(`${key}.proposedImpl.name`, name);
+    await cache.set(`${key}.proposedImpl.verified`, false);
     await cache.set(`${key}.proposedImpl.version`, await getContractVersion({ address: implAddress, provider: await getDefaultProvider() }));
 }
 
