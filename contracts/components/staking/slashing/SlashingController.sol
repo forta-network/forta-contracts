@@ -59,7 +59,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     StateMachines.Machine private immutable _transitionTable;
 
     //solhint-disable-next-line const-name-snakecase
-    string public constant version = "0.1.0";
+    string public constant version = "0.1.1";
     uint256 public constant MAX_EVIDENCE_LENGTH = 5;
     uint256 public constant MAX_CHAR_LENGTH = 200;
     uint256 private constant HUNDRED_PERCENT = 100;

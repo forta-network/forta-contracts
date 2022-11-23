@@ -17,7 +17,7 @@ contract AgentRegistry is
     AgentRegistryMetadata,
     AgentRegistryEnumerable
 {
-    string public constant version = "0.1.5";
+    string public constant version = "0.1.6";
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
 

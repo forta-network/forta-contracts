@@ -1,7 +1,7 @@
 const hre = require('hardhat');
 const { ethers, defender } = hre;
 const DEBUG = require('debug')('forta');
-const utils = require('./utils');
+const utils = require('../utils');
 
 async function updateVersions() {
     const provider = await utils.getDefaultProvider();

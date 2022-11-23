@@ -114,6 +114,20 @@ yarn
 npm run test
 ```
 
+## Querying the contracts
+
+You can query a network deployment with the help of the `./scripts/.cache-<network_id>.json` files and using ethers to attach contract factories to addresses.
+There is a helper function to automate this process from console or scripts called `loadEnv()`
+
+Example:
+
+```
+npx hardhat --network <network name from hardhat.config.js> console
+> const e = require('./scripts/loadEnv')
+> const d = await e.loadEnv()
+> await d.contracts.scanners.ownerOf('0x6F0BAADa52e8340C2154224Ecb476E5c9285F01c')
+```
+
 ## Deployments
 
 Deployment addresses are listed in `scripts/.cache-<chainID>.json`

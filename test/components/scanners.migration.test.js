@@ -46,7 +46,6 @@ describe('Scanner Registry (Deprecation and migration)', function () {
         this.scanners = await upgrades.upgradeProxy(this.scanners.address, await ethers.getContractFactory('ScannerRegistry'), {
             constructorArgs: [this.contracts.forwarder.address],
             unsafeAllow: ['delegatecall'],
-            unsafeSkipStorageCheck: true,
             call: {
                 fn: 'configureMigration(uint256, address)',
                 args: [(await this.contracts.scanners.sunsettingTime()).toNumber() + 5000, await this.scannerPools.address],
@@ -102,7 +101,6 @@ describe('Scanner Registry (Deprecation and migration)', function () {
             this.scanners = await upgrades.upgradeProxy(this.scanners.address, NewImplementation, {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                unsafeSkipStorageCheck: true,
             });
             const { timestamp } = await this.accounts.user1.provider.getBlock('latest');
             await this.scanners.connect(this.accounts.admin).configureMigration(timestamp + 5000, await this.scannerPools.address);

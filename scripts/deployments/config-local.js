@@ -1,6 +1,6 @@
 const { ethers } = require('hardhat');
-const migrate = require('../scripts/deploy-platform');
-const deployBatchRelayer = require('../scripts/deploy-batch-relayer');
+const migrate = require('./platform');
+const deployBatchRelayer = require('./batch-relayer');
 const utils = require('../scripts/utils');
 const DEBUG = require('debug')('forta:deploy-config-local');
 

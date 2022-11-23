@@ -97,7 +97,7 @@ async function main(config = {}) {
     DEBUG('--------------------------');
     DEBUG(laterRows);
     const size = Math.max(originalRows.length, laterRows.length);
-    console.log(size);
+
     console.log(header);
     let data = header;
     for (let i = 0; i < size; i++) {

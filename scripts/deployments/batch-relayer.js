@@ -1,6 +1,6 @@
 const { ethers, upgrades } = require('hardhat');
 const DEBUG = require('debug')('forta:migration');
-const utils = require('./utils');
+const utils = require('../utils');
 
 upgrades.silenceWarnings();
 
