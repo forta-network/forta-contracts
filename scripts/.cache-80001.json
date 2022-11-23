@@ -22,7 +22,7 @@
 			"address": "0xDCFC2E4037a5d5524A957D7771C6Fd328f1D8ECE",
 			"name": "AccessManager",
 			"version": "0.1.0",
-			"verified": "true"
+            "verified": "true"
 		}
 	},
 	"agents-pending": "0x74e5c36c5d4c1d7ae47f08d803c9695c9ec9849753138d1f6634f61974f6c2eb",
@@ -49,7 +49,7 @@
 			"address": "0x0FF4A7603EB4FB7A5c8D4cd25199046942fb968B",
 			"name": "ScannerRegistry",
 			"version": "0.1.4",
-			"verified": "true"
+            "verified": "true"
 		}
 	},
 	"dispatch-pending": "0x667cb934eaf86cf1a7070c76a327a863564133715264f8b55fef199b6766a23c",
@@ -62,7 +62,7 @@
 			"address": "0x485F9c35d90E639f5B591DA5281199Ae59A9794F",
 			"name": "Dispatch",
 			"version": "0.1.5",
-			"verified": "true"
+            "verified": "true"
 		}
 	},
 	"ens-registry-pending": "0x8065caff48c61f4526c8fd89fd562cfbd1119c02b07de9697867b3197155d35c",
@@ -99,7 +99,7 @@
 			"address": "0xC5a5ea6FE58b24f78039A65db835BE806a20C1b7",
 			"name": "StakeSubjectGateway",
 			"version": "0.1.2",
-			"verified": "true"
+            "verified": "true"
 		}
 	},
 	"scanner-node-version-pending": "0x306b9798a2a6a177aea66843c57518c62b44acd041e5e0ccc30b594f77169daa",
@@ -112,7 +112,7 @@
 			"address": "0x52a53DCC546c09CECe279F5549d0958433912802",
 			"name": "ScannerNodeVersion",
 			"version": "0.1.1",
-			"verified": "true"
+            "verified": "true"
 		}
 	},
 	"contracts": [
@@ -130,7 +130,7 @@
 			"address": "0x5e9Fe0d11AA082e5426eb66E9f85d333241E519e",
 			"name": "FortaStaking",
 			"version": "0.1.2",
-			"verified": "true"
+            "verified": "true"
 		}
 	},
 	"forwarder-pending": "0x9bea5544f223d1fcbc2b2aa03fbcf2916edde6bdffd770d63a7f82fb9b21813b",
@@ -178,7 +178,7 @@
 			"address": "0xc500d015E69721Ec3D29955EBF15bf9b8Ad832eA",
 			"name": "SlashingController",
 			"version": "0.1.0",
-			"verified": "true"
+            "verified": "true"
 		}
 	},
 	"staking-rewards-pending": "0x82d9ced095db584f6c3658f8a2f9ce353e433ff5e8f68b3665252822ad8a20f8",
@@ -219,7 +219,7 @@
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
 				"0x26112a3885124E8b7564824F030A6d4f6e29E52B"
 			],
-			"address": "0x10fF0fb7211a3D0aa8A861220775C028C99F6686",
+			"address": "0x41d0597e85c944d191e578d9658fe5ec8ee9f393",
 			"name": "ScannerPoolRegistry",
 			"version": "0.1.0",
 			"verified": "true"
