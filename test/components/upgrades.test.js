@@ -299,7 +299,7 @@ describe('Upgrades testing', function () {
             this.subjectGateway = await upgrades.upgradeProxy(this.subjectGateway.address, StakeSubjectGateway, {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                // unsafeSkipStorageCheck: true,
+                //unsafeSkipStorageCheck: true,
             });
 
             expect(await this.staking.activeStakeFor(0, this.accounts.scanner.address)).to.be.equal('50');

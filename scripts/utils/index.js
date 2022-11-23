@@ -1,4 +1,4 @@
-const { ethers, upgrades, network } = require('hardhat');
+const { ethers, upgrades, network, defender } = require('hardhat');
 const { NonceManager } = require('@ethersproject/experimental');
 const Conf = require('conf');
 const pLimit = require('p-limit');
@@ -18,7 +18,6 @@ const DEFAULT_FEE_DATA = {
 const getDefaultProvider = async (baseProvider = ethers.provider, feeData = {}) => {
     const provider = new ethers.providers.FallbackProvider([baseProvider], 1);
     provider.getFeeData = () => Promise.resolve(Object.assign(DEFAULT_FEE_DATA, feeData));
-    console.log(await provider.getFeeData());
     return provider;
 };
 
@@ -106,6 +105,14 @@ async function performUpgrade(proxy, factory, opts = {}, cache, key) {
     return afterUpgradeContract;
 }
 
+async function proposeUpgrade(contractName, opts = {}, cache, key) {
+    const proxyAddress = await cache.get(`${key}.address`);
+    const proposal = await defender.proposeUpgrade(proxyAddress, contractName, opts);
+    //console.log(proposal.metadata.newImplementationAddress);
+    await saveProposedImplementationParams(cache, key, opts, proposal.metadata.newImplementationAddress, contractName);
+    return proposal.url;
+}
+
 // eslint-disable-next-line no-unused-vars
 async function tryFetchContract(cache, key, contract, args = [], opts = {}) {
     let name;
@@ -148,6 +155,13 @@ async function saveImplementationParams(cache, key, opts, contract, name) {
     await cache.set(`${key}.impl.address`, implAddress);
     await cache.set(`${key}.impl.name`, name);
     await saveVersion(key, cache, contract, true);
+}
+
+async function saveProposedImplementationParams(cache, key, opts, implAddress, name) {
+    await cache.set(`${key}.proposedImpl.args`, opts.constructorArgs ?? []);
+    await cache.set(`${key}.proposedImpl.address`, implAddress);
+    await cache.set(`${key}.proposedImpl.name`, name);
+    await cache.set(`${key}.proposedImpl.version`, await getContractVersion({ address: implAddress, provider: await getDefaultProvider() }));
 }
 
 async function getContractVersion(contract, deployParams = {}) {
@@ -324,6 +338,7 @@ module.exports = {
     deploy,
     deployUpgradeable,
     performUpgrade,
+    proposeUpgrade,
     tryFetchContract,
     tryFetchProxy,
     migrateAddress,
