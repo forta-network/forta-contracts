@@ -18,7 +18,7 @@ async function main() {
     if (name !== 'hardhat' && deployer.address === '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266') {
         throw new Error('using hardhat key for other network');
     }
-/*
+    /*
     console.log('upgrading FortaStaking...');
     console.log(
         await proposeUpgrade(
@@ -78,7 +78,7 @@ async function main() {
         )
     );
     console.log('ScannerRegistry proposed!');
-*/
+
     console.log('upgrading AgentRegistry...');
     console.log(
         await proposeUpgrade(
@@ -93,6 +93,19 @@ async function main() {
         )
     );
     console.log('AgentRegistry proposed!');
+    */
+    console.log(
+        await proposeUpgrade(
+            'RewardsDistributor',
+            {
+                unsafeAllow: ['delegatecall'],
+                multisig: MULTISIG_ADDRESS,
+                constructorArgs: [deployment.forwarder.address, deployment.token.address, deployment['subject-gateway'].address],
+            },
+            CACHE,
+            'staking-rewards'
+        )
+    );
 }
 
 main()

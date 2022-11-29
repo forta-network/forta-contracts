@@ -9,7 +9,7 @@
 			"address": "0x21b1B0f8E9182c92C2A81F43f305cE25994D9d57",
 			"name": "FortaBridgedPolygon",
 			"version": "0.1.1",
-            "verified": "true"
+			"verified": "true"
 		}
 	},
 	"access-pending": "0xeb761b35d307c30baca49115043dfcc856511affb22fabd7ce4bf031eb4cd93c",
@@ -22,7 +22,7 @@
 			"address": "0xDCFC2E4037a5d5524A957D7771C6Fd328f1D8ECE",
 			"name": "AccessManager",
 			"version": "0.1.0",
-            "verified": "true"
+			"verified": "true"
 		}
 	},
 	"agents-pending": "0x74e5c36c5d4c1d7ae47f08d803c9695c9ec9849753138d1f6634f61974f6c2eb",
@@ -35,7 +35,7 @@
 			"address": "0xCDbb73F9F4894D745506317d567bF4d3598EfC82",
 			"name": "AgentRegistry",
 			"version": "0.1.6",
-            "verified": "true"
+			"verified": "true"
 		}
 	},
 	"scanners-pending": "0x15ea76aabbf5f1fd7119e74010146cc88746428840b10c38dba7ee0fa430b03d",
@@ -49,7 +49,7 @@
 			"address": "0x0FF4A7603EB4FB7A5c8D4cd25199046942fb968B",
 			"name": "ScannerRegistry",
 			"version": "0.1.4",
-            "verified": "true"
+			"verified": "true"
 		}
 	},
 	"dispatch-pending": "0x667cb934eaf86cf1a7070c76a327a863564133715264f8b55fef199b6766a23c",
@@ -62,7 +62,7 @@
 			"address": "0x485F9c35d90E639f5B591DA5281199Ae59A9794F",
 			"name": "Dispatch",
 			"version": "0.1.5",
-            "verified": "true"
+			"verified": "true"
 		}
 	},
 	"ens-registry-pending": "0x8065caff48c61f4526c8fd89fd562cfbd1119c02b07de9697867b3197155d35c",
@@ -99,7 +99,7 @@
 			"address": "0xC5a5ea6FE58b24f78039A65db835BE806a20C1b7",
 			"name": "StakeSubjectGateway",
 			"version": "0.1.2",
-            "verified": "true"
+			"verified": "true"
 		}
 	},
 	"scanner-node-version-pending": "0x306b9798a2a6a177aea66843c57518c62b44acd041e5e0ccc30b594f77169daa",
@@ -112,7 +112,7 @@
 			"address": "0x52a53DCC546c09CECe279F5549d0958433912802",
 			"name": "ScannerNodeVersion",
 			"version": "0.1.1",
-            "verified": "true"
+			"verified": "true"
 		}
 	},
 	"contracts": [
@@ -130,7 +130,7 @@
 			"address": "0x5e9Fe0d11AA082e5426eb66E9f85d333241E519e",
 			"name": "FortaStaking",
 			"version": "0.1.2",
-            "verified": "true"
+			"verified": "true"
 		}
 	},
 	"forwarder-pending": "0x9bea5544f223d1fcbc2b2aa03fbcf2916edde6bdffd770d63a7f82fb9b21813b",
@@ -178,7 +178,7 @@
 			"address": "0xc500d015E69721Ec3D29955EBF15bf9b8Ad832eA",
 			"name": "SlashingController",
 			"version": "0.1.0",
-            "verified": "true"
+			"verified": "true"
 		}
 	},
 	"staking-rewards-pending": "0x82d9ced095db584f6c3658f8a2f9ce353e433ff5e8f68b3665252822ad8a20f8",
@@ -190,10 +190,10 @@
 				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
 				"0x2441Ce5eB269505f30F6F434D21E039438aaC342"
 			],
-			"address": "0xeAdE3dba984b34357571213bA63C4aAc52178248",
+			"address": "0x4311438A01d7A9D8B9fE3Ba6599481B8081BCbc9",
 			"name": "RewardsDistributor",
-			"version": "0.1.0",
-            "verified": "true"
+			"verified": true,
+			"version": "0.1.0"
 		}
 	},
 	"staking-allocator-pending": "0x31ce395099ddd67735e19ba7fe118b4063d8f124201a2c2bce74fcf443d31f6c",
@@ -208,7 +208,7 @@
 			"address": "0x04688C6D523B77280C8b7292A94c5c98Fe806322",
 			"name": "StakeAllocator",
 			"version": "0.1.0",
-            "verified": "true"
+			"verified": "true"
 		}
 	},
 	"scanner-pools-pending": "0xf5a8be1b02c1731d47fbba2a98b160dab41a8eb139c97a8dfe38bccae1c13710",
@@ -222,7 +222,7 @@
 			"address": "0x10fF0fb7211a3D0aa8A861220775C028C99F6686",
 			"name": "ScannerPoolRegistry",
 			"version": "0.1.0",
-            "verified": "true"
+			"verified": "true"
 		}
 	},
 	"scanner-to-scanner-pool-migration-pending": "0x0927a6b74fafb4cdeb01d6fd4f67b1d7c813086f9eb9f0a98b3793b9d30c9b99",
@@ -238,7 +238,7 @@
 			"address": "0xa284F91580374D11Eee8344f00BA5F874A87D493",
 			"name": "ScannerToScannerPoolMigration",
 			"version": "0.1.0",
-            "verified": "true"
+			"verified": "true"
 		}
 	}
 }
