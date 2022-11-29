@@ -65,11 +65,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     error SetDelegationFeeNotReady();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(
-        address _forwarder,
-        address _rewardsToken,
-        address __subjectGateway
-    ) initializer ForwardedContext(_forwarder) {
+    constructor(address _forwarder, address _rewardsToken, address __subjectGateway) initializer ForwardedContext(_forwarder) {
         if (_rewardsToken == address(0)) revert ZeroAddress("_rewardsToken");
         if (__subjectGateway == address(0)) revert ZeroAddress("__subjectGateway");
         rewardsToken = IERC20(_rewardsToken);
@@ -86,13 +82,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     }
 
     /********** Epoch number getters **********/
-    function didAllocate(
-        uint8 subjectType,
-        uint256 subject,
-        uint256 stakeAmount,
-        uint256 sharesAmount,
-        address staker
-    ) external onlyRole(ALLOCATOR_CONTRACT_ROLE) {
+    function didAllocate(uint8 subjectType, uint256 subject, uint256 stakeAmount, uint256 sharesAmount, address staker) external onlyRole(ALLOCATOR_CONTRACT_ROLE) {
         bool delegated = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED;
         if (delegated) {
             uint8 delegatorType = getDelegatorSubjectType(subjectType);
@@ -111,13 +101,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         emit DidAccumulateRate(subjectType, subject, staker, stakeAmount, sharesAmount);
     }
 
-    function didUnallocate(
-        uint8 subjectType,
-        uint256 subject,
-        uint256 stakeAmount,
-        uint256 sharesAmount,
-        address staker
-    ) external onlyRole(ALLOCATOR_CONTRACT_ROLE) {
+    function didUnallocate(uint8 subjectType, uint256 subject, uint256 stakeAmount, uint256 sharesAmount, address staker) external onlyRole(ALLOCATOR_CONTRACT_ROLE) {
         bool delegated = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED;
         if (delegated) {
             uint8 delegatorType = getDelegatorSubjectType(subjectType);
@@ -152,12 +136,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     }
 
     /********** Reward management **********/
-    function reward(
-        uint8 subjectType,
-        uint256 subjectId,
-        uint256 amount,
-        uint256 epochNumber
-    ) external onlyRole(REWARDER_ROLE) {
+    function reward(uint8 subjectType, uint256 subjectId, uint256 amount, uint256 epochNumber) external onlyRole(REWARDER_ROLE) {
         if (subjectType != SCANNER_POOL_SUBJECT) revert InvalidSubjectType(subjectType);
         if (!_subjectGateway.isRegistered(subjectType, subjectId)) revert RewardingNonRegisteredSubject(subjectType, subjectId);
         uint256 shareId = FortaStakingUtils.subjectToActive(getDelegatorSubjectType(subjectType), subjectId);
@@ -166,12 +145,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         emit Rewarded(subjectType, subjectId, amount, epochNumber);
     }
 
-    function availableReward(
-        uint8 subjectType,
-        uint256 subjectId,
-        uint256 epochNumber,
-        address staker
-    ) public view returns (uint256) {
+    function availableReward(uint8 subjectType, uint256 subjectId, uint256 epochNumber, address staker) public view returns (uint256) {
         (uint256 shareId, bool isDelegator) = _getShareId(subjectType, subjectId);
         if (_claimedRewardsPerEpoch[shareId][epochNumber][staker]) {
             return 0;
@@ -179,12 +153,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         return _availableReward(shareId, isDelegator, epochNumber, staker);
     }
 
-    function _availableReward(
-        uint256 shareId,
-        bool delegator,
-        uint256 epochNumber,
-        address staker
-    ) internal view returns (uint256) {
+    function _availableReward(uint256 shareId, bool delegator, uint256 epochNumber, address staker) internal view returns (uint256) {
         DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
 
         uint256 N = s.delegated.getValueAtEpoch(epochNumber);
@@ -212,11 +181,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         }
     }
 
-    function claimRewards(
-        uint8 subjectType,
-        uint256 subjectId,
-        uint256[] calldata epochNumbers
-    ) external {
+    function claimRewards(uint8 subjectType, uint256 subjectId, uint256[] calldata epochNumbers) external {
         (uint256 shareId, bool isDelegator) = _getShareId(subjectType, subjectId);
         if (!isDelegator) {
             if (_subjectGateway.ownerOf(subjectType, subjectId) != _msgSender()) revert SenderNotOwner(_msgSender(), subjectId);
@@ -230,10 +195,8 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         }
     }
 
-
     /********** Delegation parameters **********/
 
-    
     function setDelegationParams(uint256 _delegationParamsEpochDelay, uint256 _defaultFeeBps) external onlyRole(STAKING_ADMIN_ROLE) {
         if (_delegationParamsEpochDelay == 0) revert ZeroAmount("_delegationParamsEpochDelay");
         delegationParamsEpochDelay = delegationParamsEpochDelay;
@@ -249,7 +212,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
      * @param subjectType a DELEGATED subject type.
      * @param subjectId the DELEGATED subject id.
      */
-    function setDelegationFeeBps(uint8 subjectType, uint256 subjectId, uint16 feeBps) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED)  {
+    function setDelegationFeeBps(uint8 subjectType, uint256 subjectId, uint16 feeBps) external onlyAgencyType(subjectType, SubjectStakeAgency.DELEGATED) {
         if (feeBps > MAX_BPS) revert AmountTooLarge(feeBps, MAX_BPS);
         (uint256 shareId, bool isDelegator) = _getShareId(subjectType, subjectId);
         if (!isDelegator && _subjectGateway.ownerOf(subjectType, subjectId) != _msgSender()) revert SenderNotOwner(_msgSender(), subjectId);
@@ -266,19 +229,18 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         emit SetDelegationFee(subjectType, subjectId, fees[1].sinceEpoch, feeBps);
     }
 
-
     /// Returns current delegation fee for an epoch or defaultFeeBps if not set
-    function getDelegationFee(uint8 subjectType, uint256 subjectId, uint256 epochNumber) public view returns(uint256) {
+    function getDelegationFee(uint8 subjectType, uint256 subjectId, uint256 epochNumber) public view returns (uint256) {
         (uint256 shareId, ) = _getShareId(subjectType, subjectId);
         return _getDelegationFee(shareId, epochNumber);
     }
 
-    function _getDelegationFee(uint256 shareId, uint256 epochNumber) private view returns(uint256) {
+    function _getDelegationFee(uint256 shareId, uint256 epochNumber) private view returns (uint256) {
         DelegationFee[2] storage fees = delegationFees[shareId];
         return _getFee(fees, 1, epochNumber);
     }
 
-    function _getFee(DelegationFee[2] storage fees, uint256 index, uint256 epochNumber) private view returns(uint256) {
+    function _getFee(DelegationFee[2] storage fees, uint256 index, uint256 epochNumber) private view returns (uint256) {
         if (fees[index].feeBps == 0) {
             // No fees set yet
             return defaultFeeBps;
@@ -294,9 +256,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
     function _getShareId(uint8 subjectType, uint256 subjectId) private pure returns (uint256 shareId, bool isDelegator) {
         isDelegator = getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATOR;
-        shareId = isDelegator
-            ? FortaStakingUtils.subjectToActive(subjectType, subjectId)
-            : FortaStakingUtils.subjectToActive(getDelegatorSubjectType(subjectType), subjectId);
+        shareId = isDelegator ? FortaStakingUtils.subjectToActive(subjectType, subjectId) : FortaStakingUtils.subjectToActive(getDelegatorSubjectType(subjectType), subjectId);
         return (shareId, isDelegator);
     }
 
@@ -324,19 +284,31 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
     /********** Epoch number getters **********/
 
+    function getEpochNumber(uint256 timestamp) external pure returns (uint32) {
+        return Accumulators.getEpochNumber(timestamp);
+    }
+
     function getCurrentEpochNumber() external view returns (uint32) {
         return Accumulators.getCurrentEpochNumber();
     }
 
-    function getEpochNumber(uint256 timestamp) external pure returns (uint32) {
-        return Accumulators.getEpochNumber(timestamp);
+    function getEpochStartTimestamp(uint256 epochNumber) external pure returns (uint256) {
+        return Accumulators.getEpochStartTimestamp(epochNumber);
+    }
+
+    function getCurrentEpochStartTimestamp() external view returns (uint256) {
+        return Accumulators.getCurrentEpochStartTimestamp();
     }
 
     function getEpochEndTimestamp(uint256 epochNumber) external pure returns (uint256) {
         return Accumulators.getEpochEndTimestamp(epochNumber);
     }
 
-    function getCurrentEpochTimestamp() external view returns (uint256) {
-        return Accumulators.getCurrentEpochTimestamp();
-    }  
+    function getCurrentEpochEndTimestamp() external view returns (uint256) {
+        return Accumulators.getCurrentEpochEndTimestamp();
+    }
+
+    function isCurrentEpoch(uint256 timestamp) external view returns (bool) {
+        return Accumulators.isCurrentEpoch(timestamp);
+    }
 }
