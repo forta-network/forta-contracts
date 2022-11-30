@@ -419,7 +419,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
      * @notice Getter for StakeThreshold for the scanner with id `subject`
      */
     function getManagedStakeThreshold(uint256 managedId) public view returns (StakeThreshold memory) {
-        return _scannerStakeThresholds[managedId];
+        return _scannerStakeThresholds[_scannerPoolChainId[managedId]];
     }
 
     /// Total scanners registered to a ScannerPool
