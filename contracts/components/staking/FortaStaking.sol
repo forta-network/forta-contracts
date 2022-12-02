@@ -698,5 +698,5 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         return super._msgData();
     }
 
-    uint256[37] private __gap;
+    uint256[38] private __gap;
 }
