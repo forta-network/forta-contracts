@@ -94,15 +94,6 @@
 		"address": "0x2441Ce5eB269505f30F6F434D21E039438aaC342",
 		"impl": {
 			"args": [
-				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
-			],
-			"address": "0xC5a5ea6FE58b24f78039A65db835BE806a20C1b7",
-			"name": "StakeSubjectGateway",
-			"version": "0.1.2",
-			"verified": "true"
-		},
-		"proposedImpl": {
-			"args": [
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
 				"0x2441Ce5eB269505f30F6F434D21E039438aaC342",
 				"0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9"
@@ -135,15 +126,6 @@
 	"staking": {
 		"address": "0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c",
 		"impl": {
-			"args": [
-				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
-			],
-			"address": "0x5e9Fe0d11AA082e5426eb66E9f85d333241E519e",
-			"name": "FortaStaking",
-			"version": "0.1.2",
-			"verified": "true"
-		},
-		"proposedImpl": {
 			"args": [
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
