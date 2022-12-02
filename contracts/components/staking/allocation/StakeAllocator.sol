@@ -31,7 +31,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
     IStakeSubjectGateway private immutable _subjectGateway;
 
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    IRewardsDistributor private immutable _rewardsDistributor;
+    IRewardsDistributor public immutable rewardsDistributor;
 
     // subject => active stake
     Distributions.Balances private _allocatedStake;
@@ -46,11 +46,11 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
     error CannotDelegateNoEnabledSubjects(uint8 subjectType, uint256 subject);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder, address subjectGateway, address rewardsDistributor) initializer ForwardedContext(forwarder) {
-        if (subjectGateway == address(0)) revert ZeroAddress("subjectGateway");
-        if (rewardsDistributor == address(0)) revert ZeroAddress("rewardsDistributor");
-        _subjectGateway = IStakeSubjectGateway(subjectGateway);
-        _rewardsDistributor = IRewardsDistributor(rewardsDistributor);
+    constructor(address _forwarder, address __subjectGateway, address _rewardsDistributor) initializer ForwardedContext(_forwarder) {
+        if (__subjectGateway == address(0)) revert ZeroAddress("__subjectGateway");
+        if (_rewardsDistributor == address(0)) revert ZeroAddress("_rewardsDistributor");
+        _subjectGateway = IStakeSubjectGateway(__subjectGateway);
+        rewardsDistributor = IRewardsDistributor(_rewardsDistributor);
     }
 
     /**
@@ -192,7 +192,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         if (extra > 0) revert AmountTooLarge(amount, max);
         _allocatedStake.mint(activeSharesId, amount);
         _unallocatedStake.burn(activeSharesId, amount);
-        _rewardsDistributor.didAllocate(subjectType, subject, amount, 0, address(0));
+        rewardsDistributor.didAllocate(subjectType, subject, amount, 0, address(0));
         emit AllocatedStake(subjectType, subject, true, amount, _allocatedStake.balanceOf(activeSharesId));
         emit UnallocatedStake(subjectType, subject, false, amount, _unallocatedStake.balanceOf(activeSharesId));
     }
@@ -213,7 +213,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
 
         _allocatedStake.burn(activeSharesId, amount);
         _unallocatedStake.mint(activeSharesId, amount);
-        _rewardsDistributor.didUnallocate(subjectType, subject, amount, 0, address(0));
+        rewardsDistributor.didUnallocate(subjectType, subject, amount, 0, address(0));
 
         emit AllocatedStake(subjectType, subject, false, amount, _allocatedStake.balanceOf(activeSharesId));
         emit UnallocatedStake(subjectType, subject, true, amount, _unallocatedStake.balanceOf(activeSharesId));
@@ -247,13 +247,13 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         (int256 extra, ) = _allocationIncreaseChecks(subjectType, subject, agency, allocator, stakeAmount);
         if (extra > 0) {
             _allocatedStake.mint(activeSharesId, stakeAmount - uint256(extra));
-            _rewardsDistributor.didAllocate(subjectType, subject, stakeAmount - uint256(extra), sharesAmount, allocator);
+            rewardsDistributor.didAllocate(subjectType, subject, stakeAmount - uint256(extra), sharesAmount, allocator);
             emit AllocatedStake(subjectType, subject, true, stakeAmount - uint256(extra), _allocatedStake.balanceOf(activeSharesId));
             _unallocatedStake.mint(activeSharesId, uint256(extra));
             emit UnallocatedStake(subjectType, subject, true, uint256(extra), _unallocatedStake.balanceOf(activeSharesId));
         } else {
             _allocatedStake.mint(activeSharesId, stakeAmount);
-            _rewardsDistributor.didAllocate(subjectType, subject, stakeAmount, sharesAmount, allocator);
+            rewardsDistributor.didAllocate(subjectType, subject, stakeAmount, sharesAmount, allocator);
             emit AllocatedStake(subjectType, subject, true, stakeAmount, _allocatedStake.balanceOf(activeSharesId));
         }
 
@@ -279,13 +279,13 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         int256 fromAllocated = int256(stakeAmount) - int256(oldUnallocated);
         if (fromAllocated > 0) {
             _allocatedStake.burn(activeSharesId, uint256(fromAllocated));
-            _rewardsDistributor.didUnallocate(subjectType, subject, uint256(fromAllocated), sharesAmount, allocator);
+            rewardsDistributor.didUnallocate(subjectType, subject, uint256(fromAllocated), sharesAmount, allocator);
             emit AllocatedStake(subjectType, subject, false, uint256(fromAllocated), _allocatedStake.balanceOf(activeSharesId));
             _unallocatedStake.burn(activeSharesId, _unallocatedStake.balanceOf(activeSharesId));
             emit UnallocatedStake(subjectType, subject, false, oldUnallocated, 0);
         } else {
             _unallocatedStake.burn(activeSharesId, stakeAmount);
-            _rewardsDistributor.didUnallocate(subjectType, subject, 0, sharesAmount, allocator);
+            rewardsDistributor.didUnallocate(subjectType, subject, 0, sharesAmount, allocator);
             emit UnallocatedStake(subjectType, subject, false, stakeAmount, _unallocatedStake.balanceOf(activeSharesId));
         }
     }
@@ -349,6 +349,6 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         address to,
         uint256 sharesAmount
     ) external {
-        _rewardsDistributor.didTransferShares(sharesId, subjectType, from, to, sharesAmount);
+        rewardsDistributor.didTransferShares(sharesId, subjectType, from, to, sharesAmount);
     }
 }

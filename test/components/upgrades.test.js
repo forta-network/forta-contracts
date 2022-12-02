@@ -356,7 +356,7 @@ describe('Upgrades testing', function () {
             });
             let i = 0;
             console.log(++i);
-            await this.staking.configureStakeHelpers(this.subjectGateway.address, this.stakeAllocator.address, this.rewardsDistributor.address);
+            await this.staking.configureStakeHelpers(this.subjectGateway.address, this.stakeAllocator.address);
             console.log(++i);
             await this.subjectGateway.setStakeSubject(2, this.scannerPools.address);
             console.log(++i);

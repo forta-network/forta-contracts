@@ -177,7 +177,7 @@ async function migrate(config = {}) {
         if (semver.gt(stakingVersion, '0.1.1')) {
             DEBUG('Configuring configureStakeHelpers...');
 
-            await contracts.staking.configureStakeHelpers(contracts.subjectGateway.address, contracts.stakeAllocator.address, contracts.rewardsDistributor.address);
+            await contracts.staking.configureStakeHelpers(contracts.subjectGateway.address, contracts.stakeAllocator.address);
             DEBUG(`[${Object.keys(contracts).length}.2] configured Staking`);
         }
 
