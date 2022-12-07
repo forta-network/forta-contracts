@@ -233,7 +233,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @return true if subject is frozen, false otherwise
      */
     function isFrozen(uint8 subjectType, uint256 subject) public view returns (bool) {
-        return openProposals[FortaStakingUtils.subjectToActive(subjectType, subject)] > 0;
+        uint256 sharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        return openProposals[sharesId] > 0 || _deprecated_frozen[sharesId];
     }
 
     /**
@@ -667,5 +668,5 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         return super._msgData();
     }
 
-    uint256[38] private __gap;
+    uint256[37] private __gap;
 }
