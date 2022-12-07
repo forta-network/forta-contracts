@@ -4,7 +4,6 @@
 pragma solidity ^0.8.9;
 
 import "../stake_subjects/StakeSubjectGateway.sol";
-import "../FortaStakingUtils.sol";
 import "../../utils/StateMachines.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
@@ -54,7 +53,6 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     StakeSubjectGateway public subjectGateway; // Should be immutable, but it's already deployed.
     uint256 public depositAmount;
     uint256 public slashPercentToProposer;
-    mapping(uint256 => uint256) public openProposals; // activeShareId --> counter
 
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IERC20 public immutable depositToken;
@@ -345,16 +343,10 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     }
 
     function _unfreeze(uint256 _proposalId) private {
-        uint256 sharesId = FortaStakingUtils.subjectToActive(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId);
-        // There could be an active proposal with previous deployed contract, so don't do 0-1
-        openProposals[sharesId] = openProposals[sharesId] >= 1 ? openProposals[sharesId] - 1 : 0;
-        if (openProposals[sharesId] == 0) {
-            slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
-        }
+        slashingExecutor.freeze(proposals[_proposalId].subjectType, proposals[_proposalId].subjectId, false);
     }
 
     function _freeze(uint8 _subjectType, uint256 _subjectId) private {
-        openProposals[FortaStakingUtils.subjectToActive(_subjectType, _subjectId)]++;
         slashingExecutor.freeze(_subjectType, _subjectId, true);
     }
 
