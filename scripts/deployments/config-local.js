@@ -1,6 +1,6 @@
 const { ethers } = require('hardhat');
-const migrate = require('../scripts/deploy-platform');
-const deployBatchRelayer = require('../scripts/deploy-batch-relayer');
+const migrate = require('./platform');
+const deployBatchRelayer = require('./batch-relayer');
 const utils = require('../scripts/utils');
 const DEBUG = require('debug')('forta:deploy-config-local');
 
@@ -45,8 +45,8 @@ async function deployAndConfig(config = {}) {
         this.access.connect(this.accounts.admin).grantRole(this.roles.AGENT_ADMIN, this.accounts.manager.address),
         this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN, this.accounts.manager.address),
         this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN, this.accounts.admin.address),
-        this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_ADMIN, this.accounts.manager.address),
-        this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_ADMIN, this.accounts.admin.address),
+        this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_POOL_ADMIN, this.accounts.manager.address),
+        this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_POOL_ADMIN, this.accounts.admin.address),
         this.access.connect(this.accounts.admin).grantRole(this.roles.DISPATCHER, this.accounts.manager.address),
         this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address),
         this.access.connect(this.accounts.admin).grantRole(this.roles.REWARDER, this.accounts.admin.address),

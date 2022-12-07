@@ -5,7 +5,7 @@ const utils = require('../../../scripts/utils');
 const { subjectToActive, subjectToInactive } = require('../../../scripts/utils/staking.js');
 
 const subjects = [
-    [1, 3], // node runner id, node runner type
+    [1, 3], // ScannerPool id, ScannerPool type
 ];
 const [[subject, subjectType, active, inactive]] = subjects.map((items) => [items[0], items[1], subjectToActive(items[1], items[0]), subjectToInactive(items[1], items[0])]);
 const txTimestamp = (tx) =>
@@ -22,7 +22,7 @@ describe.skip('Staking Escrow', function () {
 
     beforeEach(async function () {
         this.accounts.getAccount('manager');
-        await this.nodeRunners.connect(this.accounts.user1).registerNodeRunner();
+        await this.scannerPools.connect(this.accounts.user1).registerScannerPool();
 
         await Promise.all([
             this.token.connect(this.accounts.admin).grantRole(ethers.utils.id('WHITELISTER_ROLE'), this.escrowFactory.address),
@@ -71,7 +71,7 @@ describe.skip('Staking Escrow', function () {
             });
 
             it('multiple deposits reaching max stake do not break StakingEscrow', async function () {
-                await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: this.value, min: '1', activated: true });
+                await this.scannerPools.connect(this.accounts.manager).setStakeThreshold({ max: this.value, min: '1', activated: true });
                 await expect(this.escrow.connect(this.accounts.manager).functions['deposit(uint8,uint256,uint256)'](subjectType, subject, this.value))
                     .to.emit(this.token, 'Approval')
                     .withArgs(this.escrow.address, this.staking.address, this.value)
@@ -95,7 +95,7 @@ describe.skip('Staking Escrow', function () {
                     .withArgs(this.escrow.address, ethers.constants.AddressZero, this.escrow.address, active, ethers.BigNumber.from('0'))
                     .to.emit(this.staking, 'StakeDeposited')
                     .withArgs(subjectType, subject, this.escrow.address, ethers.BigNumber.from('0'));
-                await this.nodeRunners.connect(this.accounts.manager).setStakeThreshold({ max: this.value.mul('2'), min: '1', activated: true });
+                await this.scannerPools.connect(this.accounts.manager).setStakeThreshold({ max: this.value.mul('2'), min: '1', activated: true });
                 await expect(this.escrow.connect(this.accounts.manager).functions['deposit(uint8,uint256,uint256)'](subjectType, subject, this.value))
                     .to.emit(this.token, 'Approval')
                     .withArgs(this.escrow.address, this.staking.address, this.value)

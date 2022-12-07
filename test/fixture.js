@@ -1,5 +1,5 @@
 const { ethers } = require('hardhat');
-const migrate = require('../scripts/deploy-platform');
+const migrate = require('../scripts/deployments/platform');
 const utils = require('../scripts/utils');
 const DEBUG = require('debug')('forta:migration');
 
@@ -37,7 +37,7 @@ function prepare(config = {}) {
                 this.access.connect(this.accounts.admin).grantRole(this.roles.UPGRADER, this.accounts.admin.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.AGENT_ADMIN, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_ADMIN, this.accounts.manager.address),
-                this.access.connect(this.accounts.admin).grantRole(this.roles.NODE_RUNNER_ADMIN, this.accounts.manager.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_POOL_ADMIN, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.DISPATCHER, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.REWARDER, this.accounts.manager.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address),
@@ -65,7 +65,7 @@ function prepare(config = {}) {
             this.stakingSubjects = {};
             this.stakingSubjects.SCANNER = 0;
             this.stakingSubjects.AGENT = 1;
-            this.stakingSubjects.NODE_RUNNER = 2;
+            this.stakingSubjects.SCANNER_POOL = 2;
             this.stakingSubjects.UNDEFINED = 255;
             this.subjectAgency = {};
             this.subjectAgency.UNDEFINED = 0;
@@ -84,7 +84,7 @@ function prepare(config = {}) {
                 await this.scanners
                     .connect(this.accounts.manager)
                     .setStakeThreshold({ max: config.stake.scanners.max, min: config.stake.scanners.min, activated: config.stake.scanners.activated }, 1);
-                await this.nodeRunners
+                await this.scannerPools
                     .connect(this.accounts.manager)
                     .setManagedStakeThreshold({ max: config.stake.scanners.max, min: config.stake.scanners.min, activated: config.stake.scanners.activated }, 1);
             }

@@ -8,27 +8,27 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../agents/AgentRegistry.sol";
 import "../scanners/ScannerRegistry.sol";
-import "../node_runners/NodeRunnerRegistry.sol";
+import "../scanner_pools/ScannerPoolRegistry.sol";
 
 contract Dispatch is BaseComponentUpgradeable {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    string public constant version = "0.1.5";
+
     AgentRegistry private _agents;
     /// @custom:oz-renamed-from _scanners
     ScannerRegistry private _scanners_deprecated;
-    NodeRunnerRegistry private _nodeRunners;
-
-    string public constant version = "0.1.4";
-
     mapping(uint256 => EnumerableSet.UintSet) private scannerToAgents;
     mapping(uint256 => EnumerableSet.UintSet) private agentToScanners;
+
+    ScannerPoolRegistry private _scannerPools;
 
     error Disabled(string name);
     error InvalidId(string name, uint256 id);
 
     event SetAgentRegistry(address registry);
     event SetScannerRegistry(address registry);
-    event SetNodeRunnerRegistry(address registry);
+    event SetScannerPoolRegistry(address registry);
     event AlreadyLinked(uint256 agentId, uint256 scannerId, bool enable);
     event Link(uint256 agentId, uint256 scannerId, bool enable);
 
@@ -40,17 +40,18 @@ contract Dispatch is BaseComponentUpgradeable {
      * @param __manager address of AccessManager.
      * @param __agents address of AgentRegistry.
      * @param __scanners address of ScannerRegistry.
+     * @param __scannerPools address of ScannerPoolRegistry.
      */
     function initialize(
         address __manager,
         address __agents,
         address __scanners,
-        address __nodeRunners
+        address __scannerPools
     ) public initializer {
         __BaseComponentUpgradeable_init(__manager);
         _setAgentRegistry(__agents);
         _setScannerRegistry(__scanners);
-        _setNodeRunnerRegistry(__nodeRunners);
+        _setScannerPoolRegistry(__scannerPools);
     }
 
     function agentRegistry() public view returns (AgentRegistry) {
@@ -61,14 +62,14 @@ contract Dispatch is BaseComponentUpgradeable {
         return _scanners_deprecated;
     }
 
-    function nodeRunnerRegistry() public view returns (NodeRunnerRegistry) {
-        return _nodeRunners;
+    function scannerPoolRegistry() public view returns (ScannerPoolRegistry) {
+        return _scannerPools;
     }
 
     /**
      * @notice Get total agents linked to a scanner.
      * @dev helper for external iteration.
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId address of the scanner converted to uint256
      * @return total agents linked to a scanner
      */
     function numAgentsFor(uint256 scannerId) public view returns (uint256) {
@@ -78,7 +79,7 @@ contract Dispatch is BaseComponentUpgradeable {
     /**
      * @notice Get total scanners where an agent is running in.
      * @dev helper for external iteration.
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      * @return total scanners running an scanner
      */
     function numScannersFor(uint256 agentId) public view returns (uint256) {
@@ -88,9 +89,9 @@ contract Dispatch is BaseComponentUpgradeable {
     /**
      * @notice Get agentId linked to a scanner in certain position.
      * @dev helper for external iteration.
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId address of the scanner converted to uint256
      * @param pos index for iteration.
-     * @return ERC1155 token id of the agent.
+     * @return ERC721 token id of the agent.
      */
     function agentAt(uint256 scannerId, uint256 pos) public view returns (uint256) {
         return scannerToAgents[scannerId].at(pos);
@@ -99,11 +100,11 @@ contract Dispatch is BaseComponentUpgradeable {
     /**
      * @notice Get data of an agent linked to a scanner at a certain position.
      * @dev helper for external iteration.
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId address of the scanner converted to uint256
      * @param pos index for iteration.
      * @return registered bool if agent exists, false otherwise.
      * @return owner address.
-     * @return agentId ERC1155 token id of the agent.
+     * @return agentId ERC721 token id of the agent.
      * @return agentVersion agent version number.
      * @return metadata IPFS pointer for agent metadata.
      * @return chainIds ordered array of chainId were the agent wants to run.
@@ -132,9 +133,9 @@ contract Dispatch is BaseComponentUpgradeable {
     /**
      * @notice Get scannerId running an agent at a certain position.
      * @dev helper for external iteration.
-     * @param agentId ERC1155 token id of the scanner.
+     * @param agentId ERC721 token id of the scanner.
      * @param pos index for iteration.
-     * @return ERC1155 token id of the scanner.
+     * @return ERC721 token id of the scanner.
      */
     function scannerAt(uint256 agentId, uint256 pos) public view returns (uint256) {
         return agentToScanners[agentId].at(pos);
@@ -143,15 +144,15 @@ contract Dispatch is BaseComponentUpgradeable {
     /**
      * @notice Get data of ascanner running an agent at a certain position.
      * @dev helper for external iteration.
-     * @param agentId ERC1155 token id of the agent.
+     * @param agentId ERC721 token id of the agent.
      * @param pos index for iteration.
      * @return registered true if scanner is registered.
-     * @return scannerId ERC1155 token id of the scanner.
+     * @return scannerId ERC721 token id of the scanner.
      * @return owner address.
      * @return chainId that the scanner monitors.
      * @return metadata IPFS pointer for agent metadata.
      * @return operational true if scanner is not disabled and staked over min, false otherwise.
-     * @return disabled true if disabled by Node Runner or scanner itself.
+     * @return disabled true if disabled by ScannerPool or scanner itself.
      */
     function scannerRefAt(uint256 agentId, uint256 pos)
         external
@@ -180,8 +181,8 @@ contract Dispatch is BaseComponentUpgradeable {
      * @notice Assigns the job of running an agent to a scanner.
      * @dev currently only allowed for DISPATCHER_ROLE (Assigner software).
      * @dev emits Link(agentId, scannerId, true) event.
-     * @param agentId ERC1155 token id of the agent.
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param agentId ERC721 token id of the agent.
+     * @param scannerId address of the scanner converted to uint256
      */
     function link(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
         if (!_agents.isEnabled(agentId)) revert Disabled("Agent");
@@ -198,8 +199,8 @@ contract Dispatch is BaseComponentUpgradeable {
      * @notice Unassigns the job of running an agent to a scanner.
      * @dev currently only allowed for DISPATCHER_ROLE (Assigner software).
      * @dev emits Link(agentId, scannerId, false) event.
-     * @param agentId ERC1155 token id of the agent.
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param agentId ERC721 token id of the agent.
+     * @param scannerId address of the scanner converted to uint256
      */
     function unlink(uint256 agentId, uint256 scannerId) public onlyRole(DISPATCHER_ROLE) {
         if (!_agents.isRegistered(agentId)) revert InvalidId("Agent", agentId);
@@ -243,18 +244,18 @@ contract Dispatch is BaseComponentUpgradeable {
     }
 
     /**
-     * @notice Sets node runner registry address.
+     * @notice Sets ScannerPool registry address.
      * @dev only DEFAULT_ADMIN_ROLE (governance).
-     * @param newNodeRunnerRegistry agent of the new ScannerRegistry.
+     * @param newScannerPoolRegistry agent of the new ScannerRegistry.
      */
-    function setNodeRunnerRegistry(address newNodeRunnerRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setNodeRunnerRegistry(newNodeRunnerRegistry);
+    function setScannerPoolRegistry(address newScannerPoolRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setScannerPoolRegistry(newScannerPoolRegistry);
     }
 
-    function _setNodeRunnerRegistry(address newNodeRunnerRegistry) private {
-        if (newNodeRunnerRegistry == address(0)) revert ZeroAddress("newNodeRunnerRegistry");
-        _nodeRunners = NodeRunnerRegistry(newNodeRunnerRegistry);
-        emit SetNodeRunnerRegistry(newNodeRunnerRegistry);
+    function _setScannerPoolRegistry(address newScannerPoolRegistry) private {
+        if (newScannerPoolRegistry == address(0)) revert ZeroAddress("newScannerPoolRegistry");
+        _scannerPools = ScannerPoolRegistry(newScannerPoolRegistry);
+        emit SetScannerPoolRegistry(newScannerPoolRegistry);
     }
 
     /**
@@ -276,7 +277,7 @@ contract Dispatch is BaseComponentUpgradeable {
      * @dev method used by Scanner Node software to know if their list of assigned agents has changed,
      * their enabled state or version has changed so they can start managing changes
      * (loading new agent images, removing not assigned agents, updating agents...).
-     * @param scannerId ERC1155 token id of the scanner.
+     * @param scannerId address of the scanner converted to uint256
      * @return length amount of agents.
      * @return manifest keccak256 of list of agents, list of agentVersion and list of enabled states.
      */
@@ -295,7 +296,7 @@ contract Dispatch is BaseComponentUpgradeable {
 
     function _isScannerOperational(uint256 scannerId) internal view returns (bool) {
         if (_scanners_deprecated.hasMigrationEnded()) {
-            return _nodeRunners.isScannerOperational(address(uint160(scannerId)));
+            return _scannerPools.isScannerOperational(address(uint160(scannerId)));
         } else {
             return _scanners_deprecated.isEnabled(scannerId);
         }
@@ -303,7 +304,7 @@ contract Dispatch is BaseComponentUpgradeable {
 
     function _isScannerRegistered(uint256 scannerId) internal view returns (bool) {
         if (_scanners_deprecated.hasMigrationEnded()) {
-            return _nodeRunners.isScannerRegistered(address(uint160(scannerId)));
+            return _scannerPools.isScannerRegistered(address(uint160(scannerId)));
         } else {
             return _scanners_deprecated.isRegistered(scannerId);
         }
@@ -322,7 +323,7 @@ contract Dispatch is BaseComponentUpgradeable {
         )
     {
         if (_scanners_deprecated.hasMigrationEnded()) {
-            return _nodeRunners.getScannerState(address(uint160(scannerId)));
+            return _scannerPools.getScannerState(address(uint160(scannerId)));
         } else {
             uint256 disabledFlags;
             (registered, owner, chainId, metadata, operational, disabledFlags) = _scanners_deprecated.getScannerState(scannerId);

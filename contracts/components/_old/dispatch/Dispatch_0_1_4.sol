@@ -4057,7 +4057,7 @@ contract ScannerRegistry_v012 is
 
 // File contracts/components/dispatch/Dispatch.sol
 
-contract Dispatch_0_1_5 is BaseComponentUpgradeable {
+contract Dispatch_0_1_4 is BaseComponentUpgradeable {
     using EnumerableSet for EnumerableSet.UintSet;
 
     AgentRegistry_v015   private _agents;

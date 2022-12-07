@@ -16,6 +16,8 @@ import "./IDirectStakeSubject.sol";
 contract StakeSubjectGateway is BaseComponentUpgradeable, SubjectTypeValidator, IStakeSubjectGateway {
     FortaStaking private _fortaStaking; // Should be immutable but already deployed.
     // stake subject parameters for each subject
+    /// @custom:oz-renamed-from _stakeSubjectHandlers
+    /// @custom:oz-retyped-from mapping(uint8 => contract IStakeSubject)
     mapping(uint8 => address) private _stakeSubjects;
 
     error NonIDelegatedSubjectHandler(uint8 subjectType, address stakeSubject);
@@ -121,7 +123,7 @@ contract StakeSubjectGateway is BaseComponentUpgradeable, SubjectTypeValidator, 
 
     /// Get if staking is activated for that `subjectType` and `subject`. If not set, will return false.
     function isStakeActivatedFor(uint8 subjectType, uint256 subject) external view returns (bool) {
-        if (subjectType == NODE_RUNNER_SUBJECT || subjectType == DELEGATOR_NODE_RUNNER_SUBJECT) {
+        if (subjectType == SCANNER_POOL_SUBJECT || subjectType == DELEGATOR_SCANNER_POOL_SUBJECT) {
             return true;
         }
         if (address(0) == _stakeSubjects[subjectType]) {
@@ -151,6 +153,7 @@ contract StakeSubjectGateway is BaseComponentUpgradeable, SubjectTypeValidator, 
         return IStakeSubject(_stakeSubjects[subjectType]).isRegistered(subject);
     }
 
+    /// Returns true if allocator owns the subject, or is the subject contract itself
     function canManageAllocation(uint8 subjectType, uint256 subject, address allocator) external view returns (bool) {
         SubjectStakeAgency agency = getSubjectTypeAgency(subjectType);
         if (agency != SubjectStakeAgency.DELEGATOR && agency != SubjectStakeAgency.DELEGATED) {
@@ -159,7 +162,7 @@ contract StakeSubjectGateway is BaseComponentUpgradeable, SubjectTypeValidator, 
         if (address(0) == _stakeSubjects[subjectType]) {
             return false;
         }
-        return IStakeSubject(_stakeSubjects[subjectType]).ownerOf(subject) == allocator;
+        return IStakeSubject(_stakeSubjects[subjectType]).ownerOf(subject) == allocator || _stakeSubjects[subjectType] == allocator;
     }
 
     function ownerOf(uint8 subjectType, uint256 subject) external view returns (address) {

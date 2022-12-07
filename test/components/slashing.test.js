@@ -5,7 +5,7 @@ const { prepare } = require('../fixture');
 const { BigNumber } = require('ethers');
 
 const subjects = [
-    { id: '1', type: 2 }, // NodeRunners id, NodeRunner type
+    { id: '1', type: 2 }, // ScannerPools id, ScannerPool type
     { id: ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), type: 1 }, // Agent id, agent type
 ];
 
@@ -73,7 +73,7 @@ describe('Slashing Proposals', function () {
 
         const args = [subjects[1].id, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
         await this.agents.connect(this.accounts.other).createAgent(...args);
-        await this.nodeRunners.connect(this.accounts.user2).registerNodeRunner(1);
+        await this.scannerPools.connect(this.accounts.user2).registerScannerPool(1);
 
         await this.staking.connect(this.accounts.user2).deposit(2, '1', STAKING_DEPOSIT);
         await this.staking.connect(this.accounts.user2).deposit(1, subjects[1].id, STAKING_DEPOSIT);

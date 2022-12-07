@@ -5,7 +5,7 @@ const { subjectToActive, subjectToInactive } = require('../../scripts/utils/stak
 
 const subjects = [
     [ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), 1], // Agent id, agent type
-    [ethers.BigNumber.from('1'), 2], // Node Runner id, Node Runner Type
+    [ethers.BigNumber.from('1'), 2], // ScannerPool id, ScannerPool Type
 ];
 const [[subject1, subjectType1, active1, inactive1], [subject2, subjectType2, active2, inactive2]] = subjects.map((items) => [
     items[0],

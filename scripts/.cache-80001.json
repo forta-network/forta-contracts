@@ -7,9 +7,10 @@
 				"0xb5505a6d998549090530911180f38aC5130101c6"
 			],
 			"address": "0x21b1B0f8E9182c92C2A81F43f305cE25994D9d57",
-			"version": "0.1.1"
-		},
-		"verified": "true"
+			"name": "FortaBridgedPolygon",
+			"version": "0.1.1",
+			"verified": "true"
+		}
 	},
 	"access-pending": "0xeb761b35d307c30baca49115043dfcc856511affb22fabd7ce4bf031eb4cd93c",
 	"access": {
@@ -19,21 +20,10 @@
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
 			"address": "0xDCFC2E4037a5d5524A957D7771C6Fd328f1D8ECE",
-			"version": "0.1.0"
-		},
-		"verified": "true"
-	},
-	"router-pending": "0x96e5450980c452e897a343f0f0f6492645f5464e9d65cedbea24ee455a3bd476",
-	"router": {
-		"address": "0x61447385B019187daa48e91c55c02AF1F1f3F863",
-		"impl": {
-			"args": [
-				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
-			],
-			"address": "0x4b3857DD81424c2BCdD338C5B2D2d9a287642c64",
-			"version": "0.1.0"
-		},
-		"verified": "true"
+			"name": "AccessManager",
+			"version": "0.1.0",
+			"verified": "true"
+		}
 	},
 	"agents-pending": "0x74e5c36c5d4c1d7ae47f08d803c9695c9ec9849753138d1f6634f61974f6c2eb",
 	"agents": {
@@ -42,22 +32,25 @@
 			"args": [
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
-			"address": "0x3db7d890640957CCeeAA5411675fDfd678AC187d",
-			"version": "0.1.5"
-		},
-		"verified": "true"
+			"address": "0xCDbb73F9F4894D745506317d567bF4d3598EfC82",
+			"name": "AgentRegistry",
+			"version": "0.1.6",
+			"verified": "true"
+		}
 	},
 	"scanners-pending": "0x15ea76aabbf5f1fd7119e74010146cc88746428840b10c38dba7ee0fa430b03d",
 	"scanners": {
 		"address": "0xa30c3951f85941bfe474620dA25DEb90283C99D7",
+		"verified": "true",
 		"impl": {
 			"args": [
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
-			"address": "0x9A97d4f5f4711c2d629DA4D8Be072700eF15cb3e",
-			"version": "0.1.3"
-		},
-		"verified": "true"
+			"address": "0x0FF4A7603EB4FB7A5c8D4cd25199046942fb968B",
+			"name": "ScannerRegistry",
+			"version": "0.1.4",
+			"verified": "true"
+		}
 	},
 	"dispatch-pending": "0x667cb934eaf86cf1a7070c76a327a863564133715264f8b55fef199b6766a23c",
 	"dispatch": {
@@ -66,10 +59,11 @@
 			"args": [
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
-			"address": "0x20b89b26a92Fb40536a27770BA03fd65ad7124eC",
-			"version": "0.1.4"
-		},
-		"verified": "true"
+			"address": "0x485F9c35d90E639f5B591DA5281199Ae59A9794F",
+			"name": "Dispatch",
+			"version": "0.1.5",
+			"verified": "true"
+		}
 	},
 	"ens-registry-pending": "0x8065caff48c61f4526c8fd89fd562cfbd1119c02b07de9697867b3197155d35c",
 	"ens-registry": {
@@ -100,12 +94,15 @@
 		"address": "0x2441Ce5eB269505f30F6F434D21E039438aaC342",
 		"impl": {
 			"args": [
-				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x2441Ce5eB269505f30F6F434D21E039438aaC342",
+				"0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9"
 			],
-			"address": "0x1837CF2B32B25B6dDb4d8D004B3DC423d1d72243",
-			"version": "0.1.1"
-		},
-		"verified": "true"
+			"address": "0xB8E94e894eeac8cD4F759d3A39CF520590488DEC",
+			"name": "StakeAllocator",
+			"verified": false,
+			"version": "0.0.0"
+		}
 	},
 	"scanner-node-version-pending": "0x306b9798a2a6a177aea66843c57518c62b44acd041e5e0ccc30b594f77169daa",
 	"scanner-node-version": {
@@ -115,9 +112,10 @@
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
 			"address": "0x52a53DCC546c09CECe279F5549d0958433912802",
-			"version": "0.1.1"
-		},
-		"verified": "true"
+			"name": "ScannerNodeVersion",
+			"version": "0.1.1",
+			"verified": "true"
+		}
 	},
 	"contracts": [
 		"forwarder",
@@ -131,15 +129,17 @@
 			"args": [
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
-			"address": "0x7dBD9f6c557af8Dbb0A41281a150C761E57E4C85",
-			"version": "0.1.1"
-		},
-		"verified": "true"
+			"address": "0x395eaBbA70574c2642fDbD14e8D1E7CDEEBB2720",
+			"name": "FortaStaking",
+			"verified": false,
+			"version": "0.0.0"
+		}
 	},
 	"forwarder-pending": "0x9bea5544f223d1fcbc2b2aa03fbcf2916edde6bdffd770d63a7f82fb9b21813b",
 	"forwarder": {
 		"address": "0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
 		"args": [],
+		"name": "Forwarder",
 		"version": "0.0.0"
 	},
 	"escrow-factory-pending": "0x0b70f983ab2a09d961d241ecde1697e8e4c92b83f61a7b0a0bf31cf24b3fbbfd",
@@ -149,6 +149,7 @@
 			"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
 			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
 		],
+		"name": "StakingEscrowFactory",
 		"version": "0.0.0"
 	},
 	"escrow-template-pending": "0x0b70f983ab2a09d961d241ecde1697e8e4c92b83f61a7b0a0bf31cf24b3fbbfd",
@@ -159,6 +160,7 @@
 			"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
 			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
 		],
+		"name": "StakingEscrow",
 		"version": "0.0.0"
 	},
 	"batch-relayer-pending": "0x0828e1d728ffe47b2cf84c6d212e8938c775baff43b5472b302dc8e02ef1f73a",
@@ -176,7 +178,69 @@
 				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3"
 			],
 			"address": "0xc500d015E69721Ec3D29955EBF15bf9b8Ad832eA",
+			"name": "SlashingController",
+			"version": "0.1.0",
+			"verified": "true"
+		}
+	},
+	"staking-rewards-pending": "0x82d9ced095db584f6c3658f8a2f9ce353e433ff5e8f68b3665252822ad8a20f8",
+	"staking-rewards": {
+		"address": "0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+				"0x2441Ce5eB269505f30F6F434D21E039438aaC342"
+			],
+			"address": "0x4311438A01d7A9D8B9fE3Ba6599481B8081BCbc9",
+			"name": "RewardsDistributor",
+			"verified": true,
 			"version": "0.1.0"
+		}
+	},
+	"staking-allocator-pending": "0x31ce395099ddd67735e19ba7fe118b4063d8f124201a2c2bce74fcf443d31f6c",
+	"staking-allocator": {
+		"address": "0x26112a3885124E8b7564824F030A6d4f6e29E52B",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x2441Ce5eB269505f30F6F434D21E039438aaC342",
+				"0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9"
+			],
+			"address": "0x04688C6D523B77280C8b7292A94c5c98Fe806322",
+			"name": "StakeAllocator",
+			"version": "0.1.0",
+			"verified": "true"
+		}
+	},
+	"scanner-pools-pending": "0xf5a8be1b02c1731d47fbba2a98b160dab41a8eb139c97a8dfe38bccae1c13710",
+	"scanner-pools": {
+		"address": "0x5aEBaFBc23167A51D06f217a046aAeD20c9ACcb1",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x26112a3885124E8b7564824F030A6d4f6e29E52B"
+			],
+			"address": "0x41d0597e85c944d191e578d9658fe5ec8ee9f393",
+			"name": "ScannerPoolRegistry",
+			"version": "0.1.0",
+			"verified": "true"
+		}
+	},
+	"scanner-to-scanner-pool-migration-pending": "0x0927a6b74fafb4cdeb01d6fd4f67b1d7c813086f9eb9f0a98b3793b9d30c9b99",
+	"scanner-to-scanner-pool-migration": {
+		"address": "0x8aD5997696444266eC5b715f9Ac47b0D8289104A",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0xa30c3951f85941bfe474620dA25DEb90283C99D7",
+				"0x5aEBaFBc23167A51D06f217a046aAeD20c9ACcb1",
+				"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
+			],
+			"address": "0xa284F91580374D11Eee8344f00BA5F874A87D493",
+			"name": "ScannerToScannerPoolMigration",
+			"version": "0.1.0",
+			"verified": "true"
 		}
 	}
 }

@@ -88,24 +88,32 @@ library Accumulators {
         return EpochCheckpoint({ timestamp: 0, rate: 0, value: 0 });
     }
 
-    function getCurrentEpochNumber() internal view returns (uint32) {
-        return getEpochNumber(block.timestamp);
-    }
-
     function getEpochNumber(uint256 timestamp) internal pure returns (uint32) {
         return SafeCast.toUint32((timestamp - TIMESTAMP_OFFSET) / EPOCH_LENGTH);
     }
 
-    function getEpochEndTimestamp(uint256 epochNumber) internal pure returns (uint256) {
-        return ((epochNumber + 1) * EPOCH_LENGTH) + TIMESTAMP_OFFSET;
+    function getCurrentEpochNumber() internal view returns (uint32) {
+        return getEpochNumber(block.timestamp);
     }
 
-    function getCurrentEpochTimestamp() internal view returns (uint256) {
-        return ((block.timestamp / EPOCH_LENGTH) * EPOCH_LENGTH) + TIMESTAMP_OFFSET;
+    function getEpochStartTimestamp(uint256 epochNumber) internal pure returns (uint256) {
+        return (epochNumber * EPOCH_LENGTH) + TIMESTAMP_OFFSET;
+    }
+
+    function getCurrentEpochStartTimestamp() internal view returns (uint256) {
+        return getEpochStartTimestamp((getEpochNumber(block.timestamp)));
+    }
+
+    function getEpochEndTimestamp(uint256 epochNumber) internal pure returns (uint256) {
+        return ((epochNumber + 1) * EPOCH_LENGTH) + TIMESTAMP_OFFSET - 1;
+    }
+
+    function getCurrentEpochEndTimestamp() internal view returns (uint256) {
+        return getEpochEndTimestamp((getEpochNumber(block.timestamp)));
     }
 
     function isCurrentEpoch(uint256 timestamp) internal view returns (bool) {
-        uint256 currentEpochStart = getCurrentEpochTimestamp();
-        return timestamp > currentEpochStart;
+        uint256 currentEpochStart = getCurrentEpochStartTimestamp();
+        return timestamp >= currentEpochStart;
     }
 }

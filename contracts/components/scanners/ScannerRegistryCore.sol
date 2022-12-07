@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../staking/stake_subjects/DirectStakeSubject.sol";
 import "../../errors/GeneralErrors.sol";
-import "../node_runners/NodeRunnerRegistry.sol";
+import "../scanner_pools/ScannerPoolRegistry.sol";
 
 abstract contract ScannerRegistryCore is
     BaseComponentUpgradeable,

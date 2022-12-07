@@ -7,14 +7,14 @@ const { AdminClient } = require('defender-admin-client');
 const client = new AdminClient({ apiKey: process.env.DEFENDER_API_KEY, apiSecret: process.env.DEFENDER_API_SECRET });
 
 const config = {
-    contractName: 'AgentRegistry',
-    contractTag: 'agents',
-    methodName: 'setStakeThreshold',
-    params: [[{ min: ethers.utils.parseEther('100').toString(), max: ethers.utils.parseEther('10000').toString(), activated: true }]],
-    title: 'Set Detection Bot staking threshold',
+    contractName: 'ScannerRegistry',
+    contractTag: 'scanners',
+    methodName: 'configureMigration',
+    params: [['1670369819', '0x5aEBaFBc23167A51D06f217a046aAeD20c9ACcb1']],
+    title: 'Set subject gateway',
     description: `
-    - min: 100 FORT
-    - max: 10000 FORT
+    await contracts.subjectGateway.connect(deployer).setStakeSubject(SCANNER_POOL_SUBJECT, contracts.scannerPools.address);
+
     `,
     network: null,
     multisig: null,
@@ -68,7 +68,7 @@ async function main() {
     console.log(config);
     const multicall = config.params.length > 1;
     let functionInterface, functionInputs, forceMulticall;
-    //console.log(contract.interface.functions)
+
     if (!multicall) {
         const fragment = contract.interface.fragments.find((fragment) => fragment.name === config.methodName);
         functionInterface = JSON.parse(fragment.format(ethers.utils.FormatTypes.json));

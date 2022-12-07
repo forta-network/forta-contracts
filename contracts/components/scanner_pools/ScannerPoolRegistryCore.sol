@@ -8,6 +8,7 @@ import "../staking/allocation/IStakeAllocator.sol";
 import "../staking/stake_subjects/DelegatedStakeSubject.sol";
 import "../../errors/GeneralErrors.sol";
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
@@ -15,69 +16,70 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
 
-abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, DelegatedStakeSubjectUpgradeable, EIP712Upgradeable {
+abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, DelegatedStakeSubjectUpgradeable, EIP712Upgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     struct ScannerNode {
         bool registered;
         bool disabled;
-        uint256 nodeRunnerId;
+        uint256 scannerPoolId;
         uint256 chainId;
         string metadata;
     }
     struct ScannerNodeRegistration {
         address scanner;
-        uint256 nodeRunnerId;
+        uint256 scannerPoolId;
         uint256 chainId;
         string metadata;
         uint256 timestamp;
     }
 
     bytes32 private constant _SCANNERNODEREGISTRATION_TYPEHASH =
-        keccak256("ScannerNodeRegistration(address scanner,uint256 nodeRunnerId,uint256 chainId,string metadata,uint256 timestamp)");
+        keccak256("ScannerNodeRegistration(address scanner,uint256 scannerPoolId,uint256 chainId,string metadata,uint256 timestamp)");
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IStakeAllocator private immutable _stakeAllocator;
 
-    /// nodeRunnerIds is a sequential autoincremented uint
-    CountersUpgradeable.Counter private _nodeRunnerIdCounter;
+    /// scannerPoolIds is a sequential autoincremented uint
+    CountersUpgradeable.Counter private _scannerPoolIdCounter;
     /// ScannerNode data for each scanner address;
     mapping(address => ScannerNode) internal _scannerNodes;
-    /// Set of Scanner Node addresses each nodeRunnerId owns;
+    /// Set of Scanner Node addresses each scannerPoolId owns;
     mapping(uint256 => EnumerableSet.AddressSet) private _scannerNodeOwnership;
-    /// Count of enabled scanners per nodeRunnerId (nodeRunnerId => total Enabled Scanners)
+    /// Count of enabled scanners per scannerPoolId (scannerPoolId => total Enabled Scanners)
     mapping(uint256 => uint256) private _enabledScanners;
-    /// StakeThreshold of node runners
+    /// StakeThreshold of ScannerPools
     mapping(uint256 => StakeThreshold) private _scannerStakeThresholds;
-    /// nodeRunnerId => chainId. Limitation necessary to calculate stake allocations.
-    mapping(uint256 => uint256) private _nodeRunnerChainId;
-    /// Maximum amount of time allowed from scanner signing a ScannerNodeRegistration and its execution by NodeRunner
+    /// scannerPoolId => chainId. Limitation necessary to calculate stake allocations.
+    mapping(uint256 => uint256) private _scannerPoolChainId;
+    /// Maximum amount of time allowed from scanner signing a ScannerNodeRegistration and its execution by ScannerPool
     uint256 public registrationDelay;
 
-    event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata, uint256 nodeRunner);
+    event ScannerUpdated(uint256 indexed scannerId, uint256 indexed chainId, string metadata, uint256 scannerPool);
     event ManagedStakeThresholdChanged(uint256 indexed chainId, uint256 min, uint256 max, bool activated);
     event RegistrationDelaySet(uint256 delay);
     // TODO: discuss with the dev team if it breaks compatibility to change 'enabled' too 'operational'
     event ScannerEnabled(uint256 indexed scannerId, bool indexed enabled, address sender, bool disableFlag);
-    event EnabledScannersChanged(uint256 indexed nodeRunnerId, uint256 enabledScanners);
-    event NodeRunnerRegistered(uint256 indexed nodeRunnerId, uint256 indexed chainId);
+    event EnabledScannersChanged(uint256 indexed scannerPoolId, uint256 enabledScanners);
+    event ScannerPoolRegistered(uint256 indexed scannerPoolId, uint256 indexed chainId);
 
-    error NodeRunnerNotRegistered(uint256 nodeRunnerId);
+    error ScannerPoolNotRegistered(uint256 scannerPoolId);
     error ScannerExists(address scanner);
     error ScannerNotRegistered(address scanner);
     error PublicRegistrationDisabled(uint256 chainId);
     error RegisteringTooLate();
     error SignatureDoesNotMatch();
     error CannotSetScannerActivation();
-    error SenderNotNodeRunner(address sender, uint256 nodeRunnerId);
+    error SenderNotScannerPool(address sender, uint256 scannerPoolId);
     error ChainIdMismatch(uint256 expected, uint256 provided);
+    error ActionShutsDownPool();
 
     /**
-     * @notice Checks sender (or metatx signer) is owner of the NodeRunnerRegistry ERC721 with ID nodeRunnerId.
-     * @param nodeRunnerId ERC721 token id of the Node Runner.
+     * @notice Checks sender (or metatx signer) is owner of the ScannerPoolRegistry ERC721 with ID scannerPoolId.
+     * @param scannerPoolId ERC721 token id of the ScannerPool.
      */
-    modifier onlyNodeRunner(uint256 nodeRunnerId) {
-        if (_msgSender() != ownerOf(nodeRunnerId)) revert SenderNotNodeRunner(_msgSender(), nodeRunnerId);
+    modifier onlyScannerPool(uint256 scannerPoolId) {
+        if (_msgSender() != ownerOf(scannerPoolId)) revert SenderNotScannerPool(_msgSender(), scannerPoolId);
         _;
     }
 
@@ -97,9 +99,9 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * @param __name ERC721 token name.
      * @param __symbol ERC721 token symbol.
      * @param __stakeSubjectGateway address of StakeSubjectGateway
-     * @param __registrationDelay amount of time allowed from scanner signing a ScannerNodeRegistration and it's execution by NodeRunner
+     * @param __registrationDelay amount of time allowed from scanner signing a ScannerNodeRegistration and it's execution by ScannerPool
      */
-    function __NodeRunnerRegistryCore_init(
+    function __ScannerPoolRegistryCore_init(
         string calldata __name,
         string calldata __symbol,
         address __stakeSubjectGateway,
@@ -107,46 +109,46 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     ) internal initializer {
         __ERC721_init(__name, __symbol);
         __ERC721Enumerable_init();
-        __EIP712_init("NodeRunnerRegistry", "1");
+        __EIP712_init("ScannerPoolRegistry", "1");
         __StakeSubjectUpgradeable_init(__stakeSubjectGateway);
 
         _setRegistrationDelay(__registrationDelay);
     }
 
-    // ************* Node Runner Ownership *************
+    // ************* ScannerPool Ownership *************
 
     /**
-     * @notice Checks if nodeRunnerId has been registered (minted).
-     * @param nodeRunnerId ERC721 token id of the Node Runner.
-     * @return true if nodeRunnerId exists, false otherwise.
+     * @notice Checks if scannerPoolId has been registered (minted).
+     * @param scannerPoolId ERC721 token id of the ScannerPool.
+     * @return true if scannerPoolId exists, false otherwise.
      */
-    function isRegistered(uint256 nodeRunnerId) public view override returns (bool) {
-        return _exists(nodeRunnerId);
+    function isRegistered(uint256 scannerPoolId) public view override returns (bool) {
+        return _exists(scannerPoolId);
     }
 
     /**
-     * @notice mints a NodeRunnerRegistry ERC721 NFT to sender
-     * Transferring ownership of a NodeRunnerRegistry NFT will transfer ownership of all its registered
+     * @notice mints a ScannerPoolRegistry ERC721 NFT to sender
+     * Transferring ownership of a ScannerPoolRegistry NFT will transfer ownership of all its registered
      * Scanner Node addresses
-     * @return nodeRunnerId (autoincremented uint)
+     * @return scannerPoolId (autoincremented uint)
      */
-    function registerNodeRunner(uint256 chainId) external returns (uint256 nodeRunnerId) {
-        return _registerNodeRunner(_msgSender(), chainId);
+    function registerScannerPool(uint256 chainId) external returns (uint256 scannerPoolId) {
+        return _registerScannerPool(_msgSender(), chainId);
     }
 
-    function _registerNodeRunner(address nodeRunnerAddress, uint256 chainId) internal returns (uint256 nodeRunnerId) {
-        if (nodeRunnerAddress == address(0)) revert ZeroAddress("nodeRunnerAddress");
+    function _registerScannerPool(address scannerPoolAddress, uint256 chainId) internal returns (uint256 scannerPoolId) {
+        if (scannerPoolAddress == address(0)) revert ZeroAddress("scannerPoolAddress");
         if (chainId == 0) revert ZeroAmount("chainId");
-        _nodeRunnerIdCounter.increment();
-        nodeRunnerId = _nodeRunnerIdCounter.current();
-        _safeMint(nodeRunnerAddress, nodeRunnerId);
-        _nodeRunnerChainId[nodeRunnerId] = chainId;
-        emit NodeRunnerRegistered(nodeRunnerId, chainId);
-        return nodeRunnerId;
+        _scannerPoolIdCounter.increment();
+        scannerPoolId = _scannerPoolIdCounter.current();
+        _safeMint(scannerPoolAddress, scannerPoolId);
+        _scannerPoolChainId[scannerPoolId] = chainId;
+        emit ScannerPoolRegistered(scannerPoolId, chainId);
+        return scannerPoolId;
     }
 
-    function monitoredChainId(uint256 nodeRunnerId) public view returns (uint256) {
-        return _nodeRunnerChainId[nodeRunnerId];
+    function monitoredChainId(uint256 scannerPoolId) public view returns (uint256) {
+        return _scannerPoolChainId[scannerPoolId];
     }
 
     // ************* Scanner Ownership *************
@@ -161,92 +163,115 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     }
 
     /**
-     * @notice Checks if scanner address has been registered to a specific nodeRunnerId
+     * @notice Checks if scanner address has been registered to a specific scannerPoolId
      * @param scanner address.
-     * @param nodeRunnerId ERC721 token id of the Node Runner.
-     * @return true if scanner is registered to nodeRunnerId, false otherwise.
+     * @param scannerPoolId ERC721 token id of the ScannerPool.
+     * @return true if scanner is registered to scannerPoolId, false otherwise.
      */
-    function isScannerRegisteredTo(address scanner, uint256 nodeRunnerId) public view returns (bool) {
-        return _scannerNodeOwnership[nodeRunnerId].contains(scanner);
+    function isScannerRegisteredTo(address scanner, uint256 scannerPoolId) public view returns (bool) {
+        return _scannerNodeOwnership[scannerPoolId].contains(scanner);
     }
 
     /**
-     * @notice Method to register a Scanner Node and associate it with a nodeRunnerId. Before executing this method,
-     * register a scanner with Forta Scan Node CLI and obtain the parameters for this methods by executing forta auth.
+     * @notice Method to register a Scanner Node and associate it with a scannerPoolId. Before executing this method,
+     * make sure to have enough FORT staked by the owner of the Scanner Pool to be allocated to the new scanner,
+     * then register a scanner with Forta Scan Node CLI and obtain the parameters for this methods by executing forta auth.
      * Follow the instructions here https://docs.forta.network/en/latest/scanner-quickstart/
+     * This method will try to allocate stake from unallocated stake if necessary.
      * Individual ownership of a scaner node is not transferrable.
      * A scanner node can be disabled, but not unregistered
      * @param req ScannerNodeRegistration struct with the Scanner Node data.
      * @param signature ERC712 signature, result from signed req by the scanner.
      */
-    function registerScannerNode(ScannerNodeRegistration calldata req, bytes calldata signature) external onlyNodeRunner(req.nodeRunnerId) {
+    function registerScannerNode(ScannerNodeRegistration calldata req, bytes calldata signature) external onlyScannerPool(req.scannerPoolId) {
         if (req.timestamp + registrationDelay < block.timestamp) revert RegisteringTooLate();
         if (
             !SignatureCheckerUpgradeable.isValidSignatureNow(
                 req.scanner,
                 _hashTypedDataV4(
-                    keccak256(abi.encode(_SCANNERNODEREGISTRATION_TYPEHASH, req.scanner, req.nodeRunnerId, req.chainId, keccak256(abi.encodePacked(req.metadata)), req.timestamp))
+                    keccak256(abi.encode(_SCANNERNODEREGISTRATION_TYPEHASH, req.scanner, req.scannerPoolId, req.chainId, keccak256(abi.encodePacked(req.metadata)), req.timestamp))
                 ),
                 signature
             )
         ) revert SignatureDoesNotMatch();
         _registerScannerNode(req);
+        // Not called inside _registerScannerNode because it would break registerMigratedScannerNode()
+        _allocationOnAddedEnabledScanner(req.scannerPoolId);
+    }
+
+    /**
+     * @notice Allocates unallocated stake if a there is a new scanner enabled on the pool and not enough allocated stake.
+     * If there is not enough unallocated stake, the method will revert.
+     * @dev this MUST be called after incrementing _enabledScanners
+     * @param scannerPoolId ERC721 id of the node runner
+     */
+    function _allocationOnAddedEnabledScanner(uint256 scannerPoolId) private {
+        uint256 unallocatedStake = _stakeAllocator.unallocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
+        uint256 allocatedStake = _stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
+        uint256 min = _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].min;
+        if (allocatedStake / _enabledScanners[scannerPoolId] >  min) {
+            return;
+        }
+        if ((unallocatedStake + allocatedStake) / _enabledScanners[scannerPoolId] < min) {
+            revert ActionShutsDownPool();
+        }
+        _stakeAllocator.allocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, unallocatedStake);
     }
 
     function _registerScannerNode(ScannerNodeRegistration calldata req) internal {
         if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
-        if (_nodeRunnerChainId[req.nodeRunnerId] != req.chainId)
-            revert ChainIdMismatch(_nodeRunnerChainId[req.nodeRunnerId], req.chainId);
-        _scannerNodes[req.scanner] = ScannerNode({ registered: true, disabled: false, nodeRunnerId: req.nodeRunnerId, chainId: req.chainId, metadata: req.metadata });
+        if (_scannerPoolChainId[req.scannerPoolId] != req.chainId)
+            revert ChainIdMismatch(_scannerPoolChainId[req.scannerPoolId], req.chainId);
+        _scannerNodes[req.scanner] = ScannerNode({ registered: true, disabled: false, scannerPoolId: req.scannerPoolId, chainId: req.chainId, metadata: req.metadata });
         // It is safe to ignore add()'s returned bool, since isScannerRegistered() already checks for duplicates.
-        !_scannerNodeOwnership[req.nodeRunnerId].add(req.scanner);
-        emit ScannerUpdated(scannerAddressToId(req.scanner), req.chainId, req.metadata, req.nodeRunnerId);
-        _addEnabledScanner(req.nodeRunnerId);
+        !_scannerNodeOwnership[req.scannerPoolId].add(req.scanner);
+        emit ScannerUpdated(scannerAddressToId(req.scanner), req.chainId, req.metadata, req.scannerPoolId);
+        _addEnabledScanner(req.scannerPoolId);
     }
 
     /**
-     * @notice Method to update a registered Scanner Node metadata string. Only the Node Runner that owns the scanner can update.
+     * @notice Method to update a registered Scanner Node metadata string. Only the ScannerPool that owns the scanner can update.
      * @param scanner address.
      * @param metadata IPFS string pointing to Scanner Node metadata.
      */
     function updateScannerMetadata(address scanner, string calldata metadata) external {
         if (!isScannerRegistered(scanner)) revert ScannerNotRegistered(scanner);
-        // Not using onlyNodeRunner(_scannerNodes[scanner].nodeRunnerId) to improve error readability.
+        // Not using onlyScannerPool(_scannerNodes[scanner].scannerPoolId) to improve error readability.
         // If the scanner is not registered, onlyOwner would be first and emit "ERC721: invalid token ID", which is too cryptic.
-        if (_msgSender() != ownerOf(_scannerNodes[scanner].nodeRunnerId)) {
-            revert SenderNotNodeRunner(_msgSender(), _scannerNodes[scanner].nodeRunnerId);
+        if (_msgSender() != ownerOf(_scannerNodes[scanner].scannerPoolId)) {
+            revert SenderNotScannerPool(_msgSender(), _scannerNodes[scanner].scannerPoolId);
         }
         _scannerNodes[scanner].metadata = metadata;
-        emit ScannerUpdated(scannerAddressToId(scanner), _scannerNodes[scanner].chainId, metadata, _scannerNodes[scanner].nodeRunnerId);
+        emit ScannerUpdated(scannerAddressToId(scanner), _scannerNodes[scanner].chainId, metadata, _scannerNodes[scanner].scannerPoolId);
     }
 
     /**
-     * @notice gets the amount of Scanner Nodes ever registered to a Node Runner Id.
+     * @notice gets the amount of Scanner Nodes ever registered to a ScannerPool Id.
      * Useful for external iteration.
-     * @param nodeRunnerId ERC721 token id of the Node Runner.
+     * @param scannerPoolId ERC721 token id of the ScannerPool.
      */
-    function totalScannersRegistered(uint256 nodeRunnerId) public view returns (uint256) {
-        return _scannerNodeOwnership[nodeRunnerId].length();
+    function totalScannersRegistered(uint256 scannerPoolId) public view returns (uint256) {
+        return _scannerNodeOwnership[scannerPoolId].length();
     }
 
     /**
-     * @notice gets the Scanner Node address at index registered to nodeRunnerId
+     * @notice gets the Scanner Node address at index registered to scannerPoolId
      * Useful for external iteration.
-     * @param nodeRunnerId ERC721 token id of the Node Runner.
-     * @param index of the registered Scanner Node. Must be lower than totalScannersRegistered(nodeRunnerId)
+     * @param scannerPoolId ERC721 token id of the ScannerPool.
+     * @param index of the registered Scanner Node. Must be lower than totalScannersRegistered(scannerPoolId)
      */
-    function registeredScannerAtIndex(uint256 nodeRunnerId, uint256 index) external view returns (ScannerNode memory) {
-        return _scannerNodes[_scannerNodeOwnership[nodeRunnerId].at(index)];
+    function registeredScannerAtIndex(uint256 scannerPoolId, uint256 index) external view returns (ScannerNode memory) {
+        return _scannerNodes[_scannerNodeOwnership[scannerPoolId].at(index)];
     }
 
     /**
-     * @notice gets the Scanner Node data struct at index registered to nodeRunnerId
+     * @notice gets the Scanner Node data struct at index registered to scannerPoolId
      * Useful for external iteration.
-     * @param nodeRunnerId ERC721 token id of the Node Runner.
-     * @param index of the registered Scanner Node. Must be lower than totalScannersRegistered(nodeRunnerId)
+     * @param scannerPoolId ERC721 token id of the ScannerPool.
+     * @param index of the registered Scanner Node. Must be lower than totalScannersRegistered(scannerPoolId)
      */
-    function registeredScannerAddressAtIndex(uint256 nodeRunnerId, uint256 index) external view returns (address) {
-        return _scannerNodeOwnership[nodeRunnerId].at(index);
+    function registeredScannerAddressAtIndex(uint256 scannerPoolId, uint256 index) external view returns (address) {
+        return _scannerNodeOwnership[scannerPoolId].at(index);
     }
 
     // ************* Converters *************
@@ -279,40 +304,44 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     function isScannerOperational(address scanner) public view returns (bool) {
         ScannerNode storage node = _scannerNodes[scanner];
         StakeThreshold storage stake = _scannerStakeThresholds[node.chainId];
-        return (
-            node.registered &&
-            !node.disabled &&
-            (!stake.activated || _isScannerStakedOverMin(scanner)) &&
-            _exists(node.nodeRunnerId)
-        );
+        return (node.registered && !node.disabled && (!stake.activated || _isScannerStakedOverMin(scanner)) && _exists(node.scannerPoolId));
+    }
+
+    /// returns true if one more enabled scanner (or one registration) would put ALL scanners under min threshold, (not operational)
+    function willNewScannerShutdownPool(uint256 scannerPoolId) public view returns (bool) {
+        uint256 unallocatedStake = _stakeAllocator.unallocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
+        uint256 allocatedStake = _stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
+        uint256 min = _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].min;
+        return (allocatedStake + unallocatedStake) / (_enabledScanners[scannerPoolId] + 1) < min;
     }
 
     /// Returns true if the owner of NodeRegistry (DELEGATED) has staked over min for scanner, false otherwise.
     function _isScannerStakedOverMin(address scanner) internal view returns (bool) {
         ScannerNode storage node = _scannerNodes[scanner];
         StakeThreshold storage stake = _scannerStakeThresholds[node.chainId];
-        return _stakeAllocator.allocatedStakePerManaged(NODE_RUNNER_SUBJECT, node.nodeRunnerId) >= stake.min;
+        return _stakeAllocator.allocatedStakePerManaged(SCANNER_POOL_SUBJECT, node.scannerPoolId) >= stake.min;
     }
 
     /**
      * @notice Checks if sender or meta-tx sender is allowed to set disabled flag for a Scanner Node
      * @param scanner address
-     * @return true if _msgSender() is the NodeRunner owning the Scanner or the Scanner Node itself
+     * @return true if _msgSender() is the ScannerPool owning the Scanner or the Scanner Node itself
      */
     function _canSetEnableState(address scanner) internal view virtual returns (bool) {
-        return _msgSender() == scanner || ownerOf(_scannerNodes[scanner].nodeRunnerId) == _msgSender();
+        return _msgSender() == scanner || ownerOf(_scannerNodes[scanner].scannerPoolId) == _msgSender();
     }
 
     /**
-     * @notice Sets Scanner Node disabled flag to false. It's not possible to re-enable a Scanner Node
-     * if the active stake allocated to it is below minimum for the scanned chainId.
-     * If that happens, allocate more stake to it, then try enableScanner again.
+     * @notice Sets Scanner Node disabled flag to false.
+     * It's not possible to re-enable a Scanner Node if allocatedStake / enabled scanners < min.
+     * If there is enough unallocated stake, this method will allocate it. If not, it will revert.
      * @param scanner address
      */
     function enableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
+        _addEnabledScanner(_scannerNodes[scanner].scannerPoolId);
+        _allocationOnAddedEnabledScanner(_scannerNodes[scanner].scannerPoolId);
         _setScannerDisableFlag(scanner, false);
-        _addEnabledScanner(_scannerNodes[scanner].nodeRunnerId);
     }
 
     /**
@@ -322,8 +351,8 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      */
     function disableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
+        _removeEnabledScanner(_scannerNodes[scanner].scannerPoolId);
         _setScannerDisableFlag(scanner, true);
-        _removeEnabledScanner(_scannerNodes[scanner].nodeRunnerId);
     }
 
     function _setScannerDisableFlag(address scanner, bool value) internal {
@@ -331,14 +360,14 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         emit ScannerEnabled(scannerAddressToId(scanner), isScannerOperational(scanner), _msgSender(), value);
     }
 
-    function _addEnabledScanner(uint256 nodeRunnerId) private {
-        _enabledScanners[nodeRunnerId] += 1;
-        emit EnabledScannersChanged(nodeRunnerId, _enabledScanners[nodeRunnerId]);
+    function _addEnabledScanner(uint256 scannerPoolId) private {
+        _enabledScanners[scannerPoolId] += 1;
+        emit EnabledScannersChanged(scannerPoolId, _enabledScanners[scannerPoolId]);
     }
 
-    function _removeEnabledScanner(uint256 nodeRunnerId) private {
-        _enabledScanners[nodeRunnerId] -= 1;
-        emit EnabledScannersChanged(nodeRunnerId, _enabledScanners[nodeRunnerId]);
+    function _removeEnabledScanner(uint256 scannerPoolId) private {
+        _enabledScanners[scannerPoolId] -= 1;
+        emit EnabledScannersChanged(scannerPoolId, _enabledScanners[scannerPoolId]);
     }
 
     // ************* Scanner Getters *************
@@ -364,7 +393,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
         ScannerNode memory scannerNode = getScanner(scanner);
         return (
             scannerNode.registered,
-            scannerNode.registered ? ownerOf(scannerNode.nodeRunnerId) : address(0),
+            scannerNode.registered ? ownerOf(scannerNode.scannerPoolId) : address(0),
             scannerNode.chainId,
             scannerNode.metadata,
             isScannerOperational(scanner),
@@ -375,11 +404,11 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     // ************* DelegatedStakeSubjectUpgradeable *************
 
     /**
-     * @notice Sets stake parameters (min, max, activated) for scanners. Restricted to NODE_RUNNER_ADMIN_ROLE
+     * @notice Sets stake parameters (min, max, activated) for scanners. Restricted to SCANNER_POOL_ADMIN_ROLE
      * @param newStakeThreshold struct with stake parameters.
      * @param chainId scanned chain the thresholds applies to.
      */
-    function setManagedStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(NODE_RUNNER_ADMIN_ROLE) {
+    function setManagedStakeThreshold(StakeThreshold calldata newStakeThreshold, uint256 chainId) external onlyRole(SCANNER_POOL_ADMIN_ROLE) {
         if (chainId == 0) revert ZeroAmount("chainId");
         if (newStakeThreshold.max <= newStakeThreshold.min) revert StakeThresholdMaxLessOrEqualMin();
         emit ManagedStakeThresholdChanged(chainId, newStakeThreshold.min, newStakeThreshold.max, newStakeThreshold.activated);
@@ -390,10 +419,10 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
      * @notice Getter for StakeThreshold for the scanner with id `subject`
      */
     function getManagedStakeThreshold(uint256 managedId) public view returns (StakeThreshold memory) {
-        return _scannerStakeThresholds[managedId];
+        return _scannerStakeThresholds[_scannerPoolChainId[managedId]];
     }
 
-    /// Total scanners registered to a Node Runner
+    /// Total scanners registered to a ScannerPool
     function getTotalManagedSubjects(uint256 subject) public view virtual override returns (uint256) {
         return _enabledScanners[subject];
     }
@@ -401,7 +430,7 @@ abstract contract NodeRunnerRegistryCore is BaseComponentUpgradeable, ERC721Upgr
     // ************* Privilege setters ***************
 
     /// Sets maximum delay between execution of forta auth in Scan Node CLI and execution of registerScanner() in this contract
-    function setRegistrationDelay(uint256 delay) external onlyRole(NODE_RUNNER_ADMIN_ROLE) {
+    function setRegistrationDelay(uint256 delay) external onlyRole(SCANNER_POOL_ADMIN_ROLE) {
         _setRegistrationDelay(delay);
     }
 

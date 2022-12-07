@@ -63,8 +63,6 @@ describe('Scanner Node Software Version', function () {
             const newScannerVersion = await upgrades.upgradeProxy(originalScannerVersion.address, NewImplementation, {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
-                // TODO: remove this after upgrading to a version of `openzeppelin-upgrades` without the error in RoutedUpgradeable.sol
-                unsafeSkipStorageCheck: true,
             });
             await newScannerVersion.connect(this.accounts.admin).setScannerNodeBetaVersion(VERSION_2);
             expect(await newScannerVersion.scannerNodeVersion()).to.equal(VERSION_1);

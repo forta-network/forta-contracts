@@ -11,6 +11,8 @@ import "../../Roles.sol";
 import "../../utils/AccessManaged.sol";
 
 abstract contract DirectStakeSubjectUpgradeable is AccessManagedUpgradeable, IDirectStakeSubject {
+    /// @custom:oz-renamed-from _stakeController
+    /// @custom:oz-retyped-from IStakeController
     IStakeSubjectGateway private _subjectGateway;
 
     event SubjectHandlerUpdated(address indexed newHandler);

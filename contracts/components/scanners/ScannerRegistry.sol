@@ -11,13 +11,13 @@ import "./ScannerRegistryMetadata.sol";
 
 contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, ScannerRegistryManaged, ScannerRegistryEnable, ScannerRegistryMetadata {
     event DeregisteredScanner(uint256 scannerId);
-    event ConfiguredMigration(uint256 sunsettingTime, address nodeRunnerRegistry);
+    event ConfiguredMigration(uint256 sunsettingTime, address scannerPoolRegistry);
 
     string public constant version = "0.1.4";
 
     mapping(uint256 => bool) public optingOutOfMigration;
     uint256 public sunsettingTime;
-    NodeRunnerRegistry public nodeRunnerRegistry;
+    ScannerPoolRegistry public scannerPoolRegistry;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
@@ -61,15 +61,15 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
             uint256 disabledFlags
         )
     {
-        // If migration has started, and scanner has migrated, return NodeRunnerRegistry values
-        if (nodeRunnerRegistry.isScannerRegistered(address(uint160(scannerId)))) {
-            return _getScannerStateFromNodeRunner(scannerId);
+        // If migration has started, and scanner has migrated, return ScannerPoolRegistry values
+        if (scannerPoolRegistry.isScannerRegistered(address(uint160(scannerId)))) {
+            return _getScannerStateFromScannerPool(scannerId);
         } else {
             return _getScannerState(scannerId);
         }
     }
 
-    function _getScannerStateFromNodeRunner(uint256 scannerId)
+    function _getScannerStateFromScannerPool(uint256 scannerId)
         private
         view
         returns (
@@ -82,7 +82,7 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         )
     {
         bool disabled;
-        (registered, owner, chainId, metadata, enabled, disabled) = nodeRunnerRegistry.getScannerState(address(uint160(scannerId)));
+        (registered, owner, chainId, metadata, enabled, disabled) = scannerPoolRegistry.getScannerState(address(uint160(scannerId)));
         if (disabled) {
             disabledFlags = 1;
         }
@@ -105,7 +105,7 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         return (registered, owner, chainId, metadata, isEnabled(scannerId), _getDisableFlags(scannerId));
     }
 
-    function _getScannerFromNodeRunner(uint256 scannerId)
+    function _getScannerFromScannerPool(uint256 scannerId)
         private
         view
         returns (
@@ -115,7 +115,7 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
             string memory metadata
         )
     {
-        (registered, owner, chainId, metadata, , ) = nodeRunnerRegistry.getScannerState(address(uint160(scannerId)));
+        (registered, owner, chainId, metadata, , ) = scannerPoolRegistry.getScannerState(address(uint160(scannerId)));
         return (registered, owner, chainId, metadata);
     }
 
@@ -131,9 +131,9 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
             string memory metadata
         )
     {
-        // If migration has started, and scanner has migrated, return NodeRunnerRegistry values
-        if (nodeRunnerRegistry.isScannerRegistered(address(uint160(scannerId)))) {
-            return _getScannerFromNodeRunner(scannerId);
+        // If migration has started, and scanner has migrated, return ScannerPoolRegistry values
+        if (scannerPoolRegistry.isScannerRegistered(address(uint160(scannerId)))) {
+            return _getScannerFromScannerPool(scannerId);
         } else {
             return super.getScanner(scannerId);
         }
@@ -143,9 +143,9 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         // after migration, return false
         if (hasMigrationEnded()) {
             return false;
-            // During migration, return NodeRunnerRegistry value if scannerId is migrated
-        } else if (nodeRunnerRegistry.isScannerRegistered(address(uint160(scannerId)))) {
-            return nodeRunnerRegistry.isScannerOperational(address(uint160(scannerId)));
+            // During migration, return ScannerPoolRegistry value if scannerId is migrated
+        } else if (scannerPoolRegistry.isScannerRegistered(address(uint160(scannerId)))) {
+            return scannerPoolRegistry.isScannerOperational(address(uint160(scannerId)));
             // Return ScannerRegistry value if migration has not started or if is not yet migrated
         } else {
             return super.isEnabled(scannerId);
@@ -156,7 +156,7 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         return sunsettingTime < block.timestamp;
     }
 
-    function deregisterScannerNode(uint256 scannerId) external onlyRole(SCANNER_2_NODE_RUNNER_MIGRATOR_ROLE) {
+    function deregisterScannerNode(uint256 scannerId) external onlyRole(SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE) {
         if (optingOutOfMigration[scannerId]) revert CannotDeregister(scannerId);
         _burn(scannerId);
         delete _disabled[scannerId];
@@ -166,9 +166,9 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
     }
 
     /**
-     * Declares preference for migration from ScanerRegistry to NodeRunnerRegistry. Default is yes.
+     * Declares preference for migration from ScanerRegistry to ScannerPoolRegistry. Default is yes.
      * @param scannerId ERC721 id
-     * @param isOut true if the scanner does not want to be migrated to the NodeRunnerRegistry (and deleted)
+     * @param isOut true if the scanner does not want to be migrated to the ScannerPoolRegistry (and deleted)
      */
     function setMigrationPrefrence(uint256 scannerId, bool isOut) external onlyOwnerOf(scannerId) {
         optingOutOfMigration[scannerId] = isOut;
@@ -179,14 +179,14 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
     /**
      * Configures migration params
      * @param _sunsettingTime time after which the scanners won't be operational (isEnabled will return false) and will not get bot assignments or rewards.
-     * @param _nodeRunnerRegistry new registry, for compatibility for off chain components during migration
+     * @param _scannerPoolRegistry new registry, for compatibility for off chain components during migration
      */
-    function configureMigration(uint256 _sunsettingTime, address _nodeRunnerRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function configureMigration(uint256 _sunsettingTime, address _scannerPoolRegistry) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_sunsettingTime == 0) revert ZeroAmount("_sunsettingTime");
-        if (_nodeRunnerRegistry == address(0)) revert ZeroAddress("_nodeRunnerRegistry");
+        if (_scannerPoolRegistry == address(0)) revert ZeroAddress("_scannerPoolRegistry");
         sunsettingTime = _sunsettingTime;
-        nodeRunnerRegistry = NodeRunnerRegistry(_nodeRunnerRegistry);
-        emit ConfiguredMigration(sunsettingTime, _nodeRunnerRegistry);
+        scannerPoolRegistry = ScannerPoolRegistry(_scannerPoolRegistry);
+        emit ConfiguredMigration(sunsettingTime, _scannerPoolRegistry);
     }
 
     /**
@@ -231,5 +231,5 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         return super._msgData();
     }
 
-    uint256[49] private __gap;
+    uint256[47] private __gap;
 }

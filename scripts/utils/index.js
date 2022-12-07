@@ -1,4 +1,4 @@
-const { ethers, upgrades, network } = require('hardhat');
+const { ethers, upgrades, network, defender } = require('hardhat');
 const { NonceManager } = require('@ethersproject/experimental');
 const Conf = require('conf');
 const pLimit = require('p-limit');
@@ -11,8 +11,8 @@ const process = require('process');
 Object.assign(process.env, require('dotenv').config().parsed);
 
 const DEFAULT_FEE_DATA = {
-    maxFeePerGas: ethers.utils.parseUnits('500', 'gwei'),
-    maxPriorityFeePerGas: ethers.utils.parseUnits('30', 'gwei'),
+    maxFeePerGas: ethers.utils.parseUnits('400', 'gwei'),
+    maxPriorityFeePerGas: ethers.utils.parseUnits('20', 'gwei'),
 };
 
 const getDefaultProvider = async (baseProvider = ethers.provider, feeData = {}) => {
@@ -93,17 +93,37 @@ function deployUpgradeable(factory, kind, params = [], opts = {}) {
 }
 
 async function performUpgrade(proxy, factory, opts = {}, cache, key) {
-    const contract = typeof factory === 'string' ? await getFactory(factory) : factory;
+    let contract, name;
+    if (typeof factory === 'string') {
+        contract = await getFactory(factory);
+        name = factory;
+    } else {
+        contract = factory;
+    }
     const afterUpgradeContract = await upgrades.upgradeProxy(proxy.address, contract, opts);
-    if (cache) await saveImplementationParams(cache, key, opts, afterUpgradeContract);
+    if (cache) await saveImplementationParams(cache, key, opts, afterUpgradeContract, name);
     return afterUpgradeContract;
+}
+
+async function proposeUpgrade(contractName, opts = {}, cache, key) {
+    const proxyAddress = await cache.get(`${key}.address`);
+    const proposal = await defender.proposeUpgrade(proxyAddress, contractName, opts);
+    //console.log(proposal.metadata.newImplementationAddress);
+    await saveProposedImplementationParams(cache, key, opts, proposal.metadata.newImplementationAddress, contractName);
+    return proposal.url;
 }
 
 // eslint-disable-next-line no-unused-vars
 async function tryFetchContract(cache, key, contract, args = [], opts = {}) {
+    let name;
+    if (typeof contract === 'string') {
+        name = contract;
+        contract = await ethers.getContractFactory(name);
+    }
     const deployed = await resumeOrDeploy(cache, key, () => contract.deploy(...args)).then((address) => contract.attach(address));
     DEBUG(`${key}.args`, args);
     await cache.set(`${key}.args`, args);
+    await cache.set(`${key}.name`, name);
     await saveVersion(key, cache, deployed, false);
     return deployed;
 }
@@ -119,16 +139,31 @@ async function migrateAddress(cache, key) {
 }
 
 async function tryFetchProxy(cache, key, contract, kind = 'uups', args = [], opts = {}) {
+    let name;
+    if (typeof contract === 'string') {
+        name = contract;
+        contract = await ethers.getContractFactory(name);
+    }
     const deployed = await resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind, ...opts })).then((address) => contract.attach(address));
-    if (cache) await saveImplementationParams(cache, key, opts, deployed);
+    if (cache) await saveImplementationParams(cache, key, opts, deployed, name);
     return deployed;
 }
 
-async function saveImplementationParams(cache, key, opts, contract) {
+async function saveImplementationParams(cache, key, opts, contract, name) {
     const implAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
     await cache.set(`${key}.impl.args`, opts.constructorArgs ?? []);
     await cache.set(`${key}.impl.address`, implAddress);
+    await cache.set(`${key}.impl.name`, name);
+    await cache.set(`${key}.impl.verified`, false);
     await saveVersion(key, cache, contract, true);
+}
+
+async function saveProposedImplementationParams(cache, key, opts, implAddress, name) {
+    await cache.set(`${key}.proposedImpl.args`, opts.constructorArgs ?? []);
+    await cache.set(`${key}.proposedImpl.address`, implAddress);
+    await cache.set(`${key}.proposedImpl.name`, name);
+    await cache.set(`${key}.proposedImpl.verified`, false);
+    await cache.set(`${key}.proposedImpl.version`, await getContractVersion({ address: implAddress, provider: await getDefaultProvider() }));
 }
 
 async function getContractVersion(contract, deployParams = {}) {
@@ -150,7 +185,7 @@ async function getContractVersion(contract, deployParams = {}) {
             return '0.0.0';
         }
     }
-    throw new Error('Cannot get contract version. Provide contract object or deployParams');
+    throw new Error(`Cannot get contract version for ${contract} or ${deployParams}. Provide contract object or deployParams`);
 }
 
 async function saveVersion(key, cache, contract, isProxy) {
@@ -305,6 +340,7 @@ module.exports = {
     deploy,
     deployUpgradeable,
     performUpgrade,
+    proposeUpgrade,
     tryFetchContract,
     tryFetchProxy,
     migrateAddress,
