@@ -348,7 +348,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         address from,
         address to,
         uint256 sharesAmount
-    ) external {
+    ) external onlyRole(STAKING_CONTRACT_ROLE) {
         rewardsDistributor.didTransferShares(sharesId, subjectType, from, to, sharesAmount);
     }
 }
