@@ -190,6 +190,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
             if (_claimedRewardsPerEpoch[shareId][epochNumbers[i]][_msgSender()]) revert AlreadyClaimed();
             _claimedRewardsPerEpoch[shareId][epochNumbers[i]][_msgSender()] = true;
             uint256 epochRewards = _availableReward(shareId, isDelegator, epochNumbers[i], _msgSender());
+            if (epochRewards == 0) revert ZeroAmount("epochRewards");
             SafeERC20.safeTransfer(rewardsToken, _msgSender(), epochRewards);
             emit ClaimedRewards(subjectType, subjectId, _msgSender(), epochNumbers[i], epochRewards);
         }
