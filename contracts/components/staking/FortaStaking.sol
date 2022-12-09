@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 
 import "./IStakeMigrator.sol";
@@ -20,6 +19,7 @@ import "./stake_subjects/IStakeSubjectGateway.sol";
 import "./slashing/ISlashingExecutor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
+import "../utils/ReentrancyGuardHandler.sol";
 
 /**
  * @dev This is a generic staking contract for the Forta platform. It allows any account to deposit ERC20 tokens to
@@ -49,7 +49,7 @@ import "../../tools/Distributions.sol";
  * succeed but you will not be able to withdraw or mint new shares from the contract. If this happens, transfer your
  * shares to an EOA or fully ERC1155 compatible contract.
  */
-contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, SubjectTypeValidator, ISlashingExecutor, IStakeMigrator, ReentrancyGuardUpgradeable {
+contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, SubjectTypeValidator, ISlashingExecutor, IStakeMigrator, ReentrancyGuardHandlerUpgradeable {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers for Timers.Timestamp;
@@ -82,6 +82,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     uint256 public slashDelegatorsPercent;
     IStakeAllocator public allocator;
+
+    uint256 _reentrancyStatus;
 
     uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
     uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
@@ -138,7 +140,15 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * Reinitializer to setup the reentrancy guard (introduced in v0.1.2)
      */
     function setReentrancyGuard() public reinitializer(2) {
-        __ReentrancyGuard_init();
+        __ReentrancyGuard_init_unchained();
+    }
+
+    function _setStatus(uint256 newStatus) internal virtual override {
+        _reentrancyStatus = newStatus;
+    }
+
+    function _getStatus() internal virtual override returns (uint256) {
+        return _reentrancyStatus;
     }
 
     /// Returns treasury address (slashed tokens destination)
@@ -674,8 +684,9 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * - 1 subjectGateway
      * - 1 slashDelegatorsPercent
      * - 1 allocator
+     * - 1 _reentrancyStatus
      * --------------------------
-     *  38 __gap
+     *  37 __gap
      */
-    uint256[38] private __gap;
+    uint256[37] private __gap;
 }
