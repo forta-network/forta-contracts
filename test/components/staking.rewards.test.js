@@ -70,6 +70,15 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.admin).setDelegationParams(delay, 0);
         });
 
+        it('should not allow rewarding twice', async function () {
+            const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+            await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2000', epoch);
+            await expect(this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2000', epoch)).to.be.revertedWith(
+                `AlreadyRewarded(${epoch})`
+            );
+        });
+
         it('should apply equal rewards with comission for stakes added at the same time', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
