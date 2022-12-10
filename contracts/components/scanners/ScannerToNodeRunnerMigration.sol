@@ -66,8 +66,8 @@ contract ScannerToScannerPoolMigration is BaseComponentUpgradeable {
      * - Deleted in ScannerNodeRegistry. The ERC721 will be burned, disabled flags and managers deleted from storage.
      * Scanners with optingOutOfMigration flags == true will be ignored (opted out), and will stay in ScannerNodeRegistry.
      * At migration end, they will stop receiving work and rewards.
-     * @param scannerPoolId If set as 0, a new ScannerPoolRegistry ERC721 will be minted to scannerPool (but it must not own any prior),
-     * otherwise must be set as a valid ScannerPoolRegistry ERC721 id owned by scannerPool.
+     * @param scannerPoolId If set as 0, a new ScannerPoolRegistry ERC721 will be minted to scannerPool, otherwise it must be set as a
+     * valid ScannerPoolRegistry ERC721 id owned by scannerPool.
      * @return ScannerPoolRegistry ERC721 id the scanners are migrated to.
      */
     function selfMigrate(
@@ -88,8 +88,8 @@ contract ScannerToScannerPoolMigration is BaseComponentUpgradeable {
      * - Registered in ScannerPoolRegistry to the scannerPoolId either indicated or generated, with the same chainId and metadata.
      * - Deleted in ScannerNodeRegistry. The ERC721 will be burned, disabled flags and managers deleted from storage.
      * Scanners with with optingOutOfMigration flags == true will be ignored (opted out), and will stay in ScannerNodeRegistry.
-     * @param scannerPoolId If set as 0, a new ScannerPoolRegistry ERC721 will be minted to scannerPool (but it must not own any prior),
-     * otherwise must be set as a valid ScannerPoolRegistry ERC721 id owned by scannerPool.
+     * @param scannerPoolId If set as 0, a new ScannerPoolRegistry ERC721 will be minted to scannerPool, otherwise it must be set as a
+     * valid ScannerPoolRegistry ERC721 id owned by scannerPool.
      * @param scannerPool address that owns the scanners and will own the ScannerPoolRegistry ERC721
      * @return ScannerPoolRegistry ERC721 id the scanners are migrated to.
      */

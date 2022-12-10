@@ -281,7 +281,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         return uint256(uint160(scanner));
     }
 
-    /// Converts scanner address to uint256 for FortaStaking Token Id.
+    /// Converts FortaStaking uint256 id to address.
     function scannerIdToAddress(uint256 scannerId) public pure returns (address) {
         return address(uint160(scannerId));
     }
