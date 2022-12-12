@@ -19,7 +19,7 @@ describe('Dispatcher', function () {
         this.AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
         this.SCANNER_SUBJECT_ID = BigNumber.from(this.SCANNER_ID);
         // Create Agent and Scanner
-        await this.agents.createAgent(this.AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]);
+        await this.agents.connect(this.accounts.user1).registerAgent(this.AGENT_ID, 'Metadata1', [1, 3, 4, 5]);
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, this.AGENT_ID, '100');
 
         await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
@@ -157,7 +157,7 @@ describe('Dispatcher', function () {
         for (const i in Array(10).fill()) {
             for (const j in Array(10).fill()) {
                 const agent = ethers.utils.hexlify(ethers.utils.randomBytes(32));
-                await expect(this.agents.createAgent(agent, this.accounts.user1.address, `Agent ${i * 10 + j}`, [1])).to.be.not.reverted;
+                await expect(this.agents.connect(this.accounts.user1).registerAgent(agent, `Agent ${i * 10 + j}`, [1])).to.be.not.reverted;
                 await expect(this.dispatch.connect(this.accounts.manager).link(agent, this.SCANNER_ID)).to.be.not.reverted;
             }
 
