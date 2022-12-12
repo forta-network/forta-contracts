@@ -140,7 +140,7 @@ async function migrate(config = {}) {
                 unsafeAllow: ['delegatecall'],
             }
         );
-
+        await contracts.staking.setReentrancyGuard();
         DEBUG(`[${Object.keys(contracts).length}] staking: ${contracts.staking.address}`);
 
         contracts.subjectGateway = await utils.tryFetchProxy(CACHE, 'staking-parameters', 'StakeSubjectGateway', 'uups', [contracts.access.address, contracts.staking.address], {

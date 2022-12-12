@@ -19,6 +19,7 @@ import "./stake_subjects/IStakeSubjectGateway.sol";
 import "./slashing/ISlashingExecutor.sol";
 import "../BaseComponentUpgradeable.sol";
 import "../../tools/Distributions.sol";
+import "../utils/ReentrancyGuardHandler.sol";
 
 /**
  * @dev This is a generic staking contract for the Forta platform. It allows any account to deposit ERC20 tokens to
@@ -48,7 +49,7 @@ import "../../tools/Distributions.sol";
  * succeed but you will not be able to withdraw or mint new shares from the contract. If this happens, transfer your
  * shares to an EOA or fully ERC1155 compatible contract.
  */
-contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, SubjectTypeValidator, ISlashingExecutor, IStakeMigrator {
+contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, SubjectTypeValidator, ISlashingExecutor, IStakeMigrator, ReentrancyGuardHandlerUpgradeable {
     using Distributions for Distributions.Balances;
     using Distributions for Distributions.SignedBalances;
     using Timers for Timers.Timestamp;
@@ -83,6 +84,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     uint256 public slashDelegatorsPercent;
     IStakeAllocator public allocator;
     mapping(uint256 => uint256) public openProposals; // activeShareId --> counter
+
+    uint256 _reentrancyStatus;
 
     uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
     uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
@@ -133,6 +136,21 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         stakedToken = IERC20(__stakedToken);
         emit DelaySet(__withdrawalDelay);
         emit TreasurySet(__treasury);
+    }
+
+    /**
+     * Reinitializer to setup the reentrancy guard (introduced in v0.1.2)
+     */
+    function setReentrancyGuard() public reinitializer(2) {
+        __ReentrancyGuard_init_unchained();
+    }
+
+    function _setStatus(uint256 newStatus) internal virtual override {
+        _reentrancyStatus = newStatus;
+    }
+
+    function _getStatus() internal virtual override returns (uint256) {
+        return _reentrancyStatus;
     }
 
     /// Returns treasury address (slashed tokens destination)
@@ -260,7 +278,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint8 subjectType,
         uint256 subject,
         uint256 stakeValue
-    ) external onlyValidSubjectType(subjectType) notAgencyType(subjectType, SubjectStakeAgency.MANAGED) returns (uint256) {
+    ) external onlyValidSubjectType(subjectType) notAgencyType(subjectType, SubjectStakeAgency.MANAGED) nonReentrant returns (uint256) {
         if (address(subjectGateway) == address(0)) revert ZeroAddress("subjectGateway");
         if (!subjectGateway.isStakeActivatedFor(subjectType, subject)) revert StakeInactiveOrSubjectNotFound();
         address staker = _msgSender();
@@ -285,7 +303,13 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * Burns active stake and shares for old subject.
      * @dev No slash has been executed, so new SCANNER_POOL share proportions apply.
      */
-    function migrate(uint8 oldSubjectType, uint256 oldSubject, uint8 newSubjectType, uint256 newSubject, address staker) external onlyRole(SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE) {
+    function migrate(
+        uint8 oldSubjectType,
+        uint256 oldSubject,
+        uint8 newSubjectType,
+        uint256 newSubject,
+        address staker
+    ) external onlyRole(SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE) nonReentrant {
         if (oldSubjectType != SCANNER_SUBJECT) revert InvalidSubjectType(oldSubjectType);
         if (newSubjectType != SCANNER_POOL_SUBJECT) revert InvalidSubjectType(newSubjectType);
         if (isFrozen(oldSubjectType, oldSubject)) revert FrozenSubject();
@@ -337,7 +361,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @param sharesValue amount of shares token.
      * @return amount of time until withdrawal is valid.
      */
-    function initiateWithdrawal(uint8 subjectType, uint256 subject, uint256 sharesValue) external onlyValidSubjectType(subjectType) returns (uint64) {
+    function initiateWithdrawal(uint8 subjectType, uint256 subject, uint256 sharesValue) external onlyValidSubjectType(subjectType) nonReentrant returns (uint64) {
         address staker = _msgSender();
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
         if (balanceOf(staker, activeSharesId) == 0) revert NoActiveShares();
@@ -668,5 +692,24 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         return super._msgData();
     }
 
-    uint256[37] private __gap;
+    /**
+     *  50
+     * - 1 (stakedToken)
+     * - 1 (_activeStake)
+     * - 1 (_inactiveStake)
+     * - 1 (_lockingDelay)
+     * - 1 (_rewards)
+     * - 1 (_released)
+     * - 1 _frozen
+     * - 1 _withdrawalDelay
+     * - 1 _treasury
+     * - 1 subjectGateway
+     * - 1 slashDelegatorsPercent
+     * - 1 allocator
+     * - 1 openProposals
+     * - 1 _reentrancyStatus
+     * --------------------------
+     *  36 __gap
+     */
+    uint256[36] private __gap;
 }

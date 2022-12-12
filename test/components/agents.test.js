@@ -15,7 +15,7 @@ describe('Agent Registry', function () {
             await expect(this.agents.connect(this.accounts.manager).setFrontRunningDelay('1800'))
                 .to.emit(this.agents, 'FrontRunningDelaySet')
                 .withArgs(ethers.BigNumber.from('1800'));
-            await expect(this.agents.createAgent(...args)).to.be.revertedWith('CommitNotReady()');
+            await expect(this.agents.connect(this.accounts.user1).createAgent(...args)).to.be.revertedWith('CommitNotReady()');
         });
 
         it('setting delay is protected', async function () {
@@ -33,7 +33,7 @@ describe('Agent Registry', function () {
 
                 await this.agents.prepareAgent(prepareCommit(...args));
 
-                await expect(this.agents.createAgent(...args)).to.be.revertedWith('CommitNotReady()');
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args)).to.be.revertedWith('CommitNotReady()');
             });
 
             it('non existing agent', async function () {
@@ -47,11 +47,11 @@ describe('Agent Registry', function () {
             it('no delay', async function () {
                 const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
 
-                await expect(this.agents.connect(this.accounts.other).createAgent(...args))
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
                     .to.emit(this.agents, 'Transfer')
                     .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
                     .to.emit(this.agents, 'AgentUpdated')
-                    .withArgs(AGENT_ID, this.accounts.other.address, 'Metadata1', [1, 3, 4, 5]);
+                    .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]);
             });
 
             it('on time', async function () {
@@ -73,11 +73,11 @@ describe('Agent Registry', function () {
 
                 await network.provider.send('evm_increaseTime', [300]);
 
-                await expect(this.agents.connect(this.accounts.other).createAgent(...args))
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
                     .to.emit(this.agents, 'Transfer')
                     .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
                     .to.emit(this.agents, 'AgentUpdated')
-                    .withArgs(AGENT_ID, this.accounts.other.address, 'Metadata1', [1, 3, 4, 5]);
+                    .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]);
                 expect(await this.agents.isRegistered(AGENT_ID)).to.be.equal(true);
                 expect(await this.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
                 expect(
@@ -107,7 +107,7 @@ describe('Agent Registry', function () {
 
                 await network.provider.send('evm_increaseTime', [300]);
 
-                await expect(this.agents.createAgent(...args)).to.be.revertedWith('UnorderedArray("chainIds")');
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args)).to.be.revertedWith('UnorderedArray("chainIds")');
             });
 
             it('update', async function () {
@@ -126,11 +126,11 @@ describe('Agent Registry', function () {
 
                 await network.provider.send('evm_increaseTime', [300]);
 
-                await expect(this.agents.connect(this.accounts.other).createAgent(...args))
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
                     .to.emit(this.agents, 'Transfer')
                     .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
                     .to.emit(this.agents, 'AgentUpdated')
-                    .withArgs(AGENT_ID, this.accounts.other.address, 'Metadata1', [1, 3, 4]);
+                    .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4]);
 
                 expect(await this.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
                 expect(
@@ -188,7 +188,7 @@ describe('Agent Registry', function () {
             const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
             await expect(this.agents.prepareAgent(prepareCommit(...args))).to.be.not.reverted;
             await network.provider.send('evm_increaseTime', [300]);
-            await expect(this.agents.createAgent(...args)).to.be.not.reverted;
+            await expect(this.agents.connect(this.accounts.user1).createAgent(...args)).to.be.not.reverted;
             await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
         });
 

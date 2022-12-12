@@ -229,7 +229,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     {
         // No need to check for proposal existence, onlyInState will revert if _proposalId is in undefined state
         if (!subjectGateway.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
-
+        if (subjectGateway.totalStakeFor(_subjectType, _subjectId) == 0) revert ZeroAmount("subject stake");
         _submitEvidence(_proposalId, IN_REVIEW, _evidence);
         if (_subjectType != proposals[_proposalId].subjectType || _subjectId != proposals[_proposalId].subjectId) {
             _unfreeze(_proposalId);
