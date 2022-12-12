@@ -172,5 +172,12 @@ contract ScannerToScannerPoolMigration is BaseComponentUpgradeable {
         }
         return scannerPoolId;
     }
-    uint256[48] private __gap;
+
+    /**
+     *  50
+     * - 1 _migratedScannerPools;
+     * --------------------------
+     *  49 __gap
+     */
+    uint256[49] private __gap;
 }

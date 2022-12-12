@@ -188,5 +188,13 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
         return super.ownerOf(subject);
     }
 
-    uint256[41] private __gap; // 50 - 1 (frontRunningDelay) - 3 (_stakeThreshold) - 5 StakeSubjectUpgradeable
+    /**
+     *  50
+     * - 5 DirectStakeSubjectUpgradeable
+     * - 3 _stakeThreshold
+     * - 1 frontRunningDelay
+     * --------------------------
+     *  41 __gap
+     */
+    uint256[41] private __gap;
 }

@@ -109,5 +109,12 @@ abstract contract ScannerRegistryCore is
         return super.ownerOf(subject);
     }
 
-    uint256[44] private __gap; // 50 - 1 (_stakeThresholds) - 5 (StakeSubjectUpgradeable)
+    /**
+     *  50
+     * - 5 StakeSubjectUpgradeable;
+     * - 1 _stakeThresholds;
+     * --------------------------
+     *  44 __gap
+     */
+    uint256[44] private __gap;
 }

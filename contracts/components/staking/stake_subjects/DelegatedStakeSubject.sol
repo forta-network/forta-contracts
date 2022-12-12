@@ -42,5 +42,11 @@ abstract contract DelegatedStakeSubjectUpgradeable is AccessManagedUpgradeable, 
         emit SubjectHandlerUpdated(subjectGateway);
     }
 
+    /**
+     *   5 (Not 50, since it was part of an upgrade of XXXRegistryCore)
+     * - 1 _subjectGateway;
+     * --------------------------
+     *   4 __gap
+     */
     uint256[4] private __gap;
 }

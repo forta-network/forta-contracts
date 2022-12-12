@@ -148,5 +148,11 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
         return super._msgData();
     }
 
+    /**
+     *  50
+     * - 1 _disabled
+     * --------------------------
+     *  49 __gap
+     */
     uint256[49] private __gap;
 }

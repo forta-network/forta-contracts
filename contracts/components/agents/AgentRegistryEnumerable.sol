@@ -84,5 +84,12 @@ abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
         }
     }
 
+    /**
+     *  50
+     * - 1 _allAgents;
+     * - 1 _chainAgents;
+     * --------------------------
+     *  48 __gap
+     */
     uint256[48] private __gap;
 }

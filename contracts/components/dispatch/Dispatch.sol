@@ -331,5 +331,16 @@ contract Dispatch is BaseComponentUpgradeable {
         }
     }
 
+    /**
+     *  50
+     *   1 _agents;
+     *   1 _scanners_deprecated;
+     *   1 scannerToAgents
+     *   1 agentToScanners
+     *  48 (mistakenly deployed with 48 in version 0.1.4, so we start counting here again. This contract is the last of its inheritance chain, so it's fine.)
+     * - 1 _scannerPools
+     * --------------------------
+     *  47 __gap
+     */
     uint256[47] private __gap;
 }

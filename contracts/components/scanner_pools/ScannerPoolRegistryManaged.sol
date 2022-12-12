@@ -75,6 +75,11 @@ abstract contract ScannerPoolRegistryManaged is ScannerPoolRegistryCore {
         return super._canSetEnableState(scanner) || isManager(_scannerNodes[scanner].scannerPoolId, _msgSender());
     }
 
-
+    /**
+     *  50
+     * - 1 _managers
+     * --------------------------
+     *  49 __gap
+     */
     uint256[49] private __gap;
 }

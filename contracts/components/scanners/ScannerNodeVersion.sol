@@ -66,5 +66,12 @@ contract ScannerNodeVersion is BaseComponentUpgradeable {
         scannerNodeBetaVersion = _version;
     }
 
+    /**
+     *  50
+     * - 1 scannerNodeVersion
+     * - 1 scannerNodeBetaVersion
+     * --------------------------
+     *  48 __gap
+     */
     uint256[48] private __gap;
 }

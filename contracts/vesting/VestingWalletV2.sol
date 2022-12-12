@@ -137,5 +137,15 @@ contract VestingWalletV2 is VestingWalletV1 {
         setHistoricalBalanceMin((historicalBalanceMin.toInt256() + update).toUint256());
     }
 
+    /**
+     *  50
+     * - 1 rootChainManager (in error since immutable, but deployed)
+     * - 1 l1Token (in error since immutable, but deployed)
+     * - 1 l2EscrowFactory (in error since immutable, but deployed)
+     * - 1 l2EscrowTemplate (in error since immutable, but deployed)
+     * - 1 historicalBalanceMin
+     * --------------------------
+     *  45 __gap
+     */
     uint256[45] private __gap;
 }

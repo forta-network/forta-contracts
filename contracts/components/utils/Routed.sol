@@ -26,5 +26,11 @@ abstract contract RoutedUpgradeable is AccessManagedUpgradeable {
         emit RouterUpdated(address(0));
     }
 
+    /**
+     *  50
+     * - 1 _deprecated_router;
+     * --------------------------
+     *  49 __gap
+     */
     uint256[49] private __gap;
 }
