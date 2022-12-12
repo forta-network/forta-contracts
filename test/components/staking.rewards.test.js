@@ -129,6 +129,13 @@ describe('Staking Rewards', function () {
             );
         });
 
+        it('should fail to reclaim if no rewards available', async function () {
+            await expect(this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [1])).to.be.revertedWith(
+                'ZeroAmount("epochRewards")'
+            );
+        });
+
+
         it('remove stake', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
