@@ -478,5 +478,18 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         return super.ownerOf(subject);
     }
 
-    uint256[44] private __gap;
+    /**
+     *  50
+     * - 5 DelegatedStakeSubjectUpgradeable (to match with older registries)
+     * - 1 _scannerPoolIdCounter;
+     * - 1 _scannerNodes;
+     * - 1 _scannerNodeOwnership
+     * - 1 _enabledScanners
+     * - 1 _scannerStakeThresholds
+     * - 1 _scannerPoolChainId
+     * - 1 registrationDelay
+     * --------------------------
+     *  38 __gap
+     */
+    uint256[38] private __gap;
 }

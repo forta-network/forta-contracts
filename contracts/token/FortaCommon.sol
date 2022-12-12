@@ -57,5 +57,11 @@ abstract contract FortaCommon is AccessControlUpgradeable, ERC20VotesUpgradeable
         ENSReverseRegistration.setName(ensRegistry, ensName);
     }
 
+    /**
+     *  50
+     * - 1 deprecated_whitelistDisabled
+     * --------------------------
+     *  49 __gap
+     */
     uint256[49] private __gap; 
 }

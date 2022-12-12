@@ -55,5 +55,11 @@ abstract contract DirectStakeSubjectUpgradeable is AccessManagedUpgradeable, IDi
     
     function ownerOf(uint256 subject) external view virtual returns (address);
 
+    /**
+     *   5 (Not 50, since it was part of an upgrade of XXXRegistryCore)
+     * - 1 _subjectGateway;
+     * --------------------------
+     *   4 __gap
+     */
     uint256[4] private __gap;
 }

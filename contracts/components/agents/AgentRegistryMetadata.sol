@@ -59,5 +59,12 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
         _agentMetadata[agentId] = AgentMetadata({ version: version, metadata: newMetadata, chainIds: newChainIds });
     }
 
+    /**
+     *  50
+     * - 1 _agentMetadata;
+     * - 1 _agentMetadataUniqueness;
+     * --------------------------
+     *  48 __gap
+     */
     uint256[48] private __gap;
 }

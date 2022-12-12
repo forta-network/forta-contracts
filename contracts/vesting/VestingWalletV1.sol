@@ -134,5 +134,15 @@ contract VestingWalletV1 is OwnableUpgradeable, UUPSUpgradeable {
     internal virtual override onlyOwner()
     {}
 
+    /**
+     *  50
+     * - 1 _released
+     * - 1 _beneficiary
+     * - 1 _start
+     * - 1 _cliff
+     * - 1 _duration
+     * --------------------------
+     *  45 __gap
+     */
     uint256[45] private __gap;
 }

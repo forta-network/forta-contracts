@@ -59,5 +59,11 @@ abstract contract AccessManagedUpgradeable is ContextUpgradeable {
         emit AccessManagerUpdated(newManager);
     }
 
+    /**
+     *  50
+     * - 1 _accessControl;
+     * --------------------------
+     *  49 __gap
+     */
     uint256[49] private __gap;
 }

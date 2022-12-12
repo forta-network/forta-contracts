@@ -82,5 +82,11 @@ contract FortaBridgedPolygon is FortaCommon {
         return "0.2.0";
     }
 
+    /**
+     *  50
+     * - 1 childChainManagerProxy (on error, since it is immutable, but deployed);
+     * --------------------------
+     *  49 __gap
+     */
     uint256[49] private __gap; 
 }

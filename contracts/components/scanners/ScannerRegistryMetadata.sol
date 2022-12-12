@@ -50,6 +50,11 @@ abstract contract ScannerRegistryMetadata is ScannerRegistryCore {
         return _stakeThresholds[getScannerChainId(subject)];
     }
 
-
+    /**
+     *  50
+     * - 1 _scannerMetadata;
+     * --------------------------
+     *  49 __gap
+     */
     uint256[49] private __gap;
 }

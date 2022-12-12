@@ -56,6 +56,11 @@ abstract contract ScannerRegistryManaged is ScannerRegistryCore {
         return _managers[scannerId].at(index);
     }
 
-
+    /**
+     *  50
+     * - 1 _managers;
+     * --------------------------
+     *  49 __gap
+     */
     uint256[49] private __gap;
 }

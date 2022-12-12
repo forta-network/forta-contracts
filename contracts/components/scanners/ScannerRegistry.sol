@@ -231,5 +231,13 @@ contract ScannerRegistry is BaseComponentUpgradeable, ScannerRegistryCore, Scann
         return super._msgData();
     }
 
+    /**
+     *  50
+     * - 1 optingOutOfMigration;
+     * - 1 sunsettingTime;
+     * - 1 scannerPoolRegistry;
+     * --------------------------
+     *  47 __gap
+     */
     uint256[47] private __gap;
 }
