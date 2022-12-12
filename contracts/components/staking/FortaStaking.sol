@@ -71,7 +71,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
     // subject => staker => released reward
     mapping(uint256 => Distributions.SignedBalances) private _released;
 
-    mapping(uint256 => bool) private _frozen;
+    /// @custom:oz-renamed-from _frozen
+    mapping(uint256 => bool) private _deprecated_frozen;
     uint64 private _withdrawalDelay;
 
     // treasury for slashing
@@ -82,6 +83,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
 
     uint256 public slashDelegatorsPercent;
     IStakeAllocator public allocator;
+    mapping(uint256 => uint256) public openProposals; // activeShareId --> counter
 
     uint256 _reentrancyStatus;
 
@@ -249,7 +251,8 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @return true if subject is frozen, false otherwise
      */
     function isFrozen(uint8 subjectType, uint256 subject) public view returns (bool) {
-        return _frozen[FortaStakingUtils.subjectToActive(subjectType, subject)];
+        uint256 sharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        return openProposals[sharesId] > 0 || _deprecated_frozen[sharesId];
     }
 
     /**
@@ -396,7 +399,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         address staker = _msgSender();
         uint256 inactiveSharesId = FortaStakingUtils.subjectToInactive(subjectType, subject);
         if (balanceOf(staker, inactiveSharesId) == 0) revert NoInactiveShares();
-        if (_frozen[FortaStakingUtils.inactiveToActive(inactiveSharesId)]) revert FrozenSubject();
+        if (openProposals[FortaStakingUtils.inactiveToActive(inactiveSharesId)] > 0) revert FrozenSubject();
 
         Timers.Timestamp storage timer = _lockingDelay[FortaStakingUtils.inactiveToActive(inactiveSharesId)][staker];
         if (!timer.isExpired()) revert WithdrawalNotReady();
@@ -506,8 +509,27 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * @param frozen true to freeze, false to unfreeze.
      */
     function freeze(uint8 subjectType, uint256 subject, bool frozen) external override onlyRole(SLASHER_ROLE) onlyValidSubjectType(subjectType) {
-        _frozen[FortaStakingUtils.subjectToActive(subjectType, subject)] = frozen;
-        emit Froze(subjectType, subject, _msgSender(), frozen);
+        uint256 sharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
+        _migrateFrozenToOpenProposals(sharesId);
+        if (frozen) {
+            openProposals[sharesId]++;
+        } else {
+            openProposals[sharesId] = openProposals[sharesId] >= 1 ? openProposals[sharesId] - 1 : 0;
+        }
+        emit Froze(subjectType, subject, _msgSender(), openProposals[sharesId] != 0);
+    }
+
+    /**
+     * @notice If there is open cases before upgrading to openProposals (frozen == true), we increment as an extra proposal
+     * and set to false. There could be more than 1 open, in that case SLASHING_ARBITER_ROLE should be cautious with not unfreezing.
+     * This method will be obsolete when all the _deprecated_frozen are false
+     * @param activeSharesId of the subject
+     */
+    function _migrateFrozenToOpenProposals(uint256 activeSharesId) private {
+        if (_deprecated_frozen[activeSharesId]) {
+            _deprecated_frozen[activeSharesId] = false;
+            openProposals[activeSharesId]++;
+        }
     }
 
     /**
@@ -684,9 +706,10 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
      * - 1 subjectGateway
      * - 1 slashDelegatorsPercent
      * - 1 allocator
+     * - 1 openProposals
      * - 1 _reentrancyStatus
      * --------------------------
-     *  37 __gap
+     *  36 __gap
      */
-    uint256[37] private __gap;
+    uint256[36] private __gap;
 }

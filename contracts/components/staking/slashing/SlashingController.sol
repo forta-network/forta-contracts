@@ -53,6 +53,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     StakeSubjectGateway public subjectGateway; // Should be immutable, but it's already deployed.
     uint256 public depositAmount;
     uint256 public slashPercentToProposer;
+
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IERC20 public immutable depositToken;
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -218,7 +219,14 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
         uint256 _subjectId,
         bytes32 _penaltyId,
         string[] calldata _evidence
-    ) external onlyRole(SLASHING_ARBITER_ROLE) onlyInState(_proposalId, IN_REVIEW) onlyValidSlashPenaltyId(_penaltyId) onlyValidSubjectType(_subjectType) notAgencyType(_subjectType, SubjectStakeAgency.DELEGATOR) {
+    )
+        external
+        onlyRole(SLASHING_ARBITER_ROLE)
+        onlyInState(_proposalId, IN_REVIEW)
+        onlyValidSlashPenaltyId(_penaltyId)
+        onlyValidSubjectType(_subjectType)
+        notAgencyType(_subjectType, SubjectStakeAgency.DELEGATOR)
+    {
         // No need to check for proposal existence, onlyInState will revert if _proposalId is in undefined state
         if (!subjectGateway.isRegistered(_subjectType, _subjectId)) revert NonRegisteredSubject(_subjectType, _subjectId);
         if (subjectGateway.totalStakeFor(_subjectType, _subjectId) == 0) revert ZeroAmount("subject stake");
@@ -378,11 +386,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     }
 
     // Evidence handling
-    function _submitEvidence(
-        uint256 _proposalId,
-        StateMachines.State _stateId,
-        string[] calldata _evidence
-    ) private {
+    function _submitEvidence(uint256 _proposalId, StateMachines.State _stateId, string[] calldata _evidence) private {
         uint256 evidenceLength = _evidence.length;
         if (evidenceLength == 0) revert ZeroAmount("evidence length");
         if (evidenceLength > MAX_EVIDENCE_LENGTH) revert ArrayTooBig(evidenceLength, MAX_EVIDENCE_LENGTH);

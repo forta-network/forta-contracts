@@ -675,5 +675,19 @@ describe('Slashing Proposals', function () {
         });
     });
 
-    describe('Parameter setting', function () {});
+    describe('Multiple slashing proposals', function () {
+        it('a subject should not be unfrozen if it has active slash proposals', async function () {
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+            await this.slashing
+                .connect(this.accounts.user2)
+                .proposeSlash(subjects[0].type, subjects[0].id, this.slashParams.reasons.OPERATIONAL_SLASH, EVIDENCE_FOR_STATE(STATES.CREATED));
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(true);
+            await expect(this.slashing.connect(this.accounts.user3).dismissSlashProposal(1, EVIDENCE_FOR_STATE(STATES.DISMISSED)));
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(true);
+            await expect(this.slashing.connect(this.accounts.user3).dismissSlashProposal(2, EVIDENCE_FOR_STATE(STATES.DISMISSED)));
+            expect(await this.staking.isFrozen(subjects[0].type, subjects[0].id)).to.eq(false);
+        });
+    });
 });
