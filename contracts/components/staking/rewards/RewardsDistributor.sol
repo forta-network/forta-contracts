@@ -33,13 +33,15 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         mapping(address => Accumulators.Accumulator) delegatorsPortions;
     }
 
-    uint256 public totalRewardsDistributed;
+    uint256 public unclaimedRewards;
     // delegator share id => DelegatedAccRewards
     mapping(uint256 => DelegatedAccRewards) private _rewardsAccumulators;
     // share => epoch => amount
-    mapping(uint256 => mapping(uint256 => uint256)) private _rewardsPerEpoch;
+    mapping(uint256 => mapping(uint256 => uint256)) public rewardsPerEpoch;
+    // share => epoch => bool
+    mapping(uint256 => mapping(uint256 => bool)) public rewardedEpochs;
     // share => epoch => address => claimed
-    mapping(uint256 => mapping(uint256 => mapping(address => bool))) private _claimedRewardsPerEpoch;
+    mapping(uint256 => mapping(uint256 => mapping(address => bool))) public claimedRewardsPerEpoch;
 
     struct DelegationFee {
         uint16 feeBps;
@@ -62,6 +64,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
     error RewardingNonRegisteredSubject(uint8 subjectType, uint256 subject);
     error AlreadyClaimed();
+    error AlreadyRewarded(uint256 epochNumber);
     error SetDelegationFeeNotReady();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -140,14 +143,16 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         if (subjectType != SCANNER_POOL_SUBJECT) revert InvalidSubjectType(subjectType);
         if (!_subjectGateway.isRegistered(subjectType, subjectId)) revert RewardingNonRegisteredSubject(subjectType, subjectId);
         uint256 shareId = FortaStakingUtils.subjectToActive(getDelegatorSubjectType(subjectType), subjectId);
-        _rewardsPerEpoch[shareId][epochNumber] = amount;
-        totalRewardsDistributed += amount;
+        if(rewardedEpochs[shareId][epochNumber]) revert AlreadyRewarded(epochNumber);
+        rewardedEpochs[shareId][epochNumber] = true;
+        rewardsPerEpoch[shareId][epochNumber] = amount;
+        unclaimedRewards += amount;
         emit Rewarded(subjectType, subjectId, amount, epochNumber);
     }
 
     function availableReward(uint8 subjectType, uint256 subjectId, uint256 epochNumber, address staker) public view returns (uint256) {
         (uint256 shareId, bool isDelegator) = _getShareId(subjectType, subjectId);
-        if (_claimedRewardsPerEpoch[shareId][epochNumber][staker]) {
+        if (claimedRewardsPerEpoch[shareId][epochNumber][staker]) {
             return 0;
         }
         return _availableReward(shareId, isDelegator, epochNumber, staker);
@@ -166,7 +171,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
         uint256 feeBps = _getDelegationFee(shareId, epochNumber);
 
-        uint256 R = _rewardsPerEpoch[shareId][epochNumber];
+        uint256 R = rewardsPerEpoch[shareId][epochNumber];
         uint256 RD = Math.mulDiv(R, D, T);
         uint256 fee = (RD * feeBps) / MAX_BPS; // mulDiv not necessary - feeBps is small
 
@@ -187,9 +192,10 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
             if (_subjectGateway.ownerOf(subjectType, subjectId) != _msgSender()) revert SenderNotOwner(_msgSender(), subjectId);
         }
         for (uint256 i = 0; i < epochNumbers.length; i++) {
-            if (_claimedRewardsPerEpoch[shareId][epochNumbers[i]][_msgSender()]) revert AlreadyClaimed();
-            _claimedRewardsPerEpoch[shareId][epochNumbers[i]][_msgSender()] = true;
+            if (claimedRewardsPerEpoch[shareId][epochNumbers[i]][_msgSender()]) revert AlreadyClaimed();
+            claimedRewardsPerEpoch[shareId][epochNumbers[i]][_msgSender()] = true;
             uint256 epochRewards = _availableReward(shareId, isDelegator, epochNumbers[i], _msgSender());
+            unclaimedRewards -= epochRewards;
             SafeERC20.safeTransfer(rewardsToken, _msgSender(), epochRewards);
             emit ClaimedRewards(subjectType, subjectId, _msgSender(), epochNumbers[i], epochRewards);
         }
@@ -274,7 +280,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256 amount = token.balanceOf(address(this));
 
         if (token == rewardsToken) {
-            amount -= totalRewardsDistributed;
+            amount -= unclaimedRewards;
         }
 
         SafeERC20.safeTransfer(token, recipient, amount);
