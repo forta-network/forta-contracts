@@ -227,8 +227,6 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
         if (fees[1].sinceEpoch != 0) {
             if (Accumulators.getCurrentEpochNumber() < fees[1].sinceEpoch + delegationParamsEpochDelay) revert SetDelegationFeeNotReady();
-        }
-        if (fees[1].sinceEpoch != 0) {
             fees[0] = fees[1];
         }
         fees[1] = DelegationFee({ feeBps: feeBps, sinceEpoch: Accumulators.getCurrentEpochNumber() + 1 });
