@@ -10,21 +10,15 @@ import "../staking/stake_subjects/DirectStakeSubject.sol";
 import "../../tools/FrontRunningProtection.sol";
 import "../../errors/GeneralErrors.sol";
 
-abstract contract AgentRegistryCore is
-    BaseComponentUpgradeable,
-    FrontRunningProtection,
-    ERC721Upgradeable,
-    DirectStakeSubjectUpgradeable
-{
+abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningProtection, ERC721Upgradeable, DirectStakeSubjectUpgradeable {
     StakeThreshold private _stakeThreshold; // 3 storage slots
     // Initially 0 because the frontrunning protection starts disabled.
     uint256 public frontRunningDelay;
-    
+
     event AgentCommitted(bytes32 indexed commit);
     event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
     event StakeThresholdChanged(uint256 min, uint256 max, bool activated);
     event FrontRunningDelaySet(uint256 delay);
-
 
     /**
      * @notice Checks sender (or metatx signer) is owner of the agent token.
@@ -40,9 +34,9 @@ abstract contract AgentRegistryCore is
      * @param array to check
      */
     modifier onlySorted(uint256[] memory array) {
-        if (array.length == 0 ) revert EmptyArray("chainIds");
-        for (uint256 i = 1; i < array.length; i++ ) {
-            if (array[i] <= array[i-1]) revert UnorderedArray("chainIds");
+        if (array.length == 0) revert EmptyArray("chainIds");
+        for (uint256 i = 1; i < array.length; i++) {
+            if (array[i] <= array[i - 1]) revert UnorderedArray("chainIds");
         }
         _;
     }
@@ -56,24 +50,32 @@ abstract contract AgentRegistryCore is
     }
 
     /**
-     * @notice Agent creation method. Mints an ERC721 token with the agent id for the owner and stores metadata.
-     * @dev fires _before and _after hooks within the inheritance tree.
+     * @notice Agent registration method. Mints an ERC721 token with the agent id for the sender and stores metadata.
+     * @dev Agent Ids are generated through the Forta Bot SDK (by hashing UUIDs) so the agentId collision risk is minimized.
+     * Fires _before and _after hooks within the inheritance tree.
      * If front run protection is enabled (disabled by default), it will check if the keccak256 hash of the parameters
      * has been committed in prepareAgent(bytes32).
      * @param agentId ERC721 token id of the agent to be created.
-     * @param owner address to have ownership privileges in the agent methods.
      * @param metadata IPFS pointer to agent's metadata JSON.
      * @param chainIds ordered list of chainIds where the agent wants to run.
      */
-    function createAgent(uint256 agentId, address owner, string calldata metadata, uint256[] calldata chainIds)
-    public
-        onlySorted(chainIds)
-        frontrunProtected(keccak256(abi.encodePacked(agentId, owner, metadata, chainIds)), frontRunningDelay)
-    {
-        _mint(owner, agentId);
+    function registerAgent(
+        uint256 agentId,
+        string calldata metadata,
+        uint256[] calldata chainIds
+    ) public onlySorted(chainIds) frontrunProtected(keccak256(abi.encodePacked(agentId, _msgSender(), metadata, chainIds)), frontRunningDelay) {
+        _mint(_msgSender(), agentId);
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);
         _afterAgentUpdate(agentId, metadata, chainIds);
+    }
+
+    /**
+     * @dev Create agent method with old signature for backwards compatibility. Owner parameter is ignore in favour of sender.
+     * This method is deprecated and it will be removed in future versions of AgentRegistryCore
+     */
+    function createAgent(uint256 agentId, address /*owner*/, string calldata metadata, uint256[] calldata chainIds) external {
+        registerAgent(agentId, metadata, chainIds);
     }
 
     /**
@@ -81,7 +83,7 @@ abstract contract AgentRegistryCore is
      * @param agentId ERC721 token id of the agent.
      * @return true if agentId exists, false otherwise.
      */
-    function isRegistered(uint256 agentId) public view returns(bool) {
+    function isRegistered(uint256 agentId) public view returns (bool) {
         return _exists(agentId);
     }
 
@@ -90,13 +92,9 @@ abstract contract AgentRegistryCore is
      * @dev fires _before and _after hooks within the inheritance tree.
      * @param agentId ERC721 token id of the agent to be updated.
      * @param metadata IPFS pointer to agent's metadata JSON.
-     * @param chainIds ordered list of chainIds where the agent wants to run. 
+     * @param chainIds ordered list of chainIds where the agent wants to run.
      */
-    function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds)
-    public
-        onlyOwnerOf(agentId)
-        onlySorted(chainIds)
-    {
+    function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds) public onlyOwnerOf(agentId) onlySorted(chainIds) {
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);
         _afterAgentUpdate(agentId, metadata, chainIds);
@@ -114,11 +112,11 @@ abstract contract AgentRegistryCore is
     /**
      @dev stake threshold common for all agents
     */
-    function getStakeThreshold(uint256 /*subject*/) public override view returns (StakeThreshold memory) {
+    function getStakeThreshold(uint256 /*subject*/) public view override returns (StakeThreshold memory) {
         return _stakeThreshold;
     }
 
-    function _isStakeActivated() internal view returns(bool) {
+    function _isStakeActivated() internal view returns (bool) {
         return address(getSubjectHandler()) != address(0) && _stakeThreshold.activated;
     }
 
@@ -128,7 +126,7 @@ abstract contract AgentRegistryCore is
      * @return true if agent is staked over the minimum threshold and is, or staking is not enabled (stakeController = 0 or activated = false ).
      * false otherwise
      */
-    function _isStakedOverMin(uint256 subject) internal override view returns(bool) {
+    function _isStakedOverMin(uint256 subject) internal view override returns (bool) {
         return getSubjectHandler().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min && _exists(subject);
     }
 
@@ -147,9 +145,8 @@ abstract contract AgentRegistryCore is
      * @param agentId ERC721 token id of the agent to be created or updated.
      * @param newMetadata IPFS pointer to agent's metadata JSON.
      * @param newChainIds ordered list of chainIds where the agent wants to run.
-    */
-    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
-    }
+     */
+    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {}
 
     /**
      * @notice logic for agent update.
@@ -169,9 +166,7 @@ abstract contract AgentRegistryCore is
      * @param newMetadata IPFS pointer to agent's metadata JSON.
      * @param newChainIds ordered list of chainIds where the agent wants to run.
      */
-    function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
-        
-    }
+    function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {}
 
     /**
      * Obligatory inheritance dismambiguation of ForwardedContext's _msgSender()
