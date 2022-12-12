@@ -18,7 +18,7 @@ uint8 constant DELEGATOR_SCANNER_POOL_SUBJECT = 3;
  * - DELEGATOR --> TBD
  *
  * The current Subject Types and their Agency:
- * - SCANNER_SUBJECT --> DIRECT
+ * - SCANNER_SUBJECT --> MANAGED
  * - AGENT_SUBJECT (detection bots) --> DIRECT
  * - SCANNER_POOL_SUBJECT --> DELEGATED
  *
