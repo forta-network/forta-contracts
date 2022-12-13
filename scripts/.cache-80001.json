@@ -89,17 +89,15 @@
 		],
 		"version": "0.0.0"
 	},
-	"staking-parameters-pending": "0x73831de2a1ead62e3decc1abc34dce91eba7f607a66eed7c603373d7f8b7908a",
-	"staking-parameters": {
+	"subject-gateway-pending": "0x73831de2a1ead62e3decc1abc34dce91eba7f607a66eed7c603373d7f8b7908a",
+	"subject-gateway": {
 		"address": "0x2441Ce5eB269505f30F6F434D21E039438aaC342",
 		"impl": {
 			"args": [
-				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
-				"0x2441Ce5eB269505f30F6F434D21E039438aaC342",
-				"0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9"
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
-			"address": "0xB8E94e894eeac8cD4F759d3A39CF520590488DEC",
-			"name": "StakeAllocator",
+			"address": "0xC5a5ea6FE58b24f78039A65db835BE806a20C1b7",
+			"name": "StakeSubjectGateway",
 			"verified": false,
 			"version": "0.0.0"
 		}
@@ -117,11 +115,6 @@
 			"verified": "true"
 		}
 	},
-	"contracts": [
-		"forwarder",
-		"token",
-		"ens"
-	],
 	"staking-pending": "0x71f2c96e12fc22392c08db7022ac78e2cacb2ee1cdb3605d44290204ec3f6825",
 	"staking": {
 		"address": "0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c",
@@ -207,10 +200,10 @@
 				"0x2441Ce5eB269505f30F6F434D21E039438aaC342",
 				"0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9"
 			],
-			"address": "0x04688C6D523B77280C8b7292A94c5c98Fe806322",
+			"address": "0x3334f9C609e802b9AB1382a0693Ecb774015CC71",
 			"name": "StakeAllocator",
-			"version": "0.1.0",
-			"verified": "true"
+			"verified": false,
+			"version": "0.0.0"
 		}
 	},
 	"scanner-pools-pending": "0xf5a8be1b02c1731d47fbba2a98b160dab41a8eb139c97a8dfe38bccae1c13710",
