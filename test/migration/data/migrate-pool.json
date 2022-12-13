@@ -1,0 +1,86 @@
+{
+    "137": {
+        "0xc29af06142138f893e3f1c1d11aa98c3313b8c1f": {
+            "scanners": {
+                "0x8da226fd2f242128040a6b50f1dbbaefcbeae1e9": {
+                    "id": "0x8da226fd2f242128040a6b50f1dbbaefcbeae1e9",
+                    "chainId": "137",
+                    "enabled": true,
+                    "callOwner": "0x6352211e0000000000000000000000008da226fd2f242128040a6b50f1dbbaefcbeae1e9",
+                    "migrated": true,
+                    "owner": "0xc29af06142138f893e3f1c1d11aa98c3313b8c1f"
+                },
+                "0xb8708e6d31b0049f295d2b8391115e3ec1a3a55b": {
+                    "id": "0xb8708e6d31b0049f295d2b8391115e3ec1a3a55b",
+                    "chainId": "137",
+                    "enabled": true,
+                    "callOwner": "0x6352211e000000000000000000000000b8708e6d31b0049f295d2b8391115e3ec1a3a55b",
+                    "migrated": false,
+                    "owner": "0xc29af06142138f893e3f1c1d11aa98c3313b8c1f"
+                },
+                "0x203c71e30055ec7617b1ca933f8ea3300bfe2806": {
+                    "id": "0x203c71e30055ec7617b1ca933f8ea3300bfe2806",
+                    "chainId": "137",
+                    "enabled": true,
+                    "callOwner": "0x6352211e000000000000000000000000203c71e30055ec7617b1ca933f8ea3300bfe2806",
+                    "migrated": false,
+                    "owner": "0xc29af06142138f893e3f1c1d11aa98c3313b8c1f"
+                }
+            },
+            "poolId": 0
+        },
+        "0xfe1c1cceccab539f6095ac07a369cdd669171e9d": {
+            "scanners": [
+              {
+                "id": "0xf14FbD141BC280f56FC08E746a0B880a3A8D19E8",
+                "chainId": "137",
+                "enabled": true,
+                "callOwner": "0x6352211e000000000000000000000000f14fbd141bc280f56fc08e746a0b880a3a8d19e8",
+                "migrated": false,
+                "owner": "0xfe1c1cceccab539f6095ac07a369cdd669171e9d"
+              },
+              {
+                "id": "0x65c3d2Ad4A3142dd8E25D73cb815fdCb6201Fd1c",
+                "chainId": "137",
+                "enabled": true,
+                "callOwner": "0x6352211e00000000000000000000000065c3d2ad4a3142dd8e25d73cb815fdcb6201fd1c",
+                "migrated": false,
+                "owner": "0xfe1c1cceccab539f6095ac07a369cdd669171e9d"
+              },
+              {
+                "id": "0xF277eeFb83BfAac81206Ffc1635a10cd1a6AcC3A",
+                "chainId": "137",
+                "enabled": true,
+                "callOwner": "0x6352211e000000000000000000000000f277eefb83bfaac81206ffc1635a10cd1a6acc3a",
+                "migrated": false,
+                "owner": "0xfe1c1cceccab539f6095ac07a369cdd669171e9d"
+              },
+              {
+                "id": "0x7C80b9321a81401c00b1361Bf1439831eA4F9823",
+                "chainId": "137",
+                "enabled": true,
+                "callOwner": "0x6352211e0000000000000000000000007c80b9321a81401c00b1361bf1439831ea4f9823",
+                "migrated": false,
+                "owner": "0xfe1c1cceccab539f6095ac07a369cdd669171e9d"
+              },
+              {
+                "id": "0xf4e02E61ee076E3633A31cAb4A41fC8F3203591B",
+                "chainId": "137",
+                "enabled": true,
+                "callOwner": "0x6352211e000000000000000000000000f4e02e61ee076e3633a31cab4a41fc8f3203591b",
+                "migrated": false,
+                "owner": "0xfe1c1cceccab539f6095ac07a369cdd669171e9d"
+              },
+              {
+                "id": "0xd22c07b7d0874745B52F1F2e60Db965baEaA977B",
+                "chainId": "137",
+                "enabled": true,
+                "callOwner": "0x6352211e000000000000000000000000d22c07b7d0874745b52f1f2e60db965baeaa977b",
+                "migrated": false,
+                "owner": "0xfe1c1cceccab539f6095ac07a369cdd669171e9d"
+              }
+            ],
+            "poolId": 0
+        }
+    }
+}
