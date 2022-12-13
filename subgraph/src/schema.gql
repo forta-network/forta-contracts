@@ -209,3 +209,15 @@ type StakeDepositEvent implements Event @entity {
   subject: Subject!
   stake: Stake!
 }
+
+type ScannerPool @entity {
+  id: ID!
+  registered: Boolean!
+  chainId: Int!
+  apr: BigDecimal!
+  commission: BigDecimal!
+  status: String!
+  stakeOwned: BigInt
+  stakeDelegated: BigInt
+  stakeAllocated: BigInt
+}
