@@ -1,6 +1,7 @@
 const hre = require('hardhat');
 const { ethers } = hre;
 const utils = require('./utils');
+const fs = require('fs');
 
 const ROOT_CHAIN_MANAGER = {
     1: '0xA0c68C638235ee32657e8f720a23ceC1bFc77C77',
@@ -71,6 +72,7 @@ const MIGRATION_DURATION = (chainId) => {
     switch (chainId) {
         case 5:
         case 80001:
+            return 2 * 30 * 24 * 60 * 60; // 2 months
         case 31337:
             return 1000;
         default:
@@ -87,6 +89,22 @@ const FEE_PARAMS = (chainId) => {
         default:
             throw new Error('COMISSION_DELAY not configured for chainId: ', chainId);
     }
+};
+
+const loadRoles = () => {
+    const rolesFileContents = fs.readFileSync('./contracts/components/Roles.sol', { encoding: 'utf8', flag: 'r' });
+    const regex = /bytes32 constant [A-Z_0-9]*/g;
+    const roleIds = rolesFileContents.match(regex).map((match) => match.replace('bytes32 constant ', ''));
+    const roles = {};
+    for (const id of roleIds) {
+        if (id === 'DEFAULT_ADMIN_ROLE') {
+            roles[id.replace('_ROLE', '')] = ethers.constants.HashZero;
+        } else {
+            roles[id.replace('_ROLE', '')] = ethers.utils.id(id);
+        }
+    }
+    roles.MINTER = ethers.utils.id('MINTER_ROLE');
+    return roles;
 };
 
 async function loadEnv(config = {}) {
@@ -111,27 +129,8 @@ async function loadEnv(config = {}) {
     }
     deployment.token = Object.assign({}, deployment.forta);
     contracts.token = Object.assign({}, contracts.forta);
-    deployment['subject-gateway'] = Object.assign({}, deployment['staking-parameters']);
-    contracts.subjectGateway = Object.assign({}, contracts.stakingParameters);
 
-    // TODO update this
-    const roles = await Promise.all(
-        Object.entries({
-            DEFAULT_ADMIN: ethers.constants.HashZero,
-            ADMIN: ethers.utils.id('ADMIN_ROLE'),
-            MINTER: ethers.utils.id('MINTER_ROLE'),
-            ROUTER_ADMIN: ethers.utils.id('ROUTER_ADMIN_ROLE'),
-            ENS_MANAGER: ethers.utils.id('ENS_MANAGER_ROLE'),
-            UPGRADER: ethers.utils.id('UPGRADER_ROLE'),
-            AGENT_ADMIN: ethers.utils.id('AGENT_ADMIN_ROLE'),
-            SCANNER_ADMIN: ethers.utils.id('SCANNER_ADMIN_ROLE'),
-            SCANNER_POOL_ADMIN: ethers.utils.id('SCANNER_POOL_ADMIN_ROLE'),
-            DISPATCHER: ethers.utils.id('DISPATCHER_ROLE'),
-            SLASHER: ethers.utils.id('SLASHER_ROLE'),
-            SWEEPER: ethers.utils.id('SWEEPER_ROLE'),
-            REWARDER: ethers.utils.id('REWARDER_ROLE'),
-        }).map((entry) => Promise.all(entry))
-    ).then(Object.fromEntries);
+    const roles = loadRoles();
 
     return {
         CACHE,
@@ -155,6 +154,7 @@ if (require.main === module) {
 }
 
 module.exports.loadEnv = loadEnv;
+module.exports.loadRoles = loadRoles;
 module.exports.ROOT_CHAIN_MANAGER = ROOT_CHAIN_MANAGER;
 module.exports.CHILD_CHAIN_MANAGER_PROXY = CHILD_CHAIN_MANAGER_PROXY;
 module.exports.CHAIN_TYPE = CHAIN_TYPE;

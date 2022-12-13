@@ -143,7 +143,7 @@ async function migrate(config = {}) {
         await contracts.staking.setReentrancyGuard();
         DEBUG(`[${Object.keys(contracts).length}] staking: ${contracts.staking.address}`);
 
-        contracts.subjectGateway = await utils.tryFetchProxy(CACHE, 'staking-parameters', 'StakeSubjectGateway', 'uups', [contracts.access.address, contracts.staking.address], {
+        contracts.subjectGateway = await utils.tryFetchProxy(CACHE, 'subject-gateway', 'StakeSubjectGateway', 'uups', [contracts.access.address, contracts.staking.address], {
             constructorArgs: [contracts.forwarder.address],
             unsafeAllow: ['delegatecall'],
         });
@@ -174,12 +174,10 @@ async function migrate(config = {}) {
         const stakingVersion = await utils.getContractVersion(contracts.staking);
         DEBUG('agentVersion', stakingVersion);
 
-        if (semver.gt(stakingVersion, '0.1.1')) {
-            DEBUG('Configuring configureStakeHelpers...');
+        DEBUG('Configuring configureStakeHelpers...');
 
-            await contracts.staking.configureStakeHelpers(contracts.subjectGateway.address, contracts.stakeAllocator.address);
-            DEBUG(`[${Object.keys(contracts).length}.2] configured Staking`);
-        }
+        await contracts.staking.configureStakeHelpers(contracts.subjectGateway.address, contracts.stakeAllocator.address);
+        DEBUG(`[${Object.keys(contracts).length}.2] configured Staking`);
 
         const forwarderAddress = await CACHE.get('forwarder.address');
         const stakingAddress = await CACHE.get('staking.address');
@@ -408,7 +406,7 @@ async function migrate(config = {}) {
                 reverseRegister(contracts.dispatch, 'dispatch.forta.eth'),
                 reverseRegister(contracts.staking, 'staking.forta.eth'),
                 reverseRegister(contracts.slashing, 'slashing.forta.eth'),
-                reverseRegister(contracts.subjectGateway, 'staking-params.forta.eth'),
+                reverseRegister(contracts.subjectGateway, 'subject-gateway.forta.eth'),
                 reverseRegister(contracts.agents, 'agents.registries.forta.eth'),
                 reverseRegister(contracts.scanners, 'scanners.registries.forta.eth'),
                 reverseRegister(contracts.scannerPools, 'scanner-pools.registries.forta.eth'),
