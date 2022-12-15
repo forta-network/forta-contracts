@@ -36,6 +36,7 @@ async function upgrade(contracts) {
 async function prepareScanners(contracts, scanners, staker, manager) {
     const scannerList = Object.keys(scanners).map((id) => scanners[id]);
     for (const scanner of scannerList) {
+        console.log(await contracts.scanners.version());
         await contracts.scanners.connect(manager).adminRegister(scanner.id, scanner.owner, scanner.chainId, 'data');
         await contracts.staking.connect(staker).deposit(0, scanner.id, MIN_STAKE_MANAGED);
         await contracts.staking.connect(staker).safeTransferFrom(staker.address, scanner.owner, subjectToActive(0, scanner.id), MIN_STAKE_MANAGED, ethers.constants.HashZero);
@@ -54,7 +55,7 @@ describe('Scanner 2 Scanner pool script', function () {
         await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
     });
     describe('Migrate First Scanners Mint Pool', function () {
-        it.only('migrates first pool and updates doc', async function () {
+        it('migrates first pool and updates doc', async function () {
             fs.copyFileSync('./test/migration/data/first-pool.json', './test/migration/data/t-first-pool.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-first-pool' });
             const chainId = '137';
@@ -89,7 +90,7 @@ describe('Scanner 2 Scanner pool script', function () {
         });
     });
     describe('Migrate Pool', function () {
-        it.only('poolId 0, skip migrated', async function () {
+        it('poolId 0, skip migrated', async function () {
             fs.copyFileSync('./test/migration/data/first-pool.json', './test/migration/data/t-first-pool.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-first-pool' });
             const chainId = '137';
@@ -122,7 +123,42 @@ describe('Scanner 2 Scanner pool script', function () {
                 ]);
             }
         });
-        it('poolId 0, chunk', async function () {});
+
+        it.only('poolId 0, chunk', async function () {
+            fs.copyFileSync('./test/migration/data/migrate-pool.json', './test/migration/data/t-migrate-pool-id-0-chunk.json');
+            cache = new AsyncConf({ cwd: __dirname, configName: './data/t-migrate-pool-id-0-chunk.json' });
+            const chainId = '137';
+            const owner = '0xfe1c1cceccab539f6095ac07a369cdd669171e9d';
+            const scanners = await cache.get(`${chainId}.${owner}.scanners`);
+            console.log(scanners)
+            await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
+            await upgrade(this.contracts);
+            await migratePool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, 2);
+            expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq('1');
+            for (const id of Object.keys(scanners)) {
+                scanners[id].migrated = true;
+            }
+
+            expect(await cache.get(`${chainId}.${owner}.scanners`)).to.deep.eq(scanners);
+
+            for (const id of Object.keys(scanners)) {
+                const scanner = scanners[id];
+                expect(await this.scanners.balanceOf(scanner.owner)).to.eq(0);
+                expect(await this.scanners.isRegistered(scanner.id)).to.eq(false);
+                expect(await this.staking.activeStakeFor(0, scanner.id)).to.eq(0);
+                expect(await this.staking.activeStakeFor(2, 1)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
+                expect(await this.scannerPools.balanceOf(scanner.owner)).to.eq(1);
+                expect(await this.scannerPools.getScannerState(scanner.id)).to.deep.eq([
+                    true,
+                    ethers.utils.getAddress(scanner.owner),
+                    ethers.BigNumber.from(scanner.chainId),
+                    'data',
+                    true,
+                    false,
+                ]);
+            }
+        });
+
         it('poolId 1, chunk', async function () {});
         it('report error', async function () {});
     });
