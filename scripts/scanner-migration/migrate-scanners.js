@@ -2,6 +2,7 @@ const { ethers } = require('hardhat');
 const utils = require('../utils');
 const deployEnv = require('../loadEnv');
 const scannerData = require('../data/scanners/matic/scanners.json');
+const DEBUG = require('debug')('forta:scanner-migration');
 
 const CHUNK_SIZE = 100;
 
@@ -24,38 +25,51 @@ function sliceScanners(scanners, from, to) {
 }
 
 async function saveMigration(cache, receipt, chainId, owner, scannerAddresses) {
+    DEBUG('save-migration');
     const mintedEvent = receipt.events.find((x) => x.event === 'MigrationExecuted');
     if (mintedEvent?.args.mintedScannerPool) {
         const poolId = mintedEvent?.args.scannerPoolId?.toString();
+        DEBUG('minted new pool Id', poolId);
         await cache.set(`${chainId}.${owner}.poolId`, poolId);
+    } else {
+        DEBUG('did not mint new pool');
     }
     const scannerUpdatedTopic = ethers.utils.id('ScannerUpdated(uint256,uint256,string,uint256)');
     const scannerRegistrationEvents = receipt.events.filter((x) => x.topics[0] === scannerUpdatedTopic);
     let updatedAddresses = scannerAddresses.filter((id) => scannerRegistrationEvents.find((event) => event.topics[1].includes(id.toLowerCase().replace('0x', ''))));
+    DEBUG('Updated addresses');
+    DEBUG(updatedAddresses);
     for (const updated of updatedAddresses) {
+        DEBUG(chainId, owner, updated);
         await cache.set(`${chainId}.${owner}.scanners.${updated}.migrated`, true);
     }
 }
 
 async function migratePool(cache, registryMigration, owner, chainId, chunkSize) {
-    let poolId = await cache.set(`${chainId}.${owner}.poolId`);
-    let scanners = await cache.set(`${chainId}.${owner}.scanners`);
+    let poolId = await cache.get(`${chainId}.${owner}.poolId`);
+    let scanners = await cache.get(`${chainId}.${owner}.scanners`);
+    DEBUG('poolId', poolId);
     scanners = filterMigrated(scanners);
+
     let migratedAddresses = [];
-    if (poolId === '0') {
-        const firstScanners = sliceScanners(0, chunkSize);
+    if (poolId === 0) {
+        DEBUG('minting pool and migrating');
+        const firstScanners = sliceScanners(scanners, 0, chunkSize);
         await migrateScannersMintPool(cache, registryMigration, owner, chainId, firstScanners);
-        poolId = await cache.set(`${chainId}.${owner}.poolId`);
+        poolId = await cache.get(`${chainId}.${owner}.poolId`);
         migratedAddresses = Object.keys(firstScanners);
+        DEBUG('poolId', poolId);
+        DEBUG(migratedAddresses);
     }
     let scannerAddressesChunks = Object.keys(scanners)
         .filter((id) => !migratedAddresses.includes(id))
         .chunk(chunkSize);
+    DEBUG(scannerAddressesChunks);
 
     const calls = scannerAddressesChunks.map((addressChunk) => registryMigration.interface.encodeFunctionData('migrate', [addressChunk, poolId, owner, chainId]));
     const tx = await registryMigration.multicall(calls);
     const receipt = await tx.wait();
-    saveMigration(cache, receipt, chainId, owner, scannerAddressesChunks.flat());
+    await saveMigration(cache, receipt, chainId, owner, scannerAddressesChunks.flat());
 }
 
 async function migrateScannersMintPool(cache, registryMigration, owner, chainId, scanners) {
@@ -101,3 +115,5 @@ if (require.main === module) {
 
 module.exports.scanner2ScannerPool = scanner2ScannerPool;
 module.exports.migrateScannersMintPool = migrateScannersMintPool;
+module.exports.migratePool = migratePool;
+module.exports.saveMigration = saveMigration;
