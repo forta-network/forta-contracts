@@ -156,7 +156,7 @@ describe('Scanner 2 Scanner pool script', function () {
             expect(await this.staking.activeStakeFor(2, 1)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
         });
 
-        it.only('poolId 2, 100 chunk', async function () {
+        it('poolId 2, 100 chunk', async function () {
             fs.copyFileSync('./test/migration/data/migrate-pool.json', './test/migration/data/t-migrate-pool-id-2-chunk-100.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-migrate-pool-id-2-chunk-100' });
             const chainId = '137';
@@ -193,55 +193,69 @@ describe('Scanner 2 Scanner pool script', function () {
             }
             expect(await this.staking.activeStakeFor(2, 2)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
         });
+        it('skip migrated, migrate rest for poolId');
+        it('skip whole pool');
         it('report error', async function () {});
     });
-    describe.skip('Full test', function () {
-        beforeEach(async function () {
-            const chains = Object.keys(scannerData);
-            for (const chain of chains) {
-                console.log('Chain', chain);
-                await this.scanners.connect(this.accounts.manager).setStakeThreshold({ min: '100', max: '500', activated: true }, chain);
-                await this.scannerPools.connect(this.accounts.manager).setManagedStakeThreshold({ min: '100', max: '500', activated: true }, chain);
-                const owners = Object.keys(scannerData[chains]);
-                for (const owner of owners) {
-                    console.log('Owner', owner);
-                    for (const scanner of owners[owner].scanners) {
-                        console.log('Scanner', scanner.address);
-                        await this.scanners.connect(this.accounts.manager).adminRegister(scanner.id, owner, scanner.chainId, '');
-                        if (scanner.enabled) {
-                            await this.scanners.connect(this.accounts.manager).disableScanner(scanner.id, 0);
-                        } else {
-                            await this.staking.connect(this.accounts.user1).deposit(0, scanner.address, '100');
-                            await this.staking
-                                .connect(this.accounts.user1)
-                                .safeTransferFrom(this.accounts.user1, owner, subjectToActive(0, scanner.id), '100', ethers.constants.HashZero);
-                        }
-                    }
+    describe('Full test', function () {
+        it.only('migrate multi chain', async function () {
+            fs.copyFileSync('./test/migration/data/multi-chain.json', './test/migration/data/t-multi-chain.json');
+            cache = new AsyncConf({ cwd: __dirname, configName: './data/t-multi-chain' });
+
+            const data = require('./data/t-multi-chain.json');
+            const chainId = 137;
+            console.log('Preparing chain Id', chainId);
+            let owners = Object.keys(data[chainId]);
+            for (const owner of owners) {
+                console.log('Set scanners for owner ', owner);
+                const scanners = await cache.get(`${chainId}.${owner}.scanners`);
+                await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
+                for (const id of Object.keys(scanners)) {
+                    scanners[id].migrated = true;
                 }
             }
 
-            const NewImplementation = await ethers.getContractFactory('ScannerRegistry');
-            this.scanners = await upgrades.upgradeProxy(this.scanners.address, NewImplementation, {
-                constructorArgs: [this.contracts.forwarder.address],
-                unsafeAllow: ['delegatecall'],
+            await upgrade(this.contracts);
+
+            console.log('Run');
+            await scanner2ScannerPool({
+                chunkSize: 5,
+                scannersFilePath: '../../test/migration/data/t-multi-chain.json',
+                deployer: this.accounts.manager,
+                network: await this.accounts.manager.provider.getNetwork(),
+                contracts: this.contracts,
+                chainId: chainId,
             });
-            const { timestamp } = await this.accounts.user1.provider.getBlock('latest');
-            await this.scanners.connect(this.accounts.admin).configureMigration(timestamp + 5000, await this.scannerPools.address);
+            console.log('Checking');
 
-            const deployer = (await ethers.getSigners())[0];
-
-            const ScannerToScannerPoolMigration = await ethers.getContractFactory('ScannerToScannerPoolMigration', deployer);
-            this.registryMigration = await upgrades.deployProxy(ScannerToScannerPoolMigration, [this.access.address], {
-                kind: 'uups',
-                constructorArgs: [this.forwarder.address, this.scanners.address, this.scannerPools.address, this.staking.address],
-                unsafeAllow: 'delegatecall',
-            });
-
-            this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_2_SCANNER_POOL_MIGRATOR, this.registryMigration.address);
-        });
-
-        it('migrates', async function () {
-            await scanner2ScannerPool({});
+            let poolId = 0;
+            for (const owner of owners) {
+                expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq(`${++poolId}`);
+                const scanners = await cache.get(`${chainId}.${owner}.scanners`);
+                const dataScanners = data[chainId][owner].scanners;
+                // console.log(dataScanners);
+                for (const id of Object.keys(dataScanners)) {
+                    scanners[id].migrated = true;
+                }
+                expect(await cache.get(`${chainId}.${owner}.scanners`)).to.deep.eq(scanners);
+                expect(await this.staking.activeStakeFor(2, poolId)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
+                for (const id of Object.keys(scanners)) {
+                    const scanner = scanners[id];
+                    expect(await this.scanners.balanceOf(scanner.owner)).to.eq(0);
+                    expect(await this.scanners.isRegistered(scanner.id)).to.eq(false);
+                    expect(await this.staking.activeStakeFor(0, scanner.id)).to.eq(0);
+                    expect(await this.scannerPools.balanceOf(scanner.owner)).to.eq(1);
+                    expect(await this.scannerPools.isScannerRegisteredTo(scanner.id, poolId)).to.eq(true);
+                    expect(await this.scannerPools.getScannerState(scanner.id)).to.deep.eq([
+                        true,
+                        ethers.utils.getAddress(scanner.owner),
+                        ethers.BigNumber.from(scanner.chainId),
+                        'data',
+                        true,
+                        false,
+                    ]);
+                }
+            }
         });
     });
 });
