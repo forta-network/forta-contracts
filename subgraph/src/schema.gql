@@ -220,4 +220,16 @@ type ScannerPool @entity {
   stakeOwned: BigInt
   stakeDelegated: BigInt
   stakeAllocated: BigInt
+  scanNodes: [ScanNode!] @derivedFrom(field: "scannerPool")
+}
+
+type ScanNode @entity {
+  id: ID!
+  address: String
+  owner: Account!
+  enabled: Boolean!
+  disableFlags: Int!
+  metadata: String!
+  chainId: BigInt
+  scannerPool: ScannerPool!
 }

@@ -47,7 +47,10 @@ function getActiveSharesId(_subjectType: i32, _subject: BigInt): string {
   const tuple = changetype<ethereum.Tuple>(tupleArray);
   const encoded = ethereum.encode(ethereum.Value.fromTuple(tuple))!
   const subjectHex = encoded.toHex();
-  const subjectPack = (_subjectType ? '0x01' : '0x00') + subjectHex.slice(2);
+  const subjectPrefix = _subjectType ?
+    (_subjectType == 2 ? '0x10' : '0x01') :
+    '0x00';
+  const subjectPack = subjectPrefix + subjectHex.slice(2);
   const _subjectPackHash = crypto.keccak256(ByteArray.fromHexString(subjectPack));
   const subjectPackHash = BigInt.fromString(hexToDec(_subjectPackHash.toHex().slice(2)));
   let mask256 = BigInt.zero();

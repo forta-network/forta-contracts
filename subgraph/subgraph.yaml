@@ -120,10 +120,15 @@ dataSources:
       language: wasm/assemblyscript
       entities:
         - ScannerPool
+        - ScanNode
       abis:
         - name: ScannerPoolRegistry
           file: ./abis/ScannerPoolRegistry.json
       eventHandlers:
         - event: ScannerPoolRegistered(indexed uint256,indexed uint256)
           handler: handleScannerPoolRegistered
+        - event: ScannerUpdated(indexed uint256,indexed uint256,string,uint256)
+          handler: handleScannerUpdated
+        - event: ScannerEnabled(indexed uint256,indexed bool,address,bool)
+          handler: handleScannerEnabled
       file: ./src/datasources/ScannerPoolRegistry.ts
