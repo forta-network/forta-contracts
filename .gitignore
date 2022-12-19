@@ -15,3 +15,4 @@ scripts/parse-multi-sent-fort.js
 scripts/data/*
 yarn-error.log
 layout-compare/
+test/migration/data/t*
