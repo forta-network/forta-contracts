@@ -73,7 +73,7 @@ module.exports = {
         'contracts/mocks/**/*': 'off',
         '@ensdomains/ens-contracts/**/*': 'off',
         '@ensdomains/buffer/**/*': 'off',
-    }
+    },
 };
 
 const accountsForNetwork = (name) => [argv[`${name}Mnemonic`] && { mnemonic: argv[`${name}Mnemonic`] }, argv[`${name}PrivateKey`] && [argv[`${name}PrivateKey`]]].find(Boolean);

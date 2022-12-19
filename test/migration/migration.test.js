@@ -1,7 +1,6 @@
 const { ethers, upgrades } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('./fixture');
-const scannerData = require('../../scripts/data/scanners/matic/scanners.json');
 const { AsyncConf } = require('../../scripts/utils');
 const { subjectToActive } = require('../../scripts/utils/staking.js');
 const { migrateScannersMintPool, migratePool, scanner2ScannerPool } = require('../../scripts/scanner-migration/migrate-scanners');
@@ -43,7 +42,7 @@ async function prepareScanners(contracts, scanners, staker, manager) {
 }
 
 let cache;
-describe('Scanner 2 Scanner pool script', function () {
+describe.skip('Scanner 2 Scanner pool script', function () {
     prepare({
         stake: {
             scanners: { min: MIN_STAKE_MANAGED, max: MAX_STAKE_MANAGED, activated: true },
@@ -198,7 +197,7 @@ describe('Scanner 2 Scanner pool script', function () {
         it('report error', async function () {});
     });
     describe('Full test', function () {
-        it.only('migrate multi chain', async function () {
+        it('migrate multi chain', async function () {
             fs.copyFileSync('./test/migration/data/multi-chain.json', './test/migration/data/t-multi-chain.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-multi-chain' });
 
