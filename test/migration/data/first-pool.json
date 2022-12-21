@@ -8,6 +8,7 @@
                     "enabled": true,
                     "callOwner": "0x6352211e0000000000000000000000008da226fd2f242128040a6b50f1dbbaefcbeae1e9",
                     "migrated": false,
+                    "optingOut": false,
                     "owner": "0xc29af06142138f893e3f1c1d11aa98c3313b8c1f"
                 },
                 "0xb8708e6d31b0049f295d2b8391115e3ec1a3a55b": {
@@ -16,6 +17,7 @@
                     "enabled": true,
                     "callOwner": "0x6352211e000000000000000000000000b8708e6d31b0049f295d2b8391115e3ec1a3a55b",
                     "migrated": false,
+                    "optingOut": false,
                     "owner": "0xc29af06142138f893e3f1c1d11aa98c3313b8c1f"
                 },
                 "0x203c71e30055ec7617b1ca933f8ea3300bfe2806": {
@@ -24,6 +26,16 @@
                     "enabled": true,
                     "callOwner": "0x6352211e000000000000000000000000203c71e30055ec7617b1ca933f8ea3300bfe2806",
                     "migrated": false,
+                    "optingOut": false,
+                    "owner": "0xc29af06142138f893e3f1c1d11aa98c3313b8c1f"
+                },
+                "0x5fECA3c3188567f32d69701F876FC1dbeA4113Cb": {
+                    "id": "0x5fECA3c3188567f32d69701F876FC1dbeA4113Cb",
+                    "chainId": "137",
+                    "enabled": true,
+                    "callOwner": "0x6352211e0000000000000000000000000fECA3c3188567f32d69701F876FC1dbeA4113Cb",
+                    "migrated": false,
+                    "optingOut": false,
                     "owner": "0xc29af06142138f893e3f1c1d11aa98c3313b8c1f"
                 }
             },

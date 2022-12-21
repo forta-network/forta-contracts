@@ -9,24 +9,24 @@ const SCANNERS_FILE_PATH = '';
 const CACHE_FILE_PATH = '';
 const CHAIN_ID = 137;
 
-function filterMigrated(scanners) {
+function filterNonMigrations(scanners) {
     const result = {};
     for (const id of Object.keys(scanners)) {
-        if (!scanners[id].migrated) {
+        if (!scanners[id].migrated && !scanners[id].optingOut) {
             result[id] = scanners[id];
         }
     }
     return result;
 }
 
-function sliceScanners(scanners, from, to) {
-    const result = {};
-    for (const id of Object.keys(scanners).slice(from, to)) {
-        result[id] = scanners[id];
-    }
-    return result;
-}
-
+/**
+ * Takes an ethers.js transaction receipt, takes the migration events and updates the json file detailing the migration state, updating migrated and poolId
+ * @param {*} cache AsyncConf pointing to migration json file
+ * @param {*} receipt ethers.js tx receipt
+ * @param {*} chainId of the monitored chain (must exist in json file)
+ * @param {*} owner of the scanners/scannerPool (must exist in json file)
+ * @param {*} scannerAddresses that were submitted to migration
+ */
 async function saveMigration(cache, receipt, chainId, owner, scannerAddresses) {
     DEBUG('save-migration');
     const mintedEvent = receipt.events.find((x) => x.event === 'MigrationExecuted');
@@ -48,31 +48,49 @@ async function saveMigration(cache, receipt, chainId, owner, scannerAddresses) {
     }
 }
 
+/**
+ * This method will migrate the scanners from an owner and assign them to a Scanner Pool
+ * It will filter out already migrated scanners (by json file) and opted out scanners (by smart contract and json file)
+ * If the poolId is 0 (in the json file), it will mint a new pool.
+ * This method will try to do 1 multicall transaction with all chunked migrate([scanners]) calls, plus 1 tx with an initial batch to mint the pool.
+ * It will update the migrated scanners and minted pool id in the migration json file.
+ * @param {*} cache AsyncConf pointing to migration json file
+ * @param {*} registryMigration ethers contract attached to ScannerToScannerPoolMigration with deployer address with MIGRATION_EXECUTOR_ROLE
+ * @param {*} owner of the scanners/scannerPool (must exist in json file)
+ * @param {*} chainId monitored by scanners/scanner pool
+ * @param {*} chunkSize chunkSize amount of scanners in each migrate call.
+ */
 async function migratePool(cache, registryMigration, owner, chainId, chunkSize) {
     let poolId = await cache.get(`${chainId}.${owner}.poolId`);
     let scanners = await cache.get(`${chainId}.${owner}.scanners`);
+    let scannerAddresses = Object.keys(scanners);
     DEBUG('poolId', poolId);
-    scanners = filterMigrated(scanners);
+    DEBUG('raw: ', scannerAddresses.length);
+    scanners = filterNonMigrations(scanners);
+    scannerAddresses = Object.keys(scanners);
+    DEBUG('filtered: ', scannerAddresses.length);
+
     if (Object.keys(scanners).length === 0) {
         console.log('All migrated for ', poolId);
         return;
     }
     let migratedAddresses = [];
+
     if (poolId === 0) {
         DEBUG('minting pool and migrating');
-        const firstScanners = sliceScanners(scanners, 0, chunkSize);
-        await migrateScannersMintPool(cache, registryMigration, owner, chainId, firstScanners);
+        migratedAddresses = Object.keys(scanners).slice(0, chunkSize);
+        await migrateScannersMintPool(cache, registryMigration, owner, chainId, migratedAddresses);
         poolId = await cache.get(`${chainId}.${owner}.poolId`);
-        migratedAddresses = Object.keys(firstScanners);
         DEBUG('poolId', poolId);
-        DEBUG('migrated Addresses', migratedAddresses.length);
+        DEBUG('migrated Addresses', migratedAddresses);
     }
-    DEBUG('Registering scanners in batch');
-    let scannerAddressesChunks = Object.keys(scanners)
-        .filter((id) => !migratedAddresses.includes(id))
-        .chunk(chunkSize);
-
-    const calls = scannerAddressesChunks.map((addressChunk) => registryMigration.interface.encodeFunctionData('migrate', [addressChunk, poolId, owner, chainId]));
+    scannerAddresses = scannerAddresses.filter((id) => !migratedAddresses.includes(id));
+    if (scannerAddresses.length === 0) {
+        DEBUG('All migrated when minting');
+        return;
+    }
+    DEBUG('Registering scanners in batch...');
+    const calls = scannerAddresses.chunk(chunkSize).map((addressChunk) => registryMigration.interface.encodeFunctionData('migrate', [addressChunk, poolId, owner, chainId]));
     let tx;
     try {
         tx = await registryMigration.multicall(calls);
@@ -84,11 +102,19 @@ async function migratePool(cache, registryMigration, owner, chainId, chunkSize) 
     }
     const receipt = await tx.wait();
 
-    await saveMigration(cache, receipt, chainId, owner, scannerAddressesChunks.flat());
+    await saveMigration(cache, receipt, chainId, owner, scannerAddresses);
 }
 
-async function migrateScannersMintPool(cache, registryMigration, owner, chainId, scanners) {
-    const scannerAddresses = Object.keys(scanners);
+/**
+ * Calls migrate on provided scannerAddresses minting a ScannerPoolRegistry NFT, recording the new id and migrated scanners in cache file.
+ * @param {*} cache AsyncConf pointing to migration json file
+ * @param {*} registryMigration ethers contract attached to ScannerToScannerPoolMigration with deployer address with MIGRATION_EXECUTOR_ROLE
+ * @param {*} owner address owning the scanners, will own the scanner pool
+ * @param {*} chainId monitored by scanners/scanner pool
+ * @param {*} scannerAddresses array of scanner public keys
+ */
+async function migrateScannersMintPool(cache, registryMigration, owner, chainId, scannerAddresses) {
+    DEBUG('...migrateScannersMintPool...');
     let receipt;
     try {
         const tx = await registryMigration.migrate(scannerAddresses, 0, owner, chainId);
@@ -102,6 +128,17 @@ async function migrateScannersMintPool(cache, registryMigration, owner, chainId,
     await saveMigration(cache, receipt, chainId, owner, scannerAddresses);
 }
 
+/**
+ * Main method to migrate all the scanner pools. It will filter out already migrated scanners (by json file) and opted out scanners (by smart contract and json file)
+ * This method will try to do 1 multicall transaction with all chunked migrate([scanners]) calls.
+ * @param {*} config object containing init values. If an expected value is not provided the script will try to load defaults.
+ * - deployer ethers.js deployer with MIGRATION_EXECUTOR_ROLE. Default: provided by scripts/loadEnv according to hardhat network config used
+ * - contracts object with initialized ethers.js Contract objects (only registryMigration used). Default: provided by scripts/loadEnv according to hardhat network config used
+ * - network object with name and chainId. Default: provided by scripts/loadEnv according to hardhat network config used
+ * - chunkSize amount of scanners in each migrate call. Default: CHUNK_SIZE
+ * - scannersFilePath path to the migration json. Default: SCANNERS_FILE_PATH
+ * - chainId (string) that the scanners monitor. It will select the scanners from the file under that chainId entry. Default: CHAIN_ID
+ */
 async function scanners2ScannerPools(config = {}) {
     let e;
     if (!config.deployer || !config.contracts || !config.network) {
@@ -128,6 +165,7 @@ async function scanners2ScannerPools(config = {}) {
         console.log('Owner ', owner);
         await migratePool(cache, contracts.registryMigration.connect(deployer), owner, chainId, chunkSize);
     }
+    console.log('Done!');
 }
 
 if (require.main === module) {
@@ -143,3 +181,4 @@ module.exports.scanner2ScannerPool = scanners2ScannerPools;
 module.exports.migrateScannersMintPool = migrateScannersMintPool;
 module.exports.migratePool = migratePool;
 module.exports.saveMigration = saveMigration;
+module.exports.filterNonMigrations = filterNonMigrations;

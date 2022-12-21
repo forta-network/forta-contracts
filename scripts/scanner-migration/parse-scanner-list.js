@@ -1,11 +1,9 @@
-const { ethers } = require('hardhat');
-const utils = require('../utils');
 const deployEnv = require('../loadEnv');
 const fs = require('fs');
 let csvToJson = require('convert-csv-to-json');
 
 async function main() {
-    const { deployer, network, contracts } = await deployEnv.loadEnv();
+    const { deployer, network, contracts, deployment } = await deployEnv.loadEnv();
     console.log(`Network:  ${network.name} ${network.chainId}`);
     console.log(`Deployer: ${deployer.address}`);
     console.log('----------------------------------------------------');
@@ -21,7 +19,9 @@ async function main() {
                 chainId: scanner['_source.chain_id'],
                 enabled: scanner['_source.enabled'] === 'true',
                 callOwner: contracts.scanners.interface.encodeFunctionData('ownerOf', [scanner['_source.id']]),
+                callOptingOut: contracts.scanners.interface.encodeFunctionData('optingOutOfMigration', [scanner['_source.id']]),
                 migrated: false,
+                optingOut: false,
             };
         })
     );
@@ -36,6 +36,19 @@ async function main() {
 
     for (let i = 0; i < owners.length; i++) {
         raw[i].owner = `0x${owners[i].slice(-40)}`;
+    }
+    if (deployment.scanners.impl.version === '0.1.4') {
+        let optingOuts = await Promise.all(
+            raw.chunk(50).map((chunk) => {
+                const calls = chunk.map((x) => x.callOptingOut);
+                return contracts.scanners.callStatic.multicall(calls);
+            })
+        );
+
+        optingOuts = optingOuts.flat();
+        for (let i = 0; i < optingOuts.length; i++) {
+            raw[i].optingOut = optingOuts[i];
+        }
     }
 
     const grouped = {};
