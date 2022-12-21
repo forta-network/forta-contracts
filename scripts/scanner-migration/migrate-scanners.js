@@ -7,7 +7,6 @@ const DEBUG = require('debug')('forta:scanner-migration');
 const CHUNK_SIZE = 50;
 const MULTICALL_CHUNK_SIZE = 50;
 const SCANNERS_FILE_PATH = '';
-const CACHE_FILE_PATH = '';
 const CHAIN_ID = 137;
 
 function filterNonMigrations(scanners) {
@@ -167,14 +166,12 @@ async function scanners2ScannerPools(config = {}) {
     const chainId = config.chainId ?? CHAIN_ID;
     const cache = new AsyncConf({ cwd: __dirname, configName: scanersFilePath.replace('.json', '') });
 
-    const scannerData = require(scanersFilePath);
-    console.log(scannerData);
     console.log(`Network`);
     console.log(network);
     console.log(`Deployer: ${deployer.address}`);
     console.log('--------------------- Scanner 2 ScannerPool -------------------------------');
     console.log('Chain ', chainId);
-    const owners = Object.keys(scannerData[chainId]);
+    const owners = Object.keys(await cache.get(chainId));
     for (const owner of owners) {
         console.log('Owner ', owner);
         await migratePool(cache, contracts.registryMigration.connect(deployer), owner, chainId, chunkSize, callChunkSize);
