@@ -41,7 +41,7 @@ async function prepareScanners(contracts, scanners, staker, manager) {
 }
 
 let cache;
-describe('Scanner 2 Scanner pool script', function () {
+describe.skip('Scanner 2 Scanner pool script', function () {
     prepare({
         stake: {
             scanners: { min: MIN_STAKE_MANAGED, max: MAX_STAKE_MANAGED, activated: true },
@@ -95,7 +95,7 @@ describe('Scanner 2 Scanner pool script', function () {
             expect(await this.staking.activeStakeFor(2, 1)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
         });
     });
-    describe('Migrate Pool', function () {
+    describe('migrateScannersMintPool', function () {
         it('poolId 0, skip migrated and opting out', async function () {
             fs.copyFileSync('./test/migration/data/first-pool.json', './test/migration/data/t-first-pool.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-first-pool' });
@@ -163,7 +163,8 @@ describe('Scanner 2 Scanner pool script', function () {
             }
             expect(await this.staking.activeStakeFor(2, 1)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
         });
-
+    });
+    describe('migratePool', function () {
         it('poolId 0, chunk with minting and ignoring prev migrated and opted out', async function () {
             fs.copyFileSync('./test/migration/data/migrate-pool.json', './test/migration/data/t-migrate-pool-id-0-chunk.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-migrate-pool-id-0-chunk' });
@@ -199,7 +200,7 @@ describe('Scanner 2 Scanner pool script', function () {
             }
         });
 
-        it.only('poolId 2, 100 chunk', async function () {
+        it('poolId 2, 100 chunk, 50 callChunk', async function () {
             fs.copyFileSync('./test/migration/data/migrate-pool.json', './test/migration/data/t-migrate-pool-id-2-chunk-100.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-migrate-pool-id-2-chunk-100' });
             const chainId = '137';
@@ -211,7 +212,45 @@ describe('Scanner 2 Scanner pool script', function () {
             await this.scannerPools.connect(this.accounts.user1).registerScannerPool('137');
             await this.scannerPools.connect(this.accounts.user1).transferFrom(this.accounts.user1.address, owner, 2);
 
-            await migratePool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, 100);
+            await migratePool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, 100, 50);
+            expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq(2);
+            for (const id of Object.keys(scanners)) {
+                scanners[id].migrated = true;
+            }
+            expect(await cache.get(`${chainId}.${owner}.scanners`)).to.deep.eq(scanners);
+
+            for (const id of Object.keys(scanners)) {
+                const scanner = scanners[id];
+                expect(await this.scanners.balanceOf(scanner.owner)).to.eq(0);
+                expect(await this.scanners.isRegistered(scanner.id)).to.eq(false);
+                expect(await this.staking.activeStakeFor(0, scanner.id)).to.eq(0);
+                expect(await this.scannerPools.isScannerRegisteredTo(scanner.id, 2)).to.eq(true);
+                expect(await this.scannerPools.balanceOf(scanner.owner)).to.eq(1);
+                expect(await this.scannerPools.getScannerState(scanner.id)).to.deep.eq([
+                    true,
+                    ethers.utils.getAddress(scanner.owner),
+                    ethers.BigNumber.from(scanner.chainId),
+                    'data',
+                    true,
+                    false,
+                ]);
+            }
+            expect(await this.staking.activeStakeFor(2, 2)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
+        });
+
+        it('poolId 2, 1 chunk, 5 callChunkSize', async function () {
+            fs.copyFileSync('./test/migration/data/migrate-pool.json', './test/migration/data/t-migrate-pool-id-2-chunk-100.json');
+            cache = new AsyncConf({ cwd: __dirname, configName: './data/t-migrate-pool-id-2-chunk-100' });
+            const chainId = '137';
+            const owner = '0x3f7042c827a0d326c755741ad08d24bc61ea6d34';
+            const scanners = await cache.get(`${chainId}.${owner}.scanners`);
+            await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
+            await upgrade(this.contracts);
+            await this.scannerPools.connect(this.accounts.user1).registerScannerPool('137');
+            await this.scannerPools.connect(this.accounts.user1).registerScannerPool('137');
+            await this.scannerPools.connect(this.accounts.user1).transferFrom(this.accounts.user1.address, owner, 2);
+
+            await migratePool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, 1, 5);
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq(2);
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = true;
@@ -260,6 +299,7 @@ describe('Scanner 2 Scanner pool script', function () {
             console.log('Run');
             await scanner2ScannerPool({
                 chunkSize: 5,
+                callChunkSize: 10,
                 scannersFilePath: '../../test/migration/data/t-multi-chain.json',
                 deployer: this.accounts.manager,
                 network: await this.accounts.manager.provider.getNetwork(),

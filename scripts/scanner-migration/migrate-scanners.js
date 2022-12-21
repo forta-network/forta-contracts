@@ -4,7 +4,8 @@ const AsyncConf = utils.AsyncConf;
 const deployEnv = require('../loadEnv');
 const DEBUG = require('debug')('forta:scanner-migration');
 
-const CHUNK_SIZE = 100;
+const CHUNK_SIZE = 50;
+const MULTICALL_CHUNK_SIZE = 50;
 const SCANNERS_FILE_PATH = '';
 const CACHE_FILE_PATH = '';
 const CHAIN_ID = 137;
@@ -46,6 +47,7 @@ async function saveMigration(cache, receipt, chainId, owner, scannerAddresses) {
         DEBUG(chainId, owner, updated);
         await cache.set(`${chainId}.${owner}.scanners.${updated}.migrated`, true);
     }
+    console.log('Saved migration results for: ', receipt.transactionHash);
 }
 
 /**
@@ -58,9 +60,13 @@ async function saveMigration(cache, receipt, chainId, owner, scannerAddresses) {
  * @param {*} registryMigration ethers contract attached to ScannerToScannerPoolMigration with deployer address with MIGRATION_EXECUTOR_ROLE
  * @param {*} owner of the scanners/scannerPool (must exist in json file)
  * @param {*} chainId monitored by scanners/scanner pool
- * @param {*} chunkSize chunkSize amount of scanners in each migrate call.
+ * @param {*} chunkSize max amount of scanners in each migrate call.
+ * @param {*} callChunkSize max amount of migrate calls in each multicall.
  */
-async function migratePool(cache, registryMigration, owner, chainId, chunkSize) {
+async function migratePool(cache, registryMigration, owner, chainId, chunkSize, callChunkSize) {
+    if ((chunkSize ?? 0) <= 0 || (callChunkSize ?? 0) <= 0) {
+        throw new Error('chunk sizes cannot be <=0 ');
+    }
     let poolId = await cache.get(`${chainId}.${owner}.poolId`);
     let scanners = await cache.get(`${chainId}.${owner}.scanners`);
     let scannerAddresses = Object.keys(scanners);
@@ -77,11 +83,11 @@ async function migratePool(cache, registryMigration, owner, chainId, chunkSize) 
     let migratedAddresses = [];
 
     if (poolId === 0) {
-        DEBUG('minting pool and migrating');
+        console.log('minting pool and migrating');
         migratedAddresses = Object.keys(scanners).slice(0, chunkSize);
         await migrateScannersMintPool(cache, registryMigration, owner, chainId, migratedAddresses);
         poolId = await cache.get(`${chainId}.${owner}.poolId`);
-        DEBUG('poolId', poolId);
+        console.log('poolId', poolId);
         DEBUG('migrated Addresses', migratedAddresses);
     }
     scannerAddresses = scannerAddresses.filter((id) => !migratedAddresses.includes(id));
@@ -89,20 +95,26 @@ async function migratePool(cache, registryMigration, owner, chainId, chunkSize) 
         DEBUG('All migrated when minting');
         return;
     }
-    DEBUG('Registering scanners in batch...');
+    console.log('Registering scanners in batch...');
     const calls = scannerAddresses.chunk(chunkSize).map((addressChunk) => registryMigration.interface.encodeFunctionData('migrate', [addressChunk, poolId, owner, chainId]));
-    let tx;
-    try {
-        tx = await registryMigration.multicall(calls);
-    } catch (e) {
-        console.log('ERROR migratePool');
-        console.log('chainId', chainId);
-        console.log('poolId', poolId);
-        throw new Error(e);
-    }
-    const receipt = await tx.wait();
+    console.log('Batches: ', Math.ceil(calls.length / callChunkSize));
 
-    await saveMigration(cache, receipt, chainId, owner, scannerAddresses);
+    await Promise.all(
+        calls.chunk(callChunkSize).map(async (callChunk) => {
+            let tx;
+            try {
+                tx = await registryMigration.multicall(callChunk);
+            } catch (e) {
+                console.log('ERROR migratePool');
+                console.log('chainId', chainId);
+                console.log('poolId', poolId);
+                throw new Error(e);
+            }
+            const receipt = await tx.wait();
+            console.log('migrated: ', receipt.transactionHash);
+            await saveMigration(cache, receipt, chainId, owner, scannerAddresses);
+        })
+    ).then(() => console.log('Pool migrated!'));
 }
 
 /**
@@ -136,6 +148,7 @@ async function migrateScannersMintPool(cache, registryMigration, owner, chainId,
  * - contracts object with initialized ethers.js Contract objects (only registryMigration used). Default: provided by scripts/loadEnv according to hardhat network config used
  * - network object with name and chainId. Default: provided by scripts/loadEnv according to hardhat network config used
  * - chunkSize amount of scanners in each migrate call. Default: CHUNK_SIZE
+ * - callChunkSize amount of scanners in each migrate call. Default: CHUNK_SIZE
  * - scannersFilePath path to the migration json. Default: SCANNERS_FILE_PATH
  * - chainId (string) that the scanners monitor. It will select the scanners from the file under that chainId entry. Default: CHAIN_ID
  */
@@ -149,6 +162,7 @@ async function scanners2ScannerPools(config = {}) {
     const contracts = config.contracts ?? e.contracts;
     const network = config.network ?? e.network;
     const chunkSize = config.chunkSize ?? CHUNK_SIZE;
+    const callChunkSize = config.callChunkSize ?? MULTICALL_CHUNK_SIZE;
     const scanersFilePath = config.scannersFilePath ?? SCANNERS_FILE_PATH;
     const chainId = config.chainId ?? CHAIN_ID;
     const cache = new AsyncConf({ cwd: __dirname, configName: scanersFilePath.replace('.json', '') });
@@ -163,7 +177,7 @@ async function scanners2ScannerPools(config = {}) {
     const owners = Object.keys(scannerData[chainId]);
     for (const owner of owners) {
         console.log('Owner ', owner);
-        await migratePool(cache, contracts.registryMigration.connect(deployer), owner, chainId, chunkSize);
+        await migratePool(cache, contracts.registryMigration.connect(deployer), owner, chainId, chunkSize, callChunkSize);
     }
     console.log('Done!');
 }
