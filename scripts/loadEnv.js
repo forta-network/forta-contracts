@@ -115,8 +115,10 @@ async function loadEnv(config = {}) {
 
     const chainType = ROOT_CHAIN_MANAGER[chainId] ? CHAIN_TYPE.ROOT : CHILD_CHAIN_MANAGER_PROXY[chainId] ? CHAIN_TYPE.CHILD : CHAIN_TYPE.DEV;
     const deploymentFileName = `.cache-${chainId}${chainId === 5 ? '-components' : ''}`;
+
     const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: deploymentFileName });
     const deployment = require(`./${deploymentFileName}.json`);
+
     provider.network.ensAddress = deployment['ens-registry']?.address || provider.network.ensAddress;
 
     const keys = Object.keys(deployment).filter((key) => !key.includes('pending') && !key.startsWith('vesting-') && !key.includes('ens-') && key !== 'contracts');
