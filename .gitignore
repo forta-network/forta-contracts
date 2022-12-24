@@ -8,6 +8,7 @@ coverage.*
 deploy.*.json
 docs
 .cache-31337.json
+31337.json
 scripts/parse-multi-sent-fort.js
 .openzeppelin/unknown-31337.json
 .env

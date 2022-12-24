@@ -1,11 +1,9 @@
 const { ethers, upgrades, network, defender } = require('hardhat');
 const { NonceManager } = require('@ethersproject/experimental');
-const Conf = require('conf');
-const pLimit = require('p-limit');
 const DEBUG = require('debug')('forta:utils');
-const assert = require('assert');
 const EthDater = require('block-by-date-ethers');
 const process = require('process');
+const { kebabize } = require('./stringUtils');
 
 // override process.env with dotenv
 Object.assign(process.env, require('dotenv').config().parsed);
@@ -31,46 +29,6 @@ const getDefaultDeployer = async (provider, baseDeployer) => {
 };
 
 /*********************************************************************************************************************
- *                                                  Async safe Conf                                                  *
- *********************************************************************************************************************/
-class AsyncConf extends Conf {
-    constructor(conf) {
-        /* TODO: uncomment when this is solved https://github.com/OpenZeppelin/openzeppelin-upgrades/issues/645
-        if (conf.configName === '.cache-31337') {
-            conf.configName = `.cache-31337_${process.pid}`;
-        }
-        */
-        super(conf);
-        this.limit = pLimit(1);
-    }
-
-    get(key) {
-        return this.limit(() => super.get(key));
-    }
-
-    set(key, value) {
-        return this.limit(() => super.set(key, value));
-    }
-
-    async getFallback(key, fallback) {
-        const value = (await this.get(key)) || (await fallback());
-        await this.set(key, value);
-        return value;
-    }
-
-    async expect(key, value) {
-        const fromCache = await this.get(key);
-        if (fromCache) {
-            assert.deepStrictEqual(value, fromCache);
-            return false;
-        } else {
-            await this.set(key, value);
-            return true;
-        }
-    }
-}
-
-/*********************************************************************************************************************
  *                                                Blockchain helpers                                                 *
  *********************************************************************************************************************/
 
@@ -92,78 +50,30 @@ function deployUpgradeable(factory, kind, params = [], opts = {}) {
         .then((f) => f.deployed());
 }
 
-async function performUpgrade(proxy, factory, opts = {}, cache, key) {
-    let contract, name;
-    if (typeof factory === 'string') {
-        contract = await getFactory(factory);
-        name = factory;
-    } else {
-        contract = factory;
-    }
+async function performUpgrade(proxy, contractName, opts = {}) {
+    let contract = await getFactory(contractName);
     const afterUpgradeContract = await upgrades.upgradeProxy(proxy.address, contract, opts);
-    if (cache) await saveImplementationParams(cache, key, opts, afterUpgradeContract, name);
     return afterUpgradeContract;
 }
 
-async function proposeUpgrade(contractName, opts = {}, cache, key) {
-    const proxyAddress = await cache.get(`${key}.address`);
+async function proposeUpgrade(contractName, opts = {}, cache) {
+    const proxyAddress = await cache.get(`${kebabize(contractName)}.address`);
     const proposal = await defender.proposeUpgrade(proxyAddress, contractName, opts);
-    //console.log(proposal.metadata.newImplementationAddress);
-    await saveProposedImplementationParams(cache, key, opts, proposal.metadata.newImplementationAddress, contractName);
     return proposal.url;
 }
 
-// eslint-disable-next-line no-unused-vars
-async function tryFetchContract(cache, key, contract, args = [], opts = {}) {
-    let name;
-    if (typeof contract === 'string') {
-        name = contract;
-        contract = await ethers.getContractFactory(name);
-    }
+async function tryFetchContract(contractName, args = [], cache) {
+    const contract = await ethers.getContractFactory(contractName);
+    const key = kebabize(contractName);
     const deployed = await resumeOrDeploy(cache, key, () => contract.deploy(...args)).then((address) => contract.attach(address));
-    DEBUG(`${key}.args`, args);
-    await cache.set(`${key}.args`, args);
-    await cache.set(`${key}.name`, name);
-    await saveVersion(key, cache, deployed, false);
     return deployed;
 }
 
-async function migrateAddress(cache, key) {
-    let legacyAddress = await cache.get(key);
-    if (legacyAddress && typeof legacyAddress === 'string' && legacyAddress.startsWith('0x')) {
-        await cache.set(`${key}.address`, legacyAddress);
-        return legacyAddress;
-    } else {
-        return await cache.get(`${key}.address`);
-    }
-}
-
-async function tryFetchProxy(cache, key, contract, kind = 'uups', args = [], opts = {}) {
-    let name;
-    if (typeof contract === 'string') {
-        name = contract;
-        contract = await ethers.getContractFactory(name);
-    }
+async function tryFetchProxy(contractName, kind = 'uups', args = [], opts = {}, cache) {
+    let contract = await ethers.getContractFactory(contractName);
+    const key = kebabize(contractName);
     const deployed = await resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind, ...opts })).then((address) => contract.attach(address));
-    if (cache) await saveImplementationParams(cache, key, opts, deployed, name);
     return deployed;
-}
-
-async function saveImplementationParams(cache, key, opts, contract, name) {
-    const implAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
-    await cache.set(`${key}.impl.args`, opts.constructorArgs ?? []);
-    await cache.set(`${key}.impl.address`, implAddress);
-    await cache.set(`${key}.impl.name`, name);
-    await cache.set(`${key}.impl.verified`, false);
-    await saveVersion(key, cache, contract, true);
-}
-
-async function saveProposedImplementationParams(cache, key, opts, implAddress, name) {
-    await cache.set(`${key}.proposedImpl.args`, opts.constructorArgs ?? []);
-    await cache.set(`${key}.proposedImpl.address`, implAddress);
-    await cache.set(`${key}.proposedImpl.name`, name);
-    await cache.set(`${key}.proposedImpl.verified`, false);
-    await cache.set(`${key}.proposedImpl.version`, await getContractVersion({ address: implAddress, provider: await getDefaultProvider() }));
 }
 
 async function getContractVersion(contract, deployParams = {}) {
@@ -188,22 +98,15 @@ async function getContractVersion(contract, deployParams = {}) {
     throw new Error(`Cannot get contract version for ${contract} or ${deployParams}. Provide contract object or deployParams`);
 }
 
-async function saveVersion(key, cache, contract, isProxy) {
-    const impl = isProxy ? '.impl' : '';
-    const version = await getContractVersion(contract);
-    DEBUG(`${key}${impl}.version`, version);
-    await cache.set(`${key}${impl}.version`, version);
-}
-
 async function resumeOrDeploy(cache, key, deploy) {
-    let txHash = await cache.get(`${key}-pending`);
-    let address = await migrateAddress(cache, key);
+    let txHash = await cache?.get(`${key}-pending`);
+    let address = await cache?.get(`${key}.address`);
     DEBUG('resumeOrDeploy', key, txHash, address);
 
     if (!txHash && !address) {
         const contract = await deploy();
         txHash = contract.deployTransaction.hash;
-        await cache.set(`${key}-pending`, txHash);
+        await cache?.set(`${key}-pending`, txHash);
         await contract.deployed();
         address = contract.address;
     } else if (!address) {
@@ -212,7 +115,7 @@ async function resumeOrDeploy(cache, key, deploy) {
             .then((tx) => tx.wait())
             .then((receipt) => receipt.contractAddress);
     }
-    await cache.set(`${key}.address`, address);
+    await cache?.set(`${key}.address`, address);
     return address;
 }
 
@@ -268,6 +171,21 @@ const assertNotUsingHardhatKeys = (chainId, deployer) => {
     }
 };
 
+const getBlockExplorerDomain = (hre) => {
+    const network = hre.network.name;
+    switch (network) {
+        case 'mainnet':
+            return 'etherscan.io';
+        case 'goerli':
+            return `${network}.etherscan.io`;
+        case 'polygon':
+        case 'matic':
+            return 'polygonscan.com';
+        case 'mumbai':
+            return 'mumbai.polygonscan.com';
+    }
+};
+
 /*********************************************************************************************************************
  *                                                        Arrays                                                     *
  *********************************************************************************************************************/
@@ -286,21 +204,6 @@ Array.range = function (start, stop = undefined, step = 1) {
 Array.prototype.chunk = function (size) {
     return Array.range(Math.ceil(this.length / size)).map((i) => this.slice(i * size, i * size + size));
 };
-/*********************************************************************************************************************
- *                                                        Strings                                                       *
- *********************************************************************************************************************/
-
-const kebabize = (str) => {
-    return str
-        .split('')
-        .map((letter, idx) => {
-            return letter.toUpperCase() === letter ? `${idx !== 0 ? '-' : ''}${letter.toLowerCase()}` : letter;
-        })
-        .join('');
-};
-
-const camelize = (s) => s.replace(/-./g, (x) => x[1].toUpperCase());
-const upperCaseFirst = (s) => s.replace(/^[a-z,A-Z]/, (x) => x[0].toUpperCase());
 
 /*********************************************************************************************************************
  *                                                        Time                                                       *
@@ -332,7 +235,6 @@ function durationToSeconds(duration) {
 }
 
 module.exports = {
-    AsyncConf,
     getDefaultProvider,
     getDefaultDeployer,
     getFactory,
@@ -343,7 +245,6 @@ module.exports = {
     proposeUpgrade,
     tryFetchContract,
     tryFetchProxy,
-    migrateAddress,
     dateToTimestamp,
     durationToSeconds,
     getContractVersion,
@@ -352,7 +253,5 @@ module.exports = {
     getEventsForTimeInterval,
     getLogsForBlockInterval,
     assertNotUsingHardhatKeys,
-    kebabize,
-    camelize,
-    upperCaseFirst,
+    getBlockExplorerDomain,
 };
