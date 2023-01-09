@@ -31,7 +31,7 @@ jobs:
       - run: yarn install --frozen-lockfile
 
       - name: Compile contracts
-        run: yarn build
+        run: yarn compile
 
       - name: Save build artifacts
         uses: actions/upload-artifact@v3
