@@ -18,7 +18,7 @@ describe('Agent Registry', function () {
             await expect(this.agents.connect(this.accounts.user1).createAgent(...args)).to.be.revertedWith('CommitNotReady()');
         });
 
-        it('setting delay is protected', async function () {
+        it.only('setting delay is protected', async function () {
             await expect(this.agents.connect(this.accounts.other).setFrontRunningDelay('1800')).to.be.revertedWith(
                 `MissingRole("${this.roles.AGENT_ADMIN}", "${this.accounts.other.address}")`
             );

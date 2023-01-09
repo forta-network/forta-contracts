@@ -5,7 +5,7 @@
   "author": "OpenZeppelin Community <maintainers@openzeppelin.org>",
   "license": "MIT",
   "scripts": {
-    "compile": "hardhat compile",
+    "compile": "yarn hardhat compile",
     "coverage": "hardhat coverage",
     "lint": "npm run lint:solidity && npm run lint:javascript",
     "lint:javascript": "eslint ./",

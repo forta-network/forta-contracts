@@ -1,7 +1,7 @@
 const { execSync } = require('child_process');
 const { appendFileSync } = require('fs');
 const { saveImplementation, saveNonUpgradeable, getDeployConfig, getReleaseOutputWriter, getDeployment, setAddressesInParams } = require('../scripts/utils/deploymentFiles');
-const { tryFetchContract, tryFetchProxy, getBlockExplorerDomain, getContractVersion } = require('../scripts/utils');
+const { tryFetchContract, tryFetchProxy, getBlockExplorerDomain, getContractVersion } = require('../scripts/utils/contractHelpers');
 const { camelize } = require('../scripts/utils/stringUtils');
 
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
@@ -38,7 +38,7 @@ async function main(args, hre) {
                     params.proxy.opts[camelize(key)] = params.proxy.opts[key];
                 }
                 params.proxy.opts.constructorArgs = setAddressesInParams(deployment, params.proxy.opts.constructorArgs);
-                contract = await tryFetchProxy(outputWriter, name, 'uups', initArgs, params.proxy.opts);
+                contract = await tryFetchProxy(hre, outputWriter, name, 'uups', initArgs, params.proxy.opts);
                 implAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
                 console.log('Saving output...');
                 await saveImplementation(outputWriter, name, params.proxy.opts.constructorArgs, initArgs, implAddress, await getContractVersion(contract));
@@ -48,7 +48,7 @@ async function main(args, hre) {
                 }
                 const constructorArgs = setAddressesInParams(deployment, params.proxy.opts.constructorArgs);
                 console.log('Non upgradeable');
-                contract = await tryFetchContract(outputWriter, name, constructorArgs);
+                contract = await tryFetchContract(hre, outputWriter, name, constructorArgs);
                 console.log('Saving output...');
                 await saveNonUpgradeable(outputWriter, name, constructorArgs, contract.address, await getContractVersion(contract));
             }
@@ -66,11 +66,11 @@ async function main(args, hre) {
 }
 
 task('deploy')
-    .addPositionalParam('version', 'Version number (used to load /<version>/<network>/config/deploy.json)')
+    .addPositionalParam('release', 'Release number (used to load /<release>/<network>/config/deploy.json)')
     .setDescription(
         `Deploys the contracts as described in the correspondent deploy.json config.
         Works both with non-upgradeable and uups upgradeable contracts.
-        Results are tracked in /<version>/<network>/deployed/deployed.json
+        Results are tracked in /<release>/<network>/deployed/deployed.json
         `
     )
     .setAction(main);
