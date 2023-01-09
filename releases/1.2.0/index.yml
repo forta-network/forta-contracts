@@ -1,0 +1,10 @@
+title: Deploy 1.2.0 contracts
+network: mumbai
+deploy: deploy-proxy 1.2.0
+# verify: verify-deployed
+description: |
+  Deploy contracts:
+  - RewardsDistributor
+  - StakeAllocator
+  - ScannerPoolRegistry
+  - ScannerToScannerPoolMigration
