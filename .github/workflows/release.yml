@@ -188,6 +188,7 @@ jobs:
           commit_message: Update registries of deployed addresses
           file_pattern: '.openzeppelin/ releases/'
           skip_checkout: true
+          tagging_message: '${{ needs.prepare.outputs.release_version }} - deploy'
 
   verify:
     name: Verify contracts
