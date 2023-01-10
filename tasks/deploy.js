@@ -1,6 +1,14 @@
 const { execSync } = require('child_process');
 const { appendFileSync } = require('fs');
-const { saveImplementation, saveNonUpgradeable, getDeployConfig, getReleaseOutputWriter, getDeployment, setAddressesInParams } = require('../scripts/utils/deploymentFiles');
+const {
+    saveImplementation,
+    saveNonUpgradeable,
+    getDeployConfig,
+    getReleaseOutputWriter,
+    getDeployment,
+    setAddressesInParams,
+    getDeployed,
+} = require('../scripts/utils/deploymentFiles');
 const { tryFetchContract, tryFetchProxy, getBlockExplorerDomain, getContractVersion } = require('../scripts/utils/contractHelpers');
 const { camelize } = require('../scripts/utils/stringUtils');
 
@@ -54,16 +62,19 @@ async function main(args, hre) {
             }
         }
     } finally {
-        let deployed = await outputWriter.get('');
-        if (summaryPath && deployed && Object.entries(deployed).length > 0) {
-            const list = Object.entries(deployed).map(([name, info]) => {
-                let result = `
-                    - ${name} at [\`${contract.address}\`](https://${getBlockExplorerDomain(hre)}/address/${contract.address})`;
-                if (info.impl) {
-                    result += ` with implementation at [\`${implAddress}\`](https://${getBlockExplorerDomain(hre)}/address/${implAddress})`;
-                }
-                return result;
-            });
+        console.log('Results:');
+        const deployed = getDeployed(chainId, args.release);
+        if (deployed && Object.entries(deployed).length > 0) {
+            const list = Object.entries(deployed)
+                .filter(([key, info]) => !key.includes('-deploy-tx'))
+                .map(([key, info]) => {
+                    let result = `
+                    - ${key} at [\`${info.address}\`](https://${getBlockExplorerDomain(hre)}/address/${info.address})`;
+                    if (info.impl) {
+                        result += ` with implementation at [\`${info.impl.address}\`](https://${getBlockExplorerDomain(hre)}/address/${info.impl.address})`;
+                    }
+                    return result;
+                });
             const resultText = `## Contract deployed\n\n${list.join('\n')}\n`;
             if (summaryPath) {
                 appendFileSync(summaryPath, resultText);

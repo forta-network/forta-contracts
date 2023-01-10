@@ -51,6 +51,10 @@ function getDeployment(chainId) {
     return JSON.parse(readFileSync(`${RELEASES_PATH}/deployments/${chainId}.json`).toString());
 }
 
+function getDeployed(chainId, releaseVersion) {
+    return JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${FOLDER_FOR_CHAIN[chainId]}/output/deployed.json`).toString());
+}
+
 function getDeploymentOutputWriter(chainId) {
     return new AsyncConf({ cwd: `${RELEASES_PATH}/deployments/`, configName: `${chainId}` });
 }
@@ -76,5 +80,6 @@ module.exports = {
     getReleaseOutputWriter,
     getDeploymentOutputWriter,
     getDeployment,
+    getDeployed,
     setAddressesInParams,
 };
