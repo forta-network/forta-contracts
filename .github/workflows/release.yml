@@ -90,8 +90,8 @@ jobs:
       - name: Parse release info
         id: parse
         run: |
-          version=${BRANCH_NAME#release\/}steps.parse.outputs.release_network
-          path=releases/v$version/steps.parse.outputs.release_network/
+          version=${BRANCH_NAME#release\/}
+          path=releases/v$version/$steps.parse.outputs.release_network/
           network=$(yq -r .network $path/index.yml)
           echo "release_version=$version" >> $GITHUB_OUTPUT
           echo "release_path=$path" >> $GITHUB_OUTPUT
