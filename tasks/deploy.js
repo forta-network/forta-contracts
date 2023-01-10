@@ -14,9 +14,9 @@ async function main(args, hre) {
 
     console.log(`Deploying contracts from commit ${commit} on chain ${chainId}`);
 
-    const deploymentConfig = getDeployConfig(chainId, args.version);
+    const deploymentConfig = getDeployConfig(chainId, args.release);
     const contractNames = Object.keys(deploymentConfig);
-    const outputWriter = getReleaseOutputWriter(chainId, args.version);
+    const outputWriter = getReleaseOutputWriter(chainId, args.release);
     const deployment = getDeployment(chainId);
 
     let contract, implAddress;
