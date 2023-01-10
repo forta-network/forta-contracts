@@ -102,8 +102,8 @@
 		},
 		"verified": "true"
 	},
-	"subject-gateway-pending": "0x057da57163e941b7e143c3746fda0d285a065aa03a40083935ff0a37a0fc4df7",
-	"subject-gateway": {
+	"stake-subject-gateway-pending": "0x057da57163e941b7e143c3746fda0d285a065aa03a40083935ff0a37a0fc4df7",
+	"stake-subject-gateway": {
 		"address": "0x587969Add789c13F64Bcc34Ff253BD9BFB78f38a",
 		"impl": {
 			"args": [

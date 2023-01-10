@@ -89,8 +89,8 @@
 		],
 		"version": "0.0.0"
 	},
-	"subject-gateway-pending": "0x73831de2a1ead62e3decc1abc34dce91eba7f607a66eed7c603373d7f8b7908a",
-	"subject-gateway": {
+	"stake-subject-gateway-pending": "0x73831de2a1ead62e3decc1abc34dce91eba7f607a66eed7c603373d7f8b7908a",
+	"stake-subject-gateway": {
 		"address": "0x2441Ce5eB269505f30F6F434D21E039438aaC342",
 		"impl": {
 			"args": [
