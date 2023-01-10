@@ -1,0 +1,28 @@
+{
+	"rewards-distributor-deploy-tx": "0xeba23a922845b287ffc6256e0496b1e4e80bf15c6411911cfb87335e8c41b5fd",
+	"rewards-distributor": {
+		"address": "0x8b79BeADC00571b9AEf2AB3f1C0C5ba05ec5F1AE",
+		"impl": {
+			"address": "0xFcb1c777BFEa94a9eC884768d3B3780F175e2eE7",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+				"0x2441Ce5eB269505f30F6F434D21E039438aaC342"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				2,
+				1000
+			],
+			"name": "RewardsDistributor",
+			"version": "0.1.0"
+		}
+	},
+	"forwarder-deploy-tx": "0x2b5d53e0153045842cd18f51c4b1dca7b06ab41b53271cc3b355fabadebc12ab",
+	"forwarder": {
+		"address": "0xE055724F37634d34FA174FDa859C30D3991Da843",
+		"constructor-args": [],
+		"name": "Forwarder",
+		"version": "0.0.0"
+	}
+}
