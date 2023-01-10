@@ -28,7 +28,7 @@ async function main() {
     const contracts = {
         forwarder: await utils.attach('Forwarder', await CACHE.get('forwarder.address')).then((contract) => contract.connect(deployer)),
         staking: await utils.attach('FortaStaking', await CACHE.get('staking.address')).then((contract) => contract.connect(deployer)),
-        subjectGateway: await utils.attach('StakeSubjectGateway', await CACHE.get('subject-gateway.address')).then((contract) => contract.connect(deployer)),
+        subjectGateway: await utils.attach('StakeSubjectGateway', await CACHE.get('stake-subject-gateway.address')).then((contract) => contract.connect(deployer)),
         agents: await utils.attach('AgentRegistry', await CACHE.get('agents.address')).then((contract) => contract.connect(deployer)),
         scanners: await utils.attach('ScannerRegistry', await CACHE.get('scanners.address')).then((contract) => contract.connect(deployer)),
         dispatch: await utils.attach('Dispatch', await CACHE.get('dispatch.address')).then((contract) => contract.connect(deployer)),

@@ -57,8 +57,11 @@ function getDeploymentOutputWriter(chainId) {
 
 function setAddressesInParams(deployment, params) {
     return params.map((arg) => {
-        if (arg.startsWith('deployment.')) {
-            return deployment[arg.replace('deployment.', '')].address;
+        if (typeof arg === 'string') {
+            if (arg.startsWith('deployment.')) {
+                return deployment[arg.replace('deployment.', '')].address;
+            }
+            return arg;
         } else {
             return arg;
         }

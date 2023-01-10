@@ -100,13 +100,13 @@ function tryFetchProxy(cache, key, contract, args = [], kind = 'uups') {
 }
 
 async function resumeOrDeploy(cache, key, deploy) {
-    let txHash = await cache.get(`${key}-pending`);
+    let txHash = await cache.get(`${key}-deploy-tx`);
     let address = await cache.get(key);
 
     if (!txHash && !address) {
         const contract = await deploy();
         txHash = contract.deployTransaction.hash;
-        await cache.set(`${key}-pending`, txHash);
+        await cache.set(`${key}-deploy-tx`, txHash);
         await contract.deployed();
         address = contract.address;
         await cache.set(key, address);

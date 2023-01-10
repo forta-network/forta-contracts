@@ -433,7 +433,7 @@ async function migrate(config = {}) {
                 reverseRegister(contracts.dispatch, 'dispatch.forta.eth'),
                 reverseRegister(contracts.staking, 'staking.forta.eth'),
                 reverseRegister(contracts.slashing, 'slashing.forta.eth'),
-                reverseRegister(contracts.subjectGateway, 'subject-gateway.forta.eth'),
+                reverseRegister(contracts.subjectGateway, 'stake-subject-gateway.forta.eth'),
                 reverseRegister(contracts.agents, 'agents.registries.forta.eth'),
                 reverseRegister(contracts.scanners, 'scanners.registries.forta.eth'),
                 reverseRegister(contracts.scannerPools, 'scanner-pools.registries.forta.eth'),

@@ -9,7 +9,7 @@ require('./arrays');
 Object.assign(process.env, require('dotenv').config().parsed);
 
 async function getEventsFromContractCreation(cache, key, eventName, contract, filterParams = []) {
-    let txHash = await cache.get(`${key}-pending`);
+    let txHash = await cache.get(`${key}-deploy-tx`);
     if (!txHash) {
         throw new Error(`${key} deployment transaction not saved`);
     }

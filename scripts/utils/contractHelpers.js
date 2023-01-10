@@ -99,14 +99,15 @@ async function getContractVersion(hre, contract, deployParams = {}) {
 }
 
 async function resumeOrDeploy(hre, cache, key, deploy) {
-    let txHash = await cache?.get(`${key}-pending`);
+    let txHash = await cache?.get(`${key}-deploy-tx`);
     let address = await cache?.get(`${key}.address`);
     DEBUG('resumeOrDeploy', key, txHash, address);
 
     if (!txHash && !address) {
         const contract = await deploy();
         txHash = contract.deployTransaction.hash;
-        await cache?.set(`${key}-pending`, txHash);
+        DEBUG('Saving pending...', txHash);
+        await cache?.set(`${key}-deploy-tx`, txHash);
         await contract.deployed();
         address = contract.address;
     } else if (!address) {
