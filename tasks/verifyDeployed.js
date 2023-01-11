@@ -55,6 +55,7 @@ async function main(args, hre) {
 }
 
 task('verify-deployed')
+    .addPositionalParam('release', 'Release number (used to load /<release>/<network>/config/deploy.json)')
     .addOptionalParam('referenceUrl', 'URL to link to for artifact verification (defaults to $ARTIFACT_REFERENCE_URL the remote.origin.url of the repository)')
     .setDescription('Verifies deployed implementations in Etherscan and Defender')
     .setAction(main);
