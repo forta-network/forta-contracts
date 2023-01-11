@@ -33,7 +33,7 @@ async function main() {
     const artifactsDir = path.join(__dirname, '../', 'artifacts', 'contracts');
 
     for (const filePath of walkSync(artifactsDir)) {
-        if (filePath.includes('_old') || filePath.includes('.dbg.') || !filePath.includes('.json')) {
+        if (filePath.includes('.dbg.') || !filePath.includes('.json')) {
             continue;
         }
         const abi = require(filePath).abi;
