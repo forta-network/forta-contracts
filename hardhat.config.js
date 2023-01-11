@@ -31,7 +31,7 @@ task('forta:share-type', 'Checks if a list of shares is active or inactive')
         getShareTypes({ shareIds: taskArgs.ids.split(',') });
     });
 require('./tasks/deploy');
-require('./tasks/verify-deployed');
+require('./tasks/verifyDeployed');
 
 module.exports = {};
 
