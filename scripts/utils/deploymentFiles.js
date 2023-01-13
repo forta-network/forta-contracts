@@ -1,6 +1,7 @@
 const { kebabize } = require('./stringUtils.js');
 const AsyncConf = require('./asyncConf');
 const { readFileSync } = require('fs');
+const { getAddress } = require('@ethersproject/address');
 
 const RELEASES_PATH = './releases';
 
@@ -32,7 +33,7 @@ async function saveProposedImplementation(cache, contractName, constructorArgs, 
     await cache.set(`${key}.proposedImpl.version`, version);
 }
 
-const FOLDER_FOR_CHAIN = {
+const CHAIN_NAME = {
     1: 'mainnet',
     5: 'goerli',
     137: 'polygon',
@@ -40,11 +41,19 @@ const FOLDER_FOR_CHAIN = {
 };
 
 function getDeployConfig(chainId, releaseVersion) {
-    return JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${FOLDER_FOR_CHAIN[chainId]}/config/deploy.json`).toString());
+    return JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/config/deploy.json`).toString());
 }
 
-function getReleaseOutputWriter(chainId, releaseVersion) {
-    return new AsyncConf({ cwd: `${RELEASES_PATH}/${releaseVersion}/${FOLDER_FOR_CHAIN[chainId]}/output/`, configName: 'deployed' });
+function getUpgradesConfig(chainId, releaseVersion) {
+    return JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/config/upgrade.json`).toString());
+}
+
+function getDeployOutputwriter(chainId, releaseVersion) {
+    return new AsyncConf({ cwd: `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/`, configName: 'deployed' });
+}
+
+function getUpgradeOutputwriter(chainId, releaseVersion) {
+    return new AsyncConf({ cwd: `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/`, configName: 'prepared-upgrades' });
 }
 
 function getDeployment(chainId) {
@@ -52,18 +61,26 @@ function getDeployment(chainId) {
 }
 
 function getDeployed(chainId, releaseVersion) {
-    return JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${FOLDER_FOR_CHAIN[chainId]}/output/deployed.json`).toString());
+    return JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/deployed.json`).toString());
+}
+
+function getDeployedImplementations(chainId, releaseVersion) {
+    return JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/prepared-upgrades.json`).toString());
 }
 
 function getDeploymentOutputWriter(chainId) {
     return new AsyncConf({ cwd: `${RELEASES_PATH}/deployments/`, configName: `${chainId}` });
 }
 
+function getProxyOrContractAddress(deployment, key) {
+    return getAddress(deployment[key].address);
+}
+
 function setAddressesInParams(deployment, params) {
     return params.map((arg) => {
         if (typeof arg === 'string') {
             if (arg.startsWith('deployment.')) {
-                return deployment[arg.replace('deployment.', '')].address;
+                return getProxyOrContractAddress(deployment, arg.replace('deployment.', ''));
             }
             return arg;
         } else {
@@ -72,14 +89,24 @@ function setAddressesInParams(deployment, params) {
     });
 }
 
+function getMultisigAddress(chainId) {
+    const multisigs = JSON.parse(readFileSync(`${RELEASES_PATH}/deployments/multisigs.json`).toString());
+    return getAddress(multisigs[CHAIN_NAME[chainId]]);
+}
+
 module.exports = {
     saveImplementation,
     saveProposedImplementation,
     saveNonUpgradeable,
     getDeployConfig,
-    getReleaseOutputWriter,
+    getUpgradesConfig,
+    getDeployOutputwriter,
     getDeploymentOutputWriter,
+    getUpgradeOutputwriter,
     getDeployment,
     getDeployed,
+    getDeployedImplementations,
     setAddressesInParams,
+    getMultisigAddress,
+    getProxyOrContractAddress,
 };

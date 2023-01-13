@@ -4,7 +4,7 @@ const {
     saveImplementation,
     saveNonUpgradeable,
     getDeployConfig,
-    getReleaseOutputWriter,
+    getDeployOutputwriter,
     getDeployment,
     setAddressesInParams,
     getDeployed,
@@ -13,6 +13,38 @@ const { tryFetchContract, tryFetchProxy, getBlockExplorerDomain, getContractVers
 const { camelize } = require('../scripts/utils/stringUtils');
 
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+
+async function deployNonUpgradeable(params, deployment, contract, hre, name, outputWriter) {
+    if (!params['constructor-args']) {
+        throw new Error('No constructor args, if none set []');
+    }
+    const constructorArgs = setAddressesInParams(deployment, params['constructor-args']);
+    console.log('Non upgradeable');
+    contract = await tryFetchContract(hre, name, constructorArgs, outputWriter);
+    console.log('Saving output...');
+    await saveNonUpgradeable(outputWriter, name, constructorArgs, contract.address, await getContractVersion(hre, contract));
+    return contract;
+}
+
+async function deployUpgradeable(params, deployment, contract, hre, name, outputWriter, upgrades) {
+    console.log('Upgradeable');
+    if (!params.impl['init-args']) {
+        throw new Error('No init args, if none set []');
+    }
+    if (!params.impl?.opts['constructor-args']) {
+        throw new Error('No constructor args, if none set []');
+    }
+    const initArgs = setAddressesInParams(deployment, params.impl['init-args']);
+    for (const key of Object.keys(params.impl.opts)) {
+        params.impl.opts[camelize(key)] = params.impl.opts[key];
+    }
+    params.impl.opts.constructorArgs = setAddressesInParams(deployment, params.impl.opts.constructorArgs);
+    contract = await tryFetchProxy(hre, name, 'uups', initArgs, params.impl.opts, outputWriter);
+    const implAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
+    console.log('Saving output...');
+    await saveImplementation(outputWriter, name, params.impl.opts.constructorArgs, initArgs, implAddress, await getContractVersion(hre, contract));
+    return contract;
+}
 
 async function main(args, hre) {
     const { ethers, upgrades } = hre;
@@ -24,41 +56,19 @@ async function main(args, hre) {
 
     const deploymentConfig = getDeployConfig(chainId, args.release);
     const contractNames = Object.keys(deploymentConfig);
-    const outputWriter = getReleaseOutputWriter(chainId, args.release);
+    const outputWriter = getDeployOutputwriter(chainId, args.release);
     const deployment = getDeployment(chainId);
 
-    let contract, implAddress;
+    let contract;
 
     try {
         for (const name of contractNames) {
             console.log('Deploying ', name, '...');
             const params = deploymentConfig[name];
-            if (params.proxy) {
-                console.log('Upgradeable');
-                if (!params.proxy['init-args']) {
-                    throw new Error('No init args, if none set []');
-                }
-                if (!params.proxy?.opts['constructor-args']) {
-                    throw new Error('No constructor args, if none set []');
-                }
-                const initArgs = setAddressesInParams(deployment, params.proxy['init-args']);
-                for (const key of Object.keys(params.proxy.opts)) {
-                    params.proxy.opts[camelize(key)] = params.proxy.opts[key];
-                }
-                params.proxy.opts.constructorArgs = setAddressesInParams(deployment, params.proxy.opts.constructorArgs);
-                contract = await tryFetchProxy(hre, name, 'uups', initArgs, params.proxy.opts, outputWriter);
-                implAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
-                console.log('Saving output...');
-                await saveImplementation(outputWriter, name, params.proxy.opts.constructorArgs, initArgs, implAddress, await getContractVersion(hre, contract));
+            if (params.impl) {
+                contract = await deployUpgradeable(params, deployment, contract, hre, name, outputWriter, upgrades);
             } else {
-                if (!params['constructor-args']) {
-                    throw new Error('No constructor args, if none set []');
-                }
-                const constructorArgs = setAddressesInParams(deployment, params['constructor-args']);
-                console.log('Non upgradeable');
-                contract = await tryFetchContract(hre, name, constructorArgs, outputWriter);
-                console.log('Saving output...');
-                await saveNonUpgradeable(outputWriter, name, constructorArgs, contract.address, await getContractVersion(hre, contract));
+                contract = await deployNonUpgradeable(params, deployment, contract, hre, name, outputWriter);
             }
         }
     } finally {

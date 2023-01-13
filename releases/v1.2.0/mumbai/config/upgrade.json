@@ -1,7 +1,6 @@
 {
     "RewardsDistributor": {
         "impl": {
-            "init-args": ["deployment.access", 2, 1000],
             "opts": {
                 "unsafe-allow": [
                     "delegatecall"
@@ -10,10 +9,6 @@
                     "deployment.forwarder", "deployment.forta", "deployment.stake-subject-gateway"
                 ]
             }
-            
         }
-    },
-    "Forwarder": {
-        "constructor-args": []
     }
 }
