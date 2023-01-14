@@ -194,7 +194,7 @@ jobs:
     name: Verify contracts
     if: "startsWith(github.head_ref, 'release/') && needs.prepare.outputs.release_verify_cmd != ''"
     runs-on: ubuntu-22.04
-    timeout-minutes: 20
+    timeout-minutes: 60
     needs: 
       - prepare
       - deploy

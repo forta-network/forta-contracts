@@ -75,16 +75,14 @@ async function main(args, hre) {
         console.log('Results:');
         const deployed = getDeployed(chainId, args.release);
         if (deployed && Object.entries(deployed).length > 0) {
-            const list = Object.entries(deployed)
-                .filter(([key, info]) => !key.includes('-deploy-tx'))
-                .map(([key, info]) => {
-                    let result = `
+            const list = Object.entries(deployed).map(([key, info]) => {
+                let result = `
                     - ${key} at [\`${info.address}\`](https://${getBlockExplorerDomain(hre)}/address/${info.address})`;
-                    if (info.impl) {
-                        result += ` with implementation at [\`${info.impl.address}\`](https://${getBlockExplorerDomain(hre)}/address/${info.impl.address})`;
-                    }
-                    return result;
-                });
+                if (info.impl) {
+                    result += ` with implementation at [\`${info.impl.address}\`](https://${getBlockExplorerDomain(hre)}/address/${info.impl.address})`;
+                }
+                return result;
+            });
             const resultText = `## Contract deployed\n\n${list.join('\n')}\n`;
             if (summaryPath) {
                 appendFileSync(summaryPath, resultText);

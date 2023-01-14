@@ -1,6 +1,6 @@
 const { kebabize } = require('./stringUtils.js');
 const AsyncConf = require('./asyncConf');
-const { readFileSync } = require('fs');
+const { readFileSync, existsSync } = require('fs');
 const { getAddress } = require('@ethersproject/address');
 
 const RELEASES_PATH = './releases';
@@ -61,11 +61,20 @@ function getDeployment(chainId) {
 }
 
 function getDeployed(chainId, releaseVersion) {
-    return JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/deployed.json`).toString());
+    return Object.fromEntries(
+        Object.entries(JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/deployed.json`).toString())).filter(
+            ([key, info]) => !key.includes('-deploy-tx')
+        )
+    );
 }
 
 function getDeployedImplementations(chainId, releaseVersion) {
-    return JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/prepared-upgrades.json`).toString());
+    const path = `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/prepared-upgrades.json`;
+    if (existsSync(path)) {
+        return JSON.parse(readFileSync(path).toString());
+    } else {
+        return {};
+    }
 }
 
 function getDeploymentOutputWriter(chainId) {
