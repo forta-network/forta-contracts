@@ -1,7 +1,6 @@
 title: Deploy 1.2.0 contracts
 network: mumbai
-deploy: deploy v1.2.0
-deploy: prepareUpgrade v1.2.0
+deploy: deploy-and-prepare-upgrade v1.2.0
 verify: verify-deployed v1.2.0
 description: |
   Deploy contracts:

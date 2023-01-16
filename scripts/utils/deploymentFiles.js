@@ -40,35 +40,71 @@ const CHAIN_NAME = {
     80001: 'mumbai',
 };
 
+function validateInput(chainId, releaseVersion) {
+    if (!chainId) {
+        throw new Error(`Invalid chainId ${chainId}`);
+    }
+    if (!releaseVersion) {
+        throw new Error(`Invalid releaseVersion ${releaseVersion}`);
+    }
+}
+
 function getDeployConfig(chainId, releaseVersion) {
+    validateInput(chainId, releaseVersion);
     return JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/config/deploy.json`).toString());
 }
 
+function deployConfigExists(chainId, releaseVersion) {
+    validateInput(chainId, releaseVersion);
+    const path = `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/deployed.json`;
+    console.log(path)
+    return existsSync(path);
+}
+
 function getUpgradesConfig(chainId, releaseVersion) {
+    validateInput(chainId, releaseVersion);
     return JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/config/upgrade.json`).toString());
 }
 
+function upgradeConfigExists(chainId, releaseVersion) {
+    validateInput(chainId, releaseVersion);
+    const path = `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/config/upgrade.json`;
+    return existsSync(path);
+}
+
 function getDeployOutputwriter(chainId, releaseVersion) {
+    validateInput(chainId, releaseVersion);
     return new AsyncConf({ cwd: `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/`, configName: 'deployed' });
 }
 
 function getUpgradeOutputwriter(chainId, releaseVersion) {
+    validateInput(chainId, releaseVersion);
     return new AsyncConf({ cwd: `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/`, configName: 'prepared-upgrades' });
 }
 
 function getDeployment(chainId) {
+    if (!chainId) {
+        throw new Error(`Invalid chainId ${chainId}`);
+    }
     return JSON.parse(readFileSync(`${RELEASES_PATH}/deployments/${chainId}.json`).toString());
 }
 
 function getDeployed(chainId, releaseVersion) {
-    return Object.fromEntries(
-        Object.entries(JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/deployed.json`).toString())).filter(
-            ([key, info]) => !key.includes('-deploy-tx')
-        )
-    );
+    validateInput(chainId, releaseVersion);
+    const path = `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/deployed.json`;
+    if (existsSync(path)) {
+        return Object.fromEntries(
+            Object.entries(JSON.parse(readFileSync(`${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/deployed.json`).toString())).filter(
+                ([key, info]) => !key.includes('-deploy-tx')
+            )
+        );
+    } else {
+        return {};
+    }
 }
 
 function getDeployedImplementations(chainId, releaseVersion) {
+    validateInput(chainId, releaseVersion);
     const path = `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/prepared-upgrades.json`;
     if (existsSync(path)) {
         return JSON.parse(readFileSync(path).toString());
@@ -78,6 +114,9 @@ function getDeployedImplementations(chainId, releaseVersion) {
 }
 
 function getDeploymentOutputWriter(chainId) {
+    if (!chainId) {
+        throw new Error(`Invalid chainId ${chainId}`);
+    }
     return new AsyncConf({ cwd: `${RELEASES_PATH}/deployments/`, configName: `${chainId}` });
 }
 
@@ -108,7 +147,9 @@ module.exports = {
     saveProposedImplementation,
     saveNonUpgradeable,
     getDeployConfig,
+    deployConfigExists,
     getUpgradesConfig,
+    upgradeConfigExists,
     getDeployOutputwriter,
     getDeploymentOutputWriter,
     getUpgradeOutputwriter,

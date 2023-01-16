@@ -1,0 +1,13 @@
+{
+	"scanner-node-version": {
+		"impl": {
+			"address": "0xc341e6A45434C7906A5792fCa1E540682f088B02",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"init-args": [],
+			"name": "ScannerNodeVersion",
+			"version": "0.1.1"
+		}
+	}
+}

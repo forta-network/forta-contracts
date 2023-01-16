@@ -1,6 +1,6 @@
 const appendFileSync = require('fs');
-const execSync = require('child_process');
-const task = require('hardhat/config');
+const { execSync } = require('child_process');
+const { task } = require('hardhat/config');
 const {
     getUpgradesConfig,
     getUpgradeOutputwriter,
@@ -22,14 +22,21 @@ function getNewImplementation(prepareUpgradeResult) {
     return typeof prepareUpgradeResult === 'string' ? prepareUpgradeResult : getContractAddress(prepareUpgradeResult);
 }
 
-async function prepareUpgrade(name, upgradesConfig, deployment, multisigAddress, hre, ethers, outputWriter) {
-    console.error(`Deploying new implementation for contract ${name} ...`);
-    const { opts, initArgs } = prepareParams(upgradesConfig, name, deployment, multisigAddress);
-    const proxyAddress = getProxyOrContractAddress(kebabize(name));
-    const result = await hre.upgrades.prepareUpgrade(proxyAddress, await ethers.getContractFactory(name), opts);
+async function prepareUpgrade(hre, name, upgradesConfig, deployment, multisigAddress, outputWriter) {
+    console.log(`Deploying new implementation for contract ${name} ...`);
+    const { opts } = prepareParams(upgradesConfig, name, deployment, multisigAddress);
+    const proxyAddress = getProxyOrContractAddress(deployment, kebabize(name));
+    const result = await hre.upgrades.prepareUpgrade(proxyAddress, await hre.ethers.getContractFactory(name), opts);
     const implAddress = getNewImplementation(result);
     console.log('Saving output...');
-    await saveImplementation(outputWriter, name, opts.constructorArgs, initArgs, implAddress, await getContractVersion(hre, null, { proxyAddress, provider: ethers.provider }));
+    await saveImplementation(
+        outputWriter,
+        name,
+        opts.constructorArgs,
+        null,
+        implAddress,
+        await getContractVersion(hre, null, { address: proxyAddress, provider: hre.ethers.provider })
+    );
 }
 
 function prepareParams(upgradesConfig, name, deployment, multisigAddress) {
@@ -40,20 +47,20 @@ function prepareParams(upgradesConfig, name, deployment, multisigAddress) {
     if (!params.opts['constructor-args']) {
         throw new Error('No constructor args, if none set []');
     }
-    const initArgs = setAddressesInParams(deployment, params['constructor-args']);
+    const constructorArgs = setAddressesInParams(deployment, params.opts['constructor-args']);
     for (const key of Object.keys(params.opts)) {
         params.opts[camelize(key)] = params.opts[key];
     }
-    params.proxy.opts.constructorArgs = setAddressesInParams(deployment, params.opts.constructorArgs);
+    params.opts.constructorArgs = setAddressesInParams(deployment, constructorArgs);
     const opts = {
         kind: 'uups',
         multisig: multisigAddress,
-        ...params.proxy.opts,
+        ...params.opts,
     };
-    return { opts, params, initArgs };
+    return { opts, params, constructorArgs };
 }
 
-function saveResults(chainId, args, hre) {
+function saveResults(hre, chainId, args) {
     console.log('Results:');
     const deployed = getDeployedImplementations(chainId, args.release);
     if (deployed && Object.entries(deployed).length > 0) {
@@ -91,10 +98,10 @@ async function main(args, hre) {
 
     try {
         for (const name of contractNames) {
-            await prepareUpgrade(name, upgradesConfig, deployment, multisigAddress, hre, ethers, outputWriter);
+            await prepareUpgrade(hre, name, upgradesConfig, deployment, multisigAddress, outputWriter);
         }
     } finally {
-        saveResults(chainId, args, hre);
+        saveResults(hre, chainId, args);
     }
 }
 
