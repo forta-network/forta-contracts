@@ -42,7 +42,7 @@ async function main(args, hre) {
     for (const [name, info] of Object.entries(deployed)) {
         const addressToVerify = info.impl ? info.impl.address : info.address;
         const constructorargs = info.impl ? info.impl['constructor-args'] : info['constructor-args'];
-        // await verifyEtherscan(hre, name, addressToVerify, constructorargs, errs);
+        await verifyEtherscan(hre, name, addressToVerify, constructorargs, errs);
     }
 
     // On Defender, we only care about implementation contracts for verifying bytecode.
