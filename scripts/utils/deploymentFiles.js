@@ -56,8 +56,8 @@ function getDeployConfig(chainId, releaseVersion) {
 
 function deployConfigExists(chainId, releaseVersion) {
     validateInput(chainId, releaseVersion);
-    const path = `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/deployed.json`;
-    console.log(path)
+    const path = `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/config/deploy.json`;
+    console.log(path);
     return existsSync(path);
 }
 
@@ -70,6 +70,16 @@ function upgradeConfigExists(chainId, releaseVersion) {
     validateInput(chainId, releaseVersion);
     const path = `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/config/upgrade.json`;
     return existsSync(path);
+}
+
+function getProposedAdminActions(chainId, releaseVersion) {
+    validateInput(chainId, releaseVersion);
+    const path = `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/config/propose-admin.json`;
+    if (existsSync(path)) {
+        return JSON.parse(readFileSync(path).toString());
+    } else {
+        return {};
+    }
 }
 
 function getDeployOutputwriter(chainId, releaseVersion) {
@@ -121,18 +131,22 @@ function getDeploymentOutputWriter(chainId) {
 }
 
 function getProxyOrContractAddress(deployment, key) {
+    if (!deployment[key]) throw new Error(`${key} does not exist in deployment`);
     return getAddress(deployment[key].address);
 }
 
-function setAddressesInParams(deployment, params) {
+function formatParams(deployment, params) {
     return params.map((arg) => {
-        if (typeof arg === 'string') {
-            if (arg.startsWith('deployment.')) {
-                return getProxyOrContractAddress(deployment, arg.replace('deployment.', ''));
-            }
-            return arg;
-        } else {
-            return arg;
+        switch (typeof arg) {
+            case 'string':
+                if (arg.startsWith('deployment.')) {
+                    return getProxyOrContractAddress(deployment, arg.replace('deployment.', ''));
+                }
+                return arg;
+            case 'number':
+                throw new Error(`Param ${arg} in ${params} should be a string`);
+            default:
+                return arg;
         }
     });
 }
@@ -149,6 +163,7 @@ module.exports = {
     getDeployConfig,
     deployConfigExists,
     getUpgradesConfig,
+    getProposedAdminActions,
     upgradeConfigExists,
     getDeployOutputwriter,
     getDeploymentOutputWriter,
@@ -156,7 +171,7 @@ module.exports = {
     getDeployment,
     getDeployed,
     getDeployedImplementations,
-    setAddressesInParams,
+    formatParams,
     getMultisigAddress,
     getProxyOrContractAddress,
 };

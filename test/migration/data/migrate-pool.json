@@ -1,7 +1,7 @@
 {
     "137": {
         "0xc29af06142138f893e3f1c1d11aa98c3313b8c1f": {
-            "scanners": {
+            "scanner-registry": {
                 "0x8da226fd2f242128040a6b50f1dbbaefcbeae1e9": {
                     "id": "0x8da226fd2f242128040a6b50f1dbbaefcbeae1e9",
                     "chainId": "137",
@@ -33,7 +33,7 @@
             "poolId": 0
         },
         "0xfe1c1cceccab539f6095ac07a369cdd669171e9d": {
-            "scanners": {
+            "scanner-registry": {
                 "0xf14FbD141BC280f56FC08E746a0B880a3A8D19E8": {
                     "id": "0xf14FbD141BC280f56FC08E746a0B880a3A8D19E8",
                     "chainId": "137",
@@ -92,7 +92,7 @@
             "poolId": 0
         },
         "0x3f7042c827a0d326c755741ad08d24bc61ea6d34": {
-            "scanners": {
+            "scanner-registry": {
                 "0x98aBd6a2c27c5d75E7057f109cC82411D8209790": {
                     "id": "0x98aBd6a2c27c5d75E7057f109cC82411D8209790",
                     "chainId": "137",

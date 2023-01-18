@@ -1,0 +1,31 @@
+{
+    "ScannerRegistry": [
+        {
+            "methodName": "configureMigration",
+            "params": [
+                ["1670369819", "deployment.scanner-pool-registry"],
+                ["1670369819", "deployment.scanner-pool-registry"]
+            ]
+        },
+        {
+            "methodName": "setStakeThreshold",
+            "params": [
+                [{ "min": "0", "max": "500", "activated": true }, "420"]
+            ]
+        }
+    ],
+    "Dispatch": [
+        {
+            "methodName": "link",
+            "params": [
+                ["1", "2"]
+            ]
+        },
+        {
+            "methodName": "unlink",
+            "params": [
+                ["1", "2"]
+            ]
+        }
+    ]
+}

@@ -1,9 +1,9 @@
-// const hre = require('hardhat');
 const DEBUG = require('debug')('forta:utils');
 const EthDater = require('block-by-date-ethers');
 const process = require('process');
 // const contractHelpers = require('./contractHelpers');
 require('./arrays');
+const chainsMini = require('./chainsMini.json');
 
 // override process.env with dotenv
 Object.assign(process.env, require('dotenv').config().parsed);
@@ -60,6 +60,12 @@ const assertNotUsingHardhatKeys = (chainId, deployer) => {
     }
 };
 
+function toEIP3770(chainId, address) {
+    const network = chainsMini.find(c => c.chainId === chainId);
+    if (!network) throw new Error(`Network ${chainId} not found`);
+    return `${network.shortName}:${address}`;
+}
+
 /*********************************************************************************************************************
  *                                                        Time                                                       *
  *********************************************************************************************************************/
@@ -111,4 +117,5 @@ module.exports = {
     getEventsForTimeInterval,
     getLogsForBlockInterval,
     assertNotUsingHardhatKeys,
+    toEIP3770,
 };

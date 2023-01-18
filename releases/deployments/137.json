@@ -14,8 +14,8 @@
 		},
 		"verified": "true"
 	},
-	"agents-deploy-tx": "0x39dd322c91e6e4953370d0e2a2932d309dc091bc584d38c5fa4ce424835ce527",
-	"agents": {
+	"agent-registry-deploy-tx": "0x39dd322c91e6e4953370d0e2a2932d309dc091bc584d38c5fa4ce424835ce527",
+	"agent-registry": {
 		"address": "0x61447385B019187daa48e91c55c02AF1F1f3F863",
 		"impl": {
 			"args": [
@@ -27,8 +27,8 @@
 		},
 		"verified": "true"
 	},
-	"scanners-deploy-tx": "0xd4c140e97976ced53ee692f5728bf33dcafff3d19d73e582a6cefb2963117fd8",
-	"scanners": {
+	"scanner-registry-deploy-tx": "0xd4c140e97976ced53ee692f5728bf33dcafff3d19d73e582a6cefb2963117fd8",
+	"scanner-registry": {
 		"address": "0xbF2920129f83d75DeC95D97A879942cCe3DcD387",
 		"impl": {
 			"args": [
@@ -89,8 +89,8 @@
 			"version": "0.1.1"
 		}
 	},
-	"staking-deploy-tx": "0xaffd91a84b98c03fb0805b70827fa7e8f799fa00b8b26704955482f14feb38d4",
-	"staking": {
+	"forta-staking-deploy-tx": "0xaffd91a84b98c03fb0805b70827fa7e8f799fa00b8b26704955482f14feb38d4",
+	"forta-staking": {
 		"address": "0xd2863157539b1D11F39ce23fC4834B62082F6874",
 		"impl": {
 			"args": [
@@ -135,8 +135,8 @@
         "name": "Forwarder",
 		"version": "0.0.0"
 	},
-	"escrow-factory-deploy-tx": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
-	"escrow-factory": {
+	"staking-escrow-factory-deploy-tx": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
+	"staking-escrow-factory": {
 		"address": "0x867a3A4c431474E749fEA3106C61Cf58d4d2B046",
 		"args": [
 			"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
@@ -145,8 +145,8 @@
         "name": "StakingEscrowFactory",
 		"version": "0.0.0"
 	},
-	"escrow-template-deploy-tx": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
-	"escrow-template": {
+	"staking-escrow-template-deploy-tx": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
+	"staking-escrow-template": {
 		"address": "0x0d3DAC6368Da5bce50aFE3E61fFc450C80B2F23D",
 		"args": [
 			"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
@@ -163,8 +163,8 @@
         "name": "BatchRelayer",
 		"version": "0.0.0"
 	},
-	"slashing-deploy-tx": "0x763c1a408fda52894293a0ffe8a6d97ad4f2118120d34e8ad5edd321199f2912",
-	"slashing": {
+	"slashing-controller-deploy-tx": "0x763c1a408fda52894293a0ffe8a6d97ad4f2118120d34e8ad5edd321199f2912",
+	"slashing-controller": {
 		"address": "0x6927C25ff30ed86F86A863d987590A1d77509bDb",
 		"impl": {
 			"args": [

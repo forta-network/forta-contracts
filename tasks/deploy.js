@@ -7,7 +7,7 @@ const {
     getDeployConfig,
     getDeployOutputwriter,
     getDeployment,
-    setAddressesInParams,
+    formatParams,
     getDeployed,
 } = require('../scripts/utils/deploymentFiles');
 const { tryFetchContract, tryFetchProxy, getBlockExplorerDomain, getContractVersion } = require('../scripts/utils/contractHelpers');
@@ -19,7 +19,7 @@ async function deployNonUpgradeable(params, deployment, contract, hre, name, out
     if (!params['constructor-args']) {
         throw new Error('No constructor args, if none set []');
     }
-    const constructorArgs = setAddressesInParams(deployment, params['constructor-args']);
+    const constructorArgs = formatParams(deployment, params['constructor-args']);
     console.log('Non upgradeable');
     contract = await tryFetchContract(hre, name, constructorArgs, outputWriter);
     console.log('Saving output...');
@@ -35,11 +35,11 @@ async function deployUpgradeable(params, deployment, contract, hre, name, output
     if (!params.impl?.opts['constructor-args']) {
         throw new Error('No constructor args, if none set []');
     }
-    const initArgs = setAddressesInParams(deployment, params.impl['init-args']);
+    const initArgs = formatParams(deployment, params.impl['init-args']);
     for (const key of Object.keys(params.impl.opts)) {
         params.impl.opts[camelize(key)] = params.impl.opts[key];
     }
-    params.impl.opts.constructorArgs = setAddressesInParams(deployment, params.impl.opts.constructorArgs);
+    params.impl.opts.constructorArgs = formatParams(deployment, params.impl.opts.constructorArgs);
     contract = await tryFetchProxy(hre, name, 'uups', initArgs, params.impl.opts, outputWriter);
     const implAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
     console.log('Saving output...');

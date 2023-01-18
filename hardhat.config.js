@@ -34,6 +34,7 @@ require('./tasks/deploy');
 require('./tasks/deployAndPrepareUpgrade');
 require('./tasks/prepareUpgrade');
 require('./tasks/verifyDeployed');
+require('./tasks/proposeAdmin');
 
 module.exports = {};
 

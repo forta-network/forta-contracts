@@ -5,7 +5,7 @@ const {
     getUpgradesConfig,
     getUpgradeOutputwriter,
     getDeployment,
-    setAddressesInParams,
+    formatParams,
     getMultisigAddress,
     getProxyOrContractAddress,
     saveImplementation,
@@ -47,11 +47,11 @@ function prepareParams(upgradesConfig, name, deployment, multisigAddress) {
     if (!params.opts['constructor-args']) {
         throw new Error('No constructor args, if none set []');
     }
-    const constructorArgs = setAddressesInParams(deployment, params.opts['constructor-args']);
+    const constructorArgs = formatParams(deployment, params.opts['constructor-args']);
     for (const key of Object.keys(params.opts)) {
         params.opts[camelize(key)] = params.opts[key];
     }
-    params.opts.constructorArgs = setAddressesInParams(deployment, constructorArgs);
+    params.opts.constructorArgs = formatParams(deployment, constructorArgs);
     const opts = {
         kind: 'uups',
         multisig: multisigAddress,

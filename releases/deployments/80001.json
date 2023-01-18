@@ -25,8 +25,8 @@
 			"verified": "true"
 		}
 	},
-	"agents-deploy-tx": "0x74e5c36c5d4c1d7ae47f08d803c9695c9ec9849753138d1f6634f61974f6c2eb",
-	"agents": {
+	"agent-registry-deploy-tx": "0x74e5c36c5d4c1d7ae47f08d803c9695c9ec9849753138d1f6634f61974f6c2eb",
+	"agent-registry": {
 		"address": "0x5Cf7008aC441Ec1797fAfA4EE132eA4277E9239B",
 		"impl": {
 			"args": [
@@ -38,8 +38,8 @@
 			"verified": "true"
 		}
 	},
-	"scanners-deploy-tx": "0x15ea76aabbf5f1fd7119e74010146cc88746428840b10c38dba7ee0fa430b03d",
-	"scanners": {
+	"scanner-registry-deploy-tx": "0x15ea76aabbf5f1fd7119e74010146cc88746428840b10c38dba7ee0fa430b03d",
+	"scanner-registry": {
 		"address": "0xa30c3951f85941bfe474620dA25DEb90283C99D7",
 		"verified": "true",
 		"impl": {
@@ -115,8 +115,8 @@
 			"verified": "true"
 		}
 	},
-	"staking-deploy-tx": "0x71f2c96e12fc22392c08db7022ac78e2cacb2ee1cdb3605d44290204ec3f6825",
-	"staking": {
+	"forta-staking-deploy-tx": "0x71f2c96e12fc22392c08db7022ac78e2cacb2ee1cdb3605d44290204ec3f6825",
+	"forta-staking": {
 		"address": "0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c",
 		"impl": {
 			"args": [
@@ -135,8 +135,8 @@
 		"name": "Forwarder",
 		"version": "0.0.0"
 	},
-	"escrow-factory-deploy-tx": "0x0b70f983ab2a09d961d241ecde1697e8e4c92b83f61a7b0a0bf31cf24b3fbbfd",
-	"escrow-factory": {
+	"staking-escrow-factory-deploy-tx": "0x0b70f983ab2a09d961d241ecde1697e8e4c92b83f61a7b0a0bf31cf24b3fbbfd",
+	"staking-escrow-factory": {
 		"address": "0xB547D9Af68b05701Db065f5bF29DefbA0D504521",
 		"args": [
 			"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
@@ -145,8 +145,8 @@
 		"name": "StakingEscrowFactory",
 		"version": "0.0.0"
 	},
-	"escrow-template-deploy-tx": "0x0b70f983ab2a09d961d241ecde1697e8e4c92b83f61a7b0a0bf31cf24b3fbbfd",
-	"escrow-template": {
+	"staking-escrow-template-deploy-tx": "0x0b70f983ab2a09d961d241ecde1697e8e4c92b83f61a7b0a0bf31cf24b3fbbfd",
+	"staking-escrow-template": {
 		"address": "0x9A8B215DB93922D759233D275a7F93C40b51F0E1",
 		"args": [
 			"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
@@ -162,8 +162,8 @@
 		"args": [],
 		"version": "0.0.0"
 	},
-	"slashing-deploy-tx": "0xf7eb5ef4ff57d3f19a0c34f3c66c1c659a3410c226f8a25e09515a2a6a4070b9",
-	"slashing": {
+	"slashing-controller-deploy-tx": "0xf7eb5ef4ff57d3f19a0c34f3c66c1c659a3410c226f8a25e09515a2a6a4070b9",
+	"slashing-controller": {
 		"address": "0xdc4A1Fe7D5c5546458463F6546bf6Fbe6a1a9704",
 		"impl": {
 			"args": [
@@ -176,8 +176,8 @@
 			"verified": "true"
 		}
 	},
-	"staking-rewards-deploy-tx": "0x82d9ced095db584f6c3658f8a2f9ce353e433ff5e8f68b3665252822ad8a20f8",
-	"staking-rewards": {
+	"rewards-distributor-deploy-tx": "0x82d9ced095db584f6c3658f8a2f9ce353e433ff5e8f68b3665252822ad8a20f8",
+	"rewards-distributor": {
 		"address": "0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9",
 		"impl": {
 			"args": [
@@ -191,8 +191,8 @@
 			"version": "0.1.0"
 		}
 	},
-	"staking-allocator-deploy-tx": "0x31ce395099ddd67735e19ba7fe118b4063d8f124201a2c2bce74fcf443d31f6c",
-	"staking-allocator": {
+	"stake-allocator-deploy-tx": "0x31ce395099ddd67735e19ba7fe118b4063d8f124201a2c2bce74fcf443d31f6c",
+	"stake-allocator": {
 		"address": "0x26112a3885124E8b7564824F030A6d4f6e29E52B",
 		"impl": {
 			"args": [
@@ -206,8 +206,8 @@
 			"version": "0.0.0"
 		}
 	},
-	"scanner-pools-deploy-tx": "0xf5a8be1b02c1731d47fbba2a98b160dab41a8eb139c97a8dfe38bccae1c13710",
-	"scanner-pools": {
+	"scanner-pool-registry-deploy-tx": "0xf5a8be1b02c1731d47fbba2a98b160dab41a8eb139c97a8dfe38bccae1c13710",
+	"scanner-pool-registry": {
 		"address": "0x5aEBaFBc23167A51D06f217a046aAeD20c9ACcb1",
 		"impl": {
 			"args": [
