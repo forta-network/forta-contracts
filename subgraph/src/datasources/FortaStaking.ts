@@ -16,6 +16,7 @@ import {
   Slash,
   Stake,
   StakeDepositEvent,
+  WithdrawalExecutedEvent,
   Staker,
   Subject,
 } from "../../generated/schema";
@@ -148,12 +149,19 @@ export function handleWithdrawalInitiated(event: WithdrawalInitiated): void {
 }
 
 export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {
-  updateStake(
+  const stakeId = updateStake(
     event.address,
     event.params.subjectType,
     event.params.subject,
     event.params.account,
   );
+
+  const withdrawlExecutedEvent = new WithdrawalExecutedEvent(events.id(event));
+  withdrawlExecutedEvent.transaction = transactions.log(event).id;
+  withdrawlExecutedEvent.timestamp = event.block.timestamp;
+  withdrawlExecutedEvent.stake = stakeId;
+  withdrawlExecutedEvent.subject = event.params.subject.toHex();
+  withdrawlExecutedEvent.save();
 }
 
 export function handleRewarded(event: RewardedEvent): void {

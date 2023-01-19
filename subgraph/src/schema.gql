@@ -200,9 +200,18 @@ type Stake @entity {
   shares: BigInt
   inactiveShares: BigInt
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
+  withdrawalExecutedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
 }
 
 type StakeDepositEvent implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  subject: Subject!
+  stake: Stake!
+}
+
+type WithdrawalExecutedEvent implements Event @entity {
   id: ID!
   transaction: Transaction!
   timestamp: BigInt!
