@@ -1,7 +1,8 @@
 title: Deploy 1.2.0 contracts
 network: mumbai
 deploy: deploy-and-prepare-upgrade v1.2.0
-verify: verify-deployed v1.2.0
+verify: verify-deployed
+finish-release: propose-admin
 description: |
   Deploy contracts:
   - RewardsDistributor
