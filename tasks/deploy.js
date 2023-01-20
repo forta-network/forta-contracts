@@ -5,29 +5,32 @@ const {
     saveImplementation,
     saveNonUpgradeable,
     getDeployConfig,
-    getDeployOutputwriter,
+    getDeployReleaseWriter,
     getDeployment,
     formatParams,
     getDeployed,
+    getDeploymentOutputWriter,
+    saveToDeployment,
 } = require('../scripts/utils/deploymentFiles');
 const { tryFetchContract, tryFetchProxy, getBlockExplorerDomain, getContractVersion } = require('../scripts/utils/contractHelpers');
 const { camelize } = require('../scripts/utils/stringUtils');
 
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 
-async function deployNonUpgradeable(params, deployment, contract, hre, name, outputWriter) {
+async function deployNonUpgradeable(params, deployment, contract, hre, name, releaseWriter, deploymentWriter) {
     if (!params['constructor-args']) {
         throw new Error('No constructor args, if none set []');
     }
     const constructorArgs = formatParams(deployment, params['constructor-args']);
     console.log('Non upgradeable');
-    contract = await tryFetchContract(hre, name, constructorArgs, outputWriter);
+    contract = await tryFetchContract(hre, name, constructorArgs, releaseWriter);
     console.log('Saving output...');
-    await saveNonUpgradeable(outputWriter, name, constructorArgs, contract.address, await getContractVersion(hre, contract));
+    await saveNonUpgradeable(releaseWriter, name, constructorArgs, contract.address, await getContractVersion(hre, contract));
+    await saveToDeployment(releaseWriter, deploymentWriter, name);
     return contract;
 }
 
-async function deployUpgradeable(params, deployment, contract, hre, name, outputWriter, upgrades) {
+async function deployUpgradeable(params, deployment, contract, hre, name, releaseWriter, deploymentWriter, upgrades) {
     console.log('Upgradeable');
     if (!params.impl['init-args']) {
         throw new Error('No init args, if none set []');
@@ -40,10 +43,12 @@ async function deployUpgradeable(params, deployment, contract, hre, name, output
         params.impl.opts[camelize(key)] = params.impl.opts[key];
     }
     params.impl.opts.constructorArgs = formatParams(deployment, params.impl.opts.constructorArgs);
-    contract = await tryFetchProxy(hre, name, 'uups', initArgs, params.impl.opts, outputWriter);
+    contract = await tryFetchProxy(hre, name, 'uups', initArgs, params.impl.opts, releaseWriter);
     const implAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
     console.log('Saving output...');
-    await saveImplementation(outputWriter, name, params.impl.opts.constructorArgs, initArgs, implAddress, await getContractVersion(hre, contract));
+    await saveImplementation(releaseWriter, name, params.impl.opts.constructorArgs, initArgs, implAddress, await getContractVersion(hre, contract));
+    await saveToDeployment(releaseWriter, deploymentWriter, name);
+
     return contract;
 }
 
@@ -57,8 +62,9 @@ async function main(args, hre) {
 
     const deploymentConfig = getDeployConfig(chainId, args.release);
     const contractNames = Object.keys(deploymentConfig);
-    const outputWriter = getDeployOutputwriter(chainId, args.release);
+    const releaseWriter = getDeployReleaseWriter(chainId, args.release);
     const deployment = getDeployment(chainId);
+    const deploymentWriter = getDeploymentOutputWriter(chainId);
 
     let contract;
 
@@ -67,9 +73,9 @@ async function main(args, hre) {
             console.log('Deploying ', name, '...');
             const params = deploymentConfig[name];
             if (params.impl) {
-                contract = await deployUpgradeable(params, deployment, contract, hre, name, outputWriter, upgrades);
+                contract = await deployUpgradeable(params, deployment, contract, hre, name, releaseWriter, deploymentWriter, upgrades);
             } else {
-                contract = await deployNonUpgradeable(params, deployment, contract, hre, name, outputWriter);
+                contract = await deployNonUpgradeable(params, deployment, contract, hre, name, releaseWriter, deploymentWriter);
             }
         }
     } finally {

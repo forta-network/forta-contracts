@@ -5,32 +5,38 @@ const { getAddress } = require('@ethersproject/address');
 
 const RELEASES_PATH = './releases';
 
-async function saveImplementation(cache, contractName, constructorArgs, initArgs, implAddress, version) {
+async function saveImplementation(writer, contractName, constructorArgs, initArgs, implAddress, version) {
     const key = kebabize(contractName);
-    await cache.set(`${key}.impl.address`, implAddress);
-    await cache.set(`${key}.impl.constructor-args`, constructorArgs ?? []);
-    await cache.set(`${key}.impl.init-args`, initArgs ?? []);
-    await cache.set(`${key}.impl.name`, contractName);
-    // await cache.set(`${key}.impl.verified`, false);
-    await cache.set(`${key}.impl.version`, version);
+    await writer.set(`${key}.impl.address`, implAddress);
+    await writer.set(`${key}.impl.constructor-args`, constructorArgs ?? []);
+    await writer.set(`${key}.impl.init-args`, initArgs ?? []);
+    await writer.set(`${key}.impl.name`, contractName);
+    // await writer.set(`${key}.impl.verified`, false);
+    await writer.set(`${key}.impl.version`, version);
 }
 
-async function saveNonUpgradeable(cache, contractName, constructorArgs, address, version) {
+async function saveNonUpgradeable(writer, contractName, constructorArgs, address, version) {
     const key = kebabize(contractName);
-    await cache.set(`${key}.address`, address);
-    await cache.set(`${key}.constructor-args`, constructorArgs);
-    await cache.set(`${key}.name`, contractName);
-    await cache.set(`${key}.version`, version);
-    // await cache.set(`${key}.verified`, (await cache.get(`${key}.verified`)) ?? false);
+    await writer.set(`${key}.address`, address);
+    await writer.set(`${key}.constructor-args`, constructorArgs);
+    await writer.set(`${key}.name`, contractName);
+    await writer.set(`${key}.version`, version);
+    // await writer.set(`${key}.verified`, (await writer.get(`${key}.verified`)) ?? false);
 }
 
-async function saveProposedImplementation(cache, contractName, constructorArgs, implAddress, version) {
+async function saveProposedImplementation(writer, contractName, constructorArgs, implAddress, version) {
     const key = kebabize(contractName);
-    await cache.set(`${key}.proposedImpl.args`, constructorArgs ?? []);
-    await cache.set(`${key}.proposedImpl.address`, implAddress);
-    await cache.set(`${key}.proposedImpl.name`, contractName);
-    // await cache.set(`${key}.proposedImpl.verified`, (await cache.get(`${key}.proposedImpl.verified`)) ?? false);
-    await cache.set(`${key}.proposedImpl.version`, version);
+    await writer.set(`${key}.proposedImpl.args`, constructorArgs ?? []);
+    await writer.set(`${key}.proposedImpl.address`, implAddress);
+    await writer.set(`${key}.proposedImpl.name`, contractName);
+    // await writer.set(`${key}.proposedImpl.verified`, (await writer.get(`${key}.proposedImpl.verified`)) ?? false);
+    await writer.set(`${key}.proposedImpl.version`, version);
+}
+
+async function saveToDeployment(releaseWriter, deploymentWriter, contractName) {
+    const key = kebabize(contractName);
+    await deploymentWriter.set(`${key}`, await releaseWriter.get(`${key}`));
+    await deploymentWriter.set(`${key}-deploy-tx`, await releaseWriter.get(`${key}-deploy-tx`));
 }
 
 const CHAIN_NAME = {
@@ -82,7 +88,7 @@ function getProposedAdminActions(chainId, releaseVersion) {
     }
 }
 
-function getDeployOutputwriter(chainId, releaseVersion) {
+function getDeployReleaseWriter(chainId, releaseVersion) {
     validateInput(chainId, releaseVersion);
     return new AsyncConf({ cwd: `${RELEASES_PATH}/${releaseVersion}/${CHAIN_NAME[chainId]}/output/`, configName: 'deployed' });
 }
@@ -165,7 +171,7 @@ module.exports = {
     getUpgradesConfig,
     getProposedAdminActions,
     upgradeConfigExists,
-    getDeployOutputwriter,
+    getDeployReleaseWriter,
     getDeploymentOutputWriter,
     getUpgradeOutputwriter,
     getDeployment,
@@ -174,4 +180,5 @@ module.exports = {
     formatParams,
     getMultisigAddress,
     getProxyOrContractAddress,
+    saveToDeployment,
 };
