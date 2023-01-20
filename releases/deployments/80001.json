@@ -128,10 +128,10 @@
 			"version": "0.0.0"
 		}
 	},
-	"forwarder-deploy-tx": "0x9bea5544f223d1fcbc2b2aa03fbcf2916edde6bdffd770d63a7f82fb9b21813b",
+	"forwarder-deploy-tx": "0x2b5d53e0153045842cd18f51c4b1dca7b06ab41b53271cc3b355fabadebc12ab",
 	"forwarder": {
-		"address": "0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
-		"args": [],
+		"address": "0xE055724F37634d34FA174FDa859C30D3991Da843",
+		"constructor-args": [],
 		"name": "Forwarder",
 		"version": "0.0.0"
 	},
@@ -176,18 +176,22 @@
 			"verified": "true"
 		}
 	},
-	"rewards-distributor-deploy-tx": "0x82d9ced095db584f6c3658f8a2f9ce353e433ff5e8f68b3665252822ad8a20f8",
+	"rewards-distributor-deploy-tx": "0xeba23a922845b287ffc6256e0496b1e4e80bf15c6411911cfb87335e8c41b5fd",
 	"rewards-distributor": {
-		"address": "0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9",
+		"address": "0x8b79BeADC00571b9AEf2AB3f1C0C5ba05ec5F1AE",
 		"impl": {
-			"args": [
+			"address": "0xFcb1c777BFEa94a9eC884768d3B3780F175e2eE7",
+			"constructor-args": [
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
 				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
 				"0x2441Ce5eB269505f30F6F434D21E039438aaC342"
 			],
-			"address": "0x4311438A01d7A9D8B9fE3Ba6599481B8081BCbc9",
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"2",
+				"1000"
+			],
 			"name": "RewardsDistributor",
-			"verified": true,
 			"version": "0.1.0"
 		}
 	},
