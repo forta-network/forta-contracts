@@ -1,6 +1,6 @@
 title: Deploy 1.2.0 contracts
 network: mumbai
-deploy: deploy-and-prepare-upgrade v1.2.0
+deploy: deploy-and-prepare-upgrade
 verify: verify-deployed
 finish-release: propose-admin
 description: |
