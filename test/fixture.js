@@ -10,7 +10,8 @@ function prepare(config = {}) {
         this.accounts = await ethers.getSigners();
         this.accounts.getAccount = (name) => this.accounts[name] || (this.accounts[name] = this.accounts.shift());
         ['admin', 'manager', 'minter', 'treasure', 'user1', 'user2', 'user3', 'other'].map((name) => this.accounts.getAccount(name));
-
+        console.log('manager', this.accounts.manager.address);
+        console.log('other', this.accounts.other.address);
         // migrate
         await migrate(
             Object.assign({
@@ -29,7 +30,7 @@ function prepare(config = {}) {
 
         // Set admin as default signer for all contracts
         Object.assign(this, this.contracts);
-
+        console.log(this.roles);
         // setup roles
         await Promise.all(
             [

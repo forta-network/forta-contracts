@@ -19,7 +19,11 @@ describe.only('Agent Registry', function () {
         });
 
         it.only('setting delay is protected', async function () {
+            console.log(this.roles.AGENT_ADMIN)
+            console.log('other', this.accounts.other.address);
             console.log('hasRoles', await this.access.hasRole(this.roles.AGENT_ADMIN, this.accounts.other.address));
+            console.log(this.agents)
+            console.log(this.agents.connect(this.accounts.other))
             await expect(this.agents.connect(this.accounts.other).setFrontRunningDelay('1800')).to.be.revertedWith(
                 `MissingRole("${this.roles.AGENT_ADMIN}", "${this.accounts.other.address}")`
             );
