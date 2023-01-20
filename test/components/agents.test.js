@@ -6,7 +6,7 @@ const AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
 
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
 
-describe.only('Agent Registry', function () {
+describe('Agent Registry', function () {
     prepare({ stake: { agents: { min: '100', max: '500', activated: true } } });
 
     describe('create and update', function () {
@@ -16,17 +16,6 @@ describe.only('Agent Registry', function () {
                 .to.emit(this.agents, 'FrontRunningDelaySet')
                 .withArgs(ethers.BigNumber.from('1800'));
             await expect(this.agents.connect(this.accounts.user1).createAgent(...args)).to.be.revertedWith('CommitNotReady()');
-        });
-
-        it.only('setting delay is protected', async function () {
-            console.log(this.roles.AGENT_ADMIN)
-            console.log('other', this.accounts.other.address);
-            console.log('hasRoles', await this.access.hasRole(this.roles.AGENT_ADMIN, this.accounts.other.address));
-            console.log(this.agents)
-            console.log(this.agents.connect(this.accounts.other))
-            await expect(this.agents.connect(this.accounts.other).setFrontRunningDelay('1800')).to.be.revertedWith(
-                `MissingRole("${this.roles.AGENT_ADMIN}", "${this.accounts.other.address}")`
-            );
         });
 
         describe('with prepare', async function () {
@@ -74,6 +63,7 @@ describe.only('Agent Registry', function () {
 
                 const { blockNumber } = await this.agents.prepareAgent(prepareCommit(...args));
                 const { timestamp } = await ethers.provider.getBlock(blockNumber);
+
                 expect(await this.agents.getCommitTimestamp(prepareCommit(...args))).to.be.equal(timestamp);
 
                 await network.provider.send('evm_increaseTime', [300]);

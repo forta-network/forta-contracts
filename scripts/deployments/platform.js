@@ -81,7 +81,7 @@ async function migrate(config = {}) {
     const deployer = config?.deployer ?? (await contractHelpers.getDefaultDeployer(hre, provider));
     const { name, chainId } = await provider.getNetwork();
     const delay = deployEnv.DELAY[chainId] ?? 0;
-    const saveToFile = config?.saveToFile || false;
+    const saveToFile = config?.saveToFile || true;
     const deployEscrow = config?.deployEscrow;
     const deployScannerVersion = config?.deployScannerVersion;
     const force = config?.force || chainId === 31337;
