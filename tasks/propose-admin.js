@@ -6,11 +6,11 @@ const { fromChainId } = require('defender-base-client');
 const { AdminClient } = require('defender-admin-client');
 const { writeFileSync } = require('fs');
 const { toEIP3770 } = require('../scripts/utils');
-const client = new AdminClient({ apiKey: process.env.DEFENDER_API_KEY, apiSecret: process.env.DEFENDER_API_SECRET });
 
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 
 async function main(args, hre) {
+    const client = new AdminClient({ apiKey: process.env.DEFENDER_API_KEY, apiSecret: process.env.DEFENDER_API_SECRET });
     const { ethers } = hre;
     const chainId = await ethers.provider.getNetwork().then((n) => n.chainId);
     const network = fromChainId(chainId);
