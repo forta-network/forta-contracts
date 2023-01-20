@@ -6,7 +6,7 @@ const AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
 
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
 
-describe('Agent Registry', function () {
+describe.only('Agent Registry', function () {
     prepare({ stake: { agents: { min: '100', max: '500', activated: true } } });
 
     describe('create and update', function () {
@@ -19,6 +19,7 @@ describe('Agent Registry', function () {
         });
 
         it.only('setting delay is protected', async function () {
+            console.log('hasRoles', await this.access.hasRole(this.roles.AGENT_ADMIN, this.accounts.other.address));
             await expect(this.agents.connect(this.accounts.other).setFrontRunningDelay('1800')).to.be.revertedWith(
                 `MissingRole("${this.roles.AGENT_ADMIN}", "${this.accounts.other.address}")`
             );
