@@ -11,8 +11,8 @@
 			],
 			"init-args": [
 				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
-				2,
-				1000
+				"2",
+				"1000"
 			],
 			"name": "RewardsDistributor",
 			"version": "0.1.0"
