@@ -1,4 +1,4 @@
-const appendFileSync = require('fs');
+const { appendFileSync } = require('fs');
 const { execSync } = require('child_process');
 const { task } = require('hardhat/config');
 const {
