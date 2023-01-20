@@ -1,4 +1,5 @@
-const { ethers } = require('hardhat');
+const hre = require('hardhat');
+const { ethers } = hre;
 const { expect } = require('chai');
 const { prepare, deployUpgradeable, performUpgrade, deploy, attach } = require('../fixture');
 const utils = require('../../scripts/utils');
@@ -19,6 +20,7 @@ describe('VestingWallet ', function () {
                 allocation.owner = this.accounts.admin.address;
 
                 this.vesting = await deployUpgradeable(
+                    hre,
                     'VestingWallet',
                     'uups',
                     [this.accounts.other.address, this.accounts.admin.address, allocation.start, allocation.cliff, allocation.duration],
@@ -36,12 +38,12 @@ describe('VestingWallet ', function () {
             });
 
             it('authorized v0 -> v2', async function () {
-                this.rootchainmanager = await deploy('RootChainManagerMock');
-                this.predicate = await this.rootchainmanager.predicate().then((address) => attach('PredicatMock', address));
+                this.rootchainmanager = await deploy(hre, 'RootChainManagerMock');
+                this.predicate = await this.rootchainmanager.predicate().then((address) => attach(hre, 'PredicatMock', address));
                 this.l2escrowfactory = ethers.Wallet.createRandom();
                 this.l2escrowtemplate = ethers.Wallet.createRandom();
 
-                this.vesting = await performUpgrade(this.vesting, 'VestingWalletV2', {
+                this.vesting = await performUpgrade(hre, this.vesting, 'VestingWalletV2', {
                     constructorArgs: [this.rootchainmanager.address, this.token.address, this.l2escrowfactory.address, this.l2escrowtemplate.address],
                     unsafeAllow: 'delegatecall',
                 });
@@ -73,7 +75,9 @@ describe('VestingWallet ', function () {
 
             it('unauthorized', async function () {
                 await this.vesting.transferOwnership(this.accounts.other.address);
-                await expect(performUpgrade(this.vesting, 'VestingWalletExtendedMock', { unsafeAllow: 'delegatecall' })).to.be.revertedWith(`Ownable: caller is not the owner`);
+                await expect(performUpgrade(hre, this.vesting, 'VestingWalletExtendedMock', { unsafeAllow: 'delegatecall' })).to.be.revertedWith(
+                    `Ownable: caller is not the owner`
+                );
             });
         });
     });

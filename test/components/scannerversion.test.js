@@ -2,7 +2,7 @@ const hre = require('hardhat');
 const { ethers, upgrades } = hre;
 const { expect } = require('chai');
 const deployEnv = require('../../scripts/loadEnv');
-const { deploy, tryFetchProxy, tryFetchContract, getDefaultProvider, getDefaultDeployer } = require('../../scripts/utils/contractHelpers');
+const { deploy, tryFetchProxy, tryFetchContract } = require('../../scripts/utils/contractHelpers');
 
 const VERSION_1 = 'QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ';
 const VERSION_2 = 'QmQhadgstSRUv7aYnN25kwRBWtxP1gB9Kowdeim32uf8Td';
@@ -10,13 +10,11 @@ const VERSION_2 = 'QmQhadgstSRUv7aYnN25kwRBWtxP1gB9Kowdeim32uf8Td';
 describe('Scanner Node Software Version', function () {
     beforeEach(async function () {
         // We are not using prepare because this contracts is mostly independent and we get a small speed boost
-        const provider = await getDefaultProvider(hre);
-        const deployer = await getDefaultDeployer(hre, provider, null, await provider.getNetwork());
         this.forwarder = await tryFetchContract(hre, 'Forwarder', []);
         this.accounts = await ethers.getSigners();
         this.accounts.getAccount = (name) => this.accounts[name] || (this.accounts[name] = this.accounts.shift());
         ['admin', 'manager', 'minter', 'treasure', 'user1', 'user2', 'user3', 'other'].map((name) => this.accounts.getAccount(name));
-        this.access = await tryFetchProxy(hre, 'AccessManager', 'uups', [deployer.address], {
+        this.access = await tryFetchProxy(hre, 'AccessManager', 'uups', [this.accounts.admin.address], {
             constructorArgs: [this.forwarder.address],
             unsafeAllow: 'delegatecall',
         });

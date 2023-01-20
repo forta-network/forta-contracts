@@ -1,10 +1,11 @@
-const { ethers } = require('hardhat');
+const hre = require('hardhat');
+const { ethers } = hre;
 const { expect } = require('chai');
 const { prepare, attach, deploy, deployUpgradeable } = require('../fixture');
 
 const min = (...args) => args.slice(1).reduce((x, y) => (x.lt(y) ? x : y), args[0]);
 
-describe.skip('VestingWallet', function () {
+describe('VestingWallet', function () {
     prepare();
 
     beforeEach(async function () {
@@ -26,12 +27,13 @@ describe.skip('VestingWallet', function () {
                 vested: timestamp - this.start < this.cliff ? ethers.constants.Zero : min(this.amount.mul(timestamp.sub(this.start)).div(this.end - this.start), this.amount),
             }));
 
-        this.rootchainmanager = await deploy('RootChainManagerMock');
-        this.predicate = await this.rootchainmanager.predicate().then((address) => attach('PredicatMock', address));
+        this.rootchainmanager = await deploy(hre, 'RootChainManagerMock');
+        this.predicate = await this.rootchainmanager.predicate().then((address) => attach(hre, 'PredicatMock', address));
         this.l2escrowfactory = { address: ethers.constants.AddressZero };
         this.l2escrowtemplate = { address: ethers.constants.AddressZero };
 
         this.vesting = await deployUpgradeable(
+            hre,
             'VestingWalletV2',
             'uups',
             [
@@ -53,6 +55,7 @@ describe.skip('VestingWallet', function () {
     it('rejects zero address for beneficiary', async function () {
         await expect(
             deployUpgradeable(
+                hre,
                 'VestingWalletV2',
                 'uups',
                 [
