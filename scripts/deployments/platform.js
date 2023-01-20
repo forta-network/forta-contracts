@@ -95,7 +95,7 @@ async function migrate(config = {}) {
     if (saveToFile) {
         CACHE = getDeploymentOutputWriter(chainId);
         if (force) {
-            CACHE.clear();
+            CACHE?.clear();
         }
     }
 

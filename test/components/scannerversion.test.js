@@ -1,13 +1,33 @@
-const { ethers, upgrades } = require('hardhat');
+const hre = require('hardhat');
+const { ethers, upgrades } = hre;
 const { expect } = require('chai');
-const { prepare } = require('../fixture');
-const { deploy } = require('../../scripts/utils');
+const deployEnv = require('../../scripts/loadEnv');
+const { deploy, tryFetchProxy, tryFetchContract } = require('../../scripts/utils/contractHelpers');
 
 const VERSION_1 = 'QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ';
 const VERSION_2 = 'QmQhadgstSRUv7aYnN25kwRBWtxP1gB9Kowdeim32uf8Td';
 
 describe('Scanner Node Software Version', function () {
-    prepare();
+    beforeEach(async function () {
+        // We are not using prepare because this contracts is mostly independent and we get a small speed boost
+        this.forwarder = await tryFetchContract(hre, 'Forwarder', []);
+        this.accounts = await ethers.getSigners();
+        this.accounts.getAccount = (name) => this.accounts[name] || (this.accounts[name] = this.accounts.shift());
+        ['admin', 'manager', 'minter', 'treasure', 'user1', 'user2', 'user3', 'other'].map((name) => this.accounts.getAccount(name));
+        this.access = await tryFetchProxy(hre, 'AccessManager', 'uups', [this.accounts.admin.address], {
+            constructorArgs: [this.forwarder.address],
+            unsafeAllow: 'delegatecall',
+        });
+        this.roles = deployEnv.loadRoles();
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address);
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_BETA_VERSION, this.accounts.admin.address);
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.UPGRADER, this.accounts.admin.address);
+        this.scannerNodeVersion = await tryFetchProxy(hre, 'ScannerNodeVersion', 'uups', [this.access.address], {
+            constructorArgs: [this.forwarder.address],
+            unsafeAllow: 'delegatecall',
+        });
+    });
+
     describe('version manager', async function () {
         it('sets version', async function () {
             await expect(this.scannerNodeVersion.connect(this.accounts.admin).setScannerNodeVersion(VERSION_1))
@@ -48,11 +68,11 @@ describe('Scanner Node Software Version', function () {
 
     describe('upgrade', async function () {
         it('upgrades', async function () {
-            const mockRouter = await deploy(await ethers.getContractFactory('MockRouter'));
+            const mockRouter = await deploy(hre, await ethers.getContractFactory('MockRouter'));
             const ScannerVersion_0_1_0 = await ethers.getContractFactory('ScannerNodeVersion_0_1_0');
-            const originalScannerVersion = await upgrades.deployProxy(ScannerVersion_0_1_0, [this.contracts.access.address, mockRouter.address], {
+            const originalScannerVersion = await upgrades.deployProxy(ScannerVersion_0_1_0, [this.access.address, mockRouter.address], {
                 kind: 'uups',
-                constructorArgs: [this.contracts.forwarder.address],
+                constructorArgs: [this.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             });
             await originalScannerVersion.deployed();
@@ -61,7 +81,7 @@ describe('Scanner Node Software Version', function () {
 
             const NewImplementation = await ethers.getContractFactory('ScannerNodeVersion');
             const newScannerVersion = await upgrades.upgradeProxy(originalScannerVersion.address, NewImplementation, {
-                constructorArgs: [this.contracts.forwarder.address],
+                constructorArgs: [this.forwarder.address],
                 unsafeAllow: ['delegatecall'],
             });
             await newScannerVersion.connect(this.accounts.admin).setScannerNodeBetaVersion(VERSION_2);
