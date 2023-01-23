@@ -10,7 +10,6 @@ const {
     formatParams,
     getDeployed,
     getDeploymentOutputWriter,
-    saveToDeployment,
 } = require('../scripts/utils/deploymentFiles');
 const { tryFetchContract, tryFetchProxy, getBlockExplorerDomain, getContractVersion } = require('../scripts/utils/contractHelpers');
 const { camelize } = require('../scripts/utils/stringUtils');
@@ -26,7 +25,7 @@ async function deployNonUpgradeable(params, deployment, contract, hre, name, rel
     contract = await tryFetchContract(hre, name, constructorArgs, releaseWriter);
     console.log('Saving output...');
     await saveNonUpgradeable(releaseWriter, name, constructorArgs, contract.address, await getContractVersion(hre, contract));
-    await saveToDeployment(releaseWriter, deploymentWriter, name);
+    // await saveToDeployment(releaseWriter, deploymentWriter, name);
     return contract;
 }
 
@@ -47,7 +46,7 @@ async function deployUpgradeable(params, deployment, contract, hre, name, releas
     const implAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
     console.log('Saving output...');
     await saveImplementation(releaseWriter, name, params.impl.opts.constructorArgs, initArgs, implAddress, await getContractVersion(hre, contract));
-    await saveToDeployment(releaseWriter, deploymentWriter, name);
+    // await saveToDeployment(releaseWriter, deploymentWriter, name);
 
     return contract;
 }
