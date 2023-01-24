@@ -168,7 +168,7 @@ jobs:
                   name: contract-artifacts
 
             - name: Deploy contracts
-              run: eval yarn hardhat --network ${{ needs.prepare.outputs.release_network }} ${{ needs.prepare.outputs.release_deploy_cmd }} ${{ needs.prepare.outputs.release_version }}
+              run: eval yarn hardhat --network ${{ needs.prepare.outputs.release_network }} ${{ needs.prepare.outputs.release_deploy_cmd }}
               env:
                   INFURA_PROJECT_ID: '${{ secrets.INFURA_PROJECT_ID }}'
                   MUMBAI_MNEMONIC: '${{ secrets.MUMBAI_MNEMONIC }}'
