@@ -1,0 +1,21 @@
+{
+	"forta-staking-deploy-tx": "0x16df4158699535b75add141c3706b7e068fc66bb6dd809dae6df84f635e91149",
+	"forta-staking": {
+		"address": "0x64d5192F03bD98dB1De2AA8B4abAC5419eaC32CE",
+		"impl": {
+			"address": "0xa817715A731011ca865b5229D6E107B446da52a6",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"0x61447385B019187daa48e91c55c02AF1F1f3F863",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+				"60",
+				"0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24"
+			],
+			"name": "FortaStaking_0_1_1",
+			"version": "0.1.1"
+		}
+	}
+}

@@ -155,6 +155,11 @@
       "address": "0x8b79BeADC00571b9AEf2AB3f1C0C5ba05ec5F1AE",
       "txHash": "0xeba23a922845b287ffc6256e0496b1e4e80bf15c6411911cfb87335e8c41b5fd",
       "kind": "uups"
+    },
+    {
+      "address": "0x64d5192F03bD98dB1De2AA8B4abAC5419eaC32CE",
+      "txHash": "0x16df4158699535b75add141c3706b7e068fc66bb6dd809dae6df84f635e91149",
+      "kind": "uups"
     }
   ],
   "impls": {
@@ -11825,153 +11830,6 @@
         }
       }
     },
-    "64f808435520a9dda7838b213676d2141dda3fe8cdcb5b495ab2c92c275c31fd": {
-      "address": "0xEb5F2f5487B0c9D73C34Ef1e5f3307eDc5E11153",
-      "txHash": "0xf435ef2e04588373c311c3acea9c96584fe35a2685f02691abee32d304629363",
-      "layout": {
-        "storage": [
-          {
-            "label": "_initialized",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_uint8",
-            "contract": "Initializable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
-            "retypedFrom": "bool"
-          },
-          {
-            "label": "_initializing",
-            "offset": 1,
-            "slot": "0",
-            "type": "t_bool",
-            "contract": "Initializable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "ContextUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
-          },
-          {
-            "label": "_accessControl",
-            "offset": 0,
-            "slot": "51",
-            "type": "t_contract(IAccessControl)14517",
-            "contract": "AccessManagedUpgradeable",
-            "src": "contracts/components/utils/AccessManaged.sol:16"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "52",
-            "type": "t_array(t_uint256)49_storage",
-            "contract": "AccessManagedUpgradeable",
-            "src": "contracts/components/utils/AccessManaged.sol:62"
-          },
-          {
-            "label": "_router",
-            "offset": 0,
-            "slot": "101",
-            "type": "t_contract(IRouter)24066",
-            "contract": "RoutedUpgradeable",
-            "src": "contracts/components/utils/Routed.sol:11"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "102",
-            "type": "t_array(t_uint256)49_storage",
-            "contract": "RoutedUpgradeable",
-            "src": "contracts/components/utils/Routed.sol:46"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "151",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "ERC1967UpgradeUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:211"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "201",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "UUPSUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:107"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "251",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "BaseComponentUpgradeable",
-            "src": "contracts/components/BaseComponentUpgradeable.sol:58"
-          },
-          {
-            "label": "_fortaStaking",
-            "offset": 0,
-            "slot": "301",
-            "type": "t_contract(FortaStaking)27583",
-            "contract": "FortaStakingParameters",
-            "src": "contracts/components/staking/FortaStakingParameters.sol:9"
-          },
-          {
-            "label": "_stakeSubjectHandlers",
-            "offset": 0,
-            "slot": "302",
-            "type": "t_mapping(t_uint8,t_contract(IStakeSubject)28128)",
-            "contract": "FortaStakingParameters",
-            "src": "contracts/components/staking/FortaStakingParameters.sol:11"
-          }
-        ],
-        "types": {
-          "t_array(t_uint256)49_storage": {
-            "label": "uint256[49]",
-            "numberOfBytes": "1568"
-          },
-          "t_array(t_uint256)50_storage": {
-            "label": "uint256[50]",
-            "numberOfBytes": "1600"
-          },
-          "t_bool": {
-            "label": "bool",
-            "numberOfBytes": "1"
-          },
-          "t_contract(FortaStaking)27583": {
-            "label": "contract FortaStaking",
-            "numberOfBytes": "20"
-          },
-          "t_contract(IAccessControl)14517": {
-            "label": "contract IAccessControl",
-            "numberOfBytes": "20"
-          },
-          "t_contract(IRouter)24066": {
-            "label": "contract IRouter",
-            "numberOfBytes": "20"
-          },
-          "t_contract(IStakeSubject)28128": {
-            "label": "contract IStakeSubject",
-            "numberOfBytes": "20"
-          },
-          "t_mapping(t_uint8,t_contract(IStakeSubject)28128)": {
-            "label": "mapping(uint8 => contract IStakeSubject)",
-            "numberOfBytes": "32"
-          },
-          "t_uint256": {
-            "label": "uint256",
-            "numberOfBytes": "32"
-          },
-          "t_uint8": {
-            "label": "uint8",
-            "numberOfBytes": "1"
-          }
-        }
-      }
-    },
     "8e32bacdd92a69843256605b9d0b554fc301ffa30234db38508c325d5f7273a8": {
       "address": "0xeAdE3dba984b34357571213bA63C4aAc52178248",
       "txHash": "0xfd57c2126d39d8642e825c3c55365868a9180d86c2529aab826b7b567fb7b967",
@@ -17373,6 +17231,390 @@
           "t_uint256": {
             "label": "uint256",
             "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "9c02ce1ef9e59ca8c0bae5ba6777155d15387e5f1986b84b2d534ded3f4d1660": {
+      "address": "0xa817715A731011ca865b5229D6E107B446da52a6",
+      "txHash": "0xa54a5768a0f4437ea59013dc5f0bd4f1bc587b8c27a361edcd1b702c691d03cb",
+      "layout": {
+        "solcVersion": "0.8.9",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:2518",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:2523"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:2628"
+          },
+          {
+            "label": "_accessControl",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_contract(IAccessControl)114881",
+            "contract": "AccessManagedUpgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4099"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "AccessManagedUpgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4145"
+          },
+          {
+            "label": "_router",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_contract(IRouter)115378",
+            "contract": "RoutedUpgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4215"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "RoutedUpgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4250"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC1967UpgradeUpgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:3741"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "201",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "UUPSUpgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:3844"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "251",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "BaseComponentUpgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4355"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "301",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC165Upgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:2666"
+          },
+          {
+            "label": "_balances",
+            "offset": 0,
+            "slot": "351",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "contract": "ERC1155Upgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:2682"
+          },
+          {
+            "label": "_operatorApprovals",
+            "offset": 0,
+            "slot": "352",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_bool))",
+            "contract": "ERC1155Upgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:2685"
+          },
+          {
+            "label": "_uri",
+            "offset": 0,
+            "slot": "353",
+            "type": "t_string_storage",
+            "contract": "ERC1155Upgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:2688"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "354",
+            "type": "t_array(t_uint256)47_storage",
+            "contract": "ERC1155Upgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:3185"
+          },
+          {
+            "label": "_totalSupply",
+            "offset": 0,
+            "slot": "401",
+            "type": "t_mapping(t_uint256,t_uint256)",
+            "contract": "ERC1155SupplyUpgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:3205"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "402",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ERC1155SupplyUpgradeable",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:3258"
+          },
+          {
+            "label": "stakedToken",
+            "offset": 0,
+            "slot": "451",
+            "type": "t_contract(IERC20)108434",
+            "contract": "FortaStaking_0_1_1",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4468"
+          },
+          {
+            "label": "_activeStake",
+            "offset": 0,
+            "slot": "452",
+            "type": "t_struct(Balances)115767_storage",
+            "contract": "FortaStaking_0_1_1",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4471"
+          },
+          {
+            "label": "_inactiveStake",
+            "offset": 0,
+            "slot": "454",
+            "type": "t_struct(Balances)115767_storage",
+            "contract": "FortaStaking_0_1_1",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4473"
+          },
+          {
+            "label": "_lockingDelay",
+            "offset": 0,
+            "slot": "456",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_struct(Timestamp)111567_storage))",
+            "contract": "FortaStaking_0_1_1",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4476"
+          },
+          {
+            "label": "_rewards",
+            "offset": 0,
+            "slot": "457",
+            "type": "t_struct(Balances)115767_storage",
+            "contract": "FortaStaking_0_1_1",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4479"
+          },
+          {
+            "label": "_released",
+            "offset": 0,
+            "slot": "459",
+            "type": "t_mapping(t_uint256,t_struct(SignedBalances)115881_storage)",
+            "contract": "FortaStaking_0_1_1",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4481"
+          },
+          {
+            "label": "_frozen",
+            "offset": 0,
+            "slot": "460",
+            "type": "t_mapping(t_uint256,t_bool)",
+            "contract": "FortaStaking_0_1_1",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4484"
+          },
+          {
+            "label": "_withdrawalDelay",
+            "offset": 0,
+            "slot": "461",
+            "type": "t_uint64",
+            "contract": "FortaStaking_0_1_1",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4487"
+          },
+          {
+            "label": "_treasury",
+            "offset": 8,
+            "slot": "461",
+            "type": "t_address",
+            "contract": "FortaStaking_0_1_1",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4490"
+          },
+          {
+            "label": "_stakingParameters",
+            "offset": 0,
+            "slot": "462",
+            "type": "t_contract(IStakeController)114090",
+            "contract": "FortaStaking_0_1_1",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:4492"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "463",
+            "type": "t_array(t_uint256)40_storage",
+            "contract": "FortaStaking_0_1_1",
+            "src": "contracts/components/_old/staking/FortaStaking_0_1_1.sol:5134"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)40_storage": {
+            "label": "uint256[40]",
+            "numberOfBytes": "1280"
+          },
+          "t_array(t_uint256)47_storage": {
+            "label": "uint256[47]",
+            "numberOfBytes": "1504"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IAccessControl)114881": {
+            "label": "contract IAccessControl",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IERC20)108434": {
+            "label": "contract IERC20",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IRouter)115378": {
+            "label": "contract IRouter",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IStakeController)114090": {
+            "label": "contract IStakeController",
+            "numberOfBytes": "20"
+          },
+          "t_int256": {
+            "label": "int256",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_int256)": {
+            "label": "mapping(address => int256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_bool))": {
+            "label": "mapping(address => mapping(address => bool))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Timestamp)111567_storage)": {
+            "label": "mapping(address => struct Timers.Timestamp)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_bool)": {
+            "label": "mapping(uint256 => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_struct(Timestamp)111567_storage))": {
+            "label": "mapping(uint256 => mapping(address => struct Timers.Timestamp))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(uint256 => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(SignedBalances)115881_storage)": {
+            "label": "mapping(uint256 => struct Distributions.SignedBalances)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Balances)115767_storage": {
+            "label": "struct Distributions.Balances",
+            "members": [
+              {
+                "label": "_balances",
+                "type": "t_mapping(t_uint256,t_uint256)",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_totalSupply",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_struct(SignedBalances)115881_storage": {
+            "label": "struct Distributions.SignedBalances",
+            "members": [
+              {
+                "label": "_balances",
+                "type": "t_mapping(t_address,t_int256)",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_totalSupply",
+                "type": "t_int256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_struct(Timestamp)111567_storage": {
+            "label": "struct Timers.Timestamp",
+            "members": [
+              {
+                "label": "_deadline",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
           },
           "t_uint8": {
             "label": "uint8",
