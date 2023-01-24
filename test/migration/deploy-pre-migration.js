@@ -140,7 +140,6 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}.1] stake allocator: ${contracts.stakeAllocator.address}`);
 
-
         contracts.agents = await tryFetchProxy(
             hre,
             'AgentRegistry',

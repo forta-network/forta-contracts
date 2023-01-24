@@ -58,7 +58,7 @@ async function deployUpgradeable(params, deployment, contract, hre, name, releas
     console.log('Saving output...');
     await saveImplementation(releaseWriter, name, params.impl.opts.constructorArgs, initArgs, implAddress, await getContractVersion(hre, contract));
     if (promoteDeployed) {
-        console.log('saving')
+        console.log('saving');
         await saveToDeployment(releaseWriter, deploymentWriter, name);
     }
 
@@ -97,7 +97,7 @@ async function main(args, hre) {
     } finally {
         console.log('Results:');
         const deployed = getDeployed(chainId, args.release);
-        console.log('Deployed', deployed)
+        console.log('Deployed', deployed);
         if (deployed && Object.entries(deployed).length > 0) {
             const list = Object.entries(deployed).map(([key, info]) => {
                 let result = `

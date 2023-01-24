@@ -129,7 +129,6 @@ function getDeploymentOutputWriter(chainId) {
 }
 
 function getProxyOrContractAddress(deployment, key) {
-    key = key.replace()
     if (!deployment[key]) throw new Error(`${key} does not exist in deployment`);
     return getAddress(deployment[key].address);
 }
