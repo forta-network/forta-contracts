@@ -62,17 +62,36 @@
 			"verified": "true"
 		}
 	},
-    "router": {
-        "address": "0x61447385B019187daa48e91c55c02AF1F1f3F863",
-        "impl": {
-            "address": "0x4b3857dd81424c2bcdd338c5b2d2d9a287642c64"
-        }
-    },
+	"router": {
+		"address": "0x61447385B019187daa48e91c55c02AF1F1f3F863",
+		"impl": {
+			"address": "0x4b3857dd81424c2bcdd338c5b2d2d9a287642c64"
+		}
+	},
 	"forwarder-deploy-tx": "0x2b5d53e0153045842cd18f51c4b1dca7b06ab41b53271cc3b355fabadebc12ab",
 	"forwarder": {
 		"address": "0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
 		"constructor-args": [],
 		"name": "Forwarder",
 		"version": "0.0.0"
-	}
+	},
+	"forta-staking": {
+		"address": "0x163D2F65803765886459079b253E3d90cdfA9B51",
+		"impl": {
+			"address": "0x53da2531c8175F28e850F821bEeeB3c6733e857C",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"0x61447385B019187daa48e91c55c02AF1F1f3F863",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+				"60",
+				"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+			],
+			"name": "FortaStaking_0_1_1",
+			"version": "0.1.1"
+		}
+	},
+	"forta-staking-deploy-tx": "0xc7aaa8698500b97eb202d347eea684e5fb5bc0c8663d8061077b9ddbf2f027cb"
 }
