@@ -1,9 +1,8 @@
 const hre = require('hardhat');
 const { ethers } = hre;
 const deployEnv = require('../../scripts/loadEnv');
-const { durationToSeconds } = require('../../scripts/utils');
-const { getDefaultDeployer } = require('../../scripts/utils/contractHelpers');
-const { getRelayerAddress, getMultisigAddress } = require('../../scripts/utils/deploymentFiles');
+const { durationToSeconds, networkName } = require('../../scripts/utils');
+const { getDefaultDeployer, getDefaultProvider } = require('../../scripts/utils/contractHelpers');
 
 async function main() {
     const release = '1.1.0';
@@ -13,7 +12,8 @@ async function main() {
     console.log('Deploy and prepare upgrade');
     console.log('Checking for deploy config...');
     const config = {};
-    const deployer = await getDefaultDeployer(hre, ethers.provider, null, network, true);
+    const provider = await getDefaultProvider(hre);
+    const deployer = await getDefaultDeployer(hre, provider, networkName(chainId), true);
 
     config.FortaStaking_0_1_1 = {
         impl: {

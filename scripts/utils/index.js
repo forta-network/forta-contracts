@@ -61,9 +61,13 @@ const assertNotUsingHardhatKeys = (chainId, deployer) => {
 };
 
 function toEIP3770(chainId, address) {
-    const network = chainsMini.find(c => c.chainId === chainId);
+    const network = chainsMini.find((c) => c.chainId === chainId);
     if (!network) throw new Error(`Network ${chainId} not found`);
     return `${network.shortName}:${address}`;
+}
+
+function networkName(chainId) {
+    return chainsMini.find((c) => c.chainId === chainId)?.name;
 }
 
 /*********************************************************************************************************************
@@ -118,4 +122,5 @@ module.exports = {
     getLogsForBlockInterval,
     assertNotUsingHardhatKeys,
     toEIP3770,
+    networkName,
 };
