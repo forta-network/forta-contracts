@@ -5,6 +5,7 @@ const contractHelpers = require('./utils/contractHelpers');
 const stringUtils = require('./utils/stringUtils');
 const fs = require('fs');
 const { getDeployment, getDeploymentOutputWriter } = require('../scripts/utils/deploymentFiles');
+
 const ROOT_CHAIN_MANAGER = {
     1: '0xA0c68C638235ee32657e8f720a23ceC1bFc77C77',
     5: '0xBbD7cBFA79faee899Eaf900F13C9065bF03B1A74',
@@ -113,7 +114,7 @@ const loadRoles = () => {
 async function loadEnv(config = {}) {
     const provider = config?.provider ?? config?.deployer?.provider ?? (await contractHelpers.getDefaultProvider(hre));
     const network = await provider.getNetwork();
-    const deployer = config?.deployer ?? (await contractHelpers.getDefaultDeployer(hre, provider, null, network));
+    const deployer = config?.deployer ?? (await contractHelpers.getDefaultDeployer(hre, provider, utils.networkName(chainId)));
 
     const { name, chainId } = network;
 
