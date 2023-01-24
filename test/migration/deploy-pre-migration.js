@@ -84,7 +84,7 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}] staking: ${contracts.staking.address}`);
 
-        contracts.subjectGateway = await utils.tryFetchProxy(CACHE, 'subject-gateway', 'StakeSubjectGateway', 'uups', [contracts.access.address, contracts.staking.address], {
+        contracts.subjectGateway = await utils.tryFetchProxy(CACHE, 'stake-subject-gateway', 'StakeSubjectGateway', 'uups', [contracts.access.address, contracts.staking.address], {
             constructorArgs: [contracts.forwarder.address],
             unsafeAllow: ['delegatecall'],
         });

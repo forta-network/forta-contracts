@@ -1,126 +1,15 @@
-const { ethers, upgrades, network, defender } = require('hardhat');
-const { NonceManager } = require('@ethersproject/experimental');
 const DEBUG = require('debug')('forta:utils');
 const EthDater = require('block-by-date-ethers');
 const process = require('process');
-const { kebabize } = require('./stringUtils');
+// const contractHelpers = require('./contractHelpers');
+require('./arrays');
+const chainsMini = require('./chainsMini.json');
 
 // override process.env with dotenv
 Object.assign(process.env, require('dotenv').config().parsed);
 
-const DEFAULT_FEE_DATA = {
-    maxFeePerGas: ethers.utils.parseUnits('400', 'gwei'),
-    maxPriorityFeePerGas: ethers.utils.parseUnits('20', 'gwei'),
-};
-
-const getDefaultProvider = async (baseProvider = ethers.provider, feeData = {}) => {
-    const provider = new ethers.providers.FallbackProvider([baseProvider], 1);
-    provider.getFeeData = () => Promise.resolve(Object.assign(DEFAULT_FEE_DATA, feeData));
-    return provider;
-};
-
-const getDefaultDeployer = async (provider, baseDeployer) => {
-    baseDeployer =
-        baseDeployer ?? ethers.Wallet.fromMnemonic(process.env[`${network.name.toUpperCase()}_MNEMONIC`] || 'test test test test test test test test test test test junk');
-    const deployer = new NonceManager(baseDeployer).connect(provider);
-    await deployer.getTransactionCount().then((nonce) => deployer.setTransactionCount(nonce));
-    deployer.address = await deployer.getAddress();
-    return deployer;
-};
-
-/*********************************************************************************************************************
- *                                                Blockchain helpers                                                 *
- *********************************************************************************************************************/
-
-function getFactory(name) {
-    return ethers.getContractFactory(name);
-}
-
-function attach(factory, address) {
-    return (typeof factory === 'string' ? getFactory(factory) : Promise.resolve(factory)).then((contract) => contract.attach(address));
-}
-
-function deploy(factory, params = []) {
-    return (typeof factory === 'string' ? getFactory(factory) : Promise.resolve(factory)).then((contract) => contract.deploy(...params)).then((f) => f.deployed());
-}
-
-function deployUpgradeable(factory, kind, params = [], opts = {}) {
-    return (typeof factory === 'string' ? getFactory(factory) : Promise.resolve(factory))
-        .then((contract) => upgrades.deployProxy(contract, params, { kind, ...opts }))
-        .then((f) => f.deployed());
-}
-
-async function performUpgrade(proxy, contractName, opts = {}) {
-    let contract = await getFactory(contractName);
-    const afterUpgradeContract = await upgrades.upgradeProxy(proxy.address, contract, opts);
-    return afterUpgradeContract;
-}
-
-async function proposeUpgrade(contractName, opts = {}, cache) {
-    const proxyAddress = await cache.get(`${kebabize(contractName)}.address`);
-    const proposal = await defender.proposeUpgrade(proxyAddress, contractName, opts);
-    return proposal.url;
-}
-
-async function tryFetchContract(contractName, args = [], cache) {
-    const contract = await ethers.getContractFactory(contractName);
-    const key = kebabize(contractName);
-    const deployed = await resumeOrDeploy(cache, key, () => contract.deploy(...args)).then((address) => contract.attach(address));
-    return deployed;
-}
-
-async function tryFetchProxy(contractName, kind = 'uups', args = [], opts = {}, cache) {
-    let contract = await ethers.getContractFactory(contractName);
-    const key = kebabize(contractName);
-    const deployed = await resumeOrDeploy(cache, key, () => upgrades.deployProxy(contract, args, { kind, ...opts })).then((address) => contract.attach(address));
-    return deployed;
-}
-
-async function getContractVersion(contract, deployParams = {}) {
-    if (contract) {
-        try {
-            return contract['version'] ? await contract.version() : '0.0.0';
-        } catch (e) {
-            // Version not introduced in deployed contract yet
-            return '0.0.0';
-        }
-    } else if (deployParams.address && deployParams.provider) {
-        try {
-            const abi = `[{"inputs": [],"name": "version","outputs": [{"internalType": "string","name": "","type": "string"}],"stateMutability": "view","type": "function"}]`;
-            const versioned = new ethers.Contract(deployParams.address, JSON.parse(abi), deployParams.provider);
-            return await versioned.version();
-        } catch (e) {
-            console.log(e);
-            // Version not introduced in source code yet
-            return '0.0.0';
-        }
-    }
-    throw new Error(`Cannot get contract version for ${contract} or ${deployParams}. Provide contract object or deployParams`);
-}
-
-async function resumeOrDeploy(cache, key, deploy) {
-    let txHash = await cache?.get(`${key}-pending`);
-    let address = await cache?.get(`${key}.address`);
-    DEBUG('resumeOrDeploy', key, txHash, address);
-
-    if (!txHash && !address) {
-        const contract = await deploy();
-        txHash = contract.deployTransaction.hash;
-        await cache?.set(`${key}-pending`, txHash);
-        await contract.deployed();
-        address = contract.address;
-    } else if (!address) {
-        address = await ethers.provider
-            .getTransaction(txHash)
-            .then((tx) => tx.wait())
-            .then((receipt) => receipt.contractAddress);
-    }
-    await cache?.set(`${key}.address`, address);
-    return address;
-}
-
 async function getEventsFromContractCreation(cache, key, eventName, contract, filterParams = []) {
-    let txHash = await cache.get(`${key}-pending`);
+    let txHash = await cache.get(`${key}-deploy-tx`);
     if (!txHash) {
         throw new Error(`${key} deployment transaction not saved`);
     }
@@ -171,39 +60,11 @@ const assertNotUsingHardhatKeys = (chainId, deployer) => {
     }
 };
 
-const getBlockExplorerDomain = (hre) => {
-    const network = hre.network.name;
-    switch (network) {
-        case 'mainnet':
-            return 'etherscan.io';
-        case 'goerli':
-            return `${network}.etherscan.io`;
-        case 'polygon':
-        case 'matic':
-            return 'polygonscan.com';
-        case 'mumbai':
-            return 'mumbai.polygonscan.com';
-    }
-};
-
-/*********************************************************************************************************************
- *                                                        Arrays                                                     *
- *********************************************************************************************************************/
-Array.range = function (start, stop = undefined, step = 1) {
-    if (!stop) {
-        stop = start;
-        start = 0;
-    }
-    return start < stop
-        ? Array(Math.ceil((stop - start) / step))
-              .fill()
-              .map((_, i) => start + i * step)
-        : [];
-};
-
-Array.prototype.chunk = function (size) {
-    return Array.range(Math.ceil(this.length / size)).map((i) => this.slice(i * size, i * size + size));
-};
+function toEIP3770(chainId, address) {
+    const network = chainsMini.find(c => c.chainId === chainId);
+    if (!network) throw new Error(`Network ${chainId} not found`);
+    return `${network.shortName}:${address}`;
+}
 
 /*********************************************************************************************************************
  *                                                        Time                                                       *
@@ -235,23 +96,26 @@ function durationToSeconds(duration) {
 }
 
 module.exports = {
-    getDefaultProvider,
-    getDefaultDeployer,
-    getFactory,
-    attach,
-    deploy,
-    deployUpgradeable,
-    performUpgrade,
-    proposeUpgrade,
-    tryFetchContract,
-    tryFetchProxy,
+    /*
+    getDefaultProvider: (baseProvider, feeData) => contractHelpers.getDefaultProvider(hre, baseProvider, feeData),
+    getDefaultDeployer: (provider, baseDeployer, network) => contractHelpers.getDefaultDeployer(hre, provider, baseDeployer, network),
+    getFactory: (name) => contractHelpers.getFactory(hre, name),
+    attach: (factory, address) => contractHelpers.attach(hre, factory, address),
+    deploy: (factory, params) => contractHelpers.deploy(hre, factory, params),
+    deployUpgradeable: (factory, kind, params, opts) => contractHelpers.deployUpgradeable(hre, factory, kind, params, opts),
+    performUpgrade: (proxy, contractName, opts) => contractHelpers.performUpgrade(hre, proxy, contractName, opts),
+    proposeUpgrade: (contractName, opts, cache) => contractHelpers.proposeUpgrade(hre, contractName, opts, cache),
+    tryFetchContract: (contractName, args, cache) => contractHelpers.tryFetchContract(hre, contractName, args, cache),
+    tryFetchProxy: (contractName, kind, args, opts, cache) => contractHelpers.tryFetchProxy(hre, contractName, kind, args, opts, cache),
+    getContractVersion: (contract, deployParams) => contractHelpers.getContractVersion(hre, contract, deployParams),
+    getBlockExplorerDomain: () => contractHelpers.getBlockExplorerDomain(hre),
+    */
     dateToTimestamp,
     durationToSeconds,
-    getContractVersion,
     getEventsFromTx,
     getEventsFromContractCreation,
     getEventsForTimeInterval,
     getLogsForBlockInterval,
     assertNotUsingHardhatKeys,
-    getBlockExplorerDomain,
+    toEIP3770,
 };

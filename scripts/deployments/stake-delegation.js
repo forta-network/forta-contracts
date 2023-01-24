@@ -106,7 +106,7 @@ async function migrate(config = {}) {
         'uups',
         [deployment.access.address, ...deployEnv.FEE_PARAMS(chainId)],
         {
-            constructorArgs: [deployment.forwarder.address, deployment.token.address, deployment['subject-gateway'].address],
+            constructorArgs: [deployment.forwarder.address, deployment.token.address, deployment['stake-subject-gateway'].address],
             unsafeAllow: ['delegatecall'],
         }
     );
@@ -114,7 +114,7 @@ async function migrate(config = {}) {
     DEBUG(`[${Object.keys(contracts).length}.1] rewardsDistributor ${contracts.rewardsDistributor.address}`);
 
     contracts.stakeAllocator = await utils.tryFetchProxy(CACHE, 'staking-allocator', 'StakeAllocator', 'uups', [deployment.access.address], {
-        constructorArgs: [deployment.forwarder.address, deployment['subject-gateway'].address, contracts.rewardsDistributor.address],
+        constructorArgs: [deployment.forwarder.address, deployment['stake-subject-gateway'].address, contracts.rewardsDistributor.address],
         unsafeAllow: ['delegatecall'],
     });
 
@@ -127,7 +127,7 @@ async function migrate(config = {}) {
         'scanner-pools',
         'ScannerPoolRegistry',
         'uups',
-        [deployment.access.address, 'Forta Scanner Pools', 'FScannerPools', deployment['subject-gateway'].address, deployEnv.SCANNER_REGISTRATION_DELAY(chainId)],
+        [deployment.access.address, 'Forta Scanner Pools', 'FScannerPools', deployment['stake-subject-gateway'].address, deployEnv.SCANNER_REGISTRATION_DELAY(chainId)],
         {
             constructorArgs: [deployment.forwarder.address, contracts.stakeAllocator.address],
             unsafeAllow: 'delegatecall',

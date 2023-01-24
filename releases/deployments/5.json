@@ -1,13 +1,13 @@
 {
-	"ens-registry-pending": "0x408a700dd95c50c3b76f373047a9901185824dce4e99e3831f41a4cbbf0b4f1b",
+	"ens-registry-deploy-tx": "0x408a700dd95c50c3b76f373047a9901185824dce4e99e3831f41a4cbbf0b4f1b",
 	"ens-registry": {
 		"address": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
 	},
-	"ens-resolver-pending": "0x9e8c45585cfad40ed09f789401aa59a27e25a5fa306b554507446094d5549025",
+	"ens-resolver-deploy-tx": "0x9e8c45585cfad40ed09f789401aa59a27e25a5fa306b554507446094d5549025",
 	"ens-resolver": {
 		"address": "0x4B1488B7a6B320d2D721406204aBc3eeAa9AD329"
 	},
-	"forta-pending": "0x1edf4692955ca96d72e3d20e70744ceb06490e59f617a89f2c9e52e150773443",
+	"forta-deploy-tx": "0x1edf4692955ca96d72e3d20e70744ceb06490e59f617a89f2c9e52e150773443",
 	"forta": {
 		"address": "0x848F1fF1fa76Dc882Ca2F3521265ba3F27e42158",
 		"impl": {
@@ -19,7 +19,7 @@
 	"contracts": [
 		"forta"
 	],
-	"vesting-0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24-pending": "0x72667a8b7ad2e0adbb65b2801cc5bf2faad12ce27baf7bd5109ab42bc606d0d9",
+	"vesting-0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24-deploy-tx": "0x72667a8b7ad2e0adbb65b2801cc5bf2faad12ce27baf7bd5109ab42bc606d0d9",
 	"vesting-0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24": {
 		"address": "0x60a5FDe7D9C4b519CDDb4be1C34BCDaEC1633028",
 		"impl": {
@@ -36,13 +36,13 @@
 			"address": "0x830bF7E7Db45651f7913264D9d9487C9a92B4CeE"
 		}
 	},
-	"batch-relayer-pending": "0x7e65c6c4ca6df0da128533af9db832c90db8ebea519034d89b69574cc91ad40b",
+	"batch-relayer-deploy-tx": "0x7e65c6c4ca6df0da128533af9db832c90db8ebea519034d89b69574cc91ad40b",
 	"batch-relayer": {
 		"address": "0x8fdc4B92904627aC8B67cF89995F3eEE24B90504",
 		"args": [],
 		"version": "0.0.0"
 	},
-	"vesting-0xf65eebb411211a2c0348f71d1b89646819159035-pending": "0xc385c066b8a2976556722ce756b647f866bef19a14d40ccb0fdaf6692964d47f",
+	"vesting-0xf65eebb411211a2c0348f71d1b89646819159035-deploy-tx": "0xc385c066b8a2976556722ce756b647f866bef19a14d40ccb0fdaf6692964d47f",
 	"vesting-0xf65eebb411211a2c0348f71d1b89646819159035": {
 		"address": "0x3A616aB08b975aB652ec8Ab27912aB4Df774147F",
 		"impl": {
@@ -59,7 +59,7 @@
 			"address": "0x995826B5B49965D47807A7C1e345a2B4a442D83F"
 		}
 	},
-	"vesting-0x7A8b8bFC9Cf860b4EC8Ef725567048185ef6ED93-pending": "0xc56bbb68ca544cec8ae8d3eea46ec24696f96d5423b017b51f673bc04eeac02b",
+	"vesting-0x7A8b8bFC9Cf860b4EC8Ef725567048185ef6ED93-deploy-tx": "0xc56bbb68ca544cec8ae8d3eea46ec24696f96d5423b017b51f673bc04eeac02b",
 	"vesting-0x7A8b8bFC9Cf860b4EC8Ef725567048185ef6ED93": {
 		"address": "0x9BB5df28EcEd09cF8eec1d480074ee4431afCa1E",
 		"impl": {
@@ -76,7 +76,7 @@
 			"address": "0x179228A96ee923545cd9D775CdC8E64cc2B5341f"
 		}
 	},
-	"vesting-0x218AE10DA9695b7E38381f22685603Be605Ad371-pending": "0x05f636f367e6546ee7c9901cea105a635e25ce794b21ebd39f73a37f1b7f2fbe",
+	"vesting-0x218AE10DA9695b7E38381f22685603Be605Ad371-deploy-tx": "0x05f636f367e6546ee7c9901cea105a635e25ce794b21ebd39f73a37f1b7f2fbe",
 	"vesting-0x218AE10DA9695b7E38381f22685603Be605Ad371": {
 		"address": "0x7Ec874154930297C09E9AD11aE122fE6E5Af2d67",
 		"impl": {
@@ -93,7 +93,7 @@
 			"address": "0xa3ff68846a494a31B58D5d0C923EE94311D162fe"
 		}
 	},
-	"vesting-0xf0F5D6F95e97A207434510799E346180B81356D1-pending": "0x75e3cca55638a5f08dc2a5b8db0b9c0a655cf8445a98057ba0be10941036575d",
+	"vesting-0xf0F5D6F95e97A207434510799E346180B81356D1-deploy-tx": "0x75e3cca55638a5f08dc2a5b8db0b9c0a655cf8445a98057ba0be10941036575d",
 	"vesting-0xf0F5D6F95e97A207434510799E346180B81356D1": {
 		"address": "0x0e841c73093ce7343de864B24536F59E1D55194c",
 		"impl": {

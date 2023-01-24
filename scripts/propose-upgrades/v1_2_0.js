@@ -40,7 +40,7 @@ async function main() {
             {
                 unsafeAllow: ['delegatecall'],
                 multisig: MULTISIG_ADDRESS,
-                constructorArgs: [deployment.forwarder.address, deployment['subject-gateway'].address, deployment['staking-rewards'].address],
+                constructorArgs: [deployment.forwarder.address, deployment['stake-subject-gateway'].address, deployment['staking-rewards'].address],
                 unsafeSkipStorageCheck: true,
             },
             CACHE,
@@ -59,7 +59,7 @@ async function main() {
                 constructorArgs: [deployment.forwarder.address],
             },
             CACHE,
-            'subject-gateway'
+            'stake-subject-gateway'
         )
     );
     console.log('StakeSubjectGateway proposed!');

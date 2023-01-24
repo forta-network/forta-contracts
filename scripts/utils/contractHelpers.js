@@ -1,0 +1,151 @@
+const { NonceManager } = require('@ethersproject/experimental');
+const DEBUG = require('debug')('forta:utils');
+const process = require('process');
+const { kebabize } = require('./stringUtils');
+
+// override process.env with dotenv
+Object.assign(process.env, require('dotenv').config().parsed);
+
+const getDefaultProvider = async (hre, baseProvider, feeData = {}) => {
+    if (!baseProvider) {
+        baseProvider = hre.ethers.provider;
+    }
+    const DEFAULT_FEE_DATA = {
+        maxFeePerGas: hre.ethers.utils.parseUnits('400', 'gwei'),
+        maxPriorityFeePerGas: hre.ethers.utils.parseUnits('20', 'gwei'),
+    };
+    const provider = new hre.ethers.providers.FallbackProvider([baseProvider], 1);
+    provider.getFeeData = () => Promise.resolve(Object.assign(DEFAULT_FEE_DATA, feeData));
+    return provider;
+};
+
+const getDefaultDeployer = async (hre, provider, baseDeployer, network) => {
+    baseDeployer =
+        baseDeployer ?? hre.ethers.Wallet.fromMnemonic(process.env[`${network.name.toUpperCase()}_MNEMONIC`] || 'test test test test test test test test test test test junk');
+    const deployer = new NonceManager(baseDeployer).connect(provider);
+    await deployer.getTransactionCount().then((nonce) => deployer.setTransactionCount(nonce));
+    deployer.address = await deployer.getAddress();
+    return deployer;
+};
+
+/*********************************************************************************************************************
+ *                                                Blockchain helpers                                                 *
+ *********************************************************************************************************************/
+
+function getFactory(hre, name) {
+    return hre.ethers.getContractFactory(name);
+}
+
+function attach(hre, factory, address) {
+    return (typeof factory === 'string' ? getFactory(hre, factory) : Promise.resolve(factory)).then((contract) => contract.attach(address));
+}
+
+function deploy(hre, factory, params = []) {
+    return (typeof factory === 'string' ? getFactory(hre, factory) : Promise.resolve(factory)).then((contract) => contract.deploy(...params)).then((f) => f.deployed());
+}
+
+function deployUpgradeable(hre, factory, kind, params = [], opts = {}) {
+    return (typeof factory === 'string' ? getFactory(hre, factory) : Promise.resolve(factory))
+        .then((contract) => hre.upgrades.deployProxy(contract, params, { kind, ...opts }))
+        .then((f) => f.deployed());
+}
+
+async function performUpgrade(hre, proxy, contractName, opts = {}) {
+    let contract = await getFactory(hre, contractName);
+    const afterUpgradeContract = await hre.upgrades.upgradeProxy(proxy.address, contract, opts);
+    return afterUpgradeContract;
+}
+
+async function proposeUpgrade(hre, contractName, opts = {}, cache) {
+    const proxyAddress = await cache.get(`${kebabize(contractName)}.address`);
+    const proposal = await hre.defender.proposeUpgrade(proxyAddress, contractName, opts);
+    return proposal.url;
+}
+
+async function tryFetchContract(hre, contractName, args = [], cache) {
+    const contract = await hre.ethers.getContractFactory(contractName);
+    const key = kebabize(contractName);
+    const deployed = await resumeOrDeploy(hre, cache, key, () => contract.deploy(...args)).then((address) => contract.attach(address));
+    return deployed;
+}
+
+async function tryFetchProxy(hre, contractName, kind = 'uups', args = [], opts = {}, cache) {
+    let contract = await hre.ethers.getContractFactory(contractName);
+    const key = kebabize(contractName);
+    const deployed = await resumeOrDeploy(hre, cache, key, () => hre.upgrades.deployProxy(contract, args, { kind, ...opts })).then((address) => contract.attach(address));
+    return deployed;
+}
+
+async function getContractVersion(hre, contract, deployParams = {}) {
+    if (contract) {
+        try {
+            return contract['version'] ? await contract.version() : '0.0.0';
+        } catch (e) {
+            // Version not introduced in deployed contract yet
+            return '0.0.0';
+        }
+    } else if (deployParams.address && deployParams.provider) {
+        try {
+            const abi = `[{"inputs": [],"name": "version","outputs": [{"internalType": "string","name": "","type": "string"}],"stateMutability": "view","type": "function"}]`;
+            const versioned = new hre.ethers.Contract(deployParams.address, JSON.parse(abi), deployParams.provider);
+            return await versioned.version();
+        } catch (e) {
+            console.log(e);
+            // Version not introduced in source code yet
+            return '0.0.0';
+        }
+    }
+    throw new Error(`Cannot get contract version for ${contract} or ${deployParams}. Provide contract object or deployParams`);
+}
+
+async function resumeOrDeploy(hre, cache, key, deploy) {
+    let txHash = await cache?.get(`${key}-deploy-tx`);
+    let address = await cache?.get(`${key}.address`);
+    DEBUG('resumeOrDeploy', key, txHash, address);
+
+    if (!txHash && !address) {
+        const contract = await deploy();
+        txHash = contract.deployTransaction.hash;
+        DEBUG('Saving pending...', txHash);
+        await cache?.set(`${key}-deploy-tx`, txHash);
+        await contract.deployed();
+        address = contract.address;
+    } else if (!address) {
+        address = await hre.ethers.provider
+            .getTransaction(txHash)
+            .then((tx) => tx.wait())
+            .then((receipt) => receipt.contractAddress);
+    }
+    await cache?.set(`${key}.address`, address);
+    return address;
+}
+
+const getBlockExplorerDomain = (hre) => {
+    const network = hre.network.name;
+    switch (network) {
+        case 'mainnet':
+            return 'etherscan.io';
+        case 'goerli':
+            return `${network}.etherscan.io`;
+        case 'polygon':
+        case 'matic':
+            return 'polygonscan.com';
+        case 'mumbai':
+            return 'mumbai.polygonscan.com';
+    }
+};
+
+module.exports = {
+    getDefaultProvider,
+    getDefaultDeployer,
+    getFactory,
+    attach,
+    deploy,
+    deployUpgradeable,
+    performUpgrade,
+    proposeUpgrade,
+    tryFetchContract,
+    tryFetchProxy,
+    getContractVersion,
+    getBlockExplorerDomain,
+};

@@ -1,4 +1,5 @@
-const { ethers, upgrades, network } = require('hardhat');
+const hre = require('hardhat');
+const { ethers, upgrades, network } = hre;
 const { expect } = require('chai');
 const { prepare, deploy } = require('../fixture');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
@@ -10,7 +11,7 @@ let originalScanners, agents, mockRouter;
 describe('Upgrades testing', function () {
     prepare();
     before(async () => {
-        mockRouter = await deploy(await ethers.getContractFactory('MockRouter'));
+        mockRouter = await deploy(hre, await ethers.getContractFactory('MockRouter'));
     });
 
     describe('Agent Registry', async function () {
@@ -355,16 +356,11 @@ describe('Upgrades testing', function () {
                 unsafeAllow: ['delegatecall'],
             });
             let i = 0;
-            console.log(++i);
             await this.staking.configureStakeHelpers(this.subjectGateway.address, this.stakeAllocator.address);
-            console.log(++i);
             await this.subjectGateway.setStakeSubject(2, this.scannerPools.address);
-            console.log(++i);
             await this.scannerPools.registerScannerPool(1);
             await this.access.grantRole(this.roles.STAKING_CONTRACT, this.staking.address);
-            console.log(++i);
             await this.staking.deposit(2, 1, '100');
-            console.log(++i);
             await this.staking.initiateWithdrawal(2, 1, '50');
 
             expect(await this.staking.subjectGateway()).to.be.equal(this.subjectGateway.address);

@@ -1,10 +1,55 @@
+const { task } = require('hardhat/config');
 const { execSync } = require('child_process');
 const { appendFileSync } = require('fs');
-const { saveImplementation, saveNonUpgradeable, getDeployConfig, getReleaseOutputWriter, getDeployment, setAddressesInParams } = require('../scripts/utils/deploymentFiles');
-const { tryFetchContract, tryFetchProxy, getBlockExplorerDomain, getContractVersion } = require('../scripts/utils');
+const {
+    saveImplementation,
+    saveNonUpgradeable,
+    getDeployConfig,
+    getDeployReleaseWriter,
+    getDeployment,
+    formatParams,
+    getDeployed,
+    getDeploymentOutputWriter,
+} = require('../scripts/utils/deploymentFiles');
+const { tryFetchContract, tryFetchProxy, getBlockExplorerDomain, getContractVersion } = require('../scripts/utils/contractHelpers');
 const { camelize } = require('../scripts/utils/stringUtils');
 
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+
+async function deployNonUpgradeable(params, deployment, contract, hre, name, releaseWriter, deploymentWriter) {
+    if (!params['constructor-args']) {
+        throw new Error('No constructor args, if none set []');
+    }
+    const constructorArgs = formatParams(deployment, params['constructor-args']);
+    console.log('Non upgradeable');
+    contract = await tryFetchContract(hre, name, constructorArgs, releaseWriter);
+    console.log('Saving output...');
+    await saveNonUpgradeable(releaseWriter, name, constructorArgs, contract.address, await getContractVersion(hre, contract));
+    // await saveToDeployment(releaseWriter, deploymentWriter, name);
+    return contract;
+}
+
+async function deployUpgradeable(params, deployment, contract, hre, name, releaseWriter, deploymentWriter, upgrades) {
+    console.log('Upgradeable');
+    if (!params.impl['init-args']) {
+        throw new Error('No init args, if none set []');
+    }
+    if (!params.impl?.opts['constructor-args']) {
+        throw new Error('No constructor args, if none set []');
+    }
+    const initArgs = formatParams(deployment, params.impl['init-args']);
+    for (const key of Object.keys(params.impl.opts)) {
+        params.impl.opts[camelize(key)] = params.impl.opts[key];
+    }
+    params.impl.opts.constructorArgs = formatParams(deployment, params.impl.opts.constructorArgs);
+    contract = await tryFetchProxy(hre, name, 'uups', initArgs, params.impl.opts, releaseWriter);
+    const implAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
+    console.log('Saving output...');
+    await saveImplementation(releaseWriter, name, params.impl.opts.constructorArgs, initArgs, implAddress, await getContractVersion(hre, contract));
+    // await saveToDeployment(releaseWriter, deploymentWriter, name);
+
+    return contract;
+}
 
 async function main(args, hre) {
     const { ethers, upgrades } = hre;
@@ -14,63 +59,51 @@ async function main(args, hre) {
 
     console.log(`Deploying contracts from commit ${commit} on chain ${chainId}`);
 
-    const deploymentConfig = getDeployConfig(chainId, args.version);
+    const deploymentConfig = getDeployConfig(chainId, args.release);
     const contractNames = Object.keys(deploymentConfig);
-    const outputWriter = getReleaseOutputWriter(chainId, args.version);
+    const releaseWriter = getDeployReleaseWriter(chainId, args.release);
     const deployment = getDeployment(chainId);
+    const deploymentWriter = getDeploymentOutputWriter(chainId);
 
-    let contract, implAddress;
-    let resultList = '## Contract deployed';
-    for (const name of contractNames) {
-        console.log('Deploying ', name, '...');
-        const params = name[deploymentConfig];
-        try {
-            if (params.proxy) {
-                console.log('Upgradeable');
-                if (!params.proxy['init-args']) {
-                    throw new Error('No init args, if none set []');
-                }
-                if (!params.proxy['constructor-args']) {
-                    throw new Error('No constructor args, if none set []');
-                }
-                const initArgs = setAddressesInParams(deployment, params.proxy['init-args']);
-                for (const key of Object.keys(params.proxy.opts)) {
-                    params.proxy.opts[camelize(key)] = params.proxy.opts[key];
-                }
-                params.proxy.opts.constructorArgs = setAddressesInParams(deployment, params.proxy.opts.constructorArgs);
-                contract = await tryFetchProxy(outputWriter, name, 'uups', initArgs, params.proxy.opts);
-                implAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
-                console.log('Saving output...');
-                await saveImplementation(outputWriter, name, params.proxy.opts.constructorArgs, initArgs, implAddress, await getContractVersion(contract));
+    let contract;
+
+    try {
+        for (const name of contractNames) {
+            console.log('Deploying ', name, '...');
+            const params = deploymentConfig[name];
+            if (params.impl) {
+                contract = await deployUpgradeable(params, deployment, contract, hre, name, releaseWriter, deploymentWriter, upgrades);
             } else {
-                if (!params['constructor-args']) {
-                    throw new Error('No constructor args, if none set []');
-                }
-                const constructorArgs = setAddressesInParams(deployment, params.proxy.opts.constructorArgs);
-                console.log('Non upgradeable');
-                contract = await tryFetchContract(outputWriter, name, constructorArgs);
-                console.log('Saving output...');
-                await saveNonUpgradeable(outputWriter, name, constructorArgs, contract.address, await getContractVersion(contract));
-            }
-        } finally {
-            if (summaryPath) {
-                resultList += `
-                - ${name} at [\`${contract.address}\`](https://${getBlockExplorerDomain(hre)}/address/${contract.address})`;
-                if (implAddress) {
-                    resultList += ` with implementation at [\`${implAddress}\`](https://${getBlockExplorerDomain(hre)}/address/${implAddress})`;
-                }
+                contract = await deployNonUpgradeable(params, deployment, contract, hre, name, releaseWriter, deploymentWriter);
             }
         }
+    } finally {
+        console.log('Results:');
+        const deployed = getDeployed(chainId, args.release);
+        if (deployed && Object.entries(deployed).length > 0) {
+            const list = Object.entries(deployed).map(([key, info]) => {
+                let result = `
+                    - ${key} at [\`${info.address}\`](https://${getBlockExplorerDomain(hre)}/address/${info.address})`;
+                if (info.impl) {
+                    result += ` with implementation at [\`${info.impl.address}\`](https://${getBlockExplorerDomain(hre)}/address/${info.impl.address})`;
+                }
+                return result;
+            });
+            const resultText = `## Contract deployed\n\n${list.join('\n')}\n`;
+            if (summaryPath) {
+                appendFileSync(summaryPath, resultText);
+            }
+            console.log(resultText);
+        }
     }
-    appendFileSync(summaryPath, resultList);
 }
 
 task('deploy')
-    .addPositionalParam('version', 'Version number (used to load /<version>/<network>/config/deploy.json)')
+    .addPositionalParam('release', 'Release number (used to load /<release>/<network>/config/deploy.json)')
     .setDescription(
         `Deploys the contracts as described in the correspondent deploy.json config.
         Works both with non-upgradeable and uups upgradeable contracts.
-        Results are tracked in /<version>/<network>/deployed/deployed.json
+        Results are tracked in /<release>/<network>/deployed/deployed.json
         `
     )
     .setAction(main);

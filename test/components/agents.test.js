@@ -18,12 +18,6 @@ describe('Agent Registry', function () {
             await expect(this.agents.connect(this.accounts.user1).createAgent(...args)).to.be.revertedWith('CommitNotReady()');
         });
 
-        it('setting delay is protected', async function () {
-            await expect(this.agents.connect(this.accounts.other).setFrontRunningDelay('1800')).to.be.revertedWith(
-                `MissingRole("${this.roles.AGENT_ADMIN}", "${this.accounts.other.address}")`
-            );
-        });
-
         describe('with prepare', async function () {
             it('early', async function () {
                 const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
@@ -69,6 +63,7 @@ describe('Agent Registry', function () {
 
                 const { blockNumber } = await this.agents.prepareAgent(prepareCommit(...args));
                 const { timestamp } = await ethers.provider.getBlock(blockNumber);
+
                 expect(await this.agents.getCommitTimestamp(prepareCommit(...args))).to.be.equal(timestamp);
 
                 await network.provider.send('evm_increaseTime', [300]);

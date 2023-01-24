@@ -1,7 +1,7 @@
 {
     "137": {
         "0xc29af06142138f893e3f1c1d11aa98c3313b8c1f": {
-            "scanners": {
+            "scanner-registry": {
                 "0x8da226fd2f242128040a6b50f1dbbaefcbeae1e9": {
                     "id": "0x8da226fd2f242128040a6b50f1dbbaefcbeae1e9",
                     "chainId": "137",

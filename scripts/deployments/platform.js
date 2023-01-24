@@ -1,13 +1,12 @@
 /* eslint-disable no-unexpected-multiline */
-const { ethers, upgrades } = require('hardhat');
+const hre = require('hardhat');
+const { ethers, upgrades } = hre;
 const DEBUG = require('debug')('forta:migration');
-const utils = require('../utils');
+const contractHelpers = require('../utils/contractHelpers');
 const { getDeploymentOutputWriter } = require('../utils/deploymentFiles');
 const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
 const SCANNER_POOL_SUBJECT = 2;
-
-const semver = require('semver');
 const deployEnv = require('../loadEnv');
 
 upgrades.silenceWarnings();
@@ -78,8 +77,8 @@ const reverseRegister = async (contract, name) => {
  *                                                Migration workflow                                                 *
  *********************************************************************************************************************/
 async function migrate(config = {}) {
-    const provider = config?.provider ?? config?.deployer?.provider ?? (await utils.getDefaultProvider());
-    const deployer = config?.deployer ?? (await utils.getDefaultDeployer(provider));
+    const provider = config?.provider ?? config?.deployer?.provider ?? (await contractHelpers.getDefaultProvider(hre));
+    const deployer = config?.deployer ?? (await contractHelpers.getDefaultDeployer(hre, provider));
     const { name, chainId } = await provider.getNetwork();
     const delay = deployEnv.DELAY[chainId] ?? 0;
     const saveToFile = config?.saveToFile || true;
@@ -91,12 +90,12 @@ async function migrate(config = {}) {
     DEBUG(`Deployer: ${deployer.address}`);
     DEBUG(`Balance:  ${await provider.getBalance(deployer.address).then(ethers.utils.formatEther)}${ethers.constants.EtherSymbol}`);
     DEBUG('----------------------------------------------------');
-    utils.assertNotUsingHardhatKeys(chainId, deployer);
+
     let CACHE;
     if (saveToFile) {
         CACHE = getDeploymentOutputWriter(chainId);
         if (force) {
-            CACHE.clear();
+            CACHE?.clear();
         }
     }
 
@@ -105,7 +104,7 @@ async function migrate(config = {}) {
     const contracts = {};
     const slashParams = {};
 
-    contracts.forwarder = await utils.tryFetchContract('Forwarder', [], CACHE);
+    contracts.forwarder = await contractHelpers.tryFetchContract(hre, 'Forwarder', [], CACHE);
 
     DEBUG(`[${Object.keys(contracts).length}] forwarder: ${contracts.forwarder.address}`);
 
@@ -118,7 +117,8 @@ async function migrate(config = {}) {
     config.childChainManagerProxy ? fortaConstructorArgs.push(config.childChainManagerProxy) : null;
     DEBUG(`Deploying token: ${config.childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta'}`);
 
-    contracts.token = await utils.tryFetchProxy(
+    contracts.token = await contractHelpers.tryFetchProxy(
+        hre,
         config.childChainManagerProxy ? 'FortaBridgedPolygon' : 'Forta',
         'uups',
         [deployer.address],
@@ -131,7 +131,8 @@ async function migrate(config = {}) {
     DEBUG(`[${Object.keys(contracts).length}] forta: ${contracts.token.address}`);
 
     if (config.childChain || chainId === 31337) {
-        contracts.access = await utils.tryFetchProxy(
+        contracts.access = await contractHelpers.tryFetchProxy(
+            hre,
             'AccessManager',
             'uups',
             [deployer.address],
@@ -144,7 +145,8 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}] access: ${contracts.access.address}`);
 
-        contracts.staking = await utils.tryFetchProxy(
+        contracts.staking = await contractHelpers.tryFetchProxy(
+            hre,
             'FortaStaking',
             'uups',
             [contracts.access.address, contracts.token.address, delay, deployEnv.TREASURY(chainId, deployer)],
@@ -157,7 +159,8 @@ async function migrate(config = {}) {
         await contracts.staking.setReentrancyGuard();
         DEBUG(`[${Object.keys(contracts).length}] staking: ${contracts.staking.address}`);
 
-        contracts.subjectGateway = await utils.tryFetchProxy(
+        contracts.subjectGateway = await contractHelpers.tryFetchProxy(
+            hre,
             'StakeSubjectGateway',
             'uups',
             [contracts.access.address, contracts.staking.address],
@@ -170,7 +173,8 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}.1] stake subject gateway: ${contracts.subjectGateway.address}`);
 
-        contracts.rewardsDistributor = await utils.tryFetchProxy(
+        contracts.rewardsDistributor = await contractHelpers.tryFetchProxy(
+            hre,
             'RewardsDistributor',
             'uups',
             [contracts.access.address, ...deployEnv.FEE_PARAMS(chainId)],
@@ -183,7 +187,8 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}.1] rewardsDistributor ${contracts.rewardsDistributor.address}`);
 
-        contracts.stakeAllocator = await utils.tryFetchProxy(
+        contracts.stakeAllocator = await contractHelpers.tryFetchProxy(
+            hre,
             'StakeAllocator',
             'uups',
             [contracts.access.address],
@@ -201,11 +206,12 @@ async function migrate(config = {}) {
         await contracts.staking.configureStakeHelpers(contracts.subjectGateway.address, contracts.stakeAllocator.address);
         DEBUG(`[${Object.keys(contracts).length}.2] configured Staking`);
         if (deployEscrow) {
-            contracts.escrowFactory = await utils.tryFetchContract('StakingEscrowFactory', [contracts.forwarder.address, contracts.staking.address], CACHE);
+            contracts.escrowFactory = await contractHelpers.tryFetchContract(hre, 'StakingEscrowFactory', [contracts.forwarder.address, contracts.staking.address], CACHE);
             DEBUG(`[${Object.keys(contracts).length}.3] escrow factory: ${contracts.escrowFactory.address}`);
         }
 
-        contracts.agents = await utils.tryFetchProxy(
+        contracts.agents = await contractHelpers.tryFetchProxy(
+            hre,
             'AgentRegistry',
             'uups',
             [contracts.access.address, 'Forta Agents', 'FAgents'],
@@ -225,7 +231,8 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}.1] staking for agents configured`);
 
-        contracts.scanners = await utils.tryFetchProxy(
+        contracts.scanners = await contractHelpers.tryFetchProxy(
+            hre,
             'ScannerRegistry',
             'uups',
             [contracts.access.address, 'Forta Scanners', 'FScanners'],
@@ -244,7 +251,8 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}] Deploying ScannerNodeVersion...`);
         if (deployScannerVersion) {
-            contracts.scannerNodeVersion = await utils.tryFetchProxy(
+            contracts.scannerNodeVersion = await contractHelpers.tryFetchProxy(
+                hre,
                 'ScannerNodeVersion',
                 'uups',
                 [contracts.access.address],
@@ -270,7 +278,8 @@ async function migrate(config = {}) {
         penalties[reasons.MISCONDUCT_SLASH] = { mode: penaltyModes.CURRENT_STAKE, percentSlashed: '90' };
         const reasonIds = Object.keys(reasons).map((reason) => reasons[reason]);
 
-        contracts.slashing = await utils.tryFetchProxy(
+        contracts.slashing = await contractHelpers.tryFetchProxy(
+            hre,
             'SlashingController',
             'uups',
             [
@@ -295,7 +304,8 @@ async function migrate(config = {}) {
 
         DEBUG(`Deploying ScannerPool registry...`);
 
-        contracts.scannerPools = await utils.tryFetchProxy(
+        contracts.scannerPools = await contractHelpers.tryFetchProxy(
+            hre,
             'ScannerPoolRegistry',
             'uups',
             [contracts.access.address, 'Forta Scanner Pools', 'FScannerPools', contracts.subjectGateway.address, deployEnv.SCANNER_REGISTRATION_DELAY(chainId)],
@@ -313,7 +323,8 @@ async function migrate(config = {}) {
         await contracts.scanners.configureMigration(deployEnv.MIGRATION_DURATION(chainId) + (await ethers.provider.getBlock('latest')).timestamp, contracts.scannerPools.address);
 
         DEBUG(`Deploying Dispatch...`);
-        contracts.dispatch = await utils.tryFetchProxy(
+        contracts.dispatch = await contractHelpers.tryFetchProxy(
+            hre,
             'Dispatch',
             'uups',
             [contracts.access.address, contracts.agents.address, contracts.scanners.address, contracts.scannerPools.address],
@@ -422,7 +433,7 @@ async function migrate(config = {}) {
                 reverseRegister(contracts.dispatch, 'dispatch.forta.eth'),
                 reverseRegister(contracts.staking, 'staking.forta.eth'),
                 reverseRegister(contracts.slashing, 'slashing.forta.eth'),
-                reverseRegister(contracts.subjectGateway, 'subject-gateway.forta.eth'),
+                reverseRegister(contracts.subjectGateway, 'stake-subject-gateway.forta.eth'),
                 reverseRegister(contracts.agents, 'agents.registries.forta.eth'),
                 reverseRegister(contracts.scanners, 'scanners.registries.forta.eth'),
                 reverseRegister(contracts.scannerPools, 'scanner-pools.registries.forta.eth'),

@@ -1,7 +1,7 @@
 {
-	"old-forwarder-pending": "0x8d1761f06e6b42d672e03e821064eeb8282cf7346571a91044c3f592522f7de1",
+	"old-forwarder-deploy-tx": "0x8d1761f06e6b42d672e03e821064eeb8282cf7346571a91044c3f592522f7de1",
 	"old-forwarder": "0x4d8F93bD622cEcE936D49b09b57d0E6A1c54e6B5",
-	"access-pending": "0xf414ef0c520750dafd67514389e21bbf8887e737730f831ddcf2ad55ce9ff3f7",
+	"access-deploy-tx": "0xf414ef0c520750dafd67514389e21bbf8887e737730f831ddcf2ad55ce9ff3f7",
 	"access": {
 		"address": "0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
 		"impl": {
@@ -14,8 +14,8 @@
 		},
 		"verified": "true"
 	},
-	"agents-pending": "0x39dd322c91e6e4953370d0e2a2932d309dc091bc584d38c5fa4ce424835ce527",
-	"agents": {
+	"agent-registry-deploy-tx": "0x39dd322c91e6e4953370d0e2a2932d309dc091bc584d38c5fa4ce424835ce527",
+	"agent-registry": {
 		"address": "0x61447385B019187daa48e91c55c02AF1F1f3F863",
 		"impl": {
 			"args": [
@@ -27,8 +27,8 @@
 		},
 		"verified": "true"
 	},
-	"scanners-pending": "0xd4c140e97976ced53ee692f5728bf33dcafff3d19d73e582a6cefb2963117fd8",
-	"scanners": {
+	"scanner-registry-deploy-tx": "0xd4c140e97976ced53ee692f5728bf33dcafff3d19d73e582a6cefb2963117fd8",
+	"scanner-registry": {
 		"address": "0xbF2920129f83d75DeC95D97A879942cCe3DcD387",
 		"impl": {
 			"args": [
@@ -40,7 +40,7 @@
 		},
 		"verified": "true"
 	},
-	"dispatch-pending": "0x3027e3ec8742f39566dc38698dcfd01153a6d1a50ecde10f7b24071bf471b917",
+	"dispatch-deploy-tx": "0x3027e3ec8742f39566dc38698dcfd01153a6d1a50ecde10f7b24071bf471b917",
 	"dispatch": {
 		"address": "0xd46832F3f8EA8bDEFe5316696c0364F01b31a573",
 		"impl": {
@@ -53,13 +53,13 @@
 		},
 		"verified": "true"
 	},
-	"ens-registry-pending": "0xd90f8c866e998e234e7495ad64d4ca6972641a7a438101b46f62dee6c46702a9",
+	"ens-registry-deploy-tx": "0xd90f8c866e998e234e7495ad64d4ca6972641a7a438101b46f62dee6c46702a9",
 	"ens-registry": {
 		"address": "0xa30c3951f85941bfe474620dA25DEb90283C99D7",
 		"args": [],
 		"version": "0.0.0"
 	},
-	"ens-resolver-pending": "0x2bda1cea38a4d01ad766d92904e807bc065e3fbc0112eba295012df4faa90c3a",
+	"ens-resolver-deploy-tx": "0x2bda1cea38a4d01ad766d92904e807bc065e3fbc0112eba295012df4faa90c3a",
 	"ens-resolver": {
 		"address": "0x08f42fcc52a9C2F391bF507C4E8688D0b53e1bd7",
 		"args": [
@@ -68,7 +68,7 @@
 		],
 		"version": "0.0.0"
 	},
-	"ens-reverse-pending": "0x62dc824afff2fc51540d304201f9d2dd2ba8102a7c40c9a3aacfe5696a0202e2",
+	"ens-reverse-deploy-tx": "0x62dc824afff2fc51540d304201f9d2dd2ba8102a7c40c9a3aacfe5696a0202e2",
 	"ens-reverse": {
 		"address": "0x634C83F3213CcfC895A4e6A2c137b2B572fa64ad",
 		"args": [
@@ -77,7 +77,7 @@
 		],
 		"version": "0.0.0"
 	},
-	"forta-pending": "0xd183cf62ab34079450ca0547be4e1cdc2e8f2963232921baadef87a0b0e5490d",
+	"forta-deploy-tx": "0xd183cf62ab34079450ca0547be4e1cdc2e8f2963232921baadef87a0b0e5490d",
 	"forta": {
 		"address": "0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1",
 		"impl": {
@@ -89,8 +89,8 @@
 			"version": "0.1.1"
 		}
 	},
-	"staking-pending": "0xaffd91a84b98c03fb0805b70827fa7e8f799fa00b8b26704955482f14feb38d4",
-	"staking": {
+	"forta-staking-deploy-tx": "0xaffd91a84b98c03fb0805b70827fa7e8f799fa00b8b26704955482f14feb38d4",
+	"forta-staking": {
 		"address": "0xd2863157539b1D11F39ce23fC4834B62082F6874",
 		"impl": {
 			"args": [
@@ -102,8 +102,8 @@
 		},
 		"verified": "true"
 	},
-	"subject-gateway-pending": "0x057da57163e941b7e143c3746fda0d285a065aa03a40083935ff0a37a0fc4df7",
-	"subject-gateway": {
+	"stake-subject-gateway-deploy-tx": "0x057da57163e941b7e143c3746fda0d285a065aa03a40083935ff0a37a0fc4df7",
+	"stake-subject-gateway": {
 		"address": "0x587969Add789c13F64Bcc34Ff253BD9BFB78f38a",
 		"impl": {
 			"args": [
@@ -115,7 +115,7 @@
 		},
 		"verified": "true"
 	},
-	"scanner-node-version-pending": "0x25e95ae21b91ed837b587e4f4ba418fd2151293162e41ac738cc7e3fa4e3138d",
+	"scanner-node-version-deploy-tx": "0x25e95ae21b91ed837b587e4f4ba418fd2151293162e41ac738cc7e3fa4e3138d",
 	"scanner-node-version": {
 		"address": "0x4720c872425876B6f4b4E9130CDef667aDE553b2",
 		"impl": {
@@ -128,15 +128,15 @@
 		},
 		"verified": "true"
 	},
-	"forwarder-pending": "0x4ee1d1e2dca409cb16114c79496ca3dfd7f78cfb284d4b181f90cbb2e31556ef",
+	"forwarder-deploy-tx": "0x4ee1d1e2dca409cb16114c79496ca3dfd7f78cfb284d4b181f90cbb2e31556ef",
 	"forwarder": {
 		"address": "0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
 		"args": [],
         "name": "Forwarder",
 		"version": "0.0.0"
 	},
-	"escrow-factory-pending": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
-	"escrow-factory": {
+	"staking-escrow-factory-deploy-tx": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
+	"staking-escrow-factory": {
 		"address": "0x867a3A4c431474E749fEA3106C61Cf58d4d2B046",
 		"args": [
 			"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
@@ -145,8 +145,8 @@
         "name": "StakingEscrowFactory",
 		"version": "0.0.0"
 	},
-	"escrow-template-pending": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
-	"escrow-template": {
+	"staking-escrow-template-deploy-tx": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
+	"staking-escrow-template": {
 		"address": "0x0d3DAC6368Da5bce50aFE3E61fFc450C80B2F23D",
 		"args": [
 			"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
@@ -156,15 +156,15 @@
         "name": "StakingEscrow",
 		"version": "0.0.0"
 	},
-	"batch-relayer-pending": "0xe03451eff846689b448a658f64396a6a8511a27bdbb6c66c29f614850cb1f512",
+	"batch-relayer-deploy-tx": "0xe03451eff846689b448a658f64396a6a8511a27bdbb6c66c29f614850cb1f512",
 	"batch-relayer": {
 		"address": "0x0A6f54C598e914aD25Be1d8B7ccD4355C776bCaF",
 		"args": [],
         "name": "BatchRelayer",
 		"version": "0.0.0"
 	},
-	"slashing-pending": "0x763c1a408fda52894293a0ffe8a6d97ad4f2118120d34e8ad5edd321199f2912",
-	"slashing": {
+	"slashing-controller-deploy-tx": "0x763c1a408fda52894293a0ffe8a6d97ad4f2118120d34e8ad5edd321199f2912",
+	"slashing-controller": {
 		"address": "0x6927C25ff30ed86F86A863d987590A1d77509bDb",
 		"impl": {
 			"args": [

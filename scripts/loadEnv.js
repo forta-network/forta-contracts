@@ -1,6 +1,9 @@
 const hre = require('hardhat');
 const { ethers } = hre;
 const utils = require('./utils');
+const contractHelpers = require('./utils/contractHelpers');
+const stringUtils = require('./utils/stringUtils');
+const AsyncConf = require('./utils/asyncConf');
 const fs = require('fs');
 
 const ROOT_CHAIN_MANAGER = {
@@ -108,15 +111,15 @@ const loadRoles = () => {
 };
 
 async function loadEnv(config = {}) {
-    const provider = config?.provider ?? config?.deployer?.provider ?? (await utils.getDefaultProvider());
-    const deployer = config?.deployer ?? (await utils.getDefaultDeployer(provider));
+    const provider = config?.provider ?? config?.deployer?.provider ?? (await contractHelpers.getDefaultProvider(hre));
+    const deployer = config?.deployer ?? (await contractHelpers.getDefaultDeployer(hre, provider));
 
     const { name, chainId } = await provider.getNetwork();
 
     const chainType = ROOT_CHAIN_MANAGER[chainId] ? CHAIN_TYPE.ROOT : CHILD_CHAIN_MANAGER_PROXY[chainId] ? CHAIN_TYPE.CHILD : CHAIN_TYPE.DEV;
     const deploymentFileName = `.cache-${chainId}${chainId === 5 ? '-components' : ''}`;
 
-    const CACHE = new utils.AsyncConf({ cwd: __dirname, configName: deploymentFileName });
+    const CACHE = new AsyncConf({ cwd: __dirname, configName: deploymentFileName });
     const deployment = require(`./${deploymentFileName}.json`);
 
     provider.network.ensAddress = deployment['ens-registry']?.address || provider.network.ensAddress;
@@ -127,7 +130,7 @@ async function loadEnv(config = {}) {
         const dep = deployment[key];
         const contractName = dep.impl ? dep.impl.name : dep.name;
         if (!contractName) continue;
-        contracts[utils.camelize(key)] = await utils.attach(contractName, dep.address).then((contract) => contract.connect(deployer));
+        contracts[stringUtils.camelize(key)] = await contractHelpers.attach(hre, contractName, dep.address).then((contract) => contract.connect(deployer));
     }
     deployment.token = Object.assign({}, deployment.forta);
     contracts.token = Object.assign({}, contracts.forta);
