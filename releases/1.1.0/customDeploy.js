@@ -13,11 +13,11 @@ async function main() {
     console.log('Deploy and prepare upgrade');
     console.log('Checking for deploy config...');
     const config = {};
-    const deployer = await getDefaultDeployer(hre, ethers.provider, null, network);
+    const deployer = await getDefaultDeployer(hre, ethers.provider, null, network, true);
 
     config.FortaStaking_0_1_1 = {
         impl: {
-            'init-args': ['deployment.access-manager', 'deployment.router', 'deployment.forta', `${durationToSeconds('1 minute')}`, deployer.address],
+            'init-args': ['deployment.access-manager', 'deployment.router', 'deployment.forta', `${durationToSeconds('1 minute')}`, '0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24'],
             opts: {
                 'unsafe-allow': ['delegatecall'],
                 'constructor-args': ['deployment.forwarder'],
@@ -98,21 +98,10 @@ async function main() {
     await hre.run('deploy', { release, 'manual-config': config, promotes: true });
 
     console.log('Configuring...');
-    const { contracts, roles } = await deployEnv.loadEnv({ provider: ethers.provider, deployer });
-    const multisig = getMultisigAddress(chainId);
-    const relayer = getRelayerAddress(chainId);
+    const { contracts } = await deployEnv.loadEnv({ provider: ethers.provider, deployer });
 
     let result = await Promise.all(
         [
-            contracts.accessManager.connect(deployer).grantRole(roles.AGENT_ADMIN, multisig),
-            contracts.accessManager.connect(deployer).grantRole(roles.AGENT_ADMIN, deployer.address),
-            contracts.accessManager.connect(deployer).grantRole(roles.SCANNER_ADMIN, multisig),
-            contracts.accessManager.connect(deployer).grantRole(roles.SCANNER_ADMIN, deployer.address),
-            contracts.accessManager.connect(deployer).grantRole(roles.DISPATCHER, relayer),
-            contracts.accessManager.connect(deployer).grantRole(roles.SLASHER, multisig),
-            contracts.accessManager.connect(deployer).grantRole(roles.SLASHER, deployer.address),
-            contracts.accessManager.connect(deployer).grantRole(roles.STAKING_ADMIN, multisig),
-            contracts.accessManager.connect(deployer).grantRole(roles.STAKING_ADMIN, deployer.address),
             contracts.fortaStakingParameters.connect(deployer).setStakeSubjectHandler(0, contracts.scannerRegistry.address),
             contracts.fortaStakingParameters.connect(deployer).setStakeSubjectHandler(1, contracts.agentRegistry.address),
             contracts.agentRegistry.connect(deployer).setStakeController(contracts.fortaStakingParameters.address),
