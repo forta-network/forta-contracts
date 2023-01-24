@@ -1,0 +1,8 @@
+title: Redeploy to Mumbai 1.1.0 version
+network: mumbai
+deploy: run ./releases/1.1.0/customDeploy.js
+verify: verify-deployed
+description: |
+  Deploy component contracts pre ScannerPools as they live in Polygon in version 1.1.0.
+  This way we can test the migration from ScannerRegistry to ScannerPoolRegistry
+  We still keep FortaBridgedPolygon, Access and Forwarder since these are not changed.

@@ -17,3 +17,4 @@ scripts/data/*
 yarn-error.log
 layout-compare/
 test/migration/data/t*
+releases/*/local/*

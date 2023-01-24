@@ -1,7 +1,7 @@
 const { NonceManager } = require('@ethersproject/experimental');
 const DEBUG = require('debug')('forta:utils');
 const process = require('process');
-const { kebabize } = require('./stringUtils');
+const { kebabizeContractName } = require('./stringUtils');
 
 // override process.env with dotenv
 Object.assign(process.env, require('dotenv').config().parsed);
@@ -57,21 +57,21 @@ async function performUpgrade(hre, proxy, contractName, opts = {}) {
 }
 
 async function proposeUpgrade(hre, contractName, opts = {}, cache) {
-    const proxyAddress = await cache.get(`${kebabize(contractName)}.address`);
+    const proxyAddress = await cache.get(`${kebabizeContractName(contractName)}.address`);
     const proposal = await hre.defender.proposeUpgrade(proxyAddress, contractName, opts);
     return proposal.url;
 }
 
 async function tryFetchContract(hre, contractName, args = [], cache) {
     const contract = await hre.ethers.getContractFactory(contractName);
-    const key = kebabize(contractName);
+    const key = kebabizeContractName(contractName);
     const deployed = await resumeOrDeploy(hre, cache, key, () => contract.deploy(...args)).then((address) => contract.attach(address));
     return deployed;
 }
 
 async function tryFetchProxy(hre, contractName, kind = 'uups', args = [], opts = {}, cache) {
     let contract = await hre.ethers.getContractFactory(contractName);
-    const key = kebabize(contractName);
+    const key = kebabizeContractName(contractName);
     const deployed = await resumeOrDeploy(hre, cache, key, () => hre.upgrades.deployProxy(contract, args, { kind, ...opts })).then((address) => contract.attach(address));
     return deployed;
 }

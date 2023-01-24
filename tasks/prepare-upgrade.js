@@ -39,7 +39,7 @@ async function prepareUpgrade(hre, name, upgradesConfig, deployment, multisigAdd
     );
 }
 
-function prepareParams(upgradesConfig, name, deployment, multisigAddress) {
+async function prepareParams(upgradesConfig, name, deployment, multisigAddress) {
     const params = upgradesConfig[name].impl;
     if (!params) {
         throw new Error('No impl info');
