@@ -24,7 +24,7 @@ const CHAIN_TYPE = {
 const DELAY = {
     137: `${utils.durationToSeconds('10 days')}`,
     8001: `${utils.durationToSeconds('10 minutes')}`,
-    31337: `${utils.durationToSeconds('1 second')}`,
+    31337: `${utils.durationToSeconds('1 minute')}`,
 };
 
 const TREASURY = (chainId, deployer) => {

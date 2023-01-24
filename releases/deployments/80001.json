@@ -29,7 +29,8 @@
 	"ens-registry": {
 		"address": "0x3742ee4Cf1F5200C20e33778fF09D629b3D75385",
 		"args": [],
-		"version": "0.0.0"
+		"version": "0.0.0",
+        "name": "ENSRegistry"
 	},
 	"ens-resolver-deploy-tx": "0x1625da0c48703cceefb7d707b15220d885c88f3a72c1d8f1cc4e1663e117fb70",
 	"ens-resolver": {
@@ -38,7 +39,8 @@
 			"0x3742ee4Cf1F5200C20e33778fF09D629b3D75385",
 			"0x0000000000000000000000000000000000000000"
 		],
-		"version": "0.0.0"
+		"version": "0.0.0",
+        "name": "PublicResolver"
 	},
 	"ens-reverse-deploy-tx": "0x196666a7a5d61c8d16330eec1ef4fdc7ed72e9b02d11ce5b2578e3e29d21233e",
 	"ens-reverse": {
@@ -47,7 +49,8 @@
 			"0x3742ee4Cf1F5200C20e33778fF09D629b3D75385",
 			"0x5f7c5bbBa72e1e1fae689120D76D2f334A390Ae9"
 		],
-		"version": "0.0.0"
+		"version": "0.0.0",
+        "name": "ReverseRegistrar"
 	},
 	"scanner-node-version-deploy-tx": "0x306b9798a2a6a177aea66843c57518c62b44acd041e5e0ccc30b594f77169daa",
 	"scanner-node-version": {
