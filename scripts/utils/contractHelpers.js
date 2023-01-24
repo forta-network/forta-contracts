@@ -19,9 +19,12 @@ const getDefaultProvider = async (hre, baseProvider, feeData = {}) => {
     return provider;
 };
 
-const getDefaultDeployer = async (hre, provider, baseDeployer, network) => {
-    baseDeployer =
-        baseDeployer ?? hre.ethers.Wallet.fromMnemonic(process.env[`${network.name.toUpperCase()}_MNEMONIC`] || 'test test test test test test test test test test test junk');
+const getDefaultDeployer = async (hre, provider, baseDeployer, network, noHardhat) => {
+    let mnemonic = process.env[`${network.name.toUpperCase()}_MNEMONIC`];
+    if (!mnemonic && !noHardhat) {
+        mnemonic = 'test test test test test test test test test test test junk';
+    }
+    baseDeployer = baseDeployer ?? hre.ethers.Wallet.fromMnemonic(mnemonic);
     const deployer = new NonceManager(baseDeployer).connect(provider);
     await deployer.getTransactionCount().then((nonce) => deployer.setTransactionCount(nonce));
     deployer.address = await deployer.getAddress();
