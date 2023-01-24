@@ -17,5 +17,22 @@
 			"name": "FortaStaking_0_1_1",
 			"version": "0.1.1"
 		}
+	},
+	"forta-staking-parameters-deploy-tx": "0xd3b5dcf2b0f41d4183d1ce0d17252fc425634bd22cf61455fdb444aa29d49415",
+	"forta-staking-parameters": {
+		"address": "0x02304eC24ba2996a83F595D7cf80e5571a406EFA",
+		"impl": {
+			"address": "0xd0Ea639983728ab31433A8fF33f3b1A43BC39399",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"0x61447385B019187daa48e91c55c02AF1F1f3F863",
+				"0x64d5192F03bD98dB1De2AA8B4abAC5419eaC32CE"
+			],
+			"name": "FortaStakingParameters_0_1_1",
+			"version": "0.1.1"
+		}
 	}
 }
