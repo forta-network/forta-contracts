@@ -14,13 +14,15 @@
     "deploy": "graph deploy --network matic --node https://api.thegraph.com/deploy/ forta-network/forta-network",
     "create-local": "graph create --node http://localhost:8020/ forta-network/forta-network",
     "remove-local": "graph remove --node http://localhost:8020/ forta-network/forta-network",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 forta-network/forta-network"
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 forta-network/forta-network",
+    "test": "graph test"
   },
   "dependencies": {
     "@amxx/graphprotocol-utils": "^1.1.0-alpha.0",
     "@graphprotocol/graph-cli": "0.30.0",
     "@graphprotocol/graph-ts": "0.27.0",
     "concat": "^1.0.3",
-    "matchstick-as": "^0.5.0"
+    "matchstick-as": "^0.5.0",
+    "source-map-support": "^0.5.21"
   }
 }

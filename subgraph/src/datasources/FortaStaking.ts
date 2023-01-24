@@ -60,44 +60,41 @@ function getActiveSharesId(_subjectType: i32, _subject: BigInt): string {
   return activeSharesId.toString();
 }
 
-const getStakeId = (stakerId: string, subjectId: string) => {
+function getStakeId(subjectId: string, stakerId: string): string {
   return subjectId + stakerId;
 }
 
-const calculateAggregateStakeDiff = (previousStake: Stake | null, updatedStake: Stake | null): {totalStakeDif?: number, activeStakeDif?: number} => {
-  
-  if(!previousStake) {
-    if(updatedStake) {
-      return {
-        totalStakeDif: updatedStake.shares?.toI32(),
-        activeStakeDif: (updatedStake.shares && updatedStake.inactiveShares) ? updatedStake.shares?.toI32() - updatedStake.inactiveShares?.toI32() : undefined
-      }
-    } else {
-      return {}
-    }
-  }
-  
-  // @follow-up Do shares == FORT token?
-  const previousActiveStake = (previousStake?.shares && previousStake?.inactiveShares) 
-    ? 
-      (previousStake.shares.toI32() - previousStake.inactiveShares.toI32())
-    :
-    previousStake?.shares?.toI32();
 
-   // @follow-up Do shares == FORT token?
-  const updatedActiveStake = (updatedStake?.shares && updatedStake?.inactiveShares) 
-   ? 
-     (updatedStake.shares.toI32() - updatedStake.inactiveShares.toI32())
-   :
-    updatedStake?.shares?.toI32();
+function updateAggregateStake(stakerId: string, prevStakeTotalShares: number , prevStateInActiveShares: number , updatedStakeTotalShares: number, updatedStakeInActiveShares: number): void {
 
-  const activeStakeDif = updatedActiveStake && previousActiveStake ? updatedActiveStake - previousActiveStake : undefined;
-  const totalStakeDif = previousStake?.shares && updatedStake?.shares ? updatedStake.shares.toI32() - previousStake.shares.toI32() : undefined;
-  
-  return {
-    totalStakeDif,
-    activeStakeDif
-  }
+
+  const previousActiveStake = prevStakeTotalShares - prevStateInActiveShares;
+  const updatedActiveStake = updatedStakeTotalShares - updatedStakeInActiveShares;
+
+  const activeStakeDif = updatedActiveStake - previousActiveStake;
+  const totalStakeDif = updatedStakeTotalShares - prevStakeTotalShares;
+
+   let aggregateTotalStake = AggregateTotalStake.load(stakerId);
+   let aggregateActiveStake = AggregateActiveStake.load(stakerId);
+
+   if(!aggregateTotalStake) {
+    aggregateTotalStake = new AggregateTotalStake(stakerId);
+    aggregateTotalStake.totalStake = BigInt.fromI32(0);
+   }
+
+   if(!aggregateActiveStake) {
+    aggregateActiveStake = new AggregateActiveStake(stakerId);
+    aggregateActiveStake.activeStake = BigInt.fromI32(0);
+   }
+
+   aggregateTotalStake.totalStake = BigInt.fromI32(aggregateTotalStake.totalStake.toI32() + totalStakeDif as i32)
+   aggregateActiveStake.activeStake = BigInt.fromI32(aggregateActiveStake.activeStake.toI32()  + activeStakeDif as i32)
+
+   aggregateTotalStake.staker = stakerId
+   aggregateActiveStake.staker = stakerId
+
+   aggregateTotalStake.save()
+   aggregateActiveStake.save()
 }
 
 function updateStake(
@@ -153,6 +150,10 @@ function updateStake(
   if (stake == null) {
     stake = new Stake(_subjectId + _stakerId);
   }
+
+  const prevStakeTotalShares = stake.shares ? (stake.shares as BigInt).toI32() : 0;
+  const prevStateInActiveShares = stake.inactiveShares ? (stake.inactiveShares as BigInt).toI32(): 0;
+
   stake.subject = _subjectId;
   stake.isActive = true;
   stake.staker = _stakerId;
@@ -167,7 +168,12 @@ function updateStake(
     _staker
   );
 
+
+  updateAggregateStake(_stakerId, prevStakeTotalShares, prevStateInActiveShares, stake.shares!!.toI32(), stake.inactiveShares!!.toI32())
+
   account.staker = _stakerId;
+  staker.aggregateActiveStake = _stakerId;
+  staker.aggregateTotalStake = _stakerId;
 
   subject.save();
   stake.save();
@@ -176,69 +182,13 @@ function updateStake(
   return _subjectId + _stakerId;
 }
 
-function updateAggregateStake(stakerAddress: Address, prevStake: Stake | null, updatedStake: Stake): {aggregateTotalStakeId: string, aggregateActiveStakeId: string} {
-
-   const stakerId = stakerAddress.toHex()
-
-   const aggregateStakeDiff = calculateAggregateStakeDiff(prevStake, updatedStake);
-
-   let aggregateTotalStake = AggregateTotalStake.load(stakerId);
-   let aggregateActiveStake = AggregateActiveStake.load(stakerId);
-
-   if(!aggregateTotalStake) {
-    aggregateTotalStake = new AggregateTotalStake(stakerId);
-    aggregateTotalStake.totalStake = BigInt.fromI32(0);
-   }
-
-   if(!aggregateActiveStake) {
-    aggregateActiveStake = new AggregateActiveStake(stakerId);
-    aggregateActiveStake.activeStake = BigInt.fromI32(0);
-   }
-
-   aggregateTotalStake.totalStake = BigInt.fromI32(aggregateTotalStake.totalStake.toI32() + aggregateStakeDiff.totalStakeDif!!)
-   aggregateActiveStake.activeStake = BigInt.fromI32(aggregateActiveStake.activeStake.toI32()  + aggregateStakeDiff.activeStakeDif!!)
-
-   aggregateTotalStake.staker = stakerId
-   aggregateActiveStake.staker = stakerId
-
-   aggregateTotalStake.save()
-   aggregateActiveStake.save()
-
-   const staker = Staker.load(stakerId)
-
-   if(staker) {
-     staker.aggregateActiveStake = aggregateTotalStake.id
-     staker.aggregateTotalStake = aggregateActiveStake.id
-
-     aggregateTotalStake.save()
-     aggregateActiveStake.save()
-     staker.save()
-   } else {
-     aggregateTotalStake.save()
-     aggregateActiveStake.save()
-   }
-
-   return {
-    aggregateTotalStakeId: aggregateTotalStake.id,
-    aggregateActiveStakeId: aggregateActiveStake.id
-   }
-}
-
 export function handleStakeDeposited(event: StakeDepositedEvent): void {
-  const subjectId = event.params.subject.toHex();
-  const stakerId = event.params.account.toHex();
-
-  const prevStake = Stake.load(getStakeId(subjectId, stakerId));
-
   const stakeId = updateStake(
     event.address,
     event.params.subjectType,
     event.params.subject,
     event.params.account,
   );
-
-  const updatedStake = Stake.load(stakeId);
-  updateAggregateStake(event.params.account, prevStake, updatedStake!!)
 
   const stakeDepositedEvent = new StakeDepositEvent(events.id(event));
   stakeDepositedEvent.transaction = transactions.log(event).id;
@@ -257,21 +207,13 @@ export function handleWithdrawalInitiated(event: WithdrawalInitiated): void {
   );
 }
 
-export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {
-  const subjectId = event.params.subject.toHex();
-  const stakerId = event.params.account.toHex();
-
-  const prevStake = Stake.load(getStakeId(subjectId, stakerId));
-  
+export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {  
   const stakeId = updateStake(
     event.address,
     event.params.subjectType,
     event.params.subject,
     event.params.account,
   );
-
-  const updatedStake = Stake.load(stakeId);
-  updateAggregateStake(event.params.account, prevStake, updatedStake!!)
 
   const withdrawlExecutedEvent = new WithdrawalExecutedEvent(events.id(event));
   withdrawlExecutedEvent.transaction = transactions.log(event).id;
