@@ -1,8 +1,8 @@
 {
 	"old-forwarder-deploy-tx": "0x8d1761f06e6b42d672e03e821064eeb8282cf7346571a91044c3f592522f7de1",
 	"old-forwarder": "0x4d8F93bD622cEcE936D49b09b57d0E6A1c54e6B5",
-	"access-deploy-tx": "0xf414ef0c520750dafd67514389e21bbf8887e737730f831ddcf2ad55ce9ff3f7",
-	"access": {
+	"access-manager-deploy-tx": "0xf414ef0c520750dafd67514389e21bbf8887e737730f831ddcf2ad55ce9ff3f7",
+	"access-manager": {
 		"address": "0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
 		"impl": {
 			"args": [

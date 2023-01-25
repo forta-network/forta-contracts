@@ -3,8 +3,8 @@ const { ethers } = hre;
 const utils = require('./utils');
 const contractHelpers = require('./utils/contractHelpers');
 const stringUtils = require('./utils/stringUtils');
-const AsyncConf = require('./utils/asyncConf');
 const fs = require('fs');
+const { getDeployment, getDeploymentOutputWriter } = require('../scripts/utils/deploymentFiles');
 
 const ROOT_CHAIN_MANAGER = {
     1: '0xA0c68C638235ee32657e8f720a23ceC1bFc77C77',
@@ -23,8 +23,9 @@ const CHAIN_TYPE = {
 };
 
 const DELAY = {
-    137: utils.durationToSeconds('10 days'),
-    8001: utils.durationToSeconds('10 minutes'),
+    137: `${utils.durationToSeconds('10 days')}`,
+    8001: `${utils.durationToSeconds('10 minutes')}`,
+    31337: `${utils.durationToSeconds('1 minute')}`,
 };
 
 const TREASURY = (chainId, deployer) => {
@@ -112,23 +113,23 @@ const loadRoles = () => {
 
 async function loadEnv(config = {}) {
     const provider = config?.provider ?? config?.deployer?.provider ?? (await contractHelpers.getDefaultProvider(hre));
-    const deployer = config?.deployer ?? (await contractHelpers.getDefaultDeployer(hre, provider));
+    const network = await provider.getNetwork();
+    const deployer = config?.deployer ?? (await contractHelpers.getDefaultDeployer(hre, provider, utils.networkName(chainId)));
 
-    const { name, chainId } = await provider.getNetwork();
+    const { name, chainId } = network;
 
     const chainType = ROOT_CHAIN_MANAGER[chainId] ? CHAIN_TYPE.ROOT : CHILD_CHAIN_MANAGER_PROXY[chainId] ? CHAIN_TYPE.CHILD : CHAIN_TYPE.DEV;
-    const deploymentFileName = `.cache-${chainId}${chainId === 5 ? '-components' : ''}`;
-
-    const CACHE = new AsyncConf({ cwd: __dirname, configName: deploymentFileName });
-    const deployment = require(`./${deploymentFileName}.json`);
+    let deployment = getDeployment(chainId);
+    let CACHE = getDeploymentOutputWriter(chainId);
 
     provider.network.ensAddress = deployment['ens-registry']?.address || provider.network.ensAddress;
 
-    const keys = Object.keys(deployment).filter((key) => !key.includes('pending') && !key.startsWith('vesting-') && !key.includes('ens-') && key !== 'contracts');
+    const keys = Object.keys(deployment).filter((key) => !key.includes('deploy-tx') && !key.startsWith('vesting-') && !key.includes('ens-') && key !== 'contracts');
     const contracts = {};
     for (const key of keys) {
         const dep = deployment[key];
         const contractName = dep.impl ? dep.impl.name : dep.name;
+        console.log(contractName);
         if (!contractName) continue;
         contracts[stringUtils.camelize(key)] = await contractHelpers.attach(hre, contractName, dep.address).then((contract) => contract.connect(deployer));
     }

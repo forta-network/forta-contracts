@@ -1,6 +1,5 @@
 const { ethers } = require('hardhat');
 const migrate = require('./deploy-pre-migration.js');
-const utils = require('../../scripts/utils');
 const DEBUG = require('debug')('forta:migration');
 
 function prepare(config = {}) {
@@ -22,9 +21,6 @@ function prepare(config = {}) {
         DEBUG('Fixture: migrated');
 
         // mock contracts
-        this.contracts.sink = await utils.deploy('Sink');
-        this.contracts.otherToken = await utils.deployUpgradeable('Forta', 'uups', [this.deployer.address]);
-        DEBUG('Fixture: mock contracts');
 
         // Set admin as default signer for all contracts
         Object.assign(this, this.contracts);
@@ -50,7 +46,6 @@ function prepare(config = {}) {
                 this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_2_SCANNER_POOL_MIGRATOR, this.contracts.registryMigration.address),
 
                 this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
-                this.otherToken.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
             ].map((txPromise) => txPromise.then((tx) => tx.wait()).catch(() => {}))
         );
 
@@ -58,12 +53,7 @@ function prepare(config = {}) {
 
         // Prep for tests that need minimum stake
         if (config.stake) {
-            if (!config.adminAsChildChainManagerProxy) {
-                //Bridged FORT does not have mint()
-                DEBUG('Fixture: minting');
-
-                await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));
-            }
+            await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));
             this.accounts.staker = this.accounts.user1;
             DEBUG('Fixture: approving');
 
@@ -121,9 +111,4 @@ function prepare(config = {}) {
 
 module.exports = {
     prepare,
-    getFactory: utils.getFactory,
-    attach: utils.attach,
-    deploy: utils.deploy,
-    deployUpgradeable: utils.deployUpgradeable,
-    performUpgrade: utils.performUpgrade,
 };

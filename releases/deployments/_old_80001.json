@@ -1,0 +1,243 @@
+{
+	"forta-deploy-tx": "0x05b4262214f22ef7e90634a401e9bd6b568526fb5642963136d90bdf61b48fa4",
+	"forta": {
+		"address": "0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+		"impl": {
+			"args": [
+				"0xb5505a6d998549090530911180f38aC5130101c6"
+			],
+			"address": "0x21b1B0f8E9182c92C2A81F43f305cE25994D9d57",
+			"name": "FortaBridgedPolygon",
+			"version": "0.1.1",
+			"verified": "true"
+		}
+	},
+	"access-manager-deploy-tx": "0xeb761b35d307c30baca49115043dfcc856511affb22fabd7ce4bf031eb4cd93c",
+	"access-manager": {
+		"address": "0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"address": "0xDCFC2E4037a5d5524A957D7771C6Fd328f1D8ECE",
+			"name": "AccessManager",
+			"version": "0.1.0",
+			"verified": "true"
+		}
+	},
+	"agent-registry-deploy-tx": "0x74e5c36c5d4c1d7ae47f08d803c9695c9ec9849753138d1f6634f61974f6c2eb",
+	"agent-registry": {
+		"address": "0x5Cf7008aC441Ec1797fAfA4EE132eA4277E9239B",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"address": "0xCDbb73F9F4894D745506317d567bF4d3598EfC82",
+			"name": "AgentRegistry",
+			"version": "0.1.6",
+			"verified": "true"
+		}
+	},
+	"scanner-registry-deploy-tx": "0x15ea76aabbf5f1fd7119e74010146cc88746428840b10c38dba7ee0fa430b03d",
+	"scanner-registry": {
+		"address": "0xa30c3951f85941bfe474620dA25DEb90283C99D7",
+		"verified": "true",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"address": "0x0FF4A7603EB4FB7A5c8D4cd25199046942fb968B",
+			"name": "ScannerRegistry",
+			"version": "0.1.4",
+			"verified": "true"
+		}
+	},
+	"dispatch-deploy-tx": "0x667cb934eaf86cf1a7070c76a327a863564133715264f8b55fef199b6766a23c",
+	"dispatch": {
+		"address": "0x634C83F3213CcfC895A4e6A2c137b2B572fa64ad",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"address": "0x485F9c35d90E639f5B591DA5281199Ae59A9794F",
+			"name": "Dispatch",
+			"version": "0.1.5",
+			"verified": "true"
+		}
+	},
+	"ens-registry-deploy-tx": "0x8065caff48c61f4526c8fd89fd562cfbd1119c02b07de9697867b3197155d35c",
+	"ens-registry": {
+		"address": "0x3742ee4Cf1F5200C20e33778fF09D629b3D75385",
+		"args": [],
+		"version": "0.0.0"
+	},
+	"ens-resolver-deploy-tx": "0x1625da0c48703cceefb7d707b15220d885c88f3a72c1d8f1cc4e1663e117fb70",
+	"ens-resolver": {
+		"address": "0x5f7c5bbBa72e1e1fae689120D76D2f334A390Ae9",
+		"args": [
+			"0x3742ee4Cf1F5200C20e33778fF09D629b3D75385",
+			"0x0000000000000000000000000000000000000000"
+		],
+		"version": "0.0.0"
+	},
+	"ens-reverse-deploy-tx": "0x196666a7a5d61c8d16330eec1ef4fdc7ed72e9b02d11ce5b2578e3e29d21233e",
+	"ens-reverse": {
+		"address": "0x6A434647A4a3De2F915Bb49B6227444EBbE67Aed",
+		"args": [
+			"0x3742ee4Cf1F5200C20e33778fF09D629b3D75385",
+			"0x5f7c5bbBa72e1e1fae689120D76D2f334A390Ae9"
+		],
+		"version": "0.0.0"
+	},
+	"stake-subject-gateway-deploy-tx": "0x73831de2a1ead62e3decc1abc34dce91eba7f607a66eed7c603373d7f8b7908a",
+	"stake-subject-gateway": {
+		"address": "0x2441Ce5eB269505f30F6F434D21E039438aaC342",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"address": "0xC5a5ea6FE58b24f78039A65db835BE806a20C1b7",
+			"name": "StakeSubjectGateway",
+			"verified": false,
+			"version": "0.0.0"
+		}
+	},
+	"scanner-node-version-deploy-tx": "0x306b9798a2a6a177aea66843c57518c62b44acd041e5e0ccc30b594f77169daa",
+	"scanner-node-version": {
+		"address": "0x67D4d0654D6Ba56d41a7A6Ec8f33430c3d778201",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"address": "0x52a53DCC546c09CECe279F5549d0958433912802",
+			"name": "ScannerNodeVersion",
+			"version": "0.1.1",
+			"verified": "true"
+		}
+	},
+	"forta-staking-deploy-tx": "0x71f2c96e12fc22392c08db7022ac78e2cacb2ee1cdb3605d44290204ec3f6825",
+	"forta-staking": {
+		"address": "0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"address": "0x395eaBbA70574c2642fDbD14e8D1E7CDEEBB2720",
+			"name": "FortaStaking",
+			"verified": false,
+			"version": "0.0.0"
+		}
+	},
+	"forwarder-deploy-tx": "0x2b5d53e0153045842cd18f51c4b1dca7b06ab41b53271cc3b355fabadebc12ab",
+	"forwarder": {
+		"address": "0xE055724F37634d34FA174FDa859C30D3991Da843",
+		"constructor-args": [],
+		"name": "Forwarder",
+		"version": "0.0.0"
+	},
+	"staking-escrow-factory-deploy-tx": "0x0b70f983ab2a09d961d241ecde1697e8e4c92b83f61a7b0a0bf31cf24b3fbbfd",
+	"staking-escrow-factory": {
+		"address": "0xB547D9Af68b05701Db065f5bF29DefbA0D504521",
+		"args": [
+			"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
+		],
+		"name": "StakingEscrowFactory",
+		"version": "0.0.0"
+	},
+	"staking-escrow-template-deploy-tx": "0x0b70f983ab2a09d961d241ecde1697e8e4c92b83f61a7b0a0bf31cf24b3fbbfd",
+	"staking-escrow-template": {
+		"address": "0x9A8B215DB93922D759233D275a7F93C40b51F0E1",
+		"args": [
+			"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+			"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+			"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
+		],
+		"name": "StakingEscrow",
+		"version": "0.0.0"
+	},
+	"batch-relayer-deploy-tx": "0x0828e1d728ffe47b2cf84c6d212e8938c775baff43b5472b302dc8e02ef1f73a",
+	"batch-relayer": {
+		"address": "0x83D5687F076f6AA81a9b1C8C3e2DD966C8AC416f",
+		"args": [],
+		"version": "0.0.0"
+	},
+	"slashing-controller-deploy-tx": "0xf7eb5ef4ff57d3f19a0c34f3c66c1c659a3410c226f8a25e09515a2a6a4070b9",
+	"slashing-controller": {
+		"address": "0xdc4A1Fe7D5c5546458463F6546bf6Fbe6a1a9704",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3"
+			],
+			"address": "0xc500d015E69721Ec3D29955EBF15bf9b8Ad832eA",
+			"name": "SlashingController",
+			"version": "0.1.0",
+			"verified": "true"
+		}
+	},
+	"rewards-distributor-deploy-tx": "0xeba23a922845b287ffc6256e0496b1e4e80bf15c6411911cfb87335e8c41b5fd",
+	"rewards-distributor": {
+		"address": "0x8b79BeADC00571b9AEf2AB3f1C0C5ba05ec5F1AE",
+		"impl": {
+			"address": "0xFcb1c777BFEa94a9eC884768d3B3780F175e2eE7",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+				"0x2441Ce5eB269505f30F6F434D21E039438aaC342"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"2",
+				"1000"
+			],
+			"name": "RewardsDistributor",
+			"version": "0.1.0"
+		}
+	},
+	"stake-allocator-deploy-tx": "0x31ce395099ddd67735e19ba7fe118b4063d8f124201a2c2bce74fcf443d31f6c",
+	"stake-allocator": {
+		"address": "0x26112a3885124E8b7564824F030A6d4f6e29E52B",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x2441Ce5eB269505f30F6F434D21E039438aaC342",
+				"0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9"
+			],
+			"address": "0x3334f9C609e802b9AB1382a0693Ecb774015CC71",
+			"name": "StakeAllocator",
+			"verified": false,
+			"version": "0.0.0"
+		}
+	},
+	"scanner-pool-registry-deploy-tx": "0xf5a8be1b02c1731d47fbba2a98b160dab41a8eb139c97a8dfe38bccae1c13710",
+	"scanner-pool-registry": {
+		"address": "0x5aEBaFBc23167A51D06f217a046aAeD20c9ACcb1",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x26112a3885124E8b7564824F030A6d4f6e29E52B"
+			],
+			"address": "0x41d0597e85c944d191e578d9658fe5ec8ee9f393",
+			"name": "ScannerPoolRegistry",
+			"version": "0.1.0",
+			"verified": "true"
+		}
+	},
+	"scanner-to-scanner-pool-migration-deploy-tx": "0x0927a6b74fafb4cdeb01d6fd4f67b1d7c813086f9eb9f0a98b3793b9d30c9b99",
+	"scanner-to-scanner-pool-migration": {
+		"address": "0x8aD5997696444266eC5b715f9Ac47b0D8289104A",
+		"impl": {
+			"args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0xa30c3951f85941bfe474620dA25DEb90283C99D7",
+				"0x5aEBaFBc23167A51D06f217a046aAeD20c9ACcb1",
+				"0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
+			],
+			"address": "0xa284F91580374D11Eee8344f00BA5F874A87D493",
+			"name": "ScannerToScannerPoolMigration",
+			"version": "0.1.0",
+			"verified": "true"
+		}
+	}
+}

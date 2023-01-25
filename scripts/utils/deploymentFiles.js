@@ -1,4 +1,4 @@
-const { kebabize } = require('./stringUtils.js');
+const { kebabizeContractName, removeVersionFromContractName } = require('./stringUtils.js');
 const AsyncConf = require('./asyncConf');
 const { readFileSync, existsSync } = require('fs');
 const { getAddress } = require('@ethersproject/address');
@@ -6,7 +6,7 @@ const { getAddress } = require('@ethersproject/address');
 const RELEASES_PATH = './releases';
 
 async function saveImplementation(writer, contractName, constructorArgs, initArgs, implAddress, version) {
-    const key = kebabize(contractName);
+    const key = kebabizeContractName(contractName);
     await writer.set(`${key}.impl.address`, implAddress);
     await writer.set(`${key}.impl.constructor-args`, constructorArgs ?? []);
     await writer.set(`${key}.impl.init-args`, initArgs ?? []);
@@ -16,7 +16,7 @@ async function saveImplementation(writer, contractName, constructorArgs, initArg
 }
 
 async function saveNonUpgradeable(writer, contractName, constructorArgs, address, version) {
-    const key = kebabize(contractName);
+    const key = kebabizeContractName(contractName);
     await writer.set(`${key}.address`, address);
     await writer.set(`${key}.constructor-args`, constructorArgs);
     await writer.set(`${key}.name`, contractName);
@@ -24,17 +24,8 @@ async function saveNonUpgradeable(writer, contractName, constructorArgs, address
     // await writer.set(`${key}.verified`, (await writer.get(`${key}.verified`)) ?? false);
 }
 
-async function saveProposedImplementation(writer, contractName, constructorArgs, implAddress, version) {
-    const key = kebabize(contractName);
-    await writer.set(`${key}.proposedImpl.args`, constructorArgs ?? []);
-    await writer.set(`${key}.proposedImpl.address`, implAddress);
-    await writer.set(`${key}.proposedImpl.name`, contractName);
-    // await writer.set(`${key}.proposedImpl.verified`, (await writer.get(`${key}.proposedImpl.verified`)) ?? false);
-    await writer.set(`${key}.proposedImpl.version`, version);
-}
-
 async function saveToDeployment(releaseWriter, deploymentWriter, contractName) {
-    const key = kebabize(contractName);
+    const key = kebabizeContractName(contractName);
     await deploymentWriter.set(`${key}`, await releaseWriter.get(`${key}`));
     await deploymentWriter.set(`${key}-deploy-tx`, await releaseWriter.get(`${key}-deploy-tx`));
 }
@@ -44,6 +35,7 @@ const CHAIN_NAME = {
     5: 'goerli',
     137: 'polygon',
     80001: 'mumbai',
+    31337: 'local',
 };
 
 function validateInput(chainId, releaseVersion) {
@@ -146,12 +138,15 @@ function formatParams(deployment, params) {
         switch (typeof arg) {
             case 'string':
                 if (arg.startsWith('deployment.')) {
-                    return getProxyOrContractAddress(deployment, arg.replace('deployment.', ''));
+                    return getProxyOrContractAddress(deployment, removeVersionFromContractName(arg.replace('deployment.', '')));
                 }
                 return arg;
             case 'number':
                 throw new Error(`Param ${arg} in ${params} should be a string`);
             default:
+                if (arg === undefined) {
+                    throw new Error(`Undefined arg in ${params}`);
+                }
                 return arg;
         }
     });
@@ -162,9 +157,13 @@ function getMultisigAddress(chainId) {
     return getAddress(multisigs[CHAIN_NAME[chainId]]);
 }
 
+function getRelayerAddress(chainId) {
+    const relayers = JSON.parse(readFileSync(`${RELEASES_PATH}/deployments/relayers.json`).toString());
+    return getAddress(relayers[CHAIN_NAME[chainId]]);
+}
+
 module.exports = {
     saveImplementation,
-    saveProposedImplementation,
     saveNonUpgradeable,
     getDeployConfig,
     deployConfigExists,
@@ -181,4 +180,5 @@ module.exports = {
     getMultisigAddress,
     getProxyOrContractAddress,
     saveToDeployment,
+    getRelayerAddress,
 };

@@ -11,68 +11,6 @@ const deployEnv = require('../loadEnv');
 
 upgrades.silenceWarnings();
 
-// TODO: take out to ENS task
-/*
-const registerNode = async (name, owner, opts = {}) => {
-    const resolved = opts.resolved;
-    const registry = opts.registry; //?? contracts.ens.registry;
-    const resolver = opts.resolver; //?? contracts.ens.resolver;
-    const signer = opts.signer ?? registry.signer ?? resolver.signer;
-    const signerAddress = await signer.getAddress();
-    utils.assertNotUsingHardhatKeys(opts.chainId, signerAddress);
-
-    const [label, ...self] = name.split('.');
-    const parent = self.join('.');
-    DEBUG('registerNode', name);
-    const parentOwner = await registry.owner(ethers.utils.namehash(parent));
-    if (parentOwner != signerAddress) {
-        DEBUG('Unauthorized signer, owner is: ', parentOwner);
-        DEBUG('parent is: ', parent);
-        DEBUG('namehash is: ', ethers.utils.namehash(parent));
-
-        throw new Error('Unauthorized signer');
-    }
-    const currentOwner = await registry.owner(ethers.utils.namehash(name));
-    if (currentOwner == ethers.constants.AddressZero) {
-        await registry
-            .connect(signer)
-            .setSubnodeRecord(ethers.utils.namehash(parent), ethers.utils.id(label), resolved ? signerAddress : owner, resolver.address, 0)
-            .then((tx) => tx.wait())
-            .catch((e) => DEBUG(e));
-    }
-    if (resolved) {
-        const currentResolved = await signer.provider.resolveName(name);
-        DEBUG(resolved, currentResolved);
-
-        if (resolved != currentResolved) {
-            await resolver
-                .connect(signer)
-                ['setAddr(bytes32,address)'](ethers.utils.namehash(name), resolved)
-                .then((tx) => tx.wait())
-                .catch((e) => DEBUG(e));
-        }
-
-        if (signerAddress != owner) {
-            await registry
-                .connect(signer)
-                .setOwner(ethers.utils.namehash(name), owner)
-                .then((tx) => tx.wait())
-                .catch((e) => DEBUG(e));
-        }
-    }
-};
-
-const reverseRegister = async (contract, name) => {
-    const reverseResolved = await contract.provider.lookupAddress(contract.address);
-    if (reverseResolved != name) {
-        await contract
-            .setName(contract.provider.network.ensAddress, name)
-            .then((tx) => tx.wait())
-            .catch((e) => DEBUG(e));
-    }
-};
-*/
-
 /*********************************************************************************************************************
  *                                                Migration workflow                                                 *
  *********************************************************************************************************************/
@@ -80,7 +18,7 @@ async function migrate(config = {}) {
     const provider = config?.provider ?? config?.deployer?.provider ?? (await contractHelpers.getDefaultProvider(hre));
     const deployer = config?.deployer ?? (await contractHelpers.getDefaultDeployer(hre, provider));
     const { name, chainId } = await provider.getNetwork();
-    const delay = deployEnv.DELAY[chainId] ?? 0;
+    const delay = 0;
     const saveToFile = config?.saveToFile || true;
     const deployEscrow = config?.deployEscrow;
     const deployScannerVersion = config?.deployScannerVersion;
@@ -369,85 +307,6 @@ async function migrate(config = {}) {
             .hasRole(roles.ENS_MANAGER, deployer.address)
             .then((result) => result || contracts.access.grantRole(roles.ENS_MANAGER, deployer.address).then((tx) => tx.wait()));
     }
-    // TODO: extract to task
-    /*
-    if (!hardhatDeployment) {
-        if (!provider.network.ensAddress) {
-            contracts.ens = {};
-
-            contracts.ens.registry = await ethers.getContractFactory('ENSRegistry', deployer).then((factory) => utils.tryFetchContract(CACHE, 'ens-registry', factory, []));
-
-            DEBUG(`registry: ${contracts.ens.registry.address}`);
-
-            contracts.ens.resolver = await ethers
-                .getContractFactory('PublicResolver', deployer)
-                .then((factory) => utils.tryFetchContract(CACHE, 'ens-resolver', factory, [contracts.ens.registry.address, ethers.constants.AddressZero]));
-
-            DEBUG(`resolver: ${contracts.ens.resolver.address}`);
-
-            contracts.ens.reverse = await ethers
-                .getContractFactory('ReverseRegistrar', deployer)
-                .then((factory) => utils.tryFetchContract(CACHE, 'ens-reverse', factory, [contracts.ens.registry.address, contracts.ens.resolver.address]));
-
-            DEBUG(`reverse: ${contracts.ens.reverse.address}`);
-
-            // link provider to registry
-            provider.network.ensAddress = contracts.ens.registry.address;
-
-            // ens registration
-            await registerNode('reverse', deployer.address, { ...contracts.ens, chainId: chainId });
-            await registerNode('addr.reverse', contracts.ens.reverse.address, { ...contracts.ens, chainId: chainId });
-            await registerNode('eth', deployer.address, { ...contracts.ens, chainId: chainId });
-            await registerNode('forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.token.address, chainId: chainId });
-            if (config.childChain) {
-                await registerNode('registries.forta.eth', deployer.address, { ...contracts.ens, chainId: chainId });
-                await Promise.all([
-                    registerNode('access.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.access.address, chainId: chainId }),
-                    registerNode('dispatch.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.dispatch.address, chainId: chainId }),
-                    registerNode('forwarder.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.forwarder.address, chainId: chainId }),
-                    registerNode('staking.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.staking.address, chainId: chainId }),
-                    registerNode('slashing.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.staking.address, chainId: chainId }),
-                    registerNode('staking-subjects.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.subjectGateway.address, chainId: chainId }),
-                    registerNode('agents.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.agents.address, chainId: chainId }),
-                    registerNode('scanners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scanners.address, chainId: chainId }),
-                    registerNode('scanner-pools.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scannerPools.address, chainId: chainId }),
-                    registerNode('scanner-node-version.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scannerNodeVersion.address, chainId: chainId }),
-                    registerNode('rewards.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.rewardsDistributor.address, chainId: chainId }),
-                    registerNode('escrow.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.escrowFactory.address, chainId: chainId }),
-                ]);
-            }
-
-            DEBUG('ens configuration');
-        } else {
-            contracts.ens = {};
-            const ensRegistryAddress = await CACHE.get('ens-registry');
-            contracts.ens.registry = ensRegistryAddress ? await utils.attach('ENSRegistry', ensRegistryAddress) : null;
-            const ensResolverAddress = await CACHE.get('ens-resolver');
-            contracts.ens.resolver = ensRegistryAddress ? await utils.attach('PublicResolver', ensResolverAddress) : null;
-        }
-        DEBUG('Starting reverse registration...');
-        var reverseRegisters = [reverseRegister(contracts.token, 'forta.eth')];
-        if (config.childChain) {
-            reverseRegisters = reverseRegisters.concat([
-                reverseRegister(contracts.access, 'access.forta.eth'),
-                reverseRegister(contracts.dispatch, 'dispatch.forta.eth'),
-                reverseRegister(contracts.staking, 'staking.forta.eth'),
-                reverseRegister(contracts.slashing, 'slashing.forta.eth'),
-                reverseRegister(contracts.subjectGateway, 'stake-subject-gateway.forta.eth'),
-                reverseRegister(contracts.agents, 'agents.registries.forta.eth'),
-                reverseRegister(contracts.scanners, 'scanners.registries.forta.eth'),
-                reverseRegister(contracts.scannerPools, 'scanner-pools.registries.forta.eth'),
-                reverseRegister(contracts.scannerNodeVersion, 'scanner-node-version.forta.eth'),
-                reverseRegister(contracts.rewardsDistributor, 'rewards.forta.eth'),
-
-                // contract.escrow doesn't support reverse registration (not a component)
-            ]);
-        }
-        await Promise.all(reverseRegisters);
-
-        DEBUG('reverse registration');
-    }
-    */
 
     return {
         provider,

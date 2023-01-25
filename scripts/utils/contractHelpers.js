@@ -1,7 +1,7 @@
 const { NonceManager } = require('@ethersproject/experimental');
 const DEBUG = require('debug')('forta:utils');
 const process = require('process');
-const { kebabize } = require('./stringUtils');
+const { kebabizeContractName } = require('./stringUtils');
 
 // override process.env with dotenv
 Object.assign(process.env, require('dotenv').config().parsed);
@@ -19,9 +19,13 @@ const getDefaultProvider = async (hre, baseProvider, feeData = {}) => {
     return provider;
 };
 
-const getDefaultDeployer = async (hre, provider, baseDeployer, network) => {
-    baseDeployer =
-        baseDeployer ?? hre.ethers.Wallet.fromMnemonic(process.env[`${network.name.toUpperCase()}_MNEMONIC`] || 'test test test test test test test test test test test junk');
+const getDefaultDeployer = async (hre, provider, networkName, noHardhat) => {
+    let mnemonic = process.env[`${networkName.toUpperCase()}_MNEMONIC`];
+    console.log(`${networkName.toUpperCase()}_MNEMONIC`);
+    if (!mnemonic && !noHardhat) {
+        mnemonic = 'test test test test test test test test test test test junk';
+    }
+    const baseDeployer = hre.ethers.Wallet.fromMnemonic(mnemonic);
     const deployer = new NonceManager(baseDeployer).connect(provider);
     await deployer.getTransactionCount().then((nonce) => deployer.setTransactionCount(nonce));
     deployer.address = await deployer.getAddress();
@@ -57,21 +61,21 @@ async function performUpgrade(hre, proxy, contractName, opts = {}) {
 }
 
 async function proposeUpgrade(hre, contractName, opts = {}, cache) {
-    const proxyAddress = await cache.get(`${kebabize(contractName)}.address`);
+    const proxyAddress = await cache.get(`${kebabizeContractName(contractName)}.address`);
     const proposal = await hre.defender.proposeUpgrade(proxyAddress, contractName, opts);
     return proposal.url;
 }
 
 async function tryFetchContract(hre, contractName, args = [], cache) {
     const contract = await hre.ethers.getContractFactory(contractName);
-    const key = kebabize(contractName);
+    const key = kebabizeContractName(contractName);
     const deployed = await resumeOrDeploy(hre, cache, key, () => contract.deploy(...args)).then((address) => contract.attach(address));
     return deployed;
 }
 
 async function tryFetchProxy(hre, contractName, kind = 'uups', args = [], opts = {}, cache) {
     let contract = await hre.ethers.getContractFactory(contractName);
-    const key = kebabize(contractName);
+    const key = kebabizeContractName(contractName);
     const deployed = await resumeOrDeploy(hre, cache, key, () => hre.upgrades.deployProxy(contract, args, { kind, ...opts })).then((address) => contract.attach(address));
     return deployed;
 }
