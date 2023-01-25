@@ -1,4 +1,4 @@
-const { getDeployment, getDeployedImplementations, getMultisigAddress, getProposedAdminActions } = require('../scripts/utils/deploymentFiles');
+const { getDeployment, getDeployedImplementations, getMultisigAddress, getProposedAdminActions, getRelayerAddress } = require('../scripts/utils/deploymentFiles');
 const parseAdminProposals = require('./helpers/propose-action-parser');
 const parseUpgradeProposals = require('./helpers/propose-upgrades-parser');
 const { task } = require('hardhat/config');
@@ -6,6 +6,7 @@ const { fromChainId } = require('defender-base-client');
 const { AdminClient } = require('defender-admin-client');
 const { writeFileSync } = require('fs');
 const { toEIP3770 } = require('../scripts/utils');
+const loadRoles = require('../scripts/utils/loadRoles');
 
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 
@@ -20,6 +21,12 @@ async function main(args, hre) {
     const deployment = getDeployment(chainId);
     const contracts = [];
     const steps = [];
+    const deploymentInfo = {
+        deployment,
+        roles: loadRoles(hre.ethers),
+        relayer: getRelayerAddress(chainId),
+        multisig,
+    };
 
     console.log('Parsing new implementations...');
     const upgradeProposal = await parseUpgradeProposals(hre, prepared, deployment, network);
@@ -31,7 +38,7 @@ async function main(args, hre) {
         console.log('No upgrades were prepared in previous steps.');
     }
 
-    const adminProposala = await parseAdminProposals(hre, adminProposed, deployment, network);
+    const adminProposala = await parseAdminProposals(hre, adminProposed, deploymentInfo, network);
     if (adminProposala.steps.length > 0) {
         console.log(`Proposing ${adminProposala.steps.length} admin actons`);
         contracts.push(...adminProposala.contracts);

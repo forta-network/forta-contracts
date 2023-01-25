@@ -1,5 +1,5 @@
 const { camelize, upperCaseFirst } = require('../../scripts/utils/stringUtils');
-const { getProxyOrContractAddress } = require('../../scripts/utils/deploymentFiles');
+const { parseAddress } = require('../../scripts/utils/deploymentFiles');
 
 const PROXY_ABI = [
     { inputs: [{ internalType: 'address', name: 'newImplementation', type: 'address' }], name: 'upgradeTo', outputs: [], stateMutability: 'nonpayable', type: 'function' },
@@ -11,7 +11,7 @@ async function parseUpgradeProposals(hre, prepared, deployment, network) {
             return {
                 name: upperCaseFirst(camelize(key)),
                 network,
-                address: getProxyOrContractAddress(deployment, key),
+                address: parseAddress({ deployment }, key),
                 abi: JSON.stringify([...(await hre.artifacts.readArtifact(upperCaseFirst(camelize(key))).then((a) => a.abi)), ...PROXY_ABI]),
                 newImplementation: impl.address,
             };

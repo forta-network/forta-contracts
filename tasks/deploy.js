@@ -120,7 +120,7 @@ async function main(args, hre) {
 task('deploy')
     .addPositionalParam('release', 'Release number (used to load /<release>/<network>/config/deploy.json)')
     .addOptionalParam('manualConfig', 'Config object, if present the release will use this instead of deploy.json')
-    .addOptionalParam('promotes', 'Copies the release "deployed.json" output to releases/deployments/<network_id>. Defaults to false', false, boolean)
+    .addOptionalParam('promotes', 'Copies the release "deployed.json" output to releases/deployments/<network_id>. Defaults to true', true, boolean)
     .setDescription(
         `Deploys the contracts as described in the correspondent deploy.json config.
         Works both with non-upgradeable and uups upgradeable contracts.

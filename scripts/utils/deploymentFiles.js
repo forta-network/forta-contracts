@@ -2,6 +2,7 @@ const { kebabizeContractName, removeVersionFromContractName } = require('./strin
 const AsyncConf = require('./asyncConf');
 const { readFileSync, existsSync } = require('fs');
 const { getAddress } = require('@ethersproject/address');
+const { ethers } = require('ethers')
 
 const RELEASES_PATH = './releases';
 
@@ -128,17 +129,51 @@ function getDeploymentOutputWriter(chainId) {
     return new AsyncConf({ cwd: `${RELEASES_PATH}/deployments/`, configName: `${chainId}` });
 }
 
-function getProxyOrContractAddress(deployment, key) {
-    if (!deployment[key]) throw new Error(`${key} does not exist in deployment`);
-    return getAddress(deployment[key].address);
+function parseAddress(info, key) {
+    let address;
+    if (key === 'relayer') {
+        if (!info.relayer) {
+            throw new Error('relayer object missing');
+        }
+        address = info.relayer;
+    } else if (key === 'multisig') {
+        if (!info.multisig) {
+            throw new Error('multisig missing');
+        }
+        address = info.multisig;
+    } else {
+        if (!info.deployment) {
+            throw new Error('deployment object missing');
+        }
+        if (!info.deployment[key]) throw new Error(`${key} does not exist in deployment`);
+        address = info.deployment[key].address;
+    }
+    return getAddress(address);
 }
 
-function formatParams(deployment, params) {
+function parseRole(info, role) {
+    if (!info.roles) {
+        throw new Error('roles object missing');
+    }
+    const roleKey = info.roles[role.replace('_ROLE', '')];
+    if (!info.roles[roleKey]) {
+        throw new Error(`Role not found: ${role}`);
+    }
+    const roleValue = ethers.utils.id(role);
+    if (roleValue != info.roles[roleKey]) {
+        throw new Error(`Role ${roleValue} and ${info.roles[roleKey]} does not match`);
+    }
+    return roleValue;
+}
+
+function formatParams(info, params) {
     return params.map((arg) => {
         switch (typeof arg) {
             case 'string':
                 if (arg.startsWith('deployment.')) {
-                    return getProxyOrContractAddress(deployment, removeVersionFromContractName(arg.replace('deployment.', '')));
+                    return parseAddress(info, removeVersionFromContractName(arg.replace('deployment.', '')));
+                } else if (arg.startsWith('roles.')) {
+                    return parseRole(info, arg.replace('roles.', ''));
                 }
                 return arg;
             case 'number':
@@ -178,7 +213,7 @@ module.exports = {
     getDeployedImplementations,
     formatParams,
     getMultisigAddress,
-    getProxyOrContractAddress,
+    parseAddress,
     saveToDeployment,
     getRelayerAddress,
 };

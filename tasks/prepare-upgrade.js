@@ -7,7 +7,7 @@ const {
     getDeployment,
     formatParams,
     getMultisigAddress,
-    getProxyOrContractAddress,
+    parseAddress,
     saveImplementation,
     getDeployedImplementations,
 } = require('../scripts/utils/deploymentFiles');
@@ -25,7 +25,7 @@ function getNewImplementation(prepareUpgradeResult) {
 async function prepareUpgrade(hre, name, upgradesConfig, deployment, multisigAddress, outputWriter) {
     console.log(`Deploying new implementation for contract ${name} ...`);
     const { opts } = prepareParams(upgradesConfig, name, deployment, multisigAddress);
-    const proxyAddress = getProxyOrContractAddress(deployment, kebabize(name));
+    const proxyAddress = parseAddress({ deployment }, kebabize(name));
     const result = await hre.upgrades.prepareUpgrade(proxyAddress, await hre.ethers.getContractFactory(name), opts);
     const implAddress = getNewImplementation(result);
     console.log('Saving output...');
