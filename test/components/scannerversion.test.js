@@ -1,7 +1,7 @@
 const hre = require('hardhat');
 const { ethers, upgrades } = hre;
 const { expect } = require('chai');
-const deployEnv = require('../../scripts/loadEnv');
+const loadRoles = require('../../scripts/utils/loadRoles');
 const { deploy, tryFetchProxy, tryFetchContract } = require('../../scripts/utils/contractHelpers');
 
 const VERSION_1 = 'QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ';
@@ -18,7 +18,7 @@ describe('Scanner Node Software Version', function () {
             constructorArgs: [this.forwarder.address],
             unsafeAllow: 'delegatecall',
         });
-        this.roles = deployEnv.loadRoles();
+        this.roles = loadRoles(ethers);
         await this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_VERSION, this.accounts.admin.address);
         await this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_BETA_VERSION, this.accounts.admin.address);
         await this.access.connect(this.accounts.admin).grantRole(this.roles.UPGRADER, this.accounts.admin.address);

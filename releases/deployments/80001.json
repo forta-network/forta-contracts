@@ -97,7 +97,7 @@
 		}
 	},
 	"forta-staking-deploy-tx": "0x16df4158699535b75add141c3706b7e068fc66bb6dd809dae6df84f635e91149",
-	"forta-staking-parameters": {
+	"stake-subject-gateway": {
 		"address": "0x02304eC24ba2996a83F595D7cf80e5571a406EFA",
 		"impl": {
 			"address": "0xd0Ea639983728ab31433A8fF33f3b1A43BC39399",
@@ -113,7 +113,7 @@
 			"version": "0.1.1"
 		}
 	},
-	"forta-staking-parameters-deploy-tx": "0xd3b5dcf2b0f41d4183d1ce0d17252fc425634bd22cf61455fdb444aa29d49415",
+	"stake-subject-gateway-deploy-tx": "0xd3b5dcf2b0f41d4183d1ce0d17252fc425634bd22cf61455fdb444aa29d49415",
 	"agent-registry": {
 		"address": "0x4519Eaeb9A5c1a9d870Fe35452E54AD04E6e8428",
 		"impl": {

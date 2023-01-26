@@ -9,6 +9,7 @@ const contractHelpers = require('../../scripts/utils/contractHelpers');
 const { deploy, tryFetchContract, tryFetchProxy } = contractHelpers;
 const { getDeploymentOutputWriter } = require('../../scripts/utils/deploymentFiles');
 const deployEnv = require('../../scripts/loadEnv');
+const loadRoles = require('../../scripts/utils/loadRoles');
 
 upgrades.silenceWarnings();
 
@@ -258,7 +259,7 @@ async function migrate(config = {}) {
     }
 
     // Roles dictionary
-    const roles = deployEnv.loadRoles();
+    const roles = loadRoles(ethers);
     return {
         provider,
         deployer,
