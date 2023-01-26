@@ -15,7 +15,9 @@ const loadRoles = (ethers) => {
             roles[id.replace('_ROLE', '')] = ethers.utils.id(id);
         }
     }
+    //token roles
     roles.MINTER = ethers.utils.id('MINTER_ROLE');
+    roles.ADMIN = ethers.utils.id('ADMIN_ROLE');
     return roles;
 };
 
