@@ -8,7 +8,7 @@
                 ["roles.STAKING_CONTRACT_ROLE", "deployment.forta-staking"],
                 ["roles.SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE", "deployment.scanner-to-scanner-pool-migration"],
                 ["roles.SCANNER_POOL_ADMIN_ROLE", "deployment.multisig"],
-                ["roles.STAKING_ADMIN", "deployment.multisig"],
+                ["roles.STAKING_ADMIN_ROLE", "deployment.multisig"],
                 ["roles.MIGRATION_EXECUTOR_ROLE", "0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24"],
                 ["roles.REWARDER_ROLE", "deployment.relayer"]
             ]

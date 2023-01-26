@@ -22,11 +22,11 @@ const MULTICALL_ABI = {
     type: 'function',
 };
 
-async function mapContractInfo(hre, deployment, network, contractName) {
+async function mapContractInfo(hre, deploymentInfo, network, contractName) {
     return {
         name: contractName,
         network,
-        address: parseAddress({ deployment }, kebabize(contractName)),
+        address: parseAddress(deploymentInfo, kebabize(contractName)),
         abi: JSON.stringify([...(await hre.artifacts.readArtifact(contractName).then((a) => a.abi))]),
     };
 }
@@ -48,7 +48,7 @@ function mapStep(hre, deploymentInfo, network, contractInfo, stepInfo) {
     if (!Array.isArray(stepInfo.params[0])) {
         throw new Error('Params must be array of arrays (each row is a list of method params, use multiple rows for multicall');
     }
-    stepInfo.params = stepInfo.params.map((callArgs) => formatParams({ ...deploymentInfo }, callArgs));
+    stepInfo.params = stepInfo.params.map((callArgs) => formatParams(deploymentInfo, callArgs));
     const abi = JSON.parse(contractInfo.abi);
     return stepInfo.params.map((callParams) => {
         let functionInputs = callParams;
@@ -73,7 +73,7 @@ async function parseAdminProposals(hre, config, deploymentInfo, network) {
     const contracts = [];
     const steps = [];
     for (const contractName of Object.keys(config)) {
-        const contractInfo = await mapContractInfo(hre, deploymentInfo.deployment, network, contractName);
+        const contractInfo = await mapContractInfo(hre, deploymentInfo, network, contractName);
         contracts.push(contractInfo);
         steps.push(
             ...config[contractName]

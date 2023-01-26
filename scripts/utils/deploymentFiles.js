@@ -156,13 +156,13 @@ function parseRole(info, role) {
     if (!info.roles) {
         throw new Error('roles object missing');
     }
-    const roleKey = info.roles[role.replace('_ROLE', '')];
+    const roleKey = role.replace('_ROLE', '');
     if (!info.roles[roleKey]) {
         throw new Error(`Role not found: ${role}`);
     }
     const roleValue = ethers.utils.id(role);
     if (roleValue != info.roles[roleKey]) {
-        throw new Error(`Role ${roleValue} and ${info.roles[roleKey]} does not match`);
+        throw new Error(`Role ${roleValue} and ${info.roles[roleKey]} does not match. Did you add _ROLE at the end?`);
     }
     return roleValue;
 }

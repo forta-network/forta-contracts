@@ -38,6 +38,7 @@ async function main(args, hre) {
     } else {
         console.log('No admin actions.');
     }
+
     const proposal = await client.createProposal({
         contract: contracts,
         title: args.title,
