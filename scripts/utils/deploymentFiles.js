@@ -1,8 +1,9 @@
 const { kebabizeContractName, removeVersionFromContractName } = require('./stringUtils.js');
+const loadRoles = require('./loadRoles');
 const AsyncConf = require('./asyncConf');
 const { readFileSync, existsSync } = require('fs');
 const { getAddress } = require('@ethersproject/address');
-const { ethers } = require('ethers')
+const { ethers } = require('ethers');
 
 const RELEASES_PATH = './releases';
 
@@ -197,6 +198,15 @@ function getRelayerAddress(chainId) {
     return getAddress(relayers[CHAIN_NAME[chainId]]);
 }
 
+function getDeploymentInfo(chainId) {
+    return {
+        deployment: getDeployment(chainId),
+        roles: loadRoles(ethers),
+        relayer: getRelayerAddress(chainId),
+        multisig: getMultisigAddress(chainId),
+    };
+}
+
 module.exports = {
     saveImplementation,
     saveNonUpgradeable,
@@ -216,4 +226,5 @@ module.exports = {
     parseAddress,
     saveToDeployment,
     getRelayerAddress,
+    getDeploymentInfo
 };

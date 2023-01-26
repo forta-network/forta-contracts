@@ -8,6 +8,7 @@ on:
   pull_request:
     branches-ignore:
       - 'release/**'
+      - 'proposal/**'
 
 jobs:
   test:

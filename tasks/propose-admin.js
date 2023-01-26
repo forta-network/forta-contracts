@@ -1,4 +1,4 @@
-const { getDeployment, getDeployedImplementations, getMultisigAddress, getProposedAdminActions, getRelayerAddress } = require('../scripts/utils/deploymentFiles');
+const { getDeploymentInfo, getDeployedImplementations, getProposedAdminActions } = require('../scripts/utils/deploymentFiles');
 const parseAdminProposals = require('./helpers/propose-action-parser');
 const parseUpgradeProposals = require('./helpers/propose-upgrades-parser');
 const { task } = require('hardhat/config');
@@ -6,7 +6,6 @@ const { fromChainId } = require('defender-base-client');
 const { AdminClient } = require('defender-admin-client');
 const { writeFileSync } = require('fs');
 const { toEIP3770 } = require('../scripts/utils');
-const loadRoles = require('../scripts/utils/loadRoles');
 
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 
@@ -15,21 +14,14 @@ async function main(args, hre) {
     const { ethers } = hre;
     const chainId = await ethers.provider.getNetwork().then((n) => n.chainId);
     const network = fromChainId(chainId);
-    const multisig = getMultisigAddress(chainId);
     const prepared = getDeployedImplementations(chainId, args.release);
     const adminProposed = getProposedAdminActions(chainId, args.release);
-    const deployment = getDeployment(chainId);
+    const deploymentInfo = getDeploymentInfo(chainId);
     const contracts = [];
     const steps = [];
-    const deploymentInfo = {
-        deployment,
-        roles: loadRoles(hre.ethers),
-        relayer: getRelayerAddress(chainId),
-        multisig,
-    };
 
     console.log('Parsing new implementations...');
-    const upgradeProposal = await parseUpgradeProposals(hre, prepared, deployment, network);
+    const upgradeProposal = await parseUpgradeProposals(hre, prepared, deploymentInfo, network);
     if (upgradeProposal.steps.length > 0) {
         console.log(`Proposing upgrades for ${upgradeProposal.steps.length} contracts`);
         contracts.push(...upgradeProposal.contracts);
@@ -51,14 +43,14 @@ async function main(args, hre) {
         title: args.title,
         description: args.description,
         type: 'batch',
-        via: multisig,
+        via: deploymentInfo.multisig,
         viaType: 'Gnosis Safe',
         metadata: {},
         steps,
     });
 
-    const multisigLink = `https://app.safe.global/${toEIP3770(chainId, multisig)}/home`;
-    const outputText = `## Approval\n\n[Approval required](${proposal.url}) by multisig [\`${multisig}\`](${multisigLink}) signers.`;
+    const multisigLink = `https://app.safe.global/${toEIP3770(chainId, deploymentInfo.multisig)}/home`;
+    const outputText = `## Approval\n\n[Approval required](${proposal.url}) by multisig [\`${deploymentInfo.multisig}\`](${multisigLink}) signers.`;
 
     if (summaryPath) {
         writeFileSync(summaryPath, outputText);
