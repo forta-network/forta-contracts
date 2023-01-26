@@ -15,7 +15,7 @@
     },
     "StakeAllocator": {
         "impl": {
-            "init-args": ["deployment.access"],
+            "init-args": ["deployment.access-manager"],
             "opts": {
                 "unsafe-allow": [
                     "delegatecall"
@@ -29,7 +29,7 @@
     },
     "ScannerPoolRegistry": {
         "impl": {
-            "init-args": ["deployment.access", "FScannerPools", "FSP", "deployment.stake-subject-gateway", "3600"],
+            "init-args": ["deployment.access-manager", "FScannerPools", "FSP", "deployment.stake-subject-gateway", "3600"],
             "opts": {
                 "unsafe-allow": [
                     "delegatecall"
@@ -43,7 +43,7 @@
     },
     "ScannerToScannerPoolMigration": {
         "impl": {
-            "init-args": ["deployment.access"],
+            "init-args": ["deployment.access-manager"],
             "opts": {
                 "unsafe-allow": [
                     "delegatecall"
