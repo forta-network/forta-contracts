@@ -1,8 +1,8 @@
 title: Stake Delegation
 network: mumbai
-deploy: deploy-and-prepare-upgrade
+deploy: deploy-and-prepare-upgrade 1.2.0
 verify: verify-deployed
-finish-release: propose-admin
+finish: propose-admin
 description: |
   ## Deployed contracts:
   - RewardsDistributor
