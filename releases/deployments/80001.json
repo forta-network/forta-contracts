@@ -203,5 +203,24 @@
 			"version": "0.1.4"
 		}
 	},
-	"dispatch-deploy-tx": "0x507ec3b49cff285d224d4dc41c18e3ffaf1807875439cec7ccbbc8b683f83cea"
+	"dispatch-deploy-tx": "0x507ec3b49cff285d224d4dc41c18e3ffaf1807875439cec7ccbbc8b683f83cea",
+	"rewards-distributor": {
+		"address": "0xb23696793ffc58315Ed8e4c63cf1ef454a7479EC",
+		"impl": {
+			"address": "0x253Eca8E7f01708b7dFD7277D814c33451A2211B",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+				"0x02304eC24ba2996a83F595D7cf80e5571a406EFA"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"2",
+				"86400"
+			],
+			"name": "RewardsDistributor",
+			"version": "0.1.0"
+		}
+	},
+	"rewards-distributor-deploy-tx": "0x40d75ae2dd36b0fb37cab264b8731f0392892d7e0da6b0b0715f98f5081b6f23"
 }
