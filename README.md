@@ -15,7 +15,7 @@ Forta comprises a decentralized network of independent node operators that scan 
 
 Leveraging Forta, developers can build detection bots and machine learning models, and run them on the decentralized Forta network to uncover anomalous activity on every blockchain transaction.
 
-The contracts coordinate and govern Forta Network's Detection Bots (formerly Agents) and Scanner Nodes.
+The contracts coordinate and govern Forta Network's Detection Bots (formerly Agents) and Scanner Pools.
 
 # Contracts
 
@@ -38,7 +38,7 @@ Contract responsible of Agent registration, updates, enabling, disabling and def
 Agents are identified by `uint256(keccak256(UUIDv4))`
 Compliant with ERC-721 standard.
 
-## Scanner Node Registry
+## Scanner Node Registry (in deprecation)
 
 - [Folder](https://github.com/forta-network/forta-contracts/tree/master/contracts/components/scanners)
 
@@ -46,11 +46,19 @@ Contract responsible of Scanner Node registration, updates, enabling, disabling 
 Scanners are identified by their EOA Address casted to `uint256`
 Compliant with ERC-721 standard.
 
+## Scanner Pool Registry
+- [Folder](https://github.com/forta-network/forta-contracts/tree/master/contracts/components/scanner_pools)
+
+A Scan
+Contract responsible of Scanner Pool crNode registration, updates, enabling, disabling and defining the Staking Threshold for Scanner Nodes.
+Scanners are identified by their EOA Address casted to `uint256`
+Compliant with ERC-721 standard.
+
 ## Dispatch
 
 - [Folder](https://github.com/forta-network/forta-contracts/blob/master/contracts/components/dispatch/Dispatch.sol)
 
-Register of the assignments of Agents and Scanners, governed by the Assigner Software.
+Register of the assignments of Agents and Scanners, governed by the Assigner Software (off chain).
 
 ## Staking
 
@@ -59,6 +67,8 @@ Register of the assignments of Agents and Scanners, governed by the Assigner Sof
 Contract handling staking of FORT tokens on subjects (participant of the network), slashing and reward distribution.
 Deposited stake is represented by ERC-1155 shares, for active and inactive (withdrawal initiated, non-transferrable) stake.
 Share ID is derived from the subject type, subject ID and it being active or inactive.
+
+These contracts handle stake delegation for Scanner Pools and reward distribution between pool owner and delegators.
 
 ## ScannerNodeVersion
 
@@ -116,7 +126,7 @@ npm run test
 
 ## Querying the contracts
 
-You can query a network deployment with the help of the `./scripts/.cache-<network_id>.json` files and using ethers to attach contract factories to addresses.
+You can query a network deployment with the help of the `./scripts/releases/deployments/<network_id>.json` files and using ethers to attach contract factories to addresses.
 There is a helper function to automate this process from console or scripts called `loadEnv()`
 
 Example:
@@ -125,20 +135,31 @@ Example:
 npx hardhat --network <network name from hardhat.config.js> console
 > const e = require('./scripts/loadEnv')
 > const d = await e.loadEnv()
-> await d.contracts.scanners.ownerOf('0x6F0BAADa52e8340C2154224Ecb476E5c9285F01c')
+> await d.contracts.scannerPool.ownerOf('1')
 ```
 
 ## Deployments
 
 Deployment addresses are listed in `scripts/.cache-<chainID>.json`
 
-To deploy the platform's contracts:
+### Latest versions (to test:)
+To deploy the platform's contracts last version, as used by the tests (except `ScannerNodeVersion`):
 
-`npx hardhat run --network <network> scripts/deploy-platform.js`
+`npx hardhat run --network <network> scripts/deployments/deploy-platform.js`
 
 To see debug logs, we are using [debug package](https://www.npmjs.com/package/debug)
 
 `DEBUG=* npx hardhat run --network <network> scripts/deploy-platform.js`
+
+### Release process:
+
+Read our [docs for our CI/CD contracts pipeline](https://github.com/forta-network/forta-contracts/blob/master/DEPLOYMENT_AND_ADMIN_ACTIONS.md) using Github Actions and [Openzeppelin Defender](https://docs.openzeppelin.com/defender/admin-api-reference).
+
+Implemented by [Raúl Martínez](https://github.com/Ramarti) Based in the concept repo by [Santiago Palladino](https://github.com/spalladino/sample-contract-deploy-pipeline)
+
+### Trigger admin actions:
+
+Also covered in the (above pipeline!)[https://github.com/forta-network/forta-contracts/blob/master/DEPLOYMENT_AND_ADMIN_ACTIONS.md]
 
 ## Development of upgrades.
 
