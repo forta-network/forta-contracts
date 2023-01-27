@@ -214,7 +214,9 @@ jobs:
                   name: contract-artifacts
 
             - name: Verify contracts
-              run: eval yarn hardhat --network ${{ needs.prepare.outputs.release_network }} ${{ needs.prepare.outputs.release_verify_cmd }} ${{ needs.prepare.outputs.release_version }}
+              shell: bash
+              run: |
+                yarn hardhat --network ${{ needs.prepare.outputs.release_network }} ${{ needs.prepare.outputs.release_verify_cmd }} ${{ needs.prepare.outputs.release_version }}
               env:
                   INFURA_PROJECT_ID: '${{ secrets.INFURA_PROJECT_ID }}'
                   MUMBAI_MNEMONIC: '${{ secrets.MUMBAI_MNEMONIC }}'
@@ -252,7 +254,9 @@ jobs:
 
             - name: Complete release
               if: "needs.prepare.outputs.release_finish_cmd != ''"
-              run: eval yarn hardhat --network ${{ needs.prepare.outputs.release_network }} ${{ needs.prepare.outputs.release_finish_cmd }} ${{ needs.prepare.outputs.release_version }} "${{ needs.prepare.outputs.release_title }}" "${{ needs.prepare.outputs.release_description }}"
+              shell: bash
+              run: |
+                yarn hardhat --network ${{ needs.prepare.outputs.release_network }} ${{ needs.prepare.outputs.release_finish_cmd }} ${{ needs.prepare.outputs.release_version }} "${{ needs.prepare.outputs.release_title }}" "${{ needs.prepare.outputs.release_description }}"
               env:
                   INFURA_PROJECT_ID: '${{ secrets.INFURA_PROJECT_ID }}'
                   MUMBAI_MNEMONIC: '${{ secrets.MUMBAI_MNEMONIC }}'
