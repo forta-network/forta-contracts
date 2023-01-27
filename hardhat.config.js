@@ -82,7 +82,7 @@ module.exports = {
     },
 };
 
-const accountsForNetwork = (name) => [argv[`${name}Mnemonic`] && { mnemonic: argv[`${name}Mnemonic`] }, argv[`${name}PrivateKey`] && [argv[`${name}PrivateKey`]]].find(Boolean);
+const accountsForNetwork = (name) => [argv[`${name}Mnemonic`] && { mnemonic: argv[`${name}Mnemonic`] }, argv[`${name}PrivateKey`]].find(Boolean);
 
 Object.assign(
     module.exports.networks,
