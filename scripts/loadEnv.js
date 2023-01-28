@@ -98,9 +98,10 @@ const FEE_PARAMS = (chainId) => {
 async function loadEnv(config = {}) {
     const provider = config?.provider ?? config?.deployer?.provider ?? (await contractHelpers.getDefaultProvider(hre));
     const network = await provider.getNetwork();
+    const { name, chainId } = network;
+
     const deployer = config?.deployer ?? (await contractHelpers.getDefaultDeployer(hre, provider, utils.networkName(chainId)));
 
-    const { name, chainId } = network;
 
     const chainType = ROOT_CHAIN_MANAGER[chainId] ? CHAIN_TYPE.ROOT : CHILD_CHAIN_MANAGER_PROXY[chainId] ? CHAIN_TYPE.CHILD : CHAIN_TYPE.DEV;
     let deployment = getDeployment(chainId);

@@ -125,7 +125,7 @@ task('deploy')
     .setDescription(
         `Deploys the contracts as described in the correspondent deploy.json config.
         Works both with non-upgradeable and uups upgradeable contracts.
-        Results are tracked in /<release>/<network>/deployed/deployed.json
+        Results are tracked in /<release>/<network>/output/deployed.json
         `
     )
     .setAction(main);
