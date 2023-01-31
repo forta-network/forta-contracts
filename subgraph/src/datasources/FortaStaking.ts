@@ -1,4 +1,4 @@
-import { Address, BigInt, ethereum, crypto, ByteArray, Bytes, log } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum, crypto, ByteArray, log } from "@graphprotocol/graph-ts";
 import { newMockEvent } from "matchstick-as";
 import {
   StakeDeposited as StakeDepositedEvent,
@@ -16,8 +16,11 @@ import {
   Slash,
   Stake,
   StakeDepositEvent,
+  WithdrawalExecutedEvent,
   Staker,
   Subject,
+  AggregateTotalStake,
+  AggregateActiveStake,
 } from "../../generated/schema";
 import { fetchAccount } from "../fetch/account";
 
@@ -56,16 +59,57 @@ function getActiveSharesId(_subjectType: i32, _subject: BigInt): string {
   return activeSharesId.toString();
 }
 
+export function getStakeId(subjectId: string, stakerId: string): string {
+  return subjectId + stakerId;
+}
+
+
+function updateAggregateStake(stakerId: string, prevStakeTotalShares: BigInt , prevStateInActiveShares: BigInt , updatedStakeTotalShares: BigInt, updatedStakeInActiveShares: BigInt): void {
+
+
+  const previousActiveStake = prevStakeTotalShares.minus(prevStateInActiveShares);
+  const updatedActiveStake = updatedStakeTotalShares.minus(updatedStakeInActiveShares);
+
+
+  const activeStakeDif = updatedActiveStake.minus(previousActiveStake);
+  const totalStakeDif = updatedStakeTotalShares.minus(prevStakeTotalShares);
+
+   let aggregateTotalStake = AggregateTotalStake.load(stakerId);
+   let aggregateActiveStake = AggregateActiveStake.load(stakerId);
+
+   if(!aggregateTotalStake) {
+    aggregateTotalStake = new AggregateTotalStake(stakerId);
+    aggregateTotalStake.totalStake = BigInt.fromI64(0);
+   }
+
+   if(!aggregateActiveStake) {
+    aggregateActiveStake = new AggregateActiveStake(stakerId);
+    aggregateActiveStake.activeStake = BigInt.fromI64(0);
+   }
+
+   aggregateTotalStake.totalStake = aggregateTotalStake.totalStake.plus(totalStakeDif)
+   aggregateActiveStake.activeStake = aggregateActiveStake.activeStake.plus(activeStakeDif)
+
+   aggregateTotalStake.staker = stakerId
+   aggregateActiveStake.staker = stakerId
+
+
+   aggregateTotalStake.save()
+   aggregateActiveStake.save()
+}
+
 function updateStake(
   _stakingContractAddress: Address,
   _subjectType: i32,
   _subject: BigInt,
   _staker: Address): string {
-  const _subjectId = _subject.toHex();
-  const _stakerId = _staker.toHex();
+  
+  const _subjectId = _subject.toHexString();
+  const _stakerId = _staker.toHexString();
   let subject = Subject.load(_subjectId);
-  let stake = Stake.load(_subjectId + _stakerId);
+  let stake = Stake.load(getStakeId(_subjectId,_stakerId));
   let staker = Staker.load(_stakerId);
+
   const fortaStaking = FortaStakingContract.bind(_stakingContractAddress);
 
   if (subject == null) {
@@ -102,8 +146,13 @@ function updateStake(
   }
 
   if (stake == null) {
-    stake = new Stake(_subjectId + _stakerId);
+    stake = new Stake(getStakeId(_subjectId,_stakerId));
   }
+
+  const prevStakeTotalShares: BigInt = stake.shares ? stake.shares as BigInt : BigInt.fromI32(0);
+  const prevStateInActiveShares: BigInt = stake.inactiveShares ? stake.inactiveShares as BigInt : BigInt.fromI32(0);
+
+
   stake.subject = _subjectId;
   stake.isActive = true;
   stake.staker = _stakerId;
@@ -117,24 +166,36 @@ function updateStake(
     _subject,
     _staker
   );
+
+  const updatedStakeTotalShares: BigInt = stake.shares ? stake.shares as BigInt : BigInt.fromI32(0);
+  const updatedStateInActiveShares: BigInt = stake.inactiveShares ? stake.inactiveShares as BigInt: BigInt.fromI32(0);
+
+  updateAggregateStake(_stakerId, prevStakeTotalShares, prevStateInActiveShares, updatedStakeTotalShares, updatedStateInActiveShares)
+
+  staker.account = _stakerId;
+
   subject.save();
   stake.save();
   staker.save();
+
   return _subjectId + _stakerId;
 }
 
 export function handleStakeDeposited(event: StakeDepositedEvent): void {
+
   const stakeId = updateStake(
     event.address,
     event.params.subjectType,
     event.params.subject,
     event.params.account,
   );
+
   const stakeDepositedEvent = new StakeDepositEvent(events.id(event));
   stakeDepositedEvent.transaction = transactions.log(event).id;
   stakeDepositedEvent.timestamp = event.block.timestamp;
   stakeDepositedEvent.stake = stakeId;
-  stakeDepositedEvent.subject = event.params.subject.toHex();
+  stakeDepositedEvent.subject = event.params.subject.toHexString();
+  stakeDepositedEvent.amount = event.params.amount;
   stakeDepositedEvent.save();
 }
 
@@ -147,13 +208,20 @@ export function handleWithdrawalInitiated(event: WithdrawalInitiated): void {
   );
 }
 
-export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {
-  updateStake(
+export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {  
+  const stakeId = updateStake(
     event.address,
     event.params.subjectType,
     event.params.subject,
     event.params.account,
   );
+
+  const withdrawalExecutedEvent = new WithdrawalExecutedEvent(events.id(event));
+  withdrawalExecutedEvent.transaction = transactions.log(event).id;
+  withdrawalExecutedEvent.timestamp = event.block.timestamp;
+  withdrawalExecutedEvent.stake = stakeId;
+  withdrawalExecutedEvent.subject = event.params.subject.toHex();
+  withdrawalExecutedEvent.save();
 }
 
 export function handleRewarded(event: RewardedEvent): void {
