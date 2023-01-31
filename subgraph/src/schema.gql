@@ -164,7 +164,7 @@ type Subject @entity {
   slashedTotal: Int
   stakes: [Stake!]! @derivedFrom(field: "subject")
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "subject")
-  withdrawalExecutedEvent: [WithdrawalExecutedEvent!] @derivedFrom(field: "subject")
+  withdrawalExecutedEvents: [WithdrawalExecutedEvent!] @derivedFrom(field: "subject")
 }
 
 type SharesID @entity {

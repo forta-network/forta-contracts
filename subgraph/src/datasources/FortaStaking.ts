@@ -216,12 +216,12 @@ export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {
     event.params.account,
   );
 
-  const withdrawlExecutedEvent = new WithdrawalExecutedEvent(events.id(event));
-  withdrawlExecutedEvent.transaction = transactions.log(event).id;
-  withdrawlExecutedEvent.timestamp = event.block.timestamp;
-  withdrawlExecutedEvent.stake = stakeId;
-  withdrawlExecutedEvent.subject = event.params.subject.toHex();
-  withdrawlExecutedEvent.save();
+  const withdrawalExecutedEvent = new WithdrawalExecutedEvent(events.id(event));
+  withdrawalExecutedEvent.transaction = transactions.log(event).id;
+  withdrawalExecutedEvent.timestamp = event.block.timestamp;
+  withdrawalExecutedEvent.stake = stakeId;
+  withdrawalExecutedEvent.subject = event.params.subject.toHex();
+  withdrawalExecutedEvent.save();
 }
 
 export function handleRewarded(event: RewardedEvent): void {
