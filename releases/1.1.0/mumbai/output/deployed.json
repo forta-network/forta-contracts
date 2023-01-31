@@ -1,0 +1,128 @@
+{
+	"forta-staking-deploy-tx": "0x16df4158699535b75add141c3706b7e068fc66bb6dd809dae6df84f635e91149",
+	"forta-staking": {
+		"address": "0x64d5192F03bD98dB1De2AA8B4abAC5419eaC32CE",
+		"impl": {
+			"address": "0xa817715A731011ca865b5229D6E107B446da52a6",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"0x61447385B019187daa48e91c55c02AF1F1f3F863",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+				"60",
+				"0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24"
+			],
+			"name": "FortaStaking_0_1_1",
+			"version": "0.1.1"
+		}
+	},
+	"forta-staking-parameters-deploy-tx": "0xd3b5dcf2b0f41d4183d1ce0d17252fc425634bd22cf61455fdb444aa29d49415",
+	"forta-staking-parameters": {
+		"address": "0x02304eC24ba2996a83F595D7cf80e5571a406EFA",
+		"impl": {
+			"address": "0xd0Ea639983728ab31433A8fF33f3b1A43BC39399",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"0x61447385B019187daa48e91c55c02AF1F1f3F863",
+				"0x64d5192F03bD98dB1De2AA8B4abAC5419eaC32CE"
+			],
+			"name": "FortaStakingParameters_0_1_1",
+			"version": "0.1.1"
+		}
+	},
+	"agent-registry-deploy-tx": "0xb48675b7bf382b4673abbf904edf2944dcc54159aa89a786dfa5fee70e891c49",
+	"agent-registry": {
+		"address": "0x4519Eaeb9A5c1a9d870Fe35452E54AD04E6e8428",
+		"impl": {
+			"address": "0x4D303b84cfDB7C3fD1001008d884B4660dacc5a0",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"0x61447385B019187daa48e91c55c02AF1F1f3F863",
+				"Forta Agents",
+				"FAgents"
+			],
+			"name": "AgentRegistry_0_1_5",
+			"version": "0.1.5"
+		}
+	},
+	"scanner-registry-deploy-tx": "0x0d7bf9d907c69c3c2f90e4c5bca03c7dbe9671e61ddd4239e70eb60109e53f1b",
+	"scanner-registry": {
+		"address": "0x569c785b4744E582c65A12827726FC03C8D08A4a",
+		"impl": {
+			"address": "0x1333524EaCB30c56DB197f91901F6bF203F8F1fB",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"Forta Scanners",
+				"FScanners"
+			],
+			"name": "ScannerRegistry_0_1_3",
+			"version": "0.1.3"
+		}
+	},
+	"slashing-controller-deploy-tx": "0x994a24e7640160a633f36ff1fae851a7cebcce828130b7f2ba4219e6ce4ce6e4",
+	"slashing-controller": {
+		"address": "0x9bc159c97fA36282F0362C56586BA16BeB9F656a",
+		"impl": {
+			"address": "0xac870f4b6A3915f5354B0f91472F7aee255Bf488",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"0x64d5192F03bD98dB1De2AA8B4abAC5419eaC32CE",
+				"0x02304eC24ba2996a83F595D7cf80e5571a406EFA",
+				{
+					"type": "BigNumber",
+					"hex": "0x3635c9adc5dea00000"
+				},
+				"10",
+				[
+					"0x602d37be0dfc88daa6b674e3c42ff4efabf3e86cef482bce18b643e8c0a1b33c",
+					"0xe147df3b4755943b8e7219d7acfd0fd67879bdbf5f62537886a5e2acd476ee7d"
+				],
+				[
+					{
+						"mode": "1",
+						"percentSlashed": "15"
+					},
+					{
+						"mode": "2",
+						"percentSlashed": "90"
+					}
+				]
+			],
+			"name": "SlashingController",
+			"version": "0.1.1"
+		}
+	},
+	"dispatch-deploy-tx": "0x507ec3b49cff285d224d4dc41c18e3ffaf1807875439cec7ccbbc8b683f83cea",
+	"dispatch": {
+		"address": "0x4B71C61400F5da35518DE10dEcd21D1Aa4d7f283",
+		"impl": {
+			"address": "0xF1310844EC91A03B6548022dE3f9f9aE209fBDbE",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"0x61447385B019187daa48e91c55c02AF1F1f3F863",
+				"0x4519Eaeb9A5c1a9d870Fe35452E54AD04E6e8428",
+				"0x569c785b4744E582c65A12827726FC03C8D08A4a"
+			],
+			"name": "Dispatch_0_1_4",
+			"version": "0.1.4"
+		}
+	}
+}

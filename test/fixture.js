@@ -1,6 +1,7 @@
-const { ethers } = require('hardhat');
+const hre = require('hardhat');
+const ethers = hre.ethers;
 const migrate = require('../scripts/deployments/platform');
-const utils = require('../scripts/utils');
+const contractHelpers = require('../scripts/utils/contractHelpers');
 const DEBUG = require('debug')('forta:migration');
 
 function prepare(config = {}) {
@@ -22,13 +23,12 @@ function prepare(config = {}) {
         DEBUG('Fixture: migrated');
 
         // mock contracts
-        this.contracts.sink = await utils.deploy('Sink');
-        this.contracts.otherToken = await utils.deployUpgradeable('Forta', 'uups', [this.deployer.address]);
+        this.contracts.sink = await contractHelpers.deploy(hre, 'Sink');
+        this.contracts.otherToken = await contractHelpers.deployUpgradeable(hre, 'Forta', 'uups', [this.deployer.address]);
         DEBUG('Fixture: mock contracts');
 
         // Set admin as default signer for all contracts
         Object.assign(this, this.contracts);
-
         // setup roles
         await Promise.all(
             [
@@ -110,9 +110,9 @@ function prepare(config = {}) {
 
 module.exports = {
     prepare,
-    getFactory: utils.getFactory,
-    attach: utils.attach,
-    deploy: utils.deploy,
-    deployUpgradeable: utils.deployUpgradeable,
-    performUpgrade: utils.performUpgrade,
+    getFactory: contractHelpers.getFactory,
+    attach: contractHelpers.attach,
+    deploy: contractHelpers.deploy,
+    deployUpgradeable: contractHelpers.deployUpgradeable,
+    performUpgrade: contractHelpers.performUpgrade,
 };

@@ -8,6 +8,7 @@ coverage.*
 deploy.*.json
 docs
 .cache-31337.json
+31337.json
 scripts/parse-multi-sent-fort.js
 .openzeppelin/unknown-31337.json
 .env
@@ -15,3 +16,5 @@ scripts/parse-multi-sent-fort.js
 scripts/data/*
 yarn-error.log
 layout-compare/
+test/migration/data/t*
+releases/*/local/*

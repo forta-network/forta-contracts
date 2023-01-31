@@ -1,10 +1,11 @@
 import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
-import { assert, test, createMockedFunction } from "matchstick-as";
+import { assert, test, createMockedFunction, describe } from "matchstick-as";
 import {
   createFrozeEvent,
   createRewardEvent,
   createSlashedEvent,
   createStakeDepositedEvent,
+  getStakeId,
   handleFroze,
   handleRewarded,
   handleSlashed,
@@ -31,6 +32,28 @@ test("It should handle stake depostied", () => {
     contractAddress,
     "activeStakeFor",
     "activeStakeFor(uint8,uint256):(uint256)"
+  )
+    .withArgs([
+      ethereum.Value.fromUnsignedBigInt(BigInt.fromString("1234")),
+      ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(Address.zero().toI32())),
+    ])
+    .returns([ethereum.Value.fromSignedBigInt(expectedResult)]);
+
+  createMockedFunction(
+    contractAddress,
+    "totalShares",
+    "totalShares(uint8,uint256):(uint256)"
+  )
+    .withArgs([
+      ethereum.Value.fromUnsignedBigInt(BigInt.fromString("1234")),
+      ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(Address.zero().toI32())),
+    ])
+    .returns([ethereum.Value.fromSignedBigInt(expectedResult)]);
+
+  createMockedFunction(
+    contractAddress,
+    "totalInactiveShares",
+    "totalInactiveShares(uint8,uint256):(uint256)"
   )
     .withArgs([
       ethereum.Value.fromUnsignedBigInt(BigInt.fromString("1234")),
@@ -92,7 +115,7 @@ test("It should handle stake depostied", () => {
     "Stake",
     events.id(mockStakeDepostied),
     "id",
-    events.id(mockStakeDepostied)
+    getStakeId(mockStakeDepostied.params.subject.toHex(), mockStakeDepostied.params.account.toHex())
   );
 });
 
@@ -165,3 +188,37 @@ test("Should successfully handle froze event", () => {
     "true"
   );
 });
+
+describe('Delegated staking', () => {
+  test('should handle stake deposited event for new delegated staker', () => {
+
+  })
+
+  test('should handle stake deposited event for delegated staker increasing stake', () => {
+
+  })
+
+  test('should handle withdrawal executed event for delegated staker withdrawing stake', () => {
+
+  })
+
+  test('should update staker on account after stake deposited event', () => {
+
+  })
+
+  test('should increase staker total aggregate after stake deposited event', () => {
+
+  })
+
+  test('should increase staker total active aggregate after stake deposited event', () => {
+
+  })
+
+  test('should reduce staker total aggregate after handle withdrawal executed event', () => {
+
+  })
+
+  test('should reduce staker total active aggregate after handle withdrawal executed event', () => {
+
+  })
+})

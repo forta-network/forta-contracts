@@ -10,6 +10,7 @@ type Account @entity {
   scannerTransferToEvents: [ScannerTransfer!]! @derivedFrom(field: "to")
   scannerManagerEnabledEvents: [ScannerManagerEnabled!]!
     @derivedFrom(field: "manager")
+  staker: Staker @derivedFrom(field: "account")
 }
 
 type Bot @entity {
@@ -163,6 +164,7 @@ type Subject @entity {
   slashedTotal: Int
   stakes: [Stake!]! @derivedFrom(field: "subject")
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "subject")
+  withdrawalExecutedEvents: [WithdrawalExecutedEvent!] @derivedFrom(field: "subject")
 }
 
 type SharesID @entity {
@@ -188,8 +190,11 @@ type Reward @entity {
 
 type Staker @entity {
   id: ID!
+  account: Account!
   stakes: [Stake!]! @derivedFrom(field: "staker")
   releasedRewards: [Reward!] @derivedFrom(field: "staker")
+  aggregateActiveStake: AggregateActiveStake! @derivedFrom(field: "staker")
+  aggregateTotalStake: AggregateTotalStake! @derivedFrom(field: "staker")
 }
 
 type Stake @entity {
@@ -200,9 +205,31 @@ type Stake @entity {
   shares: BigInt
   inactiveShares: BigInt
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
+  withdrawalExecutedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
+}
+
+type AggregateActiveStake @entity {
+  id: ID!
+  activeStake: BigInt!
+  staker: Staker!
+}
+
+type AggregateTotalStake @entity {
+  id: ID!
+  totalStake: BigInt!
+  staker: Staker!
 }
 
 type StakeDepositEvent implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  subject: Subject!
+  amount: BigInt!
+  stake: Stake!
+}
+
+type WithdrawalExecutedEvent implements Event @entity {
   id: ID!
   transaction: Transaction!
   timestamp: BigInt!
