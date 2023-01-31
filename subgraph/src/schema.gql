@@ -10,7 +10,7 @@ type Account @entity {
   scannerTransferToEvents: [ScannerTransfer!]! @derivedFrom(field: "to")
   scannerManagerEnabledEvents: [ScannerManagerEnabled!]!
     @derivedFrom(field: "manager")
-  staker: Staker! @derivedFrom(field: "account")
+  staker: Staker @derivedFrom(field: "account")
 }
 
 type Bot @entity {
@@ -225,6 +225,7 @@ type StakeDepositEvent implements Event @entity {
   transaction: Transaction!
   timestamp: BigInt!
   subject: Subject!
+  amount: BigInt!
   stake: Stake!
 }
 

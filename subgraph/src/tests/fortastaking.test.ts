@@ -5,6 +5,7 @@ import {
   createRewardEvent,
   createSlashedEvent,
   createStakeDepositedEvent,
+  getStakeId,
   handleFroze,
   handleRewarded,
   handleSlashed,
@@ -31,6 +32,28 @@ test("It should handle stake depostied", () => {
     contractAddress,
     "activeStakeFor",
     "activeStakeFor(uint8,uint256):(uint256)"
+  )
+    .withArgs([
+      ethereum.Value.fromUnsignedBigInt(BigInt.fromString("1234")),
+      ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(Address.zero().toI32())),
+    ])
+    .returns([ethereum.Value.fromSignedBigInt(expectedResult)]);
+
+  createMockedFunction(
+    contractAddress,
+    "totalShares",
+    "totalShares(uint8,uint256):(uint256)"
+  )
+    .withArgs([
+      ethereum.Value.fromUnsignedBigInt(BigInt.fromString("1234")),
+      ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(Address.zero().toI32())),
+    ])
+    .returns([ethereum.Value.fromSignedBigInt(expectedResult)]);
+
+  createMockedFunction(
+    contractAddress,
+    "totalInactiveShares",
+    "totalInactiveShares(uint8,uint256):(uint256)"
   )
     .withArgs([
       ethereum.Value.fromUnsignedBigInt(BigInt.fromString("1234")),
@@ -92,7 +115,7 @@ test("It should handle stake depostied", () => {
     "Stake",
     events.id(mockStakeDepostied),
     "id",
-    events.id(mockStakeDepostied)
+    getStakeId(mockStakeDepostied.params.subject.toHex(), mockStakeDepostied.params.account.toHex())
   );
 });
 
