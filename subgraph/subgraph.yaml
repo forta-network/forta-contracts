@@ -132,3 +132,23 @@ dataSources:
         - event: ScannerEnabled(indexed uint256,indexed bool,address,bool)
           handler: handleScannerEnabled
       file: ./src/datasources/ScannerPoolRegistry.ts
+  - kind: ethereum
+    name: RewardsDistributor
+    network: mumbai
+    source:
+      abi: RewardsDistributor
+      address: "0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9"
+      startBlock: 29281360
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - ScannerPool
+      abis:
+        - name: RewardsDistributor
+          file: ./abis/RewardsDistributor.json
+      eventHandlers:
+        - event: SetDelegationFee(uint8 indexed, uint256 indexed, uint256, uint256)
+          handler: handleSetDelegationFee
+      file: ./src/datasources/RewardsDistributor.ts
