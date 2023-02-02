@@ -39,7 +39,6 @@ type Scanner @entity {
   subject: Subject
   metadata: String!
   chainId: BigInt
-  scannerPool: ScannerPool
 
   scannerTransferEvents: [ScannerTransfer!]! @derivedFrom(field: "scanner")
   scannerUpdatedEvents: [ScannerUpdated!]! @derivedFrom(field: "scanner")
@@ -236,10 +235,12 @@ type WithdrawalExecutedEvent implements Event @entity {
   timestamp: BigInt!
   subject: Subject!
   stake: Stake!
+  amount: BigInt
 }
 
 type ScannerPool @entity {
   id: ID!
+  owner: Account!
   registered: Boolean!
   chainId: Int!
   apr: BigDecimal!
@@ -248,5 +249,18 @@ type ScannerPool @entity {
   stakeOwned: BigInt
   stakeDelegated: BigInt
   stakeAllocated: BigInt
-  scanners: [Scanner!] @derivedFrom(field: "scannerPool")
+  stakeOwnedAllocated: BigInt
+  scanNodes: [ScanNode!] @derivedFrom(field: "scannerPool")
+}
+
+#  New entity to handle scanNodes inside of pools
+type ScanNode @entity {
+  id: ID!
+  address: String
+  owner: Account!
+  enabled: Boolean!
+  disableFlags: Int!
+  metadata: String!
+  chainId: BigInt
+  scannerPool: ScannerPool!
 }

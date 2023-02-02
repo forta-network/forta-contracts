@@ -1,17 +1,26 @@
-import { Address, BigInt } from "@graphprotocol/graph-ts";
-import {
-  ScannerPoolRegistered as ScannerPoolRegisteredEvent,
-  ScannerPoolRegistry as ScannerPoolRegistryContract,
-} from "../../generated/ScannerPoolRegistry/ScannerPoolRegistry";
+import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
+import {SetDelegationFee as SetDelegationFeeEvent } from "../../generated/RewardsDistributor/RewardsDistributor";
 import { fetchScannerPool } from "../fetch/scannerpool";
+import { log } from "matchstick-as";
+import { ScannerPool, Subject } from "../../generated/schema";
 
-function updateScannerPool(registryAddress: Address, id: BigInt): void {
-    const scannerPoolRegistry = ScannerPoolRegistryContract.bind(registryAddress);
-    const scannerPool = fetchScannerPool(id);
-    scannerPool.registered = scannerPoolRegistry.isRegistered(id);
-    scannerPool.save();
+function updateScannerPoolComission(subjectId: string, subjectType: i32, fee: BigInt): void {
+  
+  log.warning(`Updating commision: SubjectId: {}, subjectType: {}, fee: {}`, [subjectId, subjectType.toString(), fee.toString()])
+  // If subject type is node pool
+  if(subjectType === 2) {
+    const scannerPool = ScannerPool.load(subjectId);
+    if(scannerPool) {
+      scannerPool.commission = BigDecimal.fromString(fee.toString());
+      scannerPool.save();
+    }
+  }
 }
 
-export function handleSetDelegationFee(event: SetDelegationFee): void {
-    updateScannerPool(event.address, event.params.scannerPoolId)
+
+export function handleSetDelegationFee(event: SetDelegationFeeEvent): void {
+  const subjectId = event.params.subject.toHexString();
+  const subjectType = event.params.subjectType;
+  
+  updateScannerPoolComission(subjectId, subjectType ,event.params.feeBps);
 }

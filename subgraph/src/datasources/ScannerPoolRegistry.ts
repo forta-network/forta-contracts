@@ -8,15 +8,14 @@ import {
 import { fetchScannerPool } from "../fetch/scannerpool";
 import { fetchScannode } from "../fetch/scannode";
 
-function updateScannerPool(registryAddress: Address, id: BigInt): void {
-  const scannerPoolRegistry = ScannerPoolRegistryContract.bind(registryAddress);
-  const scannerPool = fetchScannerPool(id);
-  scannerPool.registered = scannerPoolRegistry.isRegistered(id);
-  scannerPool.save();
-}
-
 export function handleScannerPoolRegistered(event: ScannerPoolRegisteredEvent): void {
-  updateScannerPool(event.address, event.params.scannerPoolId)
+  const registryAddress = event.address;
+  const scannerPoolId = event.params.scannerPoolId;
+  const scannerPoolRegistry = ScannerPoolRegistryContract.bind(registryAddress);
+  const scannerPool = fetchScannerPool(scannerPoolId);
+  scannerPool.registered = scannerPoolRegistry.isRegistered(scannerPoolId);
+  scannerPool.owner = event.transaction.from.toHexString();
+  scannerPool.save();
 }
 
 export function handleScannerUpdated(event: ScannerUpdatedEvent): void {

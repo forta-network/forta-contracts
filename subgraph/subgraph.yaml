@@ -152,3 +152,25 @@ dataSources:
         - event: SetDelegationFee(indexed uint8,indexed uint256,uint256,uint256)
           handler: handleSetDelegationFee
       file: ./src/datasources/RewardsDistributor.ts
+  - kind: ethereum
+    name: StakeAllocator
+    network: mumbai
+    source:
+      abi: StakeAllocator
+      address: "0x26112a3885124E8b7564824F030A6d4f6e29E52B"
+      startBlock: 21300000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - ScannerPool
+      abis:
+        - name: StakeAllocator
+          file: ./abis/StakeAllocator.json
+      eventHandlers:
+        - event: AllocatedStake(indexed uint8,indexed uint256,bool,uint256,uint256)
+          handler: handleAllocatedStake
+        - event: UnallocatedStake(indexed uint8,indexed uint256,bool,uint256,uint256)
+          handler: handleUnAllocatedStake
+      file: ./src/datasources/StakeAllocator.ts

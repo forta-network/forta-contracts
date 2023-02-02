@@ -21,6 +21,7 @@ import {
   Subject,
   AggregateTotalStake,
   AggregateActiveStake,
+  Account,
 } from "../../generated/schema";
 import { fetchAccount } from "../fetch/account";
 
@@ -279,6 +280,39 @@ export function handleFroze(event: FrozeEvent): void {
 export function handleTransferSingle(event: TransferSingleEvent): void {
   const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
   let sharesId = SharesID.load(event.params.id.toString());
+
+  // Update withdrawl executed event with value
+
+  if(event.params.to.toHex() != ZERO_ADDRESS) {
+    const account = Account.load(event.params.to.toString()) // Get account of receiver 
+
+    log.info(`Loading account to update withdrawal`,[])
+
+    if(account && account.staker) {
+      const staker =  Staker.load(account.staker as string);
+      if(staker) {
+        for(let i = 0; i < staker.stakes.length; i++) {
+          const stake = Stake.load(staker.stakes[i]);
+
+          if(stake) {
+            const events = stake.withdrawalExecutedEvents;
+
+            if(events) {
+              for(let j = 0; j < events.length; j++) {
+                const withdrawalEvent = WithdrawalExecutedEvent.load(events[j]);
+                if(withdrawalEvent && withdrawalEvent.timestamp === event.block.timestamp) {
+                  log.info(`Updating withdrawl event with value`,[])
+                  withdrawalEvent.amount = event.params.value
+                  withdrawalEvent.save()
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
   if (sharesId) {
     let subject = Subject.load(sharesId.subject);
     if(subject && subject.subjectId) {

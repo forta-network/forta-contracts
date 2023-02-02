@@ -45,6 +45,10 @@
     "RewardsDistributor": {
         "address": "0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9",
         "startBlock": 21300000
+    },
+    "StakeAllocator": {
+        "address": "0x26112a3885124E8b7564824F030A6d4f6e29E52B",
+        "startBlock": 21300000
     }
   }
 }
