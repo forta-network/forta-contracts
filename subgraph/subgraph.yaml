@@ -138,7 +138,7 @@ dataSources:
     source:
       abi: RewardsDistributor
       address: "0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9"
-      startBlock: 29281360
+      startBlock: 21300000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -149,6 +149,6 @@ dataSources:
         - name: RewardsDistributor
           file: ./abis/RewardsDistributor.json
       eventHandlers:
-        - event: SetDelegationFee(uint8 indexed, uint256 indexed, uint256, uint256)
+        - event: SetDelegationFee(indexed uint8,indexed uint256,uint256,uint256)
           handler: handleSetDelegationFee
       file: ./src/datasources/RewardsDistributor.ts

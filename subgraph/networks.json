@@ -41,6 +41,10 @@
     "ScannerPoolRegistry": {
         "address": "0x5aEBaFBc23167A51D06f217a046aAeD20c9ACcb1",
         "startBlock": 29281360
+    },
+    "RewardsDistributor": {
+        "address": "0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9",
+        "startBlock": 21300000
     }
   }
 }
