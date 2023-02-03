@@ -161,16 +161,16 @@ function updateStake(
   // Scanner pool
   if(_subjectType === 2) {
     // Check existing pools
-    // Add new pool to Stake if it isn't already there
-    const currentPools = stake.nodePools;
+    // Add new pool to Staker if it isn't already there
+    const currentPools = staker.nodePools;
 
     const nodePool = fetchScannerPool(_subject);
 
     if(!currentPools) {
-      stake.nodePools = [nodePool.id]
+      staker.nodePools = [nodePool.id]
     } else if (!currentPools.includes(nodePool.id)) {
       currentPools.push(nodePool.id);
-      stake.nodePools = currentPools;
+      staker.nodePools = currentPools;
     }
   }
 

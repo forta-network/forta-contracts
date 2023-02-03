@@ -7,14 +7,18 @@ import {
 } from "../../generated/ScannerPoolRegistry/ScannerPoolRegistry";
 import { fetchScannerPool } from "../fetch/scannerpool";
 import { fetchScannode } from "../fetch/scannode";
+import { fetchAccount } from "../fetch/account";
 
 export function handleScannerPoolRegistered(event: ScannerPoolRegisteredEvent): void {
   const registryAddress = event.address;
   const scannerPoolId = event.params.scannerPoolId;
   const scannerPoolRegistry = ScannerPoolRegistryContract.bind(registryAddress);
   const scannerPool = fetchScannerPool(scannerPoolId);
+  let to = fetchAccount(event.transaction.from);
+  
   scannerPool.registered = scannerPoolRegistry.isRegistered(scannerPoolId);
-  scannerPool.owner = event.transaction.from.toHexString();
+  scannerPool.owner = to.id;
+  scannerPool.chainId = event.params.chainId.toI32();
   scannerPool.save();
 }
 

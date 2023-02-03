@@ -196,6 +196,7 @@ type Staker @entity {
   releasedRewards: [Reward!] @derivedFrom(field: "staker")
   aggregateActiveStake: AggregateActiveStake! @derivedFrom(field: "staker")
   aggregateTotalStake: AggregateTotalStake! @derivedFrom(field: "staker")
+  nodePools: [ScannerPool!]
 }
 
 type Stake @entity {
@@ -207,7 +208,6 @@ type Stake @entity {
   inactiveShares: BigInt
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
   withdrawalExecutedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
-  nodePools: [ScannerPool!]
 }
 
 type AggregateActiveStake @entity {

@@ -9,8 +9,18 @@ function updateScannerPoolStakes(subject: BigInt, contractAddress: Address, scan
     const delegatedStakeResult = stakeAllocatorContract.try_allocatedDelegatorsStakePerManaged(2,subject);
     const ownedStakeResult = stakeAllocatorContract.try_allocatedOwnStakePerManaged(2,subject);
 
-    if(!delegatedStakeResult.reverted) scannerPool.stakeDelegated = delegatedStakeResult.value
-    if(!ownedStakeResult.reverted) scannerPool.stakeOwnedAllocated = ownedStakeResult.value
+    if(!delegatedStakeResult.reverted) { 
+        scannerPool.stakeDelegated = delegatedStakeResult.value 
+    } else {
+        log.warning(`Failed to fetch delegatedStakeManaged for subject {}`,[subject.toHexString()])
+    }
+
+    if(!ownedStakeResult.reverted) { 
+        scannerPool.stakeOwnedAllocated = ownedStakeResult.value 
+    } else {
+        log.warning(`Failed to fetch ownedStake for subject {}`,[subject.toHexString()])
+    }
+
     scannerPool.stakeAllocated = stakeAllocatorContract.allocatedStakeFor(2,subject)
     scannerPool.stakeOwned = (scannerPool.stakeAllocated as BigInt).plus(stakeAllocatorContract.unallocatedStakeFor(2,subject))
     scannerPool.save();
