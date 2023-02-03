@@ -51,18 +51,12 @@ describe('Scanner 2 Scanner pool script', function () {
         await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('100000000'));
         await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
     });
-    // Update test to skip some, as right now
-    // they all have their `migrated` and `optingOut`
-    // properties set to `false`
     it('skips non migrated', function () {
         const firstPool = require('./data/first-pool.json');
         const scanners = firstPool['137']['0xc29af06142138f893e3f1c1d11aa98c3313b8c1f']['scanner-registry'];
         const ids = Object.keys(scanners);
         const output = {};
         output[ids[0]] = scanners[ids[0]];
-        output[ids[1]] = scanners[ids[1]];
-        output[ids[2]] = scanners[ids[2]];
-        output[ids[3]] = scanners[ids[3]];
         expect(filterNonMigrations(scanners)).to.deep.eq(output);
     });
     describe('Migrate First Scanners Mint Pool', function () {
