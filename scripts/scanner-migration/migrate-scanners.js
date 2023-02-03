@@ -1,6 +1,5 @@
 const { ethers } = require('hardhat');
-const utils = require('../utils');
-const AsyncConf = utils.AsyncConf;
+const AsyncConf = require('../utils/asyncConf');
 const deployEnv = require('../loadEnv');
 const DEBUG = require('debug')('forta:scanner-migration');
 
@@ -44,7 +43,7 @@ async function saveMigration(cache, receipt, chainId, owner, scannerAddresses) {
     DEBUG(updatedAddresses.length);
     for (const updated of updatedAddresses) {
         DEBUG(chainId, owner, updated);
-        await cache.set(`${chainId}.${owner}.scanners.${updated}.migrated`, true);
+        await cache.set(`${chainId}.${owner}.scanner-registry.${updated}.migrated`, true);
     }
     console.log('Saved migration results for: ', receipt.transactionHash);
 }
@@ -67,7 +66,7 @@ async function migratePool(cache, registryMigration, owner, chainId, chunkSize, 
         throw new Error('chunk sizes cannot be <=0 ');
     }
     let poolId = await cache.get(`${chainId}.${owner}.poolId`);
-    let scanners = await cache.get(`${chainId}.${owner}.scanners`);
+    let scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
     let scannerAddresses = Object.keys(scanners);
     DEBUG('poolId', poolId);
     DEBUG('raw: ', scannerAddresses.length);
@@ -171,7 +170,7 @@ async function scanners2ScannerPools(config = {}) {
     console.log(`Deployer: ${deployer.address}`);
     console.log('--------------------- Scanner 2 ScannerPool -------------------------------');
     console.log('Chain ', chainId);
-    const owners = Object.keys(await cache.get(chainId));
+    const owners = Object.keys(await cache.get(chainId.toString()));
     for (const owner of owners) {
         console.log('Owner ', owner);
         await migratePool(cache, contracts.registryMigration.connect(deployer), owner, chainId, chunkSize, callChunkSize);
