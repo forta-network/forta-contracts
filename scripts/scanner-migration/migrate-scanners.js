@@ -5,13 +5,22 @@ const DEBUG = require('debug')('forta:scanner-migration');
 
 const CHUNK_SIZE = 50;
 const MULTICALL_CHUNK_SIZE = 50;
-const SCANNERS_FILE_PATH = '';
+// Will be the JSON file output after running
+// the csv through parse-scanner-list.js
+const SCANNER_LIST_FILE_NAME = '';
 const CHAIN_ID = 137;
+
+// CHAIN_ID is hardcoded, perhaps
+// we can hardcode this value for
+// the live network deployment
+function getScannersFilePath(network) {
+    return '../data/scanners/${network.name}/${SCANNER_LIST_FILE_NAME}'
+};
 
 function filterNonMigrations(scanners) {
     const result = {};
     for (const id of Object.keys(scanners)) {
-        if (!scanners[id].migrated && !scanners[id].optingOut) {
+        if (!scanners[id].migrated && !scanners[id].optingOut && !scanners[id].activeStakeBelowMin) {
             result[id] = scanners[id];
         }
     }
@@ -161,7 +170,7 @@ async function scanners2ScannerPools(config = {}) {
     const network = config.network ?? e.network;
     const chunkSize = config.chunkSize ?? CHUNK_SIZE;
     const callChunkSize = config.callChunkSize ?? MULTICALL_CHUNK_SIZE;
-    const scanersFilePath = config.scannersFilePath ?? SCANNERS_FILE_PATH;
+    const scanersFilePath = config.scannersFilePath ?? getScannersFilePath(network);
     const chainId = config.chainId ?? CHAIN_ID;
     const cache = new AsyncConf({ cwd: __dirname, configName: scanersFilePath.replace('.json', '') });
 
