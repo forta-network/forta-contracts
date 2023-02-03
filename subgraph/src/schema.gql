@@ -245,9 +245,9 @@ type ScannerPool @entity {
   owner: Account!
   registered: Boolean!
   chainId: Int!
-  apr: BigDecimal!
+  apr: BigDecimal
   commission: BigDecimal!
-  status: String!
+  status: String
   stakeOwned: BigInt
   stakeDelegated: BigInt
   stakeAllocated: BigInt

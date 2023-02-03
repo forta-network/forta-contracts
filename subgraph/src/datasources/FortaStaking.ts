@@ -303,7 +303,6 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
   if(event.params.to.toHex() != ZERO_ADDRESS) {
     const account = Account.load(event.params.to.toString()) // Get account of receiver 
 
-    log.info(`Loading account to update withdrawal`,[])
 
     if(account && account.staker) {
       const staker =  Staker.load(account.staker as string);
