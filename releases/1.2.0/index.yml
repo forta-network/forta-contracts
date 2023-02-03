@@ -1,6 +1,6 @@
 title: Stake Delegation
 network: mumbai
-deploy: deploy-and-prepare-upgrade 1.1.0
+deploy: deploy-and-prepare-upgrade 1.2.0
 verify: verify-deployed
 finish: propose-admin
 description: |
