@@ -28,6 +28,7 @@ type Bot @entity {
   linkEnabledEvents: [LinkEnabled!]! @derivedFrom(field: "bot")
 }
 
+# Being deprecated with Scanner Registry contract
 type Scanner @entity {
   id: ID!
   owner: Account!
@@ -206,6 +207,7 @@ type Stake @entity {
   inactiveShares: BigInt
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
   withdrawalExecutedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
+  nodePools: [ScannerPool!]
 }
 
 type AggregateActiveStake @entity {

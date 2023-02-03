@@ -26,6 +26,8 @@ import {
 import { fetchAccount } from "../fetch/account";
 
 import { events, transactions } from "@amxx/graphprotocol-utils/";
+import { fetchScannode } from "../fetch/scannode";
+import { fetchScannerPool } from "../fetch/scannerpool";
 
 function hexToDec(s: string): string {
   var i: i32, j: i32, digits: i32[] = [0], carry: i32;
@@ -156,6 +158,21 @@ function updateStake(
   const prevStakeTotalShares: BigInt = stake.shares ? stake.shares as BigInt : BigInt.fromI32(0);
   const prevStateInActiveShares: BigInt = stake.inactiveShares ? stake.inactiveShares as BigInt : BigInt.fromI32(0);
 
+  // Scanner pool
+  if(_subjectType === 2) {
+    // Check existing pools
+    // Add new pool to Stake if it isn't already there
+    const currentPools = stake.nodePools;
+
+    const nodePool = fetchScannerPool(_subject);
+
+    if(!currentPools) {
+      stake.nodePools = [nodePool.id]
+    } else if (!currentPools.includes(nodePool.id)) {
+      currentPools.push(nodePool.id);
+      stake.nodePools = currentPools;
+    }
+  }
 
   stake.subject = _subjectId;
   stake.isActive = true;

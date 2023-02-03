@@ -6,7 +6,6 @@ import { ScannerPool, Subject } from "../../generated/schema";
 
 function updateScannerPoolComission(subjectId: string, subjectType: i32, fee: BigInt): void {
   
-  log.warning(`Updating commision: SubjectId: {}, subjectType: {}, fee: {}`, [subjectId, subjectType.toString(), fee.toString()])
   // If subject type is node pool
   if(subjectType === 2) {
     const scannerPool = ScannerPool.load(subjectId);
