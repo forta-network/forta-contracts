@@ -3,7 +3,6 @@ const migrate = require('./deploy-pre-migration.js');
 const DEBUG = require('debug')('forta:migration');
 
 function prepare(config = {}) {
-
     beforeEach(async function () {
         // list signers
         this.accounts = await ethers.getSigners();
