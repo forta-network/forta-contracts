@@ -22,8 +22,11 @@ async function main() {
                 enabled: scanner['_source.enabled'] === 'true',
                 callOwner: contracts.scanners.interface.encodeFunctionData('ownerOf', [scanner['_source.id']]),
                 callOptingOut: contracts.scanners.interface.encodeFunctionData('optingOutOfMigration', [scanner['_source.id']]),
+                callActiveStake: contracts.fortaStaking.interface.encodeFunctionData('activeStakeFor', [0, scanner['_source.id']]), // scanner subjectType is `0`
+                callMinStakeFor: contracts.fortaStaking.interface.encodeFunctionData('subjectGateway.minStakeFor', [0, scanner['_source.id']]),
                 migrated: false,
                 optingOut: false,
+                activeStakeBelowMin: false,
             };
         })
     );
@@ -51,6 +54,28 @@ async function main() {
         optingOuts = optingOuts.flat();
         for (let i = 0; i < optingOuts.length; i++) {
             raw[i].optingOut = optingOuts[i];
+        }
+    }
+    console.log('Getting activeStakeBelowMin...');
+    if (deployment.fortaStaking.impl.version === '0.1.1') {
+        let activeStakes = await Promise.all(
+            raw.chunk(50).map((chunk) => {
+                const calls = chunk.map((x) => x.callActiveStake);
+                return contracts.fortaStaking.callStatic.multicall(calls);
+            })
+        );
+        let minStakeFor = await Promise.all(
+            raw.chunk(50).map((chunk) => {
+                const calls = chunk.map((x) => x.callMinStakeFor);
+                return contracts.fortaStaking.callStatic.multicall(calls);
+            })
+        );
+        minStakeFor = minStakeFor.flat();
+        activeStakes = activeStakes.flat();
+        for (let i = 0; i < activeStakes.length; i++) {
+            if(activeStakes[i] < minStakeFor[i]) {
+                raw[i].activeStakeBelowMin = true;
+            }
         }
     }
     console.log('Formatting...');
