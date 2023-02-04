@@ -15,6 +15,7 @@ export function fetchScannerPool(id: BigInt): ScannerPool {
     scannerPool.stakeOwned = BigInt.zero();
     scannerPool.stakeDelegated = BigInt.zero();
     scannerPool.stakeAllocated = BigInt.zero();
+    scannerPool.stakeOwnedAllocated = BigInt.zero();
   }
   return scannerPool as ScannerPool;
 }
