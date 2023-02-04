@@ -248,10 +248,10 @@ type ScannerPool @entity {
   apr: BigDecimal
   commission: BigDecimal!
   status: String
-  stakeOwned: BigInt
-  stakeDelegated: BigInt
-  stakeAllocated: BigInt
-  stakeOwnedAllocated: BigInt
+  stakeOwned: BigInt!
+  stakeDelegated: BigInt!
+  stakeAllocated: BigInt!
+  stakeOwnedAllocated: BigInt!
   scanNodes: [ScanNode!] @derivedFrom(field: "scannerPool")
 }
 
