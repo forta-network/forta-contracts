@@ -1,7 +1,7 @@
 {
     "RewardsDistributor": {
         "impl": {
-            "init-args": ["deployment.access-manager", "2", "86400"],
+            "init-args": ["deployment.access-manager", "2", "10000"],
             "opts": {
                 "unsafe-allow": [
                     "delegatecall"
