@@ -7,7 +7,7 @@
 			"constructor-args": [
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
 				"0x02304eC24ba2996a83F595D7cf80e5571a406EFA",
-				"0xb23696793ffc58315Ed8e4c63cf1ef454a7479EC"
+				"0x09D2e66a9Cf405f710137E89a6e97CD3d777932B"
 			],
 			"init-args": [
 				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64"
@@ -51,6 +51,25 @@
 				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64"
 			],
 			"name": "ScannerToScannerPoolMigration",
+			"version": "0.1.0"
+		}
+	},
+	"rewards-distributor-deploy-tx": "0x761238e68d6c24e79c61691cd140f40e9e54441c08368b7118bac8a546af2386",
+	"rewards-distributor": {
+		"address": "0x09D2e66a9Cf405f710137E89a6e97CD3d777932B",
+		"impl": {
+			"address": "0x253Eca8E7f01708b7dFD7277D814c33451A2211B",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+				"0x02304eC24ba2996a83F595D7cf80e5571a406EFA"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"2",
+				"10000"
+			],
+			"name": "RewardsDistributor",
 			"version": "0.1.0"
 		}
 	}

@@ -211,7 +211,7 @@
 			"constructor-args": [
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
 				"0x02304eC24ba2996a83F595D7cf80e5571a406EFA",
-				"0xE7Fe96bEfb213EFac6efD988F95936768F33a371"
+				"0x09D2e66a9Cf405f710137E89a6e97CD3d777932B"
 			],
 			"init-args": [
 				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64"
@@ -260,7 +260,7 @@
 	},
 	"scanner-to-scanner-pool-migration-deploy-tx": "0x4ed1a659f89ecd458fe4f91fbe8f2ea38544d6667a48b599a95f6a68aca07d1c",
 	"rewards-distributor": {
-		"address": "0xE7Fe96bEfb213EFac6efD988F95936768F33a371",
+		"address": "0x09D2e66a9Cf405f710137E89a6e97CD3d777932B",
 		"impl": {
 			"address": "0x253Eca8E7f01708b7dFD7277D814c33451A2211B",
 			"constructor-args": [
@@ -277,5 +277,5 @@
 			"version": "0.1.0"
 		}
 	},
-	"rewards-distributor-deploy-tx": "0x18eae9e35385f1b9b85761958b836f57e674f220777dc0593345f97d7e6695c9"
+	"rewards-distributor-deploy-tx": "0x761238e68d6c24e79c61691cd140f40e9e54441c08368b7118bac8a546af2386"
 }

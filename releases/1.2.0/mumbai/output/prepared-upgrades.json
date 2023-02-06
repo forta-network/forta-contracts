@@ -12,7 +12,7 @@
 	},
 	"stake-subject-gateway": {
 		"impl": {
-			"address": "0xC5a5ea6FE58b24f78039A65db835BE806a20C1b7",
+			"address": "0x22C74d1Ef9568EEc71E6EBe7b338A9E381eb99c8",
 			"constructor-args": [
 				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
 			],
