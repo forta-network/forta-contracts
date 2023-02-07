@@ -7,7 +7,7 @@
 			],
 			"init-args": [],
 			"name": "FortaStaking",
-			"version": "0.1.1"
+			"version": "0.1.2"
 		}
 	},
 	"stake-subject-gateway": {
@@ -29,7 +29,7 @@
 			],
 			"init-args": [],
 			"name": "ScannerRegistry",
-			"version": "0.1.3"
+			"version": "0.1.4"
 		}
 	},
 	"agent-registry": {
@@ -40,7 +40,7 @@
 			],
 			"init-args": [],
 			"name": "AgentRegistry",
-			"version": "0.1.5"
+			"version": "0.1.6"
 		}
 	},
 	"dispatch": {
@@ -51,7 +51,7 @@
 			],
 			"init-args": [],
 			"name": "Dispatch",
-			"version": "0.1.4"
+			"version": "0.1.5"
 		}
 	}
 }

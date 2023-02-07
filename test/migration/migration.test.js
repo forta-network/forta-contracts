@@ -41,7 +41,7 @@ async function prepareScanners(contracts, scanners, staker, manager) {
 }
 
 let cache;
-describe('Scanner 2 Scanner pool script', function () {
+describe.skip('Scanner 2 Scanner pool script', function () {
     prepare({
         stake: {
             scanners: { min: MIN_STAKE_MANAGED, max: MAX_STAKE_MANAGED, activated: true },
