@@ -34,7 +34,7 @@ dataSources:
     network: mumbai
     source:
       abi: AgentRegistry
-      address: "0x5Cf7008aC441Ec1797fAfA4EE132eA4277E9239B"
+      address: "0x4519eaeb9a5c1a9d870fe35452e54ad04e6e8428"
       startBlock: 21300000
     mapping:
       kind: ethereum/events
@@ -157,7 +157,7 @@ dataSources:
     network: mumbai
     source:
       abi: StakeAllocator
-      address: "0x26112a3885124E8b7564824F030A6d4f6e29E52B"
+      address: "0x4b4272E78ec45A08D91B495c690078e3B196904C"
       startBlock: 21300000
     mapping:
       kind: ethereum/events
