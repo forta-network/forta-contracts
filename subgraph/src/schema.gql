@@ -207,7 +207,7 @@ type Stake @entity {
   shares: BigInt
   inactiveShares: BigInt
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
-  withdrawalExecutedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
+  withdrawalExecutedEvents: [WithdrawalExecutedEvent!] @derivedFrom(field: "stake")
 }
 
 type AggregateActiveStake @entity {
