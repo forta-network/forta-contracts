@@ -59,6 +59,7 @@ module.exports = {
     networks: {
         /*
         hardhat: {
+            chainId: 80001,
             forking: {
                 url: process.env.MUMBAI_NODE,
                 accounts: [process.env.MUMBAI_MNEMONIC]

@@ -6,7 +6,9 @@ const DEBUG = require('debug')('forta:scanner-migration');
 const CHUNK_SIZE = 50;
 const MULTICALL_CHUNK_SIZE = 50;
 const SCANNER_LIST_FILE_NAME = 'scanners_1675807891726.json';
-const CHAIN_ID = 137;
+// Will have to run once per chain id
+// const CHAIN_ID = 137;
+const CHAIN_ID = 1;
 
 function getScannersFilePath(network) {
     return `../data/scanners/${network.name}/${SCANNER_LIST_FILE_NAME}`
