@@ -4,7 +4,7 @@ import { ScannerPool } from "../../generated/schema";
 import { fetchAccount } from "./account";
 
 export function fetchScannerPool(id: BigInt): ScannerPool {
-  let scannerPool = ScannerPool.load(id.toHex());
+  let scannerPool = ScannerPool.load(id.toI32().toString());
   if (scannerPool == null) {
     scannerPool = new ScannerPool(id.toHex());
     scannerPool.registered = false;
