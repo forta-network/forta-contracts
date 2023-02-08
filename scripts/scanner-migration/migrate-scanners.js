@@ -5,16 +5,11 @@ const DEBUG = require('debug')('forta:scanner-migration');
 
 const CHUNK_SIZE = 50;
 const MULTICALL_CHUNK_SIZE = 50;
-// Will be the JSON file output after running
-// the csv through parse-scanner-list.js
-const SCANNER_LIST_FILE_NAME = '';
+const SCANNER_LIST_FILE_NAME = 'scanners_1675807891726.json';
 const CHAIN_ID = 137;
 
-// CHAIN_ID is hardcoded, perhaps
-// we can hardcode this value for
-// the live network deployment
 function getScannersFilePath(network) {
-    return '../data/scanners/${network.name}/${SCANNER_LIST_FILE_NAME}'
+    return `../data/scanners/${network.name}/${SCANNER_LIST_FILE_NAME}`
 };
 
 function filterNonMigrations(scanners) {
@@ -75,7 +70,7 @@ async function migratePool(cache, registryMigration, owner, chainId, chunkSize, 
         throw new Error('chunk sizes cannot be <=0 ');
     }
     let poolId = await cache.get(`${chainId}.${owner}.poolId`);
-    let scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
+    let scanners = await cache.get(`${chainId}.${owner}.scanners`);
     let scannerAddresses = Object.keys(scanners);
     DEBUG('poolId', poolId);
     DEBUG('raw: ', scannerAddresses.length);
@@ -182,7 +177,7 @@ async function scanners2ScannerPools(config = {}) {
     const owners = Object.keys(await cache.get(chainId.toString()));
     for (const owner of owners) {
         console.log('Owner ', owner);
-        await migratePool(cache, contracts.registryMigration.connect(deployer), owner, chainId, chunkSize, callChunkSize);
+        await migratePool(cache, contracts.scannerToScannerPoolMigration.connect(deployer), owner, chainId, chunkSize, callChunkSize);
     }
     console.log('Done!');
 }
