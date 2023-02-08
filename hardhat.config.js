@@ -37,7 +37,7 @@ require('./tasks/verify-deployed');
 require('./tasks/propose-admin');
 require('./tasks/promote-release');
 
-module.exports = {};
+// module.exports = {};
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -67,8 +67,8 @@ module.exports = {
         },
         */
         mumbai: {
-            url: process.env.MUMBAI_NODE,
-            accounts: [process.env.MUMBAI_MNEMONIC]
+            url: argv.MUMBAI_NODE,
+            accounts: [argv.MUMBAI_MNEMONIC]
         },
     },
     mocha: {
