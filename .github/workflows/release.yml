@@ -216,9 +216,8 @@ jobs:
 
             - name: Verify contracts
               shell: bash
-              # run: yarn hardhat --network ${{ needs.prepare.outputs.release_network }} ${{ needs.prepare.outputs.release_verify_cmd }} ${{ needs.prepare.outputs.release_version }}
               run: |
-                yarn hardhat --network maticmum ${{ needs.prepare.outputs.release_verify_cmd }} ${{ needs.prepare.outputs.release_version }}
+                yarn hardhat --network ${{ needs.prepare.outputs.release_network }} ${{ needs.prepare.outputs.release_verify_cmd }} ${{ needs.prepare.outputs.release_version }}
               env:
                   INFURA_PROJECT_ID: '${{ secrets.INFURA_PROJECT_ID }}'
                   MUMBAI_MNEMONIC: '${{ secrets.MUMBAI_MNEMONIC }}'

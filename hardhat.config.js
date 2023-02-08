@@ -65,11 +65,11 @@ module.exports = {
                 accounts: [process.env.MUMBAI_MNEMONIC]
             }
         },
+        */
         mumbai: {
             url: process.env.MUMBAI_NODE,
             accounts: [process.env.MUMBAI_MNEMONIC]
         },
-        */
     },
     mocha: {
         timeout: 300000,
