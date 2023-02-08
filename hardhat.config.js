@@ -67,7 +67,7 @@ module.exports = {
         },
         */
         mumbai: {
-            url: process.env.MUMBAI_NODE,
+            url: process.env.MUMBAI_NODE.toString(),
             accounts: [process.env.MUMBAI_MNEMONIC]
         },
     },
