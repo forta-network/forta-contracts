@@ -221,7 +221,7 @@ jobs:
               env:
                   INFURA_PROJECT_ID: '${{ secrets.INFURA_PROJECT_ID }}'
                   MUMBAI_MNEMONIC: '${{ secrets.MUMBAI_MNEMONIC }}'
-                  MUMBAI_NODE: '${{ secrets.TEST_SECRET }}'
+                  MUMBAI_NODE: 'test'
                   # MUMBAI_NODE: '${{ secrets.MUMBAI_NODE }}'
                   # POLYGON_MNEMONIC: '${{ secrets.POLYGON_MNEMONIC }}'
                   # POLYGON_NODE: '${{ secrets.POLYGON_NODE }}'
