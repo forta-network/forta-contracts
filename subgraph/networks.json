@@ -15,6 +15,10 @@
     "FortaStaking": {
         "address": "0xd2863157539b1D11F39ce23fC4834B62082F6874",
         "startBlock": 20187154
+    },
+    "ScannerPoolRegistry": {
+        "address": "0x0000000000000000000000000000000000000000",
+        "startBlock": 29281360
     }
   },
   "mumbai": {
@@ -32,6 +36,18 @@
     },
     "FortaStaking": {
         "address": "0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c",
+        "startBlock": 21300000
+    },
+    "ScannerPoolRegistry": {
+        "address": "0x5aEBaFBc23167A51D06f217a046aAeD20c9ACcb1",
+        "startBlock": 29281360
+    },
+    "RewardsDistributor": {
+        "address": "0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9",
+        "startBlock": 21300000
+    },
+    "StakeAllocator": {
+        "address": "0x26112a3885124E8b7564824F030A6d4f6e29E52B",
         "startBlock": 21300000
     }
   }

@@ -21,10 +21,13 @@ import {
   Subject,
   AggregateTotalStake,
   AggregateActiveStake,
+  Account,
 } from "../../generated/schema";
 import { fetchAccount } from "../fetch/account";
 
 import { events, transactions } from "@amxx/graphprotocol-utils/";
+import { fetchScannode } from "../fetch/scannode";
+import { fetchScannerPool } from "../fetch/scannerpool";
 
 function hexToDec(s: string): string {
   var i: i32, j: i32, digits: i32[] = [0], carry: i32;
@@ -50,7 +53,10 @@ function getActiveSharesId(_subjectType: i32, _subject: BigInt): string {
   const tuple = changetype<ethereum.Tuple>(tupleArray);
   const encoded = ethereum.encode(ethereum.Value.fromTuple(tuple))!
   const subjectHex = encoded.toHex();
-  const subjectPack = (_subjectType ? '0x01' : '0x00') + subjectHex.slice(2);
+  const subjectPrefix = _subjectType ?
+    (_subjectType == 2 ? '0x10' : '0x01') :
+    '0x00';
+  const subjectPack = subjectPrefix + subjectHex.slice(2);
   const _subjectPackHash = crypto.keccak256(ByteArray.fromHexString(subjectPack));
   const subjectPackHash = BigInt.fromString(hexToDec(_subjectPackHash.toHex().slice(2)));
   let mask256 = BigInt.zero();
@@ -152,6 +158,21 @@ function updateStake(
   const prevStakeTotalShares: BigInt = stake.shares ? stake.shares as BigInt : BigInt.fromI32(0);
   const prevStateInActiveShares: BigInt = stake.inactiveShares ? stake.inactiveShares as BigInt : BigInt.fromI32(0);
 
+  // Scanner pool
+  if(_subjectType === 2) {
+    // Check existing pools
+    // Add new pool to Staker if it isn't already there
+    const currentPools = staker.nodePools;
+
+    const nodePool = fetchScannerPool(_subject);
+
+    if(!currentPools) {
+      staker.nodePools = [nodePool.id]
+    } else if (!currentPools.includes(nodePool.id)) {
+      currentPools.push(nodePool.id);
+      staker.nodePools = currentPools;
+    }
+  }
 
   stake.subject = _subjectId;
   stake.isActive = true;
@@ -276,6 +297,38 @@ export function handleFroze(event: FrozeEvent): void {
 export function handleTransferSingle(event: TransferSingleEvent): void {
   const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
   let sharesId = SharesID.load(event.params.id.toString());
+
+  // Update withdrawl executed event with value
+
+  if(event.params.to.toHex() != ZERO_ADDRESS) {
+    const account = Account.load(event.params.to.toString()) // Get account of receiver 
+
+
+    if(account && account.staker) {
+      const staker =  Staker.load(account.staker as string);
+      if(staker) {
+        for(let i = 0; i < staker.stakes.length; i++) {
+          const stake = Stake.load(staker.stakes[i]);
+
+          if(stake) {
+            const events = stake.withdrawalExecutedEvents;
+
+            if(events) {
+              for(let j = 0; j < events.length; j++) {
+                const withdrawalEvent = WithdrawalExecutedEvent.load(events[j]);
+                if(withdrawalEvent && withdrawalEvent.timestamp === event.block.timestamp) {
+                  log.info(`Updating withdrawl event with value`,[])
+                  withdrawalEvent.amount = event.params.value
+                  withdrawalEvent.save()
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
   if (sharesId) {
     let subject = Subject.load(sharesId.subject);
     if(subject && subject.subjectId) {

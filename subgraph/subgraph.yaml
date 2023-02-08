@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: ScannerRegistry
-    network: matic
+    network: mumbai
     source:
       abi: ScannerRegistry
-      address: "0xbF2920129f83d75DeC95D97A879942cCe3DcD387"
-      startBlock: 20187154
+      address: "0xa30c3951f85941bfe474620dA25DEb90283C99D7"
+      startBlock: 21300000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -31,11 +31,11 @@ dataSources:
       file: ./src/datasources/ScannerRegistry.ts
   - kind: ethereum
     name: AgentRegistry
-    network: matic
+    network: mumbai
     source:
       abi: AgentRegistry
-      address: "0x61447385B019187daa48e91c55c02AF1F1f3F863"
-      startBlock: 20187154
+      address: "0x5Cf7008aC441Ec1797fAfA4EE132eA4277E9239B"
+      startBlock: 21300000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -55,11 +55,11 @@ dataSources:
       file: ./src/datasources/AgentRegistry.ts
   - kind: ethereum
     name: Dispatcher
-    network: matic
+    network: mumbai
     source:
       abi: Dispatcher
-      address: "0xd46832F3f8EA8bDEFe5316696c0364F01b31a573"
-      startBlock: 20187154
+      address: "0x634C83F3213CcfC895A4e6A2c137b2B572fa64ad"
+      startBlock: 21300000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -76,11 +76,11 @@ dataSources:
       file: ./src/datasources/Dispatcher.ts
   - kind: ethereum
     name: FortaStaking
-    network: matic
+    network: mumbai
     source:
       abi: FortaStaking
-      address: "0xd2863157539b1D11F39ce23fC4834B62082F6874"
-      startBlock: 20187154
+      address: "0x8a5EEfA2BAb332DD7666d885e9C9d2775221EB1c"
+      startBlock: 21300000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -107,3 +107,70 @@ dataSources:
             address,uint256,uint256)
           handler: handleTransferSingle
       file: ./src/datasources/FortaStaking.ts
+  - kind: ethereum
+    name: ScannerPoolRegistry
+    network: mumbai
+    source:
+      abi: ScannerPoolRegistry
+      address: "0x5aEBaFBc23167A51D06f217a046aAeD20c9ACcb1"
+      startBlock: 29281360
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - ScannerPool
+        - ScanNode
+      abis:
+        - name: ScannerPoolRegistry
+          file: ./abis/ScannerPoolRegistry.json
+      eventHandlers:
+        - event: ScannerPoolRegistered(indexed uint256,indexed uint256)
+          handler: handleScannerPoolRegistered
+        - event: ScannerUpdated(indexed uint256,indexed uint256,string,uint256)
+          handler: handleScannerUpdated
+        - event: ScannerEnabled(indexed uint256,indexed bool,address,bool)
+          handler: handleScannerEnabled
+      file: ./src/datasources/ScannerPoolRegistry.ts
+  - kind: ethereum
+    name: RewardsDistributor
+    network: mumbai
+    source:
+      abi: RewardsDistributor
+      address: "0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9"
+      startBlock: 21300000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - ScannerPool
+      abis:
+        - name: RewardsDistributor
+          file: ./abis/RewardsDistributor.json
+      eventHandlers:
+        - event: SetDelegationFee(indexed uint8,indexed uint256,uint256,uint256)
+          handler: handleSetDelegationFee
+      file: ./src/datasources/RewardsDistributor.ts
+  - kind: ethereum
+    name: StakeAllocator
+    network: mumbai
+    source:
+      abi: StakeAllocator
+      address: "0x26112a3885124E8b7564824F030A6d4f6e29E52B"
+      startBlock: 21300000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - ScannerPool
+      abis:
+        - name: StakeAllocator
+          file: ./abis/StakeAllocator.json
+      eventHandlers:
+        - event: AllocatedStake(indexed uint8,indexed uint256,bool,uint256,uint256)
+          handler: handleAllocatedStake
+        - event: UnallocatedStake(indexed uint8,indexed uint256,bool,uint256,uint256)
+          handler: handleUnAllocatedStake
+      file: ./src/datasources/StakeAllocator.ts

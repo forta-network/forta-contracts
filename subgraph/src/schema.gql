@@ -28,6 +28,7 @@ type Bot @entity {
   linkEnabledEvents: [LinkEnabled!]! @derivedFrom(field: "bot")
 }
 
+# Being deprecated with Scanner Registry contract
 type Scanner @entity {
   id: ID!
   owner: Account!
@@ -195,6 +196,7 @@ type Staker @entity {
   releasedRewards: [Reward!] @derivedFrom(field: "staker")
   aggregateActiveStake: AggregateActiveStake! @derivedFrom(field: "staker")
   aggregateTotalStake: AggregateTotalStake! @derivedFrom(field: "staker")
+  nodePools: [ScannerPool!]
 }
 
 type Stake @entity {
@@ -235,4 +237,32 @@ type WithdrawalExecutedEvent implements Event @entity {
   timestamp: BigInt!
   subject: Subject!
   stake: Stake!
+  amount: BigInt
+}
+
+type ScannerPool @entity {
+  id: ID!
+  owner: Account!
+  registered: Boolean!
+  chainId: Int!
+  apr: BigDecimal
+  commission: BigDecimal!
+  status: String
+  stakeOwned: BigInt!
+  stakeDelegated: BigInt!
+  stakeAllocated: BigInt!
+  stakeOwnedAllocated: BigInt!
+  scanNodes: [ScanNode!] @derivedFrom(field: "scannerPool")
+}
+
+#  New entity to handle scanNodes inside of pools
+type ScanNode @entity {
+  id: ID!
+  address: String
+  owner: Account!
+  enabled: Boolean!
+  disableFlags: Int!
+  metadata: String!
+  chainId: BigInt
+  scannerPool: ScannerPool!
 }
