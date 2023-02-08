@@ -69,6 +69,7 @@ jobs:
         name: Prepare release
         if: startsWith(github.head_ref, 'release/')
         runs-on: ubuntu-22.04
+        needs: build
         # needs: test
         outputs:
             release_version: ${{ steps.parse.outputs.release_version }}
