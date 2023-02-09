@@ -70,8 +70,8 @@ function getActiveSharesId(_subjectType: i32, _subject: BigInt): string {
   return activeSharesId.toString();
 }
 
-export function getStakeId(subjectId: string, stakerId: string): string {
-  return subjectId + stakerId;
+export function getStakeId(subjectId: string, stakerId: string, subjectType: string): string {
+  return subjectType + subjectId + stakerId;
 }
 
 
@@ -118,7 +118,7 @@ function updateStake(
   const _subjectId = _subject.toHexString();
   const _stakerId = _staker.toHexString();
   let subject = Subject.load(_subjectId);
-  let stake = Stake.load(getStakeId(_subjectId,_stakerId));
+  let stake = Stake.load(getStakeId(_subjectId,_stakerId,_subjectType.toString()));
   let staker = Staker.load(_stakerId);
 
   const fortaStaking = FortaStakingContract.bind(_stakingContractAddress);
@@ -157,7 +157,7 @@ function updateStake(
   }
 
   if (stake == null) {
-    stake = new Stake(getStakeId(_subjectId,_stakerId));
+    stake = new Stake(getStakeId(_subjectId,_stakerId,_subjectType.toString()));
   }
 
   const prevStakeTotalShares: BigInt = stake.shares ? stake.shares as BigInt : BigInt.fromI32(0);
