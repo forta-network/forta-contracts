@@ -96,11 +96,11 @@ async function main() {
         }
         if (!grouped[scanner.chainId][scanner.owner]) {
             grouped[scanner.chainId][scanner.owner] = {
-                scanners: {},
+                "scanner-registry": {},
                 poolId: 0,
             };
         }
-        grouped[scanner.chainId][scanner.owner].scanners[scanner.id] = scanner;
+        grouped[scanner.chainId][scanner.owner]["scanner-registry"][scanner.id] = scanner;
     }
     console.log(`networkName: ${network.name}`);
     const outputPath = `./scripts/data/scanners/${network.name}/scanners_${+Date.now()}.json`;
