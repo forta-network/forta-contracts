@@ -46,6 +46,13 @@ function hexToDec(s: string): string {
   return digits.reverse().join('');
 }
 
+function getSubjectTypePrefix(subjectType: number): string {
+  if(subjectType == 3) return '0x11'
+  if(subjectType == 2) return '0x10'
+  if(subjectType == 1) return '0x01'
+  return '0x00'
+}
+
 function getActiveSharesId(_subjectType: i32, _subject: BigInt): string {
   const tupleArray: Array<ethereum.Value> = [
     ethereum.Value.fromUnsignedBigInt(_subject),
@@ -53,9 +60,7 @@ function getActiveSharesId(_subjectType: i32, _subject: BigInt): string {
   const tuple = changetype<ethereum.Tuple>(tupleArray);
   const encoded = ethereum.encode(ethereum.Value.fromTuple(tuple))!
   const subjectHex = encoded.toHex();
-  const subjectPrefix = _subjectType ?
-    (_subjectType == 2 ? '0x10' : '0x01') :
-    '0x00';
+  const subjectPrefix = getSubjectTypePrefix(_subjectType)
   const subjectPack = subjectPrefix + subjectHex.slice(2);
   const _subjectPackHash = crypto.keccak256(ByteArray.fromHexString(subjectPack));
   const subjectPackHash = BigInt.fromString(hexToDec(_subjectPackHash.toHex().slice(2)));
