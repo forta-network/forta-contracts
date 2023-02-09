@@ -41,7 +41,7 @@ async function prepareScanners(contracts, scanners, staker, manager) {
 }
 
 let cache;
-describe.skip('Scanner 2 Scanner pool script', function () {
+describe('Scanner 2 Scanner pool script', function () {
     prepare({
         stake: {
             scanners: { min: MIN_STAKE_MANAGED, max: MAX_STAKE_MANAGED, activated: true },
@@ -74,7 +74,7 @@ describe.skip('Scanner 2 Scanner pool script', function () {
                 scannersAddresses.push(scanner);
             });
 
-            await migrateScannersMintPool(cache, this.contracts.registryMigration.connect(this.accounts.manager), owner, chainId, scannersAddresses);
+            await migrateScannersMintPool(cache, this.contracts.scannerToScannerPoolMigration.connect(this.accounts.manager), owner, chainId, scannersAddresses);
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq('1');
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = true;
@@ -109,7 +109,7 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             const scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
             await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
             await upgrade(this.contracts);
-            await migrateScannersMintPool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, Object.keys(scanners));
+            await migrateScannersMintPool(cache, this.scannerToScannerPoolMigration.connect(this.accounts.manager), owner, chainId, Object.keys(scanners));
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq('1');
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = true;
@@ -143,7 +143,7 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             const scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
             await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
             await upgrade(this.contracts);
-            await migrateScannersMintPool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, Object.keys(scanners));
+            await migrateScannersMintPool(cache, this.scannerToScannerPoolMigration.connect(this.accounts.manager), owner, chainId, Object.keys(scanners));
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq('1');
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = true;
@@ -169,7 +169,7 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             expect(await this.staking.activeStakeFor(2, 1)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
         });
     });
-    describe('migratePool', function () {
+    describe.skip('migratePool', function () {
         it('poolId 0, chunk with minting and ignoring prev migrated and opted out', async function () {
             fs.copyFileSync('./test/migration/data/migrate-pool.json', './test/migration/data/t-migrate-pool-id-0-chunk.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-migrate-pool-id-0-chunk' });
@@ -178,7 +178,7 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             const scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
             await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
             await upgrade(this.contracts);
-            await migratePool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, 2, 1);
+            await migratePool(cache, this.scannerToScannerPoolMigration.connect(this.accounts.manager), owner, chainId, 2, 1);
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq('1');
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = !scanners[id].optingOut;
@@ -217,7 +217,7 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             await this.scannerPools.connect(this.accounts.user1).registerScannerPool('137');
             await this.scannerPools.connect(this.accounts.user1).transferFrom(this.accounts.user1.address, owner, 2);
 
-            await migratePool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, 100, 50);
+            await migratePool(cache, this.scannerToScannerPoolMigration.connect(this.accounts.manager), owner, chainId, 100, 50);
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq(2);
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = true;
@@ -255,7 +255,7 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             await this.scannerPools.connect(this.accounts.user1).registerScannerPool('137');
             await this.scannerPools.connect(this.accounts.user1).transferFrom(this.accounts.user1.address, owner, 2);
 
-            await migratePool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, 1, 5);
+            await migratePool(cache, this.scannerToScannerPoolMigration.connect(this.accounts.manager), owner, chainId, 1, 5);
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq(2);
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = true;

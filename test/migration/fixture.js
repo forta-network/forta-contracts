@@ -43,7 +43,7 @@ function prepare(config = {}) {
                 this.access.connect(this.accounts.admin).grantRole(this.roles.STAKING_CONTRACT, this.contracts.staking.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.ALLOCATOR_CONTRACT, this.contracts.stakeAllocator.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.MIGRATION_EXECUTOR, this.accounts.manager.address),
-                this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_2_SCANNER_POOL_MIGRATOR, this.contracts.registryMigration.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.SCANNER_2_SCANNER_POOL_MIGRATOR, this.contracts.scannerToScannerPoolMigration.address),
 
                 this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
             ].map((txPromise) => txPromise.then((tx) => tx.wait()).catch(() => {}))

@@ -149,7 +149,7 @@ async function migrateScannersMintPool(cache, registryMigration, owner, chainId,
  * This method will try to do 1 multicall transaction with all chunked migrate([scanners]) calls.
  * @param {*} config object containing init values. If an expected value is not provided the script will try to load defaults.
  * - deployer ethers.js deployer with MIGRATION_EXECUTOR_ROLE. Default: provided by scripts/loadEnv according to hardhat network config used
- * - contracts object with initialized ethers.js Contract objects (only registryMigration used). Default: provided by scripts/loadEnv according to hardhat network config used
+ * - contracts object with initialized ethers.js Contract objects (only scannerToScannerPoolMigration used). Default: provided by scripts/loadEnv according to hardhat network config used
  * - network object with name and chainId. Default: provided by scripts/loadEnv according to hardhat network config used
  * - chunkSize amount of scanners in each migrate call. Default: CHUNK_SIZE
  * - callChunkSize amount of scanners in each migrate call. Default: CHUNK_SIZE
