@@ -5,7 +5,7 @@ const DEBUG = require('debug')('forta:scanner-migration');
 
 const CHUNK_SIZE = 50;
 const MULTICALL_CHUNK_SIZE = 50;
-const SCANNER_LIST_FILE_NAME = 'scanners_1675904983658.json';
+const SCANNER_LIST_FILE_NAME = 'scanners_1675983472358.json';
 // Will have to run once per chain id
 const CHAIN_ID = 137;
 // const CHAIN_ID = 1;
@@ -56,7 +56,8 @@ async function saveMigration(cache, receipt, chainId, owner, scannerAddresses) {
 
 /**
  * This method will migrate the scanners from an owner and assign them to a Scanner Pool
- * It will filter out already migrated scanners (by json file) and opted out scanners (by smart contract and json file)
+ * It will filter out already migrated scanners (by json file), opted out scanners (by smart contract and json file),
+ * and scanners whose active stake is too (by smart contract and json file) low for their chain id.
  * If the poolId is 0 (in the json file), it will mint a new pool.
  * This method will try to do 1 multicall transaction with all chunked migrate([scanners]) calls, plus 1 tx with an initial batch to mint the pool.
  * It will update the migrated scanners and minted pool id in the migration json file.
@@ -77,6 +78,7 @@ async function migratePool(cache, registryMigration, owner, chainId, chunkSize, 
     DEBUG('poolId', poolId);
     DEBUG('raw: ', scannerAddresses.length);
     scanners = filterNonMigrations(scanners);
+    console.log(`scanners after filterNonMigrations: ${JSON.stringify(scanners)}`);
     scannerAddresses = Object.keys(scanners);
     DEBUG('filtered: ', scannerAddresses.length);
 

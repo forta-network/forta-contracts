@@ -1,6 +1,7 @@
 const deployEnv = require('../loadEnv');
 const fs = require('fs');
 const { readFileSync } = require('fs');
+const { BigNumber } = require(`ethers`);
 
 const FILE_NAME = 'dev-scanners.json';
 
@@ -78,9 +79,12 @@ async function main() {
             const decodedActiveStake = contracts.fortaStaking.interface.decodeFunctionResult('activeStakeFor', activeStakes[i]);
             const decodedMinStakeThreshold = (contracts.scannerRegistry.interface.decodeFunctionResult('getStakeThreshold', minStakeThreshold[i]))[0][0];
 
+            const bnActiveStake = BigNumber.from(decodedActiveStake.toString());
+            const bnMinStakeThreshold = BigNumber.from(decodedMinStakeThreshold.toString());
+
             raw[i].activeStake = decodedActiveStake.toString();
             raw[i].minStakeThreshold = decodedMinStakeThreshold.toString();
-            if(decodedActiveStake < decodedMinStakeThreshold) {
+            if(bnActiveStake.lt(bnMinStakeThreshold)) {
                 raw[i].activeStakeBelowMin = true;
             }
         }

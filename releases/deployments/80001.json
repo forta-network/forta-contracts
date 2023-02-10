@@ -127,8 +127,8 @@
 				"Forta Agents",
 				"FAgents"
 			],
-			"name": "AgentRegistry_0_1_5",
-			"version": "0.1.5"
+			"name": "AgentRegistry",
+			"version": "0.1.6"
 		}
 	},
 	"agent-registry-deploy-tx": "0xb48675b7bf382b4673abbf904edf2944dcc54159aa89a786dfa5fee70e891c49",
@@ -199,8 +199,8 @@
 				"0x4519Eaeb9A5c1a9d870Fe35452E54AD04E6e8428",
 				"0x569c785b4744E582c65A12827726FC03C8D08A4a"
 			],
-			"name": "Dispatch_0_1_4",
-			"version": "0.1.4"
+			"name": "Dispatch",
+			"version": "0.1.5"
 		}
 	},
 	"dispatch-deploy-tx": "0x507ec3b49cff285d224d4dc41c18e3ffaf1807875439cec7ccbbc8b683f83cea",

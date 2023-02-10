@@ -37,8 +37,6 @@ require('./tasks/verify-deployed');
 require('./tasks/propose-admin');
 require('./tasks/promote-release');
 
-// module.exports = {};
-
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
@@ -57,7 +55,6 @@ module.exports = {
         ],
     },
     networks: {
-        /*
         hardhat: {
             chainId: 80001,
             forking: {
@@ -65,17 +62,16 @@ module.exports = {
                 accounts: [process.env.MUMBAI_MNEMONIC]
             }
         },
-        */
         mumbai: {
-            url: argv.MUMBAI_NODE,
-            accounts: [argv.MUMBAI_MNEMONIC]
+            url: process.env.MUMBAI_NODE,
+            accounts: [process.env.MUMBAI_MNEMONIC]
         },
     },
     mocha: {
         timeout: 300000,
     },
     etherscan: {
-        apiKey: argv.etherscan ?? argv.polyscan,
+        apiKey: argv.etherscan ?? argv.polyscan, // Use process.env.POLYSCAN to run verifcation locally
     },
     defender: {
         apiKey: process.env.DEFENDER_API_KEY ?? '',
