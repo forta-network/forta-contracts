@@ -204,7 +204,7 @@ function updateStake(
   stake.save();
   staker.save();
 
-  return _subjectId + _stakerId;
+  return getStakeId(_subjectId,_stakerId,_subjectType.toString());
 }
 
 export function handleStakeDeposited(event: StakeDepositedEvent): void {
