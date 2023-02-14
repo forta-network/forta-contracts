@@ -137,7 +137,7 @@ dataSources:
     network: mumbai
     source:
       abi: RewardsDistributor
-      address: "0x230e0C8B224Ae5513B57A35FE0D774a16364aAD9"
+      address: "0x09D2e66a9Cf405f710137E89a6e97CD3d777932B"
       startBlock: 21300000
     mapping:
       kind: ethereum/events
