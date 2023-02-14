@@ -1,4 +1,3 @@
-import { Address, BigInt } from "@graphprotocol/graph-ts";
 import {
   ScannerPoolRegistered as ScannerPoolRegisteredEvent,
   ScannerPoolRegistry as ScannerPoolRegistryContract,
@@ -46,6 +45,7 @@ export function handleScannerUpdated(event: ScannerUpdatedEvent): void {
   const scannerPool = fetchScannerPool(event.params.scannerPool);
   scanNode.chainId = event.params.chainId;
   scanNode.scannerPool = scannerPool.id;
+  scanNode.address = scanNode.id;
   scanNode.save();
   scannerPool.save();
 }
