@@ -26,7 +26,6 @@ import {
 import { fetchAccount } from "../fetch/account";
 
 import { events, transactions } from "@amxx/graphprotocol-utils/";
-import { fetchScannode } from "../fetch/scannode";
 import { fetchScannerPool } from "../fetch/scannerpool";
 
 function hexToDec(s: string): string {
@@ -74,6 +73,9 @@ export function getStakeId(subjectId: string, stakerId: string, subjectType: str
   return subjectType + subjectId + stakerId;
 }
 
+function formatSubjectId(subjectId: BigInt, subjectType: i32): string {
+  return subjectType === 2 ? subjectId.toBigDecimal().toString() : subjectId.toHexString();
+}
 
 function updateAggregateStake(stakerId: string, prevStakeTotalShares: BigInt , prevStateInActiveShares: BigInt , updatedStakeTotalShares: BigInt, updatedStakeInActiveShares: BigInt): void {
 
@@ -115,7 +117,7 @@ function updateStake(
   _subject: BigInt,
   _staker: Address): string {
   
-  const _subjectId = _subject.toHexString();
+  const _subjectId = formatSubjectId(_subject, _subjectType);
   const _stakerId = _staker.toHexString();
   let subject = Subject.load(_subjectId);
   let stake = Stake.load(getStakeId(_subjectId,_stakerId,_subjectType.toString()));
@@ -220,7 +222,7 @@ export function handleStakeDeposited(event: StakeDepositedEvent): void {
   stakeDepositedEvent.transaction = transactions.log(event).id;
   stakeDepositedEvent.timestamp = event.block.timestamp;
   stakeDepositedEvent.stake = stakeId;
-  stakeDepositedEvent.subject = event.params.subject.toHexString();
+  stakeDepositedEvent.subject = formatSubjectId(event.params.subject, event.params.subjectType);
   stakeDepositedEvent.amount = event.params.amount;
   stakeDepositedEvent.save();
 }
@@ -246,7 +248,7 @@ export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {
   withdrawalExecutedEvent.transaction = transactions.log(event).id;
   withdrawalExecutedEvent.timestamp = event.block.timestamp;
   withdrawalExecutedEvent.stake = stakeId;
-  withdrawalExecutedEvent.subject = event.params.subject.toHex();
+  withdrawalExecutedEvent.subject = formatSubjectId(event.params.subject, event.params.subjectType);
   withdrawalExecutedEvent.save();
 }
 
@@ -259,7 +261,7 @@ export function handleRewarded(event: RewardedEvent): void {
       event.params.subjectType.toString()
   );
   reward.subjectType = event.params.subjectType;
-  reward.subjectId = event.params.subject.toHex();
+  reward.subjectId = formatSubjectId(event.params.subject, event.params.subjectType);
   reward.staker = event.params.from.toHex();
   reward.save();
 }
