@@ -13,6 +13,7 @@ async function saveImplementation(writer, contractName, constructorArgs, initArg
     await writer.set(`${key}.impl.constructor-args`, constructorArgs ?? []);
     await writer.set(`${key}.impl.init-args`, initArgs ?? []);
     await writer.set(`${key}.impl.name`, contractName);
+    await writer.set(`${key}.impl.timeout`, 1200000);
     // await writer.set(`${key}.impl.verified`, false);
     await writer.set(`${key}.impl.version`, version);
 }
