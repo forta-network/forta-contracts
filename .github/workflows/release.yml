@@ -14,7 +14,6 @@ defaults:
 jobs:
     build:
         name: Build release
-        if: startsWith(github.head_ref, 'release/')
         runs-on: ubuntu-22.04
         timeout-minutes: 10
         env:
@@ -43,7 +42,6 @@ jobs:
 
     test:
         name: Test release
-        if: startsWith(github.head_ref, 'release/')
         runs-on: ubuntu-22.04
 #       timeout-minutes: 20
         needs: build
@@ -67,7 +65,6 @@ jobs:
 
     prepare:
         name: Prepare release
-        if: startsWith(github.head_ref, 'release/')
         runs-on: ubuntu-22.04
         needs: test
         outputs:
@@ -145,7 +142,6 @@ jobs:
 
     deploy:
         name: Deploy contracts
-        if: startsWith(github.head_ref, 'release/')
         runs-on: ubuntu-22.04
         timeout-minutes: 20
         needs: prepare
@@ -208,7 +204,6 @@ jobs:
     #               node-version: '14'
     #               cache: 'yarn'
     #         - run: yarn install --frozen-lockfile
-
     #         - name: Get build artifacts
     #           uses: actions/download-artifact@v3
     #           with:
@@ -231,7 +226,6 @@ jobs:
 
     finish-release:
         name: Finish release
-        if: "startsWith(github.head_ref, 'release/')"
         runs-on: ubuntu-22.04
         timeout-minutes: 20
         environment: production
