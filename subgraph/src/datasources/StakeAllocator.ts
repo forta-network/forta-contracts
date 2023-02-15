@@ -4,28 +4,17 @@ import { AllocatedStake as AllocatedStakeEvent, UnallocatedStake as UnallocatedS
 import { ScannerPool } from "../../generated/schema";
 
 function formatSubjectId(subjectId: BigInt, subjectType: i32): string {
-    return subjectType === 2 ? subjectId.toBigDecimal().toString() : subjectId.toHexString();
+    return (subjectType === 2 || subjectType == 3) ? subjectId.toBigDecimal().toString() : subjectId.toHexString();
 }
 
 function updateScannerPoolStakes(subject: BigInt, contractAddress: Address, scannerPool: ScannerPool): void {
     const stakeAllocatorContract = StakeAllocator.bind(contractAddress);
-    const delegatedStakeResult = stakeAllocatorContract.try_allocatedDelegatorsStakePerManaged(2,subject);
-    const ownedStakeResult = stakeAllocatorContract.try_allocatedOwnStakePerManaged(2,subject);
 
-    if(!delegatedStakeResult.reverted) { 
-        scannerPool.stakeDelegated = delegatedStakeResult.value 
-    } else {
-        log.warning(`Failed to fetch delegatedStakeManaged for subject {}`,[subject.toHexString()])
-    }
+    scannerPool.stakeOwnedAllocated = stakeAllocatorContract.allocatedStakeFor(2,subject);
+    scannerPool.stakeAllocated = scannerPool.stakeOwnedAllocated.plus(stakeAllocatorContract.allocatedStakeFor(3,subject))
+    scannerPool.stakeOwned = scannerPool.stakeOwnedAllocated.plus(stakeAllocatorContract.unallocatedStakeFor(2,subject))
+    scannerPool.stakeDelegated = stakeAllocatorContract.allocatedStakeFor(3,subject).plus(stakeAllocatorContract.unallocatedStakeFor(3,subject));
 
-    if(!ownedStakeResult.reverted) { 
-        scannerPool.stakeOwnedAllocated = ownedStakeResult.value 
-    } else {
-        log.warning(`Failed to fetch ownedStake for subject {}`,[subject.toHexString()])
-    }
-
-    scannerPool.stakeAllocated = stakeAllocatorContract.allocatedStakeFor(2,subject)
-    scannerPool.stakeOwned = (scannerPool.stakeAllocated as BigInt).plus(stakeAllocatorContract.unallocatedStakeFor(2,subject))
     scannerPool.save();
 }
 
@@ -34,7 +23,7 @@ export function handleAllocatedStake(event: AllocatedStakeEvent): void {
     const subjectType = event.params.subjectType;
     const subjectId = formatSubjectId(event.params.subject, event.params.subjectType);
 
-    if(subjectType === 2) {
+    if (subjectType === 2 || subjectType === 3) {
         const scannerPool = ScannerPool.load(subjectId);
         if(scannerPool) {
           updateScannerPoolStakes(event.params.subject, event.address, scannerPool)
@@ -46,7 +35,7 @@ export function handleUnAllocatedStake(event: UnallocatedStakeEvent): void {
     const subjectType = event.params.subjectType;
     const subjectId = formatSubjectId(event.params.subject, event.params.subjectType);
 
-    if(subjectType === 2) {
+    if(subjectType === 2 || subjectType === 3) {
         const scannerPool = ScannerPool.load(subjectId);
         if(scannerPool) {
             updateScannerPoolStakes(event.params.subject, event.address, scannerPool)
