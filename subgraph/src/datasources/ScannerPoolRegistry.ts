@@ -53,7 +53,7 @@ export function handleScannerUpdated(event: ScannerUpdatedEvent): void {
 export function handleScannerEnabled(event: ScannerEnabledEvent): void {
   const scanNode = fetchScannode(event.params.scannerId);
 
-  const nodePool = ScannerPool.load(scanNode.scannerPool);
+  const nodePool = ScannerPool.load(parseInt(scanNode.scannerPool).toString());
 
   scanNode.enabled = event.params.enabled;
   scanNode.save();
