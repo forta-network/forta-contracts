@@ -5,7 +5,7 @@ const DEBUG = require('debug')('forta:scanner-migration');
 
 const CHUNK_SIZE = 50;
 const MULTICALL_CHUNK_SIZE = 50;
-const SCANNER_LIST_FILE_NAME = 'scanners_1675983472358.json';
+const SCANNER_LIST_FILE_NAME = ''; // Update to have the file for PROD
 // Will have to run once per chain id
 const CHAIN_ID = 137;
 // const CHAIN_ID = 1;
@@ -17,7 +17,7 @@ function getScannersFilePath(network) {
 function filterNonMigrations(scanners) {
     const result = {};
     for (const id of Object.keys(scanners)) {
-        if (!scanners[id].migrated && !scanners[id].optingOut && !scanners[id].activeStakeBelowMin) {
+        if (!scanners[id].migrated && !scanners[id].optingOut && (scanners[id].enabled === true) && !scanners[id].activeStakeBelowMin) {
             result[id] = scanners[id];
         }
     }
@@ -78,7 +78,6 @@ async function migratePool(cache, registryMigration, owner, chainId, chunkSize, 
     DEBUG('poolId', poolId);
     DEBUG('raw: ', scannerAddresses.length);
     scanners = filterNonMigrations(scanners);
-    console.log(`scanners after filterNonMigrations: ${JSON.stringify(scanners)}`);
     scannerAddresses = Object.keys(scanners);
     DEBUG('filtered: ', scannerAddresses.length);
 
