@@ -11,6 +11,7 @@ export function fetchScannerPool(id: BigInt): ScannerPool {
     scannerPool.chainId = 1;
     scannerPool.apr = BigDecimal.zero();
     scannerPool.commission = BigDecimal.zero();
+    scannerPool.commissionSinceEpoch = 0;
     scannerPool.status = "";
     scannerPool.stakeOwned = BigInt.zero();
     scannerPool.stakeDelegated = BigInt.zero();

@@ -247,6 +247,7 @@ type ScannerPool @entity {
   chainId: Int!
   apr: BigDecimal
   commission: BigDecimal!
+  commissionSinceEpoch: Int!
   status: String
   stakeOwned: BigInt!
   stakeDelegated: BigInt!
