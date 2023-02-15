@@ -51,6 +51,7 @@ async function deployUpgradeable(params, deploymentInfo, contract, hre, name, re
         params.impl.opts[camelize(key)] = params.impl.opts[key];
     }
     params.impl.opts.constructorArgs = formatParams(deploymentInfo, params.impl.opts.constructorArgs);
+    params.impl.opts.timeout = 1200000
     console.log(name);
     console.log('initArgs', initArgs);
     console.log('opts', params.impl.opts);
