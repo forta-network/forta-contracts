@@ -86,6 +86,8 @@ async function main(args, hre) {
         for (const name of contractNames) {
             console.log('----Deploying ', name, '...');
             const params = deploymentConfig[name];
+            // TODO: Fixed timeout error in pipeline
+            params.timeout = 1200000;
             if (params.impl) {
                 contract = await deployUpgradeable(params, deploymentInfo, contract, hre, name, releaseWriter, deploymentWriter, upgrades);
             } else {
