@@ -2,7 +2,7 @@
 name: Release
 
 on:
-    pull_request:
+    workflow_dispatch:
         branches:
             - 'master'
             - 'release/**'
