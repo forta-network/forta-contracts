@@ -264,6 +264,7 @@ jobs:
                   MUMBAI_NODE: '${{ secrets.MUMBAI_NODE }}'
                   POLYGON_MNEMONIC: "${{ secrets.POLYGON_MNEMONIC }}"
                   POLYGON_NODE: "${{ secrets.POLYGON_NODE }}"
+                  POLYGON_GAS_PRICE: 500000000000
                   # ETHERSCAN "${{ secrets.ETHERSCAN }}"
                   POLYSCAN: '${{ secrets.POLYSCAN }}'
                   DEFENDER_API_KEY: '${{ secrets.DEFENDER_API_KEY }}'
