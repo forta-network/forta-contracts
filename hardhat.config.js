@@ -89,7 +89,7 @@ Object.assign(
     module.exports.networks,
     Object.fromEntries(
         ['mainnet', 'ropsten', 'rinkeby', 'goerli', 'kovan', 'polygon', 'mumbai', 'local']
-            .map((name) => [name, { url: argv[`${name}Node`], accounts: accountsForNetwork(name) }])
+            .map((name) => [name, { url: argv[`${name}Node`], accounts: accountsForNetwork(name), gasPrice: argv[`${name}GasPrice`] || "auto" }])
             .filter(([, { url }]) => url)
     ),
     argv.slow && { hardhat: { mining: { auto: false, interval: [3000, 6000] } } }, // Simulate a slow chain locally
