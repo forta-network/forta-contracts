@@ -79,6 +79,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         __BaseComponentUpgradeable_init(_manager);
 
         if (_delegationParamsEpochDelay == 0) revert ZeroAmount("_delegationParamsEpochDelay");
+        if (_defaultFeeBps > MAX_BPS) revert AmountTooLarge(_defaultFeeBps, MAX_BPS);
         delegationParamsEpochDelay = _delegationParamsEpochDelay;
         // defaultFeeBps could be 0;
         defaultFeeBps = _defaultFeeBps;
