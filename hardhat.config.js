@@ -55,23 +55,14 @@ module.exports = {
         ],
     },
     networks: {
-        hardhat: {
-            chainId: 80001,
-            forking: {
-                url: process.env.MUMBAI_NODE,
-                accounts: [process.env.MUMBAI_MNEMONIC]
-            }
-        },
-        mumbai: {
-            url: process.env.MUMBAI_NODE,
-            accounts: [process.env.MUMBAI_MNEMONIC]
-        },
+        hardhat: {}
     },
     mocha: {
         timeout: 300000,
     },
     etherscan: {
-        apiKey: argv.etherscan ?? argv.polyscan, // Use process.env.POLYSCAN to run verifcation locally
+        // Use process.env.POLYSCAN to run verifcation locally
+        apiKey: argv.etherscan ?? argv.polyscan,
     },
     defender: {
         apiKey: process.env.DEFENDER_API_KEY ?? '',
