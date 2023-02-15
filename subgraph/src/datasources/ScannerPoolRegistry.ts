@@ -33,10 +33,10 @@ export function handleScannerPoolRegistered(event: ScannerPoolRegisteredEvent): 
   const scannerPool = fetchScannerPool(scannerPoolId);
   let from = fetchAccount(event.transaction.from);
 
-  const owner = scannerPoolRegistry.ownerOf(scannerPoolId).toHexString();
+  const owner = scannerPoolRegistry.ownerOf(scannerPoolId);
 
+  scannerPool.owner = owner ? owner.toHexString() : from.id;
   scannerPool.registered = scannerPoolRegistry.isRegistered(scannerPoolId);
-  scannerPool.owner = owner ? owner : from.id;
   scannerPool.chainId = event.params.chainId.toI32();
   scannerPool.status = "Not Delegating"
   scannerPool.save();
