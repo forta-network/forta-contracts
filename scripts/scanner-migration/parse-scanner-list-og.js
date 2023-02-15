@@ -1,7 +1,6 @@
 const deployEnv = require('../loadEnv');
 const fs = require('fs');
 let csvToJson = require('convert-csv-to-json');
-const { BigNumber } = require(`ethers`);
 
 const FILE_NAME = 'On_demand_report_2022-11-24T16_27_13.841Z_da721a10-6c14-11ed-aa40-81c129ba7807.csv';
 
@@ -21,10 +20,10 @@ async function main() {
                 id: scanner['_source.id'],
                 chainId: scanner['_source.chain_id'],
                 enabled: scanner['_source.enabled'] === 'true',
-                callOwner: contracts.scannerRegistry.interface.encodeFunctionData('ownerOf', [scanner['_source.id']]),
-                callOptingOut: contracts.scannerRegistry.interface.encodeFunctionData('optingOutOfMigration', [scanner['_source.id']]),
-                callActiveStake: contracts.fortaStaking.interface.encodeFunctionData('activeStakeFor', [0, scanner['_source.id']]),
-                callGetStakeThreshold: contracts.scannerRegistry.interface.encodeFunctionData('getStakeThreshold', [scanner['_source.id']]),
+                callOwner: contracts.scanners.interface.encodeFunctionData('ownerOf', [scanner['_source.id']]),
+                callOptingOut: contracts.scanners.interface.encodeFunctionData('optingOutOfMigration', [scanner['_source.id']]),
+                callActiveStake: contracts.fortaStaking.interface.encodeFunctionData('activeStakeFor', [0, scanner['_source.id']]), // scanner subjectType is `0`
+                callMinStakeFor: contracts.fortaStaking.interface.encodeFunctionData('subjectGateway.minStakeFor', [0, scanner['_source.id']]),
                 migrated: false,
                 optingOut: false,
                 activeStakeBelowMin: false,
@@ -35,7 +34,7 @@ async function main() {
     let owners = await Promise.all(
         raw.chunk(50).map((chunk) => {
             const calls = chunk.map((x) => x.callOwner);
-            return contracts.scannerRegistry.callStatic.multicall(calls);
+            return contracts.scanners.callStatic.multicall(calls);
         })
     );
     owners = owners.flat();
@@ -44,46 +43,37 @@ async function main() {
         raw[i].owner = `0x${owners[i].slice(-40)}`;
     }
     console.log('Getting optingOuts...');
-    if (deployment["scanner-registry"].impl.version === '0.1.4') {
+    if (deployment.scanners.impl.version === '0.1.4') {
         let optingOuts = await Promise.all(
             raw.chunk(50).map((chunk) => {
                 const calls = chunk.map((x) => x.callOptingOut);
-                return contracts.scannerRegistry.callStatic.multicall(calls);
+                return contracts.scanners.callStatic.multicall(calls);
             })
         );
 
         optingOuts = optingOuts.flat();
         for (let i = 0; i < optingOuts.length; i++) {
-            const decodedData = contracts.scannerRegistry.interface.decodeFunctionResult('optingOutOfMigration', optingOuts[i]);
-            raw[i].optingOut = decodedData[0];
+            raw[i].optingOut = optingOuts[i];
         }
     }
     console.log('Getting activeStakeBelowMin...');
-    if (deployment["forta-staking"].impl.version === '0.1.2') {
+    if (deployment.fortaStaking.impl.version === '0.1.1') {
         let activeStakes = await Promise.all(
             raw.chunk(50).map((chunk) => {
                 const calls = chunk.map((x) => x.callActiveStake);
                 return contracts.fortaStaking.callStatic.multicall(calls);
             })
         );
-        let minStakeThreshold = await Promise.all(
+        let minStakeFor = await Promise.all(
             raw.chunk(50).map((chunk) => {
-                const calls = chunk.map((x) => x.callGetStakeThreshold);
-                return contracts.scannerRegistry.callStatic.multicall(calls);
+                const calls = chunk.map((x) => x.callMinStakeFor);
+                return contracts.fortaStaking.callStatic.multicall(calls);
             })
         );
-        minStakeThreshold = minStakeThreshold.flat();
+        minStakeFor = minStakeFor.flat();
         activeStakes = activeStakes.flat();
         for (let i = 0; i < activeStakes.length; i++) {
-            const decodedActiveStake = contracts.fortaStaking.interface.decodeFunctionResult('activeStakeFor', activeStakes[i]);
-            const decodedMinStakeThreshold = (contracts.scannerRegistry.interface.decodeFunctionResult('getStakeThreshold', minStakeThreshold[i]))[0][0];
-
-            const bnActiveStake = BigNumber.from(decodedActiveStake.toString());
-            const bnMinStakeThreshold = BigNumber.from(decodedMinStakeThreshold.toString());
-
-            raw[i].activeStake = decodedActiveStake.toString();
-            raw[i].minStakeThreshold = decodedMinStakeThreshold.toString();
-            if(bnActiveStake.lt(bnMinStakeThreshold)) {
+            if(activeStakes[i] < minStakeFor[i]) {
                 raw[i].activeStakeBelowMin = true;
             }
         }
@@ -98,11 +88,11 @@ async function main() {
         }
         if (!grouped[scanner.chainId][scanner.owner]) {
             grouped[scanner.chainId][scanner.owner] = {
-                "scanner-registry": {},
+                scanners: {},
                 poolId: 0,
             };
         }
-        grouped[scanner.chainId][scanner.owner]["scanner-registry"][scanner.id] = scanner;
+        grouped[scanner.chainId][scanner.owner].scanners[scanner.id] = scanner;
     }
     const outputPath = `./scripts/data/scanners/${network.name}/scanners_${+Date.now()}.json`;
     fs.writeFileSync(outputPath, JSON.stringify(grouped), null, 2);
