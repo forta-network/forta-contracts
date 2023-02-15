@@ -3,6 +3,9 @@ import { Address, BigInt, log } from "@graphprotocol/graph-ts";
 import { AllocatedStake as AllocatedStakeEvent, UnallocatedStake as UnallocatedStakeEvent, StakeAllocator } from "../../generated/StakeAllocator/StakeAllocator"
 import { ScannerPool } from "../../generated/schema";
 
+function formatSubjectId(subjectId: BigInt, subjectType: i32): string {
+    return subjectType === 2 ? subjectId.toBigDecimal().toString() : subjectId.toHexString();
+}
 
 function updateScannerPoolStakes(subject: BigInt, contractAddress: Address, scannerPool: ScannerPool): void {
     const stakeAllocatorContract = StakeAllocator.bind(contractAddress);
@@ -29,7 +32,7 @@ function updateScannerPoolStakes(subject: BigInt, contractAddress: Address, scan
 
 export function handleAllocatedStake(event: AllocatedStakeEvent): void {
     const subjectType = event.params.subjectType;
-    const subjectId = event.params.subject.toHexString();
+    const subjectId = formatSubjectId(event.params.subject, event.params.subjectType);
 
     if(subjectType === 2) {
         const scannerPool = ScannerPool.load(subjectId);
@@ -41,7 +44,7 @@ export function handleAllocatedStake(event: AllocatedStakeEvent): void {
 
 export function handleUnAllocatedStake(event: UnallocatedStakeEvent): void {
     const subjectType = event.params.subjectType;
-    const subjectId = event.params.subject.toHexString();
+    const subjectId = formatSubjectId(event.params.subject, event.params.subjectType);
 
     if(subjectType === 2) {
         const scannerPool = ScannerPool.load(subjectId);

@@ -1,7 +1,6 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 
 import { ScannerPool } from "../../generated/schema";
-import { fetchAccount } from "./account";
 
 export function fetchScannerPool(id: BigInt): ScannerPool {
   

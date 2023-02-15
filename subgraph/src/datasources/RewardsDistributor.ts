@@ -1,8 +1,10 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import {SetDelegationFee as SetDelegationFeeEvent } from "../../generated/RewardsDistributor/RewardsDistributor";
-import { fetchScannerPool } from "../fetch/scannerpool";
-import { log } from "matchstick-as";
 import { ScannerPool, Subject } from "../../generated/schema";
+
+function formatSubjectId(subjectId: BigInt, subjectType: i32): string {
+  return subjectType === 2 ? subjectId.toBigDecimal().toString() : subjectId.toHexString();
+}
 
 function updateScannerPoolComission(subjectId: string, subjectType: i32, fee: BigInt, epochNumber: BigInt): void {
   
@@ -19,7 +21,7 @@ function updateScannerPoolComission(subjectId: string, subjectType: i32, fee: Bi
 
 
 export function handleSetDelegationFee(event: SetDelegationFeeEvent): void {
-  const subjectId = event.params.subject.toHexString();
+  const subjectId = formatSubjectId(event.params.subject, event.params.subjectType);
   const subjectType = event.params.subjectType;
   const epochNumber = event.params.epochNumber;
   
