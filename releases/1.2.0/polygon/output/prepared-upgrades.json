@@ -34,5 +34,17 @@
 			"timeout": 1200000,
 			"version": "0.1.3"
 		}
+	},
+	"agent-registry": {
+		"impl": {
+			"address": "0xb779fF917F824740Dd64C0568C346A4C918EF095",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "AgentRegistry",
+			"timeout": 1200000,
+			"version": "0.1.5"
+		}
 	}
 }
