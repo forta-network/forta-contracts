@@ -10,5 +10,17 @@
 			"timeout": 1200000,
 			"version": "0.1.1"
 		}
+	},
+	"stake-subject-gateway": {
+		"impl": {
+			"address": "0xBe7AfebC79c40338B485a75792a510E32283fb70",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "StakeSubjectGateway",
+			"timeout": 1200000,
+			"version": "0.1.1"
+		}
 	}
 }
