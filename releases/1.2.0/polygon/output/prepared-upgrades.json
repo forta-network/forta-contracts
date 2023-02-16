@@ -1,0 +1,14 @@
+{
+	"forta-staking": {
+		"impl": {
+			"address": "0x543D94657fA8C710818f0D9F7eDeC7F4Ca03CCDA",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "FortaStaking",
+			"timeout": 1200000,
+			"version": "0.1.1"
+		}
+	}
+}
