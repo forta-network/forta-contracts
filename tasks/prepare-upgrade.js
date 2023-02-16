@@ -33,8 +33,6 @@ async function prepareUpgrade(hre, name, upgradesConfig, deploymentInfo, multisi
         proxyAddress,
         opts
     })
-    console.log("Contract factory")
-    console.log(JSON.stringify(cf))
 
     const result = await hre.upgrades.prepareUpgrade(proxyAddress, cf, opts);
     const implAddress = getNewImplementation(result);
