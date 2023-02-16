@@ -26,7 +26,17 @@ async function prepareUpgrade(hre, name, upgradesConfig, deploymentInfo, multisi
     console.log(`Deploying new implementation for contract ${name} ...`);
     const { opts } = prepareParams(upgradesConfig, name, deploymentInfo, multisigAddress);
     const proxyAddress = parseAddress(deploymentInfo, kebabize(name));
-    const result = await hre.upgrades.prepareUpgrade(proxyAddress, await hre.ethers.getContractFactory(name), opts);
+
+    const cf = await hre.ethers.getContractFactory(name)
+    console.group("Summary for prepareUpgrade")
+    console.log({
+        proxyAddress,
+        opts
+    })
+    console.log("Contract factory")
+    console.log(JSON.stringify(cf))
+
+    const result = await hre.upgrades.prepareUpgrade(proxyAddress, cf, opts);
     const implAddress = getNewImplementation(result);
     console.log('Saving output...');
     await saveImplementation(
@@ -95,6 +105,16 @@ async function main(args, hre) {
         throw new Error('No contracts in upgrade.json config file');
     }
     console.log(`Deploying implementation contracts ${contractNames.join(', ')} from commit ${commit} on chain ${chainId}`);
+
+    console.log({
+        commit,
+        chainId,
+        upgradesConfig,
+        contractNames,
+        deploymentInfo,
+        multisigAddress,
+        message: "prepare-upgrade summary"
+    })
 
     try {
         for (const name of contractNames) {
