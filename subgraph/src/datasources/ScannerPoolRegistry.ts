@@ -8,6 +8,7 @@ import { fetchScannerPool } from "../fetch/scannerpool";
 import { fetchScannode } from "../fetch/scannode";
 import { fetchAccount } from "../fetch/account";
 import { ScanNode, ScannerPool } from "../../generated/schema";
+import { BigDecimal } from "@graphprotocol/graph-ts";
 
 function areScannersActive(pool: ScannerPool): boolean {
   let result = false;
@@ -37,6 +38,11 @@ export function handleScannerPoolRegistered(event: ScannerPoolRegisteredEvent): 
   scannerPool.owner = to.id;
   scannerPool.chainId = event.params.chainId.toI32();
   scannerPool.status = "Not Delegating"
+
+  // the source of truth is the RewardsDistributorContract (defaultFeeBps())
+  // this is a quick and simple way to have an expected default
+  scannerPool.commission = BigDecimal.fromString("10000") // 10000 == 100%
+
   scannerPool.save();
 }
 
