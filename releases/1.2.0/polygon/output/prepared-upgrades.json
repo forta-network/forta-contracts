@@ -22,5 +22,17 @@
 			"timeout": 1200000,
 			"version": "0.1.1"
 		}
+	},
+	"scanner-registry": {
+		"impl": {
+			"address": "0x75c46283dE6b08bE4bb4425b94aC338f2802e3B0",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "ScannerRegistry",
+			"timeout": 1200000,
+			"version": "0.1.3"
+		}
 	}
 }
