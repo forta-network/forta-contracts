@@ -46,5 +46,17 @@
 			"timeout": 1200000,
 			"version": "0.1.5"
 		}
+	},
+	"dispatch": {
+		"impl": {
+			"address": "0x5eED79eC2D48be67e6D956C59110f123116C3EAD",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "Dispatch",
+			"timeout": 1200000,
+			"version": "0.1.4"
+		}
 	}
 }
