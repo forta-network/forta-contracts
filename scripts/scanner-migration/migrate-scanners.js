@@ -5,10 +5,9 @@ const DEBUG = require('debug')('forta:scanner-migration');
 
 const CHUNK_SIZE = 50;
 const MULTICALL_CHUNK_SIZE = 50;
-const SCANNER_LIST_FILE_NAME = ''; // Update to have the file for PROD
+const SCANNER_LIST_FILE_NAME = 'out-1676673081583743709.json';
 // Will have to run once per chain id
-const CHAIN_ID = 137;
-// const CHAIN_ID = 1;
+const CHAIN_ID = 1; // 10, 137, 56, 42161, 43114, 250
 
 function getScannersFilePath(network) {
     return `../data/scanners/${network.name}/${SCANNER_LIST_FILE_NAME}`
@@ -17,7 +16,7 @@ function getScannersFilePath(network) {
 function filterNonMigrations(scanners) {
     const result = {};
     for (const id of Object.keys(scanners)) {
-        if (!scanners[id].migrated && !scanners[id].optingOut && (scanners[id].enabled === true) && !scanners[id].activeStakeBelowMin) {
+        if (!scanners[id].migrated && !scanners[id].optingOut && !scanners[id].activeStakeBelowMin) {
             result[id] = scanners[id];
         }
     }
@@ -87,7 +86,7 @@ async function migratePool(cache, registryMigration, owner, chainId, chunkSize, 
     }
     let migratedAddresses = [];
 
-    if (poolId === 0) {
+    if (!poolId) {
         console.log('minting pool and migrating');
         migratedAddresses = Object.keys(scanners).slice(0, chunkSize);
         await migrateScannersMintPool(cache, registryMigration, owner, chainId, migratedAddresses);
@@ -163,7 +162,7 @@ async function scanners2ScannerPools(config = {}) {
         DEBUG('loading env');
         e = await deployEnv.loadEnv();
     }
-    const deployer = config.deployer ?? e.deployer;
+    const migrationExecutor = config.deployer ?? e.deployer;
     const contracts = config.contracts ?? e.contracts;
     const network = config.network ?? e.network;
     const chunkSize = config.chunkSize ?? CHUNK_SIZE;
@@ -174,13 +173,13 @@ async function scanners2ScannerPools(config = {}) {
 
     console.log(`Network`);
     console.log(network);
-    console.log(`Deployer: ${deployer.address}`);
+    console.log(`Migration Executor: ${migrationExecutor.address}`);
     console.log('--------------------- Scanner 2 ScannerPool -------------------------------');
     console.log('Chain ', chainId);
     const owners = Object.keys(await cache.get(chainId.toString()));
     for (const owner of owners) {
         console.log('Owner ', owner);
-        await migratePool(cache, contracts.scannerToScannerPoolMigration.connect(deployer), owner, chainId, chunkSize, callChunkSize);
+        await migratePool(cache, contracts.scannerToScannerPoolMigration.connect(migrationExecutor), owner, chainId, chunkSize, callChunkSize);
     }
     console.log('Done!');
 }
