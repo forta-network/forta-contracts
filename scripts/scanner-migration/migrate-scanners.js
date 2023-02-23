@@ -4,10 +4,10 @@ const deployEnv = require('../loadEnv');
 const DEBUG = require('debug')('forta:scanner-migration');
 
 const CHUNK_SIZE = 50;
-const MULTICALL_CHUNK_SIZE = 50;
-const SCANNER_LIST_FILE_NAME = 'out-1676673081583743709.json';
-// Will have to run once per chain id
-const CHAIN_ID = 1; // 10, 137, 56, 42161, 43114, 250
+const MULTICALL_CHUNK_SIZE = 2;
+const SCANNER_LIST_FILE_NAME = ''; // Initial PROD migration run
+// Will have to run per following chain id: 1, 10, 56, 137, 250, 42161, 43114
+const CHAIN_ID = 1;
 
 function getScannersFilePath(network) {
     return `../data/scanners/${network.name}/${SCANNER_LIST_FILE_NAME}`
@@ -107,7 +107,7 @@ async function migratePool(cache, registryMigration, owner, chainId, chunkSize, 
         calls.chunk(callChunkSize).map(async (callChunk) => {
             let tx;
             try {
-                tx = await registryMigration.multicall(callChunk);
+                tx = await registryMigration.multicall(callChunk, { gasPrice: 300000000000 });
             } catch (e) {
                 console.log('ERROR migratePool');
                 console.log('chainId', chainId);
@@ -133,7 +133,7 @@ async function migrateScannersMintPool(cache, registryMigration, owner, chainId,
     DEBUG('...migrateScannersMintPool...');
     let receipt;
     try {
-        const tx = await registryMigration.migrate(scannerAddresses, 0, owner, chainId);
+        const tx = await registryMigration.migrate(scannerAddresses, 0, owner, chainId, { gasPrice: 300000000000 });
         receipt = await tx.wait();
     } catch (e) {
         console.log('migrateScannersMintPool');
