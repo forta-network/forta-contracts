@@ -79,6 +79,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         __BaseComponentUpgradeable_init(_manager);
 
         if (_delegationParamsEpochDelay == 0) revert ZeroAmount("_delegationParamsEpochDelay");
+        if (_defaultFeeBps > MAX_BPS) revert AmountTooLarge(_defaultFeeBps, MAX_BPS);
         delegationParamsEpochDelay = _delegationParamsEpochDelay;
         // defaultFeeBps could be 0;
         defaultFeeBps = _defaultFeeBps;
@@ -206,6 +207,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
     function setDelegationParams(uint256 _delegationParamsEpochDelay, uint256 _defaultFeeBps) external onlyRole(STAKING_ADMIN_ROLE) {
         if (_delegationParamsEpochDelay == 0) revert ZeroAmount("_delegationParamsEpochDelay");
+        if (_defaultFeeBps > MAX_BPS) revert AmountTooLarge(_defaultFeeBps, MAX_BPS);
         delegationParamsEpochDelay = delegationParamsEpochDelay;
         // defaultFeeBps could be 0;
         defaultFeeBps = _defaultFeeBps;

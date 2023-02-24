@@ -37,8 +37,6 @@ require('./tasks/verify-deployed');
 require('./tasks/propose-admin');
 require('./tasks/promote-release');
 
-module.exports = {};
-
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
@@ -56,7 +54,9 @@ module.exports = {
             },
         ],
     },
-    networks: { hardhat: {} },
+    networks: {
+        hardhat: {}
+    },
     mocha: {
         timeout: 300000,
     },
@@ -82,15 +82,17 @@ module.exports = {
     },
 };
 
-const accountsForNetwork = (name) => [argv[`${name}Mnemonic`] && { mnemonic: argv[`${name}Mnemonic`] }, argv[`${name}PrivateKey`] && [argv[`${name}PrivateKey`]]].find(Boolean);
+const accountsForNetwork = (name) => [argv[`${name}Mnemonic`] && { mnemonic: argv[`${name}Mnemonic`] }, argv[`${name}PrivateKey`]].find(Boolean);
 
 Object.assign(
     module.exports.networks,
     Object.fromEntries(
         ['mainnet', 'ropsten', 'rinkeby', 'goerli', 'kovan', 'polygon', 'mumbai', 'local']
-            .map((name) => [name, { url: argv[`${name}Node`], accounts: accountsForNetwork(name) }])
+            .map((name) => [name, { url: argv[`${name}Node`], accounts: accountsForNetwork(name), gasPrice: argv[`${name}GasPrice`] || "auto" }])
             .filter(([, { url }]) => url)
     ),
     argv.slow && { hardhat: { mining: { auto: false, interval: [3000, 6000] } } }, // Simulate a slow chain locally
     argv.fork && { hardhat: { forking: { url: argv.forkNode, block: argv.blockNumber } } } // Simulate a mainnet fork
 );
+
+console.log(Object.keys(module.exports.networks));

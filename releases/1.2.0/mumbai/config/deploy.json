@@ -1,0 +1,58 @@
+{
+    "RewardsDistributor": {
+        "impl": {
+            "init-args": ["deployment.access-manager", "2", "10000"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.forta", "deployment.stake-subject-gateway"
+                ]
+            }
+            
+        }
+    },
+    "StakeAllocator": {
+        "impl": {
+            "init-args": ["deployment.access-manager"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.stake-subject-gateway", "deployment.rewards-distributor"
+                ]
+            }
+            
+        }
+    },
+    "ScannerPoolRegistry": {
+        "impl": {
+            "init-args": ["deployment.access-manager", "FScannerPools", "FSP", "deployment.stake-subject-gateway", "3600"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.stake-allocator"
+                ]
+            }
+            
+        }
+    },
+    "ScannerToScannerPoolMigration": {
+        "impl": {
+            "init-args": ["deployment.access-manager"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.scanner-registry", "deployment.scanner-pool-registry", "deployment.forta-staking"
+                ]
+            }
+            
+        }
+    }
+}

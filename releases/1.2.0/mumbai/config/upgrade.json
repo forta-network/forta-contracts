@@ -1,0 +1,62 @@
+{
+    "FortaStaking": {
+        "impl": {
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+        }
+    },
+    "StakeSubjectGateway": {
+        "impl": {
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+        }
+    },
+    "ScannerRegistry": {
+        "impl": {
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+        }
+    },
+    "AgentRegistry": {
+        "impl": {
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+        }
+    },
+    "Dispatch": {
+        "impl": {
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+        }
+    }
+}

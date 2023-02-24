@@ -29,6 +29,7 @@ function prepare(config = {}) {
 
         // Set admin as default signer for all contracts
         Object.assign(this, this.contracts);
+
         // setup roles
         await Promise.all(
             [

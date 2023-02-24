@@ -1,18 +1,21 @@
-const { camelize, upperCaseFirst } = require('../../scripts/utils/stringUtils');
-const { getProxyOrContractAddress } = require('../../scripts/utils/deploymentFiles');
+const { parseAddress } = require('../../scripts/utils/deploymentFiles');
 
 const PROXY_ABI = [
     { inputs: [{ internalType: 'address', name: 'newImplementation', type: 'address' }], name: 'upgradeTo', outputs: [], stateMutability: 'nonpayable', type: 'function' },
 ];
 
-async function parseUpgradeProposals(hre, prepared, deployment, network) {
+async function parseUpgradeProposals(hre, prepared, deploymentInfo, network) {
     const contracts = await Promise.all(
         Object.entries(prepared).map(async ([key, { impl }]) => {
+            const contractName = prepared[key].impl.name;
+            if (!contractName) {
+                throw new Error(`No contract name for prepared implementation: ${key} in network ${network}`);
+            }
             return {
-                name: upperCaseFirst(camelize(key)),
+                name: contractName,
                 network,
-                address: getProxyOrContractAddress(deployment, key),
-                abi: JSON.stringify([...(await hre.artifacts.readArtifact(upperCaseFirst(camelize(key))).then((a) => a.abi)), ...PROXY_ABI]),
+                address: parseAddress(deploymentInfo, key),
+                abi: JSON.stringify([...(await hre.artifacts.readArtifact(contractName).then((a) => a.abi)), ...PROXY_ABI]),
                 newImplementation: impl.address,
             };
         })

@@ -1,0 +1,25 @@
+title: Stake Delegation
+network: polygon
+deploy: deploy-and-prepare-upgrade 1.2.0
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deployed contracts:
+  - RewardsDistributor
+  - StakeAllocator
+  - ScannerPoolRegistry
+  - ScannerToScannerPoolMigration
+
+  ## Deployed new implementations:
+  - FortaStaking -> 0.1.2
+  - FortaStakingParameters --> StakeSubjectGateway 0.1.1
+  - ScannerRegistry -> 0.1.4
+  - AgentRegistry -> 0.1.6
+  - Dispatch -> 0.1.5
+
+  ## Output tx:
+  - Upgrade implementations
+  - Grant required roles
+  - Set managed stake thresholds for pools
+  - Wires together staking contracts
+  - Configures migration in ScannerRegistry (sunsetting time included)

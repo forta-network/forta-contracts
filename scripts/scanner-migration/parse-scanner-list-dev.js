@@ -1,30 +1,30 @@
 const deployEnv = require('../loadEnv');
 const fs = require('fs');
-let csvToJson = require('convert-csv-to-json');
+const { readFileSync } = require('fs');
 const { BigNumber } = require(`ethers`);
 
-const FILE_NAME = 'On_demand_report_2022-11-24T16_27_13.841Z_da721a10-6c14-11ed-aa40-81c129ba7807.csv';
+const FILE_NAME = 'dev-scanners.json';
 
 /**
- * Script to format an AWS Export of the scanners to a migration file
+ * Script to format an JSON of the dev scanners to a migration file
  */
 async function main() {
     const { deployer, network, contracts, deployment } = await deployEnv.loadEnv();
     console.log(`Network:  ${network.name} ${network.chainId}`);
     console.log(`Deployer: ${deployer.address}`);
     console.log('----------------------------------------------------');
-    let raw = csvToJson.fieldDelimiter(',').getJsonFromCsv(`./scripts/data/scanners/${network.name}/${FILE_NAME}`).slice(0, 1000);
+    let raw = JSON.parse(readFileSync(`./scripts/data/scanners/${network.name}/${FILE_NAME}`).toString());
 
     raw = await Promise.all(
-        raw.map(async (scanner) => {
+        Object.values(raw).map(async (scanner) => {
             return {
-                id: scanner['_source.id'],
-                chainId: scanner['_source.chain_id'],
-                enabled: scanner['_source.enabled'] === 'true',
-                callOwner: contracts.scannerRegistry.interface.encodeFunctionData('ownerOf', [scanner['_source.id']]),
-                callOptingOut: contracts.scannerRegistry.interface.encodeFunctionData('optingOutOfMigration', [scanner['_source.id']]),
-                callActiveStake: contracts.fortaStaking.interface.encodeFunctionData('activeStakeFor', [0, scanner['_source.id']]),
-                callGetStakeThreshold: contracts.scannerRegistry.interface.encodeFunctionData('getStakeThreshold', [scanner['_source.id']]),
+                id: scanner['id'],
+                chainId: scanner['chainId'],
+                enabled: scanner['enabled'] === 'true',
+                callOwner: contracts.scannerRegistry.interface.encodeFunctionData('ownerOf', [scanner['id']]),
+                callOptingOut: contracts.scannerRegistry.interface.encodeFunctionData('optingOutOfMigration', [scanner['id']]),
+                callActiveStake: contracts.fortaStaking.interface.encodeFunctionData('activeStakeFor', [0, scanner['id']]),
+                callGetStakeThreshold: contracts.scannerRegistry.interface.encodeFunctionData('getStakeThreshold', [scanner['id']]),
                 migrated: false,
                 optingOut: false,
                 activeStakeBelowMin: false,
@@ -58,6 +58,7 @@ async function main() {
             raw[i].optingOut = decodedData[0];
         }
     }
+
     console.log('Getting activeStakeBelowMin...');
     if (deployment["forta-staking"].impl.version === '0.1.2') {
         let activeStakes = await Promise.all(
@@ -88,6 +89,7 @@ async function main() {
             }
         }
     }
+
     console.log('Formatting...');
 
     const grouped = {};
@@ -104,6 +106,7 @@ async function main() {
         }
         grouped[scanner.chainId][scanner.owner]["scanner-registry"][scanner.id] = scanner;
     }
+    console.log(`networkName: ${network.name}`);
     const outputPath = `./scripts/data/scanners/${network.name}/scanners_${+Date.now()}.json`;
     fs.writeFileSync(outputPath, JSON.stringify(grouped), null, 2);
     console.log('Saved!');

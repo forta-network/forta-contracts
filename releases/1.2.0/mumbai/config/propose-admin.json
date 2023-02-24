@@ -1,0 +1,63 @@
+{
+    "AccessManager": [
+        {
+            "methodName": "grantRole",
+            "params": [
+                ["roles.SCANNER_POOL_ADMIN_ROLE", "deployment.multisig"],
+                ["roles.ALLOCATOR_CONTRACT_ROLE", "deployment.stake-allocator"],
+                ["roles.STAKING_CONTRACT_ROLE", "deployment.forta-staking"],
+                ["roles.SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE", "deployment.scanner-to-scanner-pool-migration"],
+                ["roles.SCANNER_POOL_ADMIN_ROLE", "deployment.multisig"],
+                ["roles.STAKING_ADMIN_ROLE", "deployment.multisig"],
+                ["roles.MIGRATION_EXECUTOR_ROLE", "0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24"],
+                ["roles.REWARDER_ROLE", "deployment.relayer"]
+            ]
+        }
+    ],
+    "ScannerPoolRegistry": [
+        {
+            "methodName": "setManagedStakeThreshold",
+            "params": [
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "1"],
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "10"],
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "137"],
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "56"],
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "42161"],
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "43114"],
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "250"]
+            ]
+        }
+    ],
+    "StakeSubjectGateway": [
+        {
+            "methodName": "setStakeSubject",
+            "params": [
+                ["2", "deployment.scanner-pool-registry"]
+            ]
+        }
+    ],
+    "FortaStaking": [
+        {
+            "methodName": "configureStakeHelpers",
+            "params": [
+                ["deployment.stake-subject-gateway", "deployment.stake-allocator"]
+            ]
+        }
+    ],
+    "ScannerRegistry": [
+        {
+            "methodName": "configureMigration",
+            "params": [
+                ["1676005200", "deployment.scanner-pool-registry"]
+            ]
+        }
+    ],
+    "Dispatch": [
+        {
+            "methodName": "setScannerPoolRegistry",
+            "params": [
+                ["deployment.scanner-pool-registry"]
+            ]
+        }
+    ]
+}

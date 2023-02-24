@@ -1,7 +1,9 @@
 const { kebabizeContractName, removeVersionFromContractName } = require('./stringUtils.js');
+const loadRoles = require('./loadRoles');
 const AsyncConf = require('./asyncConf');
 const { readFileSync, existsSync } = require('fs');
 const { getAddress } = require('@ethersproject/address');
+const { ethers } = require('ethers');
 
 const RELEASES_PATH = './releases';
 
@@ -11,6 +13,7 @@ async function saveImplementation(writer, contractName, constructorArgs, initArg
     await writer.set(`${key}.impl.constructor-args`, constructorArgs ?? []);
     await writer.set(`${key}.impl.init-args`, initArgs ?? []);
     await writer.set(`${key}.impl.name`, contractName);
+    await writer.set(`${key}.impl.timeout`, 1200000);
     // await writer.set(`${key}.impl.verified`, false);
     await writer.set(`${key}.impl.version`, version);
 }
@@ -128,17 +131,51 @@ function getDeploymentOutputWriter(chainId) {
     return new AsyncConf({ cwd: `${RELEASES_PATH}/deployments/`, configName: `${chainId}` });
 }
 
-function getProxyOrContractAddress(deployment, key) {
-    if (!deployment[key]) throw new Error(`${key} does not exist in deployment`);
-    return getAddress(deployment[key].address);
+function parseAddress(info, key) {
+    let address;
+    if (key === 'relayer') {
+        if (!info.relayer) {
+            throw new Error('relayer object missing');
+        }
+        address = info.relayer;
+    } else if (key === 'multisig') {
+        if (!info.multisig) {
+            throw new Error('multisig missing');
+        }
+        address = info.multisig;
+    } else {
+        if (!info.deployment) {
+            throw new Error('deployment object missing');
+        }
+        if (!info.deployment[key]) throw new Error(`${key} does not exist in deployment`);
+        address = info.deployment[key].address;
+    }
+    return getAddress(address);
 }
 
-function formatParams(deployment, params) {
+function parseRole(info, role) {
+    if (!info.roles) {
+        throw new Error('roles object missing');
+    }
+    const roleKey = role.replace('_ROLE', '');
+    if (!info.roles[roleKey]) {
+        throw new Error(`Role not found: ${role}`);
+    }
+    const roleValue = ethers.utils.id(role);
+    if (roleValue != info.roles[roleKey]) {
+        throw new Error(`Role ${roleValue} and ${info.roles[roleKey]} does not match. Did you add _ROLE at the end?`);
+    }
+    return roleValue;
+}
+
+function formatParams(info, params) {
     return params.map((arg) => {
         switch (typeof arg) {
             case 'string':
                 if (arg.startsWith('deployment.')) {
-                    return getProxyOrContractAddress(deployment, removeVersionFromContractName(arg.replace('deployment.', '')));
+                    return parseAddress(info, removeVersionFromContractName(arg.replace('deployment.', '')));
+                } else if (arg.startsWith('roles.')) {
+                    return parseRole(info, arg.replace('roles.', ''));
                 }
                 return arg;
             case 'number':
@@ -162,6 +199,15 @@ function getRelayerAddress(chainId) {
     return getAddress(relayers[CHAIN_NAME[chainId]]);
 }
 
+function getDeploymentInfo(chainId) {
+    return {
+        deployment: getDeployment(chainId),
+        roles: loadRoles(ethers),
+        relayer: getRelayerAddress(chainId),
+        multisig: getMultisigAddress(chainId),
+    };
+}
+
 module.exports = {
     saveImplementation,
     saveNonUpgradeable,
@@ -178,7 +224,8 @@ module.exports = {
     getDeployedImplementations,
     formatParams,
     getMultisigAddress,
-    getProxyOrContractAddress,
+    parseAddress,
     saveToDeployment,
     getRelayerAddress,
+    getDeploymentInfo
 };

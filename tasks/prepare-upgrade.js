@@ -4,10 +4,10 @@ const { task } = require('hardhat/config');
 const {
     getUpgradesConfig,
     getUpgradeOutputwriter,
-    getDeployment,
+    getDeploymentInfo,
     formatParams,
     getMultisigAddress,
-    getProxyOrContractAddress,
+    parseAddress,
     saveImplementation,
     getDeployedImplementations,
 } = require('../scripts/utils/deploymentFiles');
@@ -22,11 +22,19 @@ function getNewImplementation(prepareUpgradeResult) {
     return typeof prepareUpgradeResult === 'string' ? prepareUpgradeResult : getContractAddress(prepareUpgradeResult);
 }
 
-async function prepareUpgrade(hre, name, upgradesConfig, deployment, multisigAddress, outputWriter) {
+async function prepareUpgrade(hre, name, upgradesConfig, deploymentInfo, multisigAddress, outputWriter) {
     console.log(`Deploying new implementation for contract ${name} ...`);
-    const { opts } = prepareParams(upgradesConfig, name, deployment, multisigAddress);
-    const proxyAddress = getProxyOrContractAddress(deployment, kebabize(name));
-    const result = await hre.upgrades.prepareUpgrade(proxyAddress, await hre.ethers.getContractFactory(name), opts);
+    const { opts } = prepareParams(upgradesConfig, name, deploymentInfo, multisigAddress);
+    const proxyAddress = parseAddress(deploymentInfo, kebabize(name));
+
+    const cf = await hre.ethers.getContractFactory(name)
+    console.group("Summary for prepareUpgrade")
+    console.log({
+        proxyAddress,
+        opts
+    })
+
+    const result = await hre.upgrades.prepareUpgrade(proxyAddress, cf, opts);
     const implAddress = getNewImplementation(result);
     console.log('Saving output...');
     await saveImplementation(
@@ -39,7 +47,7 @@ async function prepareUpgrade(hre, name, upgradesConfig, deployment, multisigAdd
     );
 }
 
-function prepareParams(upgradesConfig, name, deployment, multisigAddress) {
+function prepareParams(upgradesConfig, name, deploymentInfo, multisigAddress) {
     const params = upgradesConfig[name].impl;
     if (!params) {
         throw new Error('No impl info');
@@ -47,11 +55,11 @@ function prepareParams(upgradesConfig, name, deployment, multisigAddress) {
     if (!params.opts['constructor-args']) {
         throw new Error('No constructor args, if none set []');
     }
-    const constructorArgs = formatParams(deployment, params.opts['constructor-args']);
+    const constructorArgs = formatParams(deploymentInfo, params.opts['constructor-args']);
     for (const key of Object.keys(params.opts)) {
         params.opts[camelize(key)] = params.opts[key];
     }
-    params.opts.constructorArgs = formatParams(deployment, constructorArgs);
+    params.opts.constructorArgs = formatParams(deploymentInfo, constructorArgs);
     const opts = {
         kind: 'uups',
         multisig: multisigAddress,
@@ -88,7 +96,7 @@ async function main(args, hre) {
     const upgradesConfig = getUpgradesConfig(chainId, args.release);
     const contractNames = Object.keys(upgradesConfig);
     const outputWriter = getUpgradeOutputwriter(chainId, args.release);
-    const deployment = getDeployment(chainId);
+    const deploymentInfo = getDeploymentInfo(chainId);
     const multisigAddress = getMultisigAddress(chainId);
 
     if (contractNames.length === 0) {
@@ -96,9 +104,19 @@ async function main(args, hre) {
     }
     console.log(`Deploying implementation contracts ${contractNames.join(', ')} from commit ${commit} on chain ${chainId}`);
 
+    console.log({
+        commit,
+        chainId,
+        upgradesConfig,
+        contractNames,
+        deploymentInfo,
+        multisigAddress,
+        message: "prepare-upgrade summary"
+    })
+
     try {
         for (const name of contractNames) {
-            await prepareUpgrade(hre, name, upgradesConfig, deployment, multisigAddress, outputWriter);
+            await prepareUpgrade(hre, name, upgradesConfig, deploymentInfo, multisigAddress, outputWriter);
         }
     } finally {
         saveResults(hre, chainId, args);

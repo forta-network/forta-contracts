@@ -1,4 +1,4 @@
-const { formatParams, getProxyOrContractAddress } = require('../../scripts/utils/deploymentFiles');
+const { formatParams, parseAddress } = require('../../scripts/utils/deploymentFiles');
 const { kebabize } = require('../../scripts/utils/stringUtils');
 const DEBUG = require('debug')('forta:propose');
 
@@ -22,11 +22,11 @@ const MULTICALL_ABI = {
     type: 'function',
 };
 
-async function mapContractInfo(hre, deployment, network, contractName) {
+async function mapContractInfo(hre, deploymentInfo, network, contractName) {
     return {
         name: contractName,
         network,
-        address: getProxyOrContractAddress(deployment, kebabize(contractName)),
+        address: parseAddress(deploymentInfo, kebabize(contractName)),
         abi: JSON.stringify([...(await hre.artifacts.readArtifact(contractName).then((a) => a.abi))]),
     };
 }
@@ -44,11 +44,11 @@ function encodeMulticall(abi, hre, stepInfo) {
     return { functionInterface, functionInputs };
 }
 
-function mapStep(hre, deployment, network, contractInfo, stepInfo) {
+function mapStep(hre, deploymentInfo, network, contractInfo, stepInfo) {
     if (!Array.isArray(stepInfo.params[0])) {
         throw new Error('Params must be array of arrays (each row is a list of method params, use multiple rows for multicall');
     }
-    stepInfo.params = stepInfo.params.map((callArgs) => formatParams(deployment, callArgs));
+    stepInfo.params = stepInfo.params.map((callArgs) => formatParams(deploymentInfo, callArgs));
     const abi = JSON.parse(contractInfo.abi);
     return stepInfo.params.map((callParams) => {
         let functionInputs = callParams;
@@ -69,16 +69,16 @@ function mapStep(hre, deployment, network, contractInfo, stepInfo) {
     });
 }
 
-async function parseAdminProposals(hre, config, deployment, network) {
+async function parseAdminProposals(hre, config, deploymentInfo, network) {
     const contracts = [];
     const steps = [];
     for (const contractName of Object.keys(config)) {
-        const contractInfo = await mapContractInfo(hre, deployment, network, contractName);
+        const contractInfo = await mapContractInfo(hre, deploymentInfo, network, contractName);
         contracts.push(contractInfo);
         steps.push(
             ...config[contractName]
                 .map((stepInfo) => {
-                    return mapStep(hre, deployment, network, contractInfo, stepInfo);
+                    return mapStep(hre, deploymentInfo, network, contractInfo, stepInfo);
                 })
                 .flat()
         );

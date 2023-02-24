@@ -1,0 +1,62 @@
+{
+	"forta-staking": {
+		"impl": {
+			"address": "0x543D94657fA8C710818f0D9F7eDeC7F4Ca03CCDA",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "FortaStaking",
+			"timeout": 1200000,
+			"version": "0.1.1"
+		}
+	},
+	"stake-subject-gateway": {
+		"impl": {
+			"address": "0xBe7AfebC79c40338B485a75792a510E32283fb70",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "StakeSubjectGateway",
+			"timeout": 1200000,
+			"version": "0.1.1"
+		}
+	},
+	"scanner-registry": {
+		"impl": {
+			"address": "0x75c46283dE6b08bE4bb4425b94aC338f2802e3B0",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "ScannerRegistry",
+			"timeout": 1200000,
+			"version": "0.1.3"
+		}
+	},
+	"agent-registry": {
+		"impl": {
+			"address": "0xb779fF917F824740Dd64C0568C346A4C918EF095",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "AgentRegistry",
+			"timeout": 1200000,
+			"version": "0.1.5"
+		}
+	},
+	"dispatch": {
+		"impl": {
+			"address": "0x5eED79eC2D48be67e6D956C59110f123116C3EAD",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "Dispatch",
+			"timeout": 1200000,
+			"version": "0.1.4"
+		}
+	}
+}

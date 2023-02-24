@@ -8,6 +8,7 @@ const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
 const SCANNER_POOL_SUBJECT = 2;
 const deployEnv = require('../loadEnv');
+const loadRoles = require('../utils/loadRoles')
 
 upgrades.silenceWarnings();
 
@@ -276,30 +277,7 @@ async function migrate(config = {}) {
     }
 
     // Roles dictionary
-    const roles = await Promise.all(
-        Object.entries({
-            DEFAULT_ADMIN: ethers.constants.HashZero,
-            ADMIN: ethers.utils.id('ADMIN_ROLE'),
-            MINTER: ethers.utils.id('MINTER_ROLE'),
-            ENS_MANAGER: ethers.utils.id('ENS_MANAGER_ROLE'),
-            UPGRADER: ethers.utils.id('UPGRADER_ROLE'),
-            AGENT_ADMIN: ethers.utils.id('AGENT_ADMIN_ROLE'),
-            SCANNER_ADMIN: ethers.utils.id('SCANNER_ADMIN_ROLE'),
-            SCANNER_POOL_ADMIN: ethers.utils.id('SCANNER_POOL_ADMIN_ROLE'),
-            DISPATCHER: ethers.utils.id('DISPATCHER_ROLE'),
-            SLASHER: ethers.utils.id('SLASHER_ROLE'),
-            SLASHING_ARBITER: ethers.utils.id('SLASHING_ARBITER_ROLE'),
-            STAKING_CONTRACT: ethers.utils.id('STAKING_CONTRACT_ROLE'),
-            STAKING_ADMIN: ethers.utils.id('STAKING_ADMIN_ROLE'),
-            SWEEPER: ethers.utils.id('SWEEPER_ROLE'),
-            REWARDER: ethers.utils.id('REWARDER_ROLE'),
-            SCANNER_VERSION: ethers.utils.id('SCANNER_VERSION_ROLE'),
-            SCANNER_BETA_VERSION: ethers.utils.id('SCANNER_BETA_VERSION_ROLE'),
-            SCANNER_2_SCANNER_POOL_MIGRATOR: ethers.utils.id('SCANNER_2_SCANNER_POOL_MIGRATOR_ROLE'),
-            MIGRATION_EXECUTOR: ethers.utils.id('MIGRATION_EXECUTOR_ROLE'),
-            ALLOCATOR_CONTRACT: ethers.utils.id('ALLOCATOR_CONTRACT_ROLE'),
-        }).map((entry) => Promise.all(entry))
-    ).then(Object.fromEntries);
+    const roles = loadRoles(hre.ethers);
 
     DEBUG(`roles fetched`);
     if (config.childChain && contracts.access && chainId !== 1 && chainId !== 137) {

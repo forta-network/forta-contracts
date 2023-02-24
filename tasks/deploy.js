@@ -11,6 +11,7 @@ const {
     getDeployed,
     getDeploymentOutputWriter,
     saveToDeployment,
+    getDeploymentInfo,
 } = require('../scripts/utils/deploymentFiles');
 const { tryFetchContract, tryFetchProxy, getBlockExplorerDomain, getContractVersion } = require('../scripts/utils/contractHelpers');
 const { camelize } = require('../scripts/utils/stringUtils');
@@ -19,11 +20,11 @@ const { boolean } = require('hardhat/internal/core/params/argumentTypes');
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 let promoteDeployed = false;
 
-async function deployNonUpgradeable(params, deployment, contract, hre, name, releaseWriter, deploymentWriter) {
+async function deployNonUpgradeable(params, deploymentInfo, contract, hre, name, releaseWriter, deploymentWriter) {
     if (!params['constructor-args']) {
         throw new Error('No constructor args, if none set []');
     }
-    const constructorArgs = formatParams(deployment, params['constructor-args']);
+    const constructorArgs = formatParams(deploymentInfo, params['constructor-args']);
     console.log('Non upgradeable');
     console.log(name);
     console.log('constructorArgs', constructorArgs);
@@ -37,7 +38,7 @@ async function deployNonUpgradeable(params, deployment, contract, hre, name, rel
     return contract;
 }
 
-async function deployUpgradeable(params, deployment, contract, hre, name, releaseWriter, deploymentWriter, upgrades) {
+async function deployUpgradeable(params, deploymentInfo, contract, hre, name, releaseWriter, deploymentWriter, upgrades) {
     console.log('Upgradeable');
     if (!params.impl['init-args']) {
         throw new Error('No init args, if none set []');
@@ -45,11 +46,12 @@ async function deployUpgradeable(params, deployment, contract, hre, name, releas
     if (!params.impl?.opts['constructor-args']) {
         throw new Error('No constructor args, if none set []');
     }
-    const initArgs = formatParams(deployment, params.impl['init-args']);
+    const initArgs = formatParams(deploymentInfo, params.impl['init-args']);
     for (const key of Object.keys(params.impl.opts)) {
         params.impl.opts[camelize(key)] = params.impl.opts[key];
     }
-    params.impl.opts.constructorArgs = formatParams(deployment, params.impl.opts.constructorArgs);
+    params.impl.opts.constructorArgs = formatParams(deploymentInfo, params.impl.opts.constructorArgs);
+    params.impl.opts.timeout = 1200000
     console.log(name);
     console.log('initArgs', initArgs);
     console.log('opts', params.impl.opts);
@@ -75,7 +77,7 @@ async function main(args, hre) {
     const deploymentConfig = args['manual-config'] ?? getDeployConfig(chainId, args.release);
     const contractNames = Object.keys(deploymentConfig);
     const releaseWriter = getDeployReleaseWriter(chainId, args.release);
-    let deployment = getDeployment(chainId);
+    const deploymentInfo = getDeploymentInfo(chainId);
     const deploymentWriter = getDeploymentOutputWriter(chainId);
     console.log(`Deploying contracts ${contractNames.length} from commit ${commit} on chain ${chainId}`);
 
@@ -86,12 +88,12 @@ async function main(args, hre) {
             console.log('----Deploying ', name, '...');
             const params = deploymentConfig[name];
             if (params.impl) {
-                contract = await deployUpgradeable(params, deployment, contract, hre, name, releaseWriter, deploymentWriter, upgrades);
+                contract = await deployUpgradeable(params, deploymentInfo, contract, hre, name, releaseWriter, deploymentWriter, upgrades);
             } else {
-                contract = await deployNonUpgradeable(params, deployment, contract, hre, name, releaseWriter, deploymentWriter);
+                contract = await deployNonUpgradeable(params, deploymentInfo, contract, hre, name, releaseWriter, deploymentWriter);
             }
             if (promoteDeployed) {
-                deployment = getDeployment(chainId);
+                deploymentInfo.deployment = getDeployment(chainId);
             }
         }
     } finally {
@@ -120,11 +122,11 @@ async function main(args, hre) {
 task('deploy')
     .addPositionalParam('release', 'Release number (used to load /<release>/<network>/config/deploy.json)')
     .addOptionalParam('manualConfig', 'Config object, if present the release will use this instead of deploy.json')
-    .addOptionalParam('promotes', 'Copies the release "deployed.json" output to releases/deployments/<network_id>. Defaults to false', false, boolean)
+    .addOptionalParam('promotes', 'Copies the release "deployed.json" output to releases/deployments/<network_id>. Defaults to true', true, boolean)
     .setDescription(
         `Deploys the contracts as described in the correspondent deploy.json config.
         Works both with non-upgradeable and uups upgradeable contracts.
-        Results are tracked in /<release>/<network>/deployed/deployed.json
+        Results are tracked in /<release>/<network>/output/deployed.json
         `
     )
     .setAction(main);

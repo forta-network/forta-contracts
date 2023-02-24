@@ -3,8 +3,8 @@ const { ethers } = hre;
 const utils = require('./utils');
 const contractHelpers = require('./utils/contractHelpers');
 const stringUtils = require('./utils/stringUtils');
-const fs = require('fs');
 const { getDeployment, getDeploymentOutputWriter } = require('../scripts/utils/deploymentFiles');
+const loadRoles = require('./utils/loadRoles');
 
 const ROOT_CHAIN_MANAGER = {
     1: '0xA0c68C638235ee32657e8f720a23ceC1bFc77C77',
@@ -95,28 +95,13 @@ const FEE_PARAMS = (chainId) => {
     }
 };
 
-const loadRoles = () => {
-    const rolesFileContents = fs.readFileSync('./contracts/components/Roles.sol', { encoding: 'utf8', flag: 'r' });
-    const regex = /bytes32 constant [A-Z_0-9]*/g;
-    const roleIds = rolesFileContents.match(regex).map((match) => match.replace('bytes32 constant ', ''));
-    const roles = {};
-    for (const id of roleIds) {
-        if (id === 'DEFAULT_ADMIN_ROLE') {
-            roles[id.replace('_ROLE', '')] = ethers.constants.HashZero;
-        } else {
-            roles[id.replace('_ROLE', '')] = ethers.utils.id(id);
-        }
-    }
-    roles.MINTER = ethers.utils.id('MINTER_ROLE');
-    return roles;
-};
-
 async function loadEnv(config = {}) {
     const provider = config?.provider ?? config?.deployer?.provider ?? (await contractHelpers.getDefaultProvider(hre));
     const network = await provider.getNetwork();
+    const { name, chainId } = network;
+
     const deployer = config?.deployer ?? (await contractHelpers.getDefaultDeployer(hre, provider, utils.networkName(chainId)));
 
-    const { name, chainId } = network;
 
     const chainType = ROOT_CHAIN_MANAGER[chainId] ? CHAIN_TYPE.ROOT : CHILD_CHAIN_MANAGER_PROXY[chainId] ? CHAIN_TYPE.CHILD : CHAIN_TYPE.DEV;
     let deployment = getDeployment(chainId);
@@ -136,7 +121,7 @@ async function loadEnv(config = {}) {
     deployment.token = Object.assign({}, deployment.forta);
     contracts.token = Object.assign({}, contracts.forta);
 
-    const roles = loadRoles();
+    const roles = loadRoles(hre.ethers);
 
     return {
         CACHE,
@@ -160,7 +145,6 @@ if (require.main === module) {
 }
 
 module.exports.loadEnv = loadEnv;
-module.exports.loadRoles = loadRoles;
 module.exports.ROOT_CHAIN_MANAGER = ROOT_CHAIN_MANAGER;
 module.exports.CHILD_CHAIN_MANAGER_PROXY = CHILD_CHAIN_MANAGER_PROXY;
 module.exports.CHAIN_TYPE = CHAIN_TYPE;

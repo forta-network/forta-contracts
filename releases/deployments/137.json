@@ -9,7 +9,7 @@
 				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
 			"address": "0xc855d842ff0aF97B0D18Cc81eEcbb702EA1a0706",
-            "name": "AccessManager",
+			"name": "AccessManager",
 			"version": "0.1.0"
 		},
 		"verified": "true"
@@ -22,7 +22,7 @@
 				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
 			"address": "0xA8A26969f7Be888D020B595340c490c02ec445dD",
-            "name": "AgentRegistry",
+			"name": "AgentRegistry",
 			"version": "0.1.2"
 		},
 		"verified": "true"
@@ -35,7 +35,7 @@
 				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
 			"address": "0x7D7A8077346204Aa1B28602ecfC977043bec2404",
-            "name": "ScannerRegistry",
+			"name": "ScannerRegistry",
 			"version": "0.1.1"
 		},
 		"verified": "true"
@@ -48,7 +48,7 @@
 				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
 			"address": "0xC413BDBF64C3f3A64C5fBc7B547BC3AfB371d45d",
-            "name": "Dispatch",
+			"name": "Dispatch",
 			"version": "0.1.3"
 		},
 		"verified": "true"
@@ -85,7 +85,7 @@
 				"0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa"
 			],
 			"address": "0xd6b3139108E271c812Acc6fFEBAD28E935D61E24",
-            "name": "FortaBridgedPolygon",
+			"name": "FortaBridgedPolygon",
 			"version": "0.1.1"
 		}
 	},
@@ -97,7 +97,7 @@
 				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
 			"address": "0x62FCaA1eDA3bcf18133510e52D28C8B79C912734",
-            "name": "FortaStaking",
+			"name": "FortaStaking",
 			"version": "0.1.0"
 		},
 		"verified": "true"
@@ -110,7 +110,7 @@
 				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
 			"address": "0xf2339D7424a615FD3324dAC880D8D81cae1264E2",
-            "name": "StakeSubjectGateway",
+			"name": "StakeSubjectGateway",
 			"version": "0.1.0"
 		},
 		"verified": "true"
@@ -123,7 +123,7 @@
 				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
 			],
 			"address": "0x68608f260BA3bE8808B83Fd686eCCFE6A9f468F7",
-            "name": "ScannerNodeVersion",
+			"name": "ScannerNodeVersion",
 			"version": "0.0.0"
 		},
 		"verified": "true"
@@ -132,7 +132,7 @@
 	"forwarder": {
 		"address": "0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
 		"args": [],
-        "name": "Forwarder",
+		"name": "Forwarder",
 		"version": "0.0.0"
 	},
 	"staking-escrow-factory-deploy-tx": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
@@ -142,7 +142,7 @@
 			"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
 			"0xd2863157539b1D11F39ce23fC4834B62082F6874"
 		],
-        "name": "StakingEscrowFactory",
+		"name": "StakingEscrowFactory",
 		"version": "0.0.0"
 	},
 	"staking-escrow-template-deploy-tx": "0xadefef65f3463c1a31f25f1dcb238fc8629105ca5146862b4c654c1cc85ccefe",
@@ -153,14 +153,14 @@
 			"0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1",
 			"0xd2863157539b1D11F39ce23fC4834B62082F6874"
 		],
-        "name": "StakingEscrow",
+		"name": "StakingEscrow",
 		"version": "0.0.0"
 	},
 	"batch-relayer-deploy-tx": "0xe03451eff846689b448a658f64396a6a8511a27bdbb6c66c29f614850cb1f512",
 	"batch-relayer": {
 		"address": "0x0A6f54C598e914aD25Be1d8B7ccD4355C776bCaF",
 		"args": [],
-        "name": "BatchRelayer",
+		"name": "BatchRelayer",
 		"version": "0.0.0"
 	},
 	"slashing-controller-deploy-tx": "0x763c1a408fda52894293a0ffe8a6d97ad4f2118120d34e8ad5edd321199f2912",
@@ -172,8 +172,86 @@
 				"0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1"
 			],
 			"address": "0xE7e33d453980e8023d54A70A40753bA7617B08F3",
-            "name": "SlashingController",
+			"name": "SlashingController",
 			"version": "0.1.0"
 		}
-	}
+	},
+	"rewards-distributor": {
+		"address": "0xf7239f26b79145297737166b0C66F4919af9c507",
+		"impl": {
+			"address": "0x70B1b7756868d03a5fC7AFb63657475b59BA5Ff9",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1",
+				"0x587969Add789c13F64Bcc34Ff253BD9BFB78f38a"
+			],
+			"init-args": [
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+				"2",
+				"10000"
+			],
+			"name": "RewardsDistributor",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"rewards-distributor-deploy-tx": "0xe8e712e3d9fd31800d762ceaab1735ef39ea59ada43b47e71fadaf7ffe5d5870",
+	"stake-allocator": {
+		"address": "0x5B73756e637A77Fa52e5Ce71EC6189A4C775c6FA",
+		"impl": {
+			"address": "0x2b8AB51156501FBbF122F1001bC6134629f343d5",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0x587969Add789c13F64Bcc34Ff253BD9BFB78f38a",
+				"0xf7239f26b79145297737166b0C66F4919af9c507"
+			],
+			"init-args": [
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3"
+			],
+			"name": "StakeAllocator",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"stake-allocator-deploy-tx": "0x3982341c379351bad2a7d77fd4ff727d15b8f1c5c7ed2be8f6c2aa29142dfd32",
+	"scanner-pool-registry": {
+		"address": "0x90FF9C193D6714E0e7a923b2Bd481Fb73FEC731d",
+		"impl": {
+			"address": "0xA27317F2F17617d8325605bD87252bCc6A64fD40",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0x5B73756e637A77Fa52e5Ce71EC6189A4C775c6FA"
+			],
+			"init-args": [
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+				"FScannerPools",
+				"FSP",
+				"0x587969Add789c13F64Bcc34Ff253BD9BFB78f38a",
+				"86400"
+			],
+			"name": "ScannerPoolRegistry",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"scanner-pool-registry-deploy-tx": "0xd5a505a07ac617a46facddc45377ad66ae0438daecb0c73997a51759fba7b0eb",
+	"scanner-to-scanner-pool-migration": {
+		"address": "0x1365fa3FE7F52db912daBc8e439f0843461fee16",
+		"impl": {
+			"address": "0xEBb33FD780757d745213CF57838c0E5b66D824Bc",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0xbF2920129f83d75DeC95D97A879942cCe3DcD387",
+				"0x90FF9C193D6714E0e7a923b2Bd481Fb73FEC731d",
+				"0xd2863157539b1D11F39ce23fC4834B62082F6874"
+			],
+			"init-args": [
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3"
+			],
+			"name": "ScannerToScannerPoolMigration",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"scanner-to-scanner-pool-migration-deploy-tx": "0x1d1672244c2e445b57502937214d258eae035cbd2317127ea681861709c25a15"
 }

@@ -9,6 +9,7 @@ const contractHelpers = require('../../scripts/utils/contractHelpers');
 const { deploy, tryFetchContract, tryFetchProxy } = contractHelpers;
 const { getDeploymentOutputWriter } = require('../../scripts/utils/deploymentFiles');
 const deployEnv = require('../../scripts/loadEnv');
+const loadRoles = require('../../scripts/utils/loadRoles');
 
 upgrades.silenceWarnings();
 
@@ -249,16 +250,16 @@ async function migrate(config = {}) {
         DEBUG(`[${Object.keys(contracts).length}] dispatch: ${contracts.dispatch.address}`);
 
         const ScannerToScannerPoolMigration = await ethers.getContractFactory('ScannerToScannerPoolMigration', deployer);
-        contracts.registryMigration = await upgrades.deployProxy(ScannerToScannerPoolMigration, [contracts.access.address], {
+        contracts.scannerToScannerPoolMigration = await upgrades.deployProxy(ScannerToScannerPoolMigration, [contracts.access.address], {
             kind: 'uups',
             constructorArgs: [contracts.forwarder.address, contracts.scanners.address, contracts.scannerPools.address, contracts.staking.address],
             unsafeAllow: 'delegatecall',
         });
-        DEBUG(`[${Object.keys(contracts).length}] registryMigration: ${contracts.registryMigration.address}`);
+        DEBUG(`[${Object.keys(contracts).length}] scannerToScannerPoolMigration: ${contracts.scannerToScannerPoolMigration.address}`);
     }
 
     // Roles dictionary
-    const roles = deployEnv.loadRoles();
+    const roles = loadRoles(ethers);
     return {
         provider,
         deployer,

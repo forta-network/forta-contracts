@@ -1,7 +1,7 @@
 const { ethers, upgrades } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('./fixture');
-const { AsyncConf } = require('../../scripts/utils');
+const AsyncConf = require('../../scripts/utils/asyncConf');
 const { subjectToActive } = require('../../scripts/utils/staking.js');
 const { migrateScannersMintPool, migratePool, scanner2ScannerPool, filterNonMigrations } = require('../../scripts/scanner-migration/migrate-scanners');
 const fs = require('fs');
@@ -41,7 +41,7 @@ async function prepareScanners(contracts, scanners, staker, manager) {
 }
 
 let cache;
-describe.skip('Scanner 2 Scanner pool script', function () {
+describe('Scanner 2 Scanner pool script', function () {
     prepare({
         stake: {
             scanners: { min: MIN_STAKE_MANAGED, max: MAX_STAKE_MANAGED, activated: true },
@@ -51,31 +51,36 @@ describe.skip('Scanner 2 Scanner pool script', function () {
         await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('100000000'));
         await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
     });
-    it('skips non migrated', function () {
+    it.skip('skips migrated, if disabled, if opting out, and if active stake below minimum', function () {
         const firstPool = require('./data/first-pool.json');
-        const scanners = firstPool['137']['0xc29af06142138f893e3f1c1d11aa98c3313b8c1f'].scanners;
+        const scanners = firstPool['137']['0xc29af06142138f893e3f1c1d11aa98c3313b8c1f']['scanner-registry'];
         const ids = Object.keys(scanners);
         const output = {};
         output[ids[0]] = scanners[ids[0]];
-        output[ids[3]] = scanners[ids[3]];
         expect(filterNonMigrations(scanners)).to.deep.eq(output);
     });
-    describe('Migrate First Scanners Mint Pool', function () {
+    describe.skip('Migrate First Scanners Mint Pool', function () {
         it('migrates first pool and updates doc', async function () {
             fs.copyFileSync('./test/migration/data/first-pool.json', './test/migration/data/t-first-pool.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-first-pool' });
             const chainId = '137';
             const owner = '0xc29af06142138f893e3f1c1d11aa98c3313b8c1f';
-            const scanners = await cache.get(`${chainId}.${owner}.scanners`);
+            const scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
             await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
             await upgrade(this.contracts);
-            await migrateScannersMintPool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, scanners);
+            let scannersAddresses = [];
+
+            Object.keys(scanners).forEach((scanner) => {
+                scannersAddresses.push(scanner);
+            });
+
+            await migrateScannersMintPool(cache, this.contracts.scannerToScannerPoolMigration.connect(this.accounts.manager), owner, chainId, scannersAddresses);
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq('1');
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = true;
             }
 
-            expect(await cache.get(`${chainId}.${owner}.scanners`)).to.deep.eq(scanners);
+            expect(await cache.get(`${chainId}.${owner}.scanner-registry`)).to.deep.eq(scanners);
 
             for (const id of Object.keys(scanners)) {
                 const scanner = scanners[id];
@@ -95,22 +100,22 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             expect(await this.staking.activeStakeFor(2, 1)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
         });
     });
-    describe('migrateScannersMintPool', function () {
+    describe.skip('migrateScannersMintPool', function () {
         it('poolId 0, skip migrated and opting out', async function () {
             fs.copyFileSync('./test/migration/data/first-pool.json', './test/migration/data/t-first-pool.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-first-pool' });
             const chainId = '137';
             const owner = '0xc29af06142138f893e3f1c1d11aa98c3313b8c1f';
-            const scanners = await cache.get(`${chainId}.${owner}.scanners`);
+            const scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
             await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
             await upgrade(this.contracts);
-            await migrateScannersMintPool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, Object.keys(scanners));
+            await migrateScannersMintPool(cache, this.scannerToScannerPoolMigration.connect(this.accounts.manager), owner, chainId, Object.keys(scanners));
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq('1');
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = true;
             }
 
-            expect(await cache.get(`${chainId}.${owner}.scanners`)).to.deep.eq(scanners);
+            expect(await cache.get(`${chainId}.${owner}.scanner-registry`)).to.deep.eq(scanners);
 
             for (const id of Object.keys(scanners)) {
                 const scanner = scanners[id];
@@ -135,16 +140,16 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-first-pool' });
             const chainId = '137';
             const owner = '0xc29af06142138f893e3f1c1d11aa98c3313b8c1f';
-            const scanners = await cache.get(`${chainId}.${owner}.scanners`);
+            const scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
             await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
             await upgrade(this.contracts);
-            await migrateScannersMintPool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, Object.keys(scanners));
+            await migrateScannersMintPool(cache, this.scannerToScannerPoolMigration.connect(this.accounts.manager), owner, chainId, Object.keys(scanners));
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq('1');
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = true;
             }
 
-            expect(await cache.get(`${chainId}.${owner}.scanners`)).to.deep.eq(scanners);
+            expect(await cache.get(`${chainId}.${owner}.scanner-registry`)).to.deep.eq(scanners);
 
             for (const id of Object.keys(scanners)) {
                 const scanner = scanners[id];
@@ -164,22 +169,22 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             expect(await this.staking.activeStakeFor(2, 1)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
         });
     });
-    describe('migratePool', function () {
+    describe.skip('migratePool', function () {
         it('poolId 0, chunk with minting and ignoring prev migrated and opted out', async function () {
             fs.copyFileSync('./test/migration/data/migrate-pool.json', './test/migration/data/t-migrate-pool-id-0-chunk.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-migrate-pool-id-0-chunk' });
             const chainId = '137';
             const owner = '0xfe1c1cceccab539f6095ac07a369cdd669171e9d';
-            const scanners = await cache.get(`${chainId}.${owner}.scanners`);
+            const scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
             await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
             await upgrade(this.contracts);
-            await migratePool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, 2);
+            await migratePool(cache, this.scannerToScannerPoolMigration.connect(this.accounts.manager), owner, chainId, 2, 1);
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq('1');
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = !scanners[id].optingOut;
             }
             const ids = Object.keys(scanners);
-            expect(await cache.get(`${chainId}.${owner}.scanners`)).to.deep.eq(scanners);
+            expect(await cache.get(`${chainId}.${owner}.scanner-registry`)).to.deep.eq(scanners);
 
             const nonMigrated = ids.slice(0, 2);
             const migrated = ids.slice(2);
@@ -205,19 +210,19 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-migrate-pool-id-2-chunk-100' });
             const chainId = '137';
             const owner = '0x3f7042c827a0d326c755741ad08d24bc61ea6d34';
-            const scanners = await cache.get(`${chainId}.${owner}.scanners`);
+            const scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
             await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
             await upgrade(this.contracts);
             await this.scannerPools.connect(this.accounts.user1).registerScannerPool('137');
             await this.scannerPools.connect(this.accounts.user1).registerScannerPool('137');
             await this.scannerPools.connect(this.accounts.user1).transferFrom(this.accounts.user1.address, owner, 2);
 
-            await migratePool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, 100, 50);
+            await migratePool(cache, this.scannerToScannerPoolMigration.connect(this.accounts.manager), owner, chainId, 100, 50);
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq(2);
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = true;
             }
-            expect(await cache.get(`${chainId}.${owner}.scanners`)).to.deep.eq(scanners);
+            expect(await cache.get(`${chainId}.${owner}.scanner-registry`)).to.deep.eq(scanners);
 
             for (const id of Object.keys(scanners)) {
                 const scanner = scanners[id];
@@ -243,19 +248,19 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-migrate-pool-id-2-chunk-100' });
             const chainId = '137';
             const owner = '0x3f7042c827a0d326c755741ad08d24bc61ea6d34';
-            const scanners = await cache.get(`${chainId}.${owner}.scanners`);
+            const scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
             await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
             await upgrade(this.contracts);
             await this.scannerPools.connect(this.accounts.user1).registerScannerPool('137');
             await this.scannerPools.connect(this.accounts.user1).registerScannerPool('137');
             await this.scannerPools.connect(this.accounts.user1).transferFrom(this.accounts.user1.address, owner, 2);
 
-            await migratePool(cache, this.registryMigration.connect(this.accounts.manager), owner, chainId, 1, 5);
+            await migratePool(cache, this.scannerToScannerPoolMigration.connect(this.accounts.manager), owner, chainId, 1, 5);
             expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq(2);
             for (const id of Object.keys(scanners)) {
                 scanners[id].migrated = true;
             }
-            expect(await cache.get(`${chainId}.${owner}.scanners`)).to.deep.eq(scanners);
+            expect(await cache.get(`${chainId}.${owner}.scanner-registry`)).to.deep.eq(scanners);
 
             for (const id of Object.keys(scanners)) {
                 const scanner = scanners[id];
@@ -276,7 +281,7 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             expect(await this.staking.activeStakeFor(2, 2)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
         });
     });
-    describe('Full test', function () {
+    describe.skip('Full test', function () {
         it('migrate multi chain', async function () {
             fs.copyFileSync('./test/migration/data/multi-chain.json', './test/migration/data/t-multi-chain.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-multi-chain' });
@@ -287,7 +292,7 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             let owners = Object.keys(data[chainId]);
             for (const owner of owners) {
                 console.log('Set scanners for owner ', owner);
-                const scanners = await cache.get(`${chainId}.${owner}.scanners`);
+                const scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
                 await prepareScanners(this.contracts, scanners, this.accounts.user1, this.accounts.manager);
                 for (const id of Object.keys(scanners)) {
                     scanners[id].migrated = true;
@@ -311,13 +316,12 @@ describe.skip('Scanner 2 Scanner pool script', function () {
             let poolId = 0;
             for (const owner of owners) {
                 expect(await cache.get(`${chainId}.${owner}.poolId`)).to.eq(`${++poolId}`);
-                const scanners = await cache.get(`${chainId}.${owner}.scanners`);
-                const dataScanners = data[chainId][owner].scanners;
-                // console.log(dataScanners);
+                const scanners = await cache.get(`${chainId}.${owner}.scanner-registry`);
+                const dataScanners = data[`${chainId}`][owner]['scanner-registry'];
                 for (const id of Object.keys(dataScanners)) {
                     scanners[id].migrated = true;
                 }
-                expect(await cache.get(`${chainId}.${owner}.scanners`)).to.deep.eq(scanners);
+                expect(await cache.get(`${chainId}.${owner}.scanner-registry`)).to.deep.eq(scanners);
                 expect(await this.staking.activeStakeFor(2, poolId)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
                 for (const id of Object.keys(scanners)) {
                     const scanner = scanners[id];
