@@ -61,7 +61,6 @@ module.exports = {
         timeout: 300000,
     },
     etherscan: {
-        // Use process.env.POLYSCAN to run verifcation locally
         apiKey: argv.etherscan ?? argv.polyscan,
     },
     defender: {
