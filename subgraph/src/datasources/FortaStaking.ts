@@ -122,6 +122,7 @@ function updateStake(
   let subject = Subject.load(_subjectId);
   let stake = Stake.load(getStakeId(_subjectId,_stakerId,_subjectType.toString()));
   let staker = Staker.load(_stakerId);
+  const account = fetchAccount(_staker);
 
   const fortaStaking = FortaStakingContract.bind(_stakingContractAddress);
 
@@ -205,6 +206,7 @@ function updateStake(
   subject.save();
   stake.save();
   staker.save();
+  account.save();
 
   return getStakeId(_subjectId,_stakerId,_subjectType.toString());
 }
