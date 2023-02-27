@@ -10,6 +10,7 @@ export function fetchScannerPool(id: BigInt): ScannerPool {
     scannerPool.registered = false;
     scannerPool.chainId = 1;
     scannerPool.apr = BigDecimal.zero();
+    scannerPool.oldCommission = BigDecimal.zero();
     scannerPool.commission = BigDecimal.zero();
     scannerPool.commissionSinceEpoch = 0;
     scannerPool.status = "";

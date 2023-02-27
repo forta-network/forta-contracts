@@ -7,11 +7,11 @@ function formatSubjectId(subjectId: BigInt, subjectType: i32): string {
 }
 
 function updateScannerPoolComission(subjectId: string, subjectType: i32, fee: BigInt, epochNumber: BigInt): void {
-  
   // If subject type is node pool
   if(subjectType === 2) {
     const scannerPool = ScannerPool.load(subjectId);
     if(scannerPool) {
+      scannerPool.oldCommission = scannerPool.commission;
       scannerPool.commission = BigDecimal.fromString(fee.toString());
       scannerPool.commissionSinceEpoch = epochNumber.toI32();
       scannerPool.save();
@@ -24,6 +24,5 @@ export function handleSetDelegationFee(event: SetDelegationFeeEvent): void {
   const subjectId = formatSubjectId(event.params.subject, event.params.subjectType);
   const subjectType = event.params.subjectType;
   const epochNumber = event.params.epochNumber;
-  
   updateScannerPoolComission(subjectId, subjectType ,event.params.feeBps, epochNumber);
 }

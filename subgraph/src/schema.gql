@@ -248,6 +248,7 @@ type ScannerPool @entity {
   apr: BigDecimal
   commission: BigDecimal!
   commissionSinceEpoch: Int!
+  oldCommission: BigDecimal!
   status: String
   stakeOwned: BigInt!
   stakeDelegated: BigInt!
