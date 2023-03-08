@@ -120,6 +120,7 @@ function updateStake(
   let stake = Stake.load(getStakeId(_subjectId,_stakerId,_subjectType.toString()));
   let staker = Staker.load(_stakerId);
   const account = fetchAccount(_staker);
+  const nodePool = fetchScannerPool(_subject);
 
   const fortaStaking = FortaStakingContract.bind(_stakingContractAddress);
 
@@ -163,13 +164,12 @@ function updateStake(
   const prevStakeTotalShares: BigInt = stake.shares ? stake.shares as BigInt : BigInt.fromI32(0);
   const prevStateInActiveShares: BigInt = stake.inactiveShares ? stake.inactiveShares as BigInt : BigInt.fromI32(0);
 
-  // Scanner pool
-  if(_subjectType === 2) {
+  // Scanner pool owner or delegation
+  if(_subjectType === 2 || _subjectType === 3) {
     // Check existing pools
     // Add new pool to Staker if it isn't already there
     const currentPools = staker.nodePools;
 
-    const nodePool = fetchScannerPool(_subject);
 
     if(!currentPools) {
       staker.nodePools = [nodePool.id]
@@ -177,6 +177,18 @@ function updateStake(
       currentPools.push(nodePool.id);
       staker.nodePools = currentPools;
     }
+
+    // Check node pool for existing stakers
+    // Add staker if it isn't already there
+    const currentStakers = nodePool.stakers;
+
+    if(!currentStakers) {
+      nodePool.stakers = [staker.id]
+    } else if (!currentStakers.includes(staker.id)) {
+      currentStakers.push(staker.id);
+      nodePool.stakers = currentStakers;
+    }
+
   }
 
   stake.subject = _subjectId;
@@ -203,6 +215,7 @@ function updateStake(
   subject.save();
   stake.save();
   staker.save();
+  nodePool.save();
   account.save();
 
   return getStakeId(_subjectId,_stakerId,_subjectType.toString());

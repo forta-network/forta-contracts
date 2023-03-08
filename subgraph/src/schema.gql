@@ -262,6 +262,7 @@ type ScannerPool @entity {
   stakeAllocated: BigInt!
   stakeOwnedAllocated: BigInt!
   scanNodes: [ScanNode!] @derivedFrom(field: "scannerPool")
+  stakers: [Staker!]
 }
 
 #  New entity to handle scanNodes inside of pools
