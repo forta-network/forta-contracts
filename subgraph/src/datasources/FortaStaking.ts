@@ -178,16 +178,22 @@ function updateStake(
       staker.nodePools = currentPools;
     }
 
-    // Check node pool for existing stakers
-    // Add staker if it isn't already there
-    const currentStakers = nodePool.stakers;
 
-    if(!currentStakers) {
-      nodePool.stakers = [staker.id]
-    } else if (!currentStakers.includes(staker.id)) {
-      currentStakers.push(staker.id);
-      nodePool.stakers = currentStakers;
+    if(nodePool.registered) {
+        // Check node pool for existing stakers
+      // Add staker if it isn't already there
+      const currentStakers = nodePool.stakers;
+
+      if(!currentStakers) {
+        nodePool.stakers = [staker.id]
+      } else if (!currentStakers.includes(staker.id)) {
+        currentStakers.push(staker.id);
+        nodePool.stakers = currentStakers;
+      }
+
+      nodePool.save()
     }
+
   }
 
   stake.subject = _subjectId;
@@ -214,7 +220,6 @@ function updateStake(
   subject.save();
   stake.save();
   staker.save();
-  nodePool.save();
   account.save();
 
   return getStakeId(_subjectId,_stakerId,_subjectType.toString());
