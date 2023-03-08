@@ -1,9 +1,8 @@
-import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
+import { BigDecimal, BigInt, log } from "@graphprotocol/graph-ts";
 import {SetDelegationFee as SetDelegationFeeEvent, Rewarded as RewardedDistributedEvent } from "../../generated/RewardsDistributor/RewardsDistributor";
 import { ScannerPool, Subject, RewardEvent } from "../../generated/schema";
 import { formatSubjectId } from "./utils";
-import { events } from "@amxx/graphprotocol-utils";
-import { logger } from "ethers";
+import { events, transactions } from "@amxx/graphprotocol-utils";
 
 
 
@@ -41,8 +40,10 @@ export function handleRewardEvent(event: RewardedDistributedEvent): void {
     rewardedEvent.subject = subjectId;
     rewardedEvent.amount = amount;
     rewardedEvent.epochNumber = epochNumber.toI32();
+    rewardedEvent.transaction = transactions.log(event).id;
+    rewardedEvent.timestamp = event.block.timestamp;
     rewardedEvent.save();
   } else {
-    logger.warn(`Failed to save reward event because could not find subject type from transaction ${event.transaction.hash}`)
+    log.warning(`Failed to save reward event because could not find subject type from transaction {}`, [event.transaction.hash.toHexString()])
   }
 }
