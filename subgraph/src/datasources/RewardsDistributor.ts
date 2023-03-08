@@ -1,10 +1,11 @@
-import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
-import {SetDelegationFee as SetDelegationFeeEvent } from "../../generated/RewardsDistributor/RewardsDistributor";
-import { ScannerPool, Subject } from "../../generated/schema";
+import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
+import {SetDelegationFee as SetDelegationFeeEvent, Rewarded as RewardedDistributedEvent } from "../../generated/RewardsDistributor/RewardsDistributor";
+import { ScannerPool, Subject, RewardEvent } from "../../generated/schema";
+import { formatSubjectId } from "./utils";
+import { events } from "@amxx/graphprotocol-utils";
+import { logger } from "ethers";
 
-function formatSubjectId(subjectId: BigInt, subjectType: i32): string {
-  return subjectType === 2 ? subjectId.toBigDecimal().toString() : subjectId.toHexString();
-}
+
 
 function updateScannerPoolComission(subjectId: string, subjectType: i32, fee: BigInt, epochNumber: BigInt): void {
   // If subject type is node pool
@@ -25,4 +26,23 @@ export function handleSetDelegationFee(event: SetDelegationFeeEvent): void {
   const subjectType = event.params.subjectType;
   const epochNumber = event.params.epochNumber;
   updateScannerPoolComission(subjectId, subjectType ,event.params.feeBps, epochNumber);
+}
+
+// Handler for when unclaimed rewards are distributed
+export function handleRewardEvent(event: RewardedDistributedEvent): void {
+  const subjectId = formatSubjectId(event.params.subject, event.params.subjectType);
+  const epochNumber = event.params.epochNumber;
+  const amount = event.params.amount;
+
+  const subject = Subject.load(subjectId);
+
+  if(subject) {
+    const rewardedEvent = new RewardEvent(events.id(event));
+    rewardedEvent.subject = subjectId;
+    rewardedEvent.amount = amount;
+    rewardedEvent.epochNumber = epochNumber.toI32();
+    rewardedEvent.save();
+  } else {
+    logger.warn(`Failed to save reward event because could not find subject type from transaction ${event.transaction.hash}`)
+  }
 }

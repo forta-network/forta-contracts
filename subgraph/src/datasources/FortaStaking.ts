@@ -27,6 +27,7 @@ import { fetchAccount } from "../fetch/account";
 
 import { events, transactions } from "@amxx/graphprotocol-utils/";
 import { fetchScannerPool } from "../fetch/scannerpool";
+import { formatSubjectId } from "./utils";
 
 function hexToDec(s: string): string {
   var i: i32, j: i32, digits: i32[] = [0], carry: i32;
@@ -71,10 +72,6 @@ function getActiveSharesId(_subjectType: i32, _subject: BigInt): string {
 
 export function getStakeId(subjectId: string, stakerId: string, subjectType: string): string {
   return subjectType + subjectId + stakerId;
-}
-
-function formatSubjectId(subjectId: BigInt, subjectType: i32): string {
-  return subjectType === 2 ? subjectId.toBigDecimal().toString() : subjectId.toHexString();
 }
 
 function updateAggregateStake(stakerId: string, prevStakeTotalShares: BigInt , prevStateInActiveShares: BigInt , updatedStakeTotalShares: BigInt, updatedStakeInActiveShares: BigInt): void {

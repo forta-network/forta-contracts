@@ -166,6 +166,7 @@ type Subject @entity {
   stakes: [Stake!]! @derivedFrom(field: "subject")
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "subject")
   withdrawalExecutedEvents: [WithdrawalExecutedEvent!] @derivedFrom(field: "subject")
+  rewardedEvents: [RewardEvent!] @derivedFrom(field: "subject")
 }
 
 type SharesID @entity {
@@ -193,7 +194,6 @@ type Staker @entity {
   id: ID!
   account: Account!
   stakes: [Stake!]! @derivedFrom(field: "staker")
-  releasedRewards: [Reward!] @derivedFrom(field: "staker")
   aggregateActiveStake: AggregateActiveStake! @derivedFrom(field: "staker")
   aggregateTotalStake: AggregateTotalStake! @derivedFrom(field: "staker")
   nodePools: [ScannerPool!]
@@ -238,6 +238,13 @@ type WithdrawalExecutedEvent implements Event @entity {
   subject: Subject!
   stake: Stake!
   amount: BigInt
+}
+
+type RewardEvent implements Event @entity {
+  id: ID!
+  subject: Subject!
+  epochNumber: Int!
+  amount: BigInt!
 }
 
 type ScannerPool @entity {
