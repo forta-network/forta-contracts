@@ -203,5 +203,83 @@
 			"version": "0.1.5"
 		}
 	},
-	"dispatch-deploy-tx": "0x507ec3b49cff285d224d4dc41c18e3ffaf1807875439cec7ccbbc8b683f83cea"
+	"dispatch-deploy-tx": "0x507ec3b49cff285d224d4dc41c18e3ffaf1807875439cec7ccbbc8b683f83cea",
+	"rewards-distributor": {
+		"address": "0xc579ab81D949BD106f0d5A3F3A17623F7AC26327",
+		"impl": {
+			"address": "0x3f540f6bD68d3A6E94CF36AD91f9fE795A3dC8BA",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+				"0x02304eC24ba2996a83F595D7cf80e5571a406EFA"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"2",
+				"10000"
+			],
+			"name": "RewardsDistributor",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"rewards-distributor-deploy-tx": "0x3358f9eae1fd2a22f905a08567a8ee51dd0b8f7d924037c44f58d343b9f92432",
+	"stake-allocator": {
+		"address": "0x878D8124EDed442EE01DD8dC72B02ba8b7521627",
+		"impl": {
+			"address": "0xc500A01Cfa49Ef3df3E45bdc6b9461F31e2Fa3fc",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x02304eC24ba2996a83F595D7cf80e5571a406EFA",
+				"0xc579ab81D949BD106f0d5A3F3A17623F7AC26327"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64"
+			],
+			"name": "StakeAllocator",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"stake-allocator-deploy-tx": "0xd90d0de6ce24bbff7c921d622ff016722545a788c646527fb1c1126482402803",
+	"scanner-pool-registry": {
+		"address": "0xf348EC964e7944DA3831EfC8e0a054acE23C5D66",
+		"impl": {
+			"address": "0x00Fe0BEDc8e57179B15327815a065Ec6297729d3",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x878D8124EDed442EE01DD8dC72B02ba8b7521627"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64",
+				"FScannerPools",
+				"FSP",
+				"0x02304eC24ba2996a83F595D7cf80e5571a406EFA",
+				"3600"
+			],
+			"name": "ScannerPoolRegistry",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"scanner-pool-registry-deploy-tx": "0x9c630532e68c93702e38c02ae23a9d911e9033864a6ed27c540225acb29fccda",
+	"scanner-to-scanner-pool-migration": {
+		"address": "0x38A849708542195E7578470ad3968430aC5C3310",
+		"impl": {
+			"address": "0x51d6928605f28916b62b2a5AADEACE5cB142Da5D",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x569c785b4744E582c65A12827726FC03C8D08A4a",
+				"0xf348EC964e7944DA3831EfC8e0a054acE23C5D66",
+				"0x64d5192F03bD98dB1De2AA8B4abAC5419eaC32CE"
+			],
+			"init-args": [
+				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64"
+			],
+			"name": "ScannerToScannerPoolMigration",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"scanner-to-scanner-pool-migration-deploy-tx": "0x76b3f0672b7ea028cb5306d04699de763e22acb86806aef5f5f87aec2740f903"
 }
