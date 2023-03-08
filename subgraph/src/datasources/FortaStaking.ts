@@ -211,12 +211,10 @@ function updateStake(
 
   staker.account = _stakerId;
 
-  if(nodePool.owner) {
-    nodePool.save()
-  }
   subject.save();
   stake.save();
   staker.save();
+  nodePool.save();
   account.save();
 
   return getStakeId(_subjectId,_stakerId,_subjectType.toString());
