@@ -6,8 +6,9 @@ async function main(args, hre) {
     console.log('Deploy and prepare upgrade');
     console.log('Checking for deploy config...');
     if (deployConfigExists(chainId, args.release)) {
-        console.log('Deploying...');
-        await hre.run('deploy', { release: args.release });
+        console.log('Skipping deployed as they are already deployed');
+        // console.log('Deploying...');
+        // await hre.run('deploy', { release: args.release });
     } else {
         console.log('Deploy config not present.');
     }
