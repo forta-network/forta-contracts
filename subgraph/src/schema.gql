@@ -166,7 +166,6 @@ type Subject @entity {
   stakes: [Stake!]! @derivedFrom(field: "subject")
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "subject")
   withdrawalExecutedEvents: [WithdrawalExecutedEvent!] @derivedFrom(field: "subject")
-  rewardedEvents: [RewardEvent!] @derivedFrom(field: "subject")
 }
 
 type SharesID @entity {
@@ -266,6 +265,7 @@ type ScannerPool @entity {
   stakeAllocated: BigInt!
   stakeOwnedAllocated: BigInt!
   scanNodes: [ScanNode!] @derivedFrom(field: "scannerPool")
+  rewardedEvents: [RewardEvent!]
   stakers: [Staker!]
 }
 
