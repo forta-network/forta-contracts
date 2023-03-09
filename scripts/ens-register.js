@@ -101,24 +101,32 @@ async function main() {
     DEBUG(`reverse: ${contracts.ens.reverse.address}`);
     provider.network.ensAddress = contracts.ens.registry.address;
     // await changeOwner(hre, 'dispatch.forta.eth', deployer, owner, contracts.ens.registry);
-    //await changeOwner(hre, 'staking.forta.eth', deployer, owner, contracts.ens.registry);
+    // await changeOwner(hre, 'staking.forta.eth', deployer, owner, contracts.ens.registry);
     // await changeOwner(hre, 'agents.registries.forta.eth', deployer, owner, contracts.ens.registry);
-    //await changeOwner(hre, 'scanners.registries.forta.eth', deployer, owner, contracts.ens.registry);
+    // await changeOwner(hre, 'scanners.registries.forta.eth', deployer, owner, contracts.ens.registry);
 
     // await registerNode(hre, 'dispatch.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.dispatch.address, chainId: chainId });
-    //await registerNode(hre, 'staking.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.fortaStaking.address, chainId: chainId });
+    // await registerNode(hre, 'staking.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.fortaStaking.address, chainId: chainId });
     // await registerNode(hre, 'slashing.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.slashingController.address, chainId: chainId });
     // await registerNode(hre, 'agents.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.agentRegistry.address, chainId: chainId });
-    //await registerNode(hre, 'scanners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scannerRegistry.address, chainId: chainId });
+    // await registerNode(hre, 'scanners.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scannerRegistry.address, chainId: chainId });
+    // await registerNode(hre, 'pools.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scannerPoolRegistry.address, chainId: chainId });
+    // await registerNode(hre, 'rewards.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.rewardsDistributor.address, chainId: chainId });
+    // await registerNode(hre, 'allocator.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.stakeAllocator.address, chainId: chainId });
+    // await registerNode(hre, 'migration.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scannerToScannerPoolMigration.address, chainId: chainId });
 
     DEBUG('ens configuration');
 
     DEBUG('Starting reverse registration...');
-    //await reverseRegister(contracts.dispatch, 'dispatch.forta.eth');
-    //await reverseRegister(contracts.fortaStaking, 'staking.forta.eth');
-    await reverseRegister(contracts.slashingController, 'slashing.forta.eth');
-    await reverseRegister(contracts.agentRegistry, 'agents.registries.forta.eth');
-    await reverseRegister(contracts.scannerRegistry, 'scanners.registries.forta.eth');
+    // await reverseRegister(contracts.dispatch, 'dispatch.forta.eth');
+    // await reverseRegister(contracts.fortaStaking, 'staking.forta.eth');
+    // await reverseRegister(contracts.slashingController, 'slashing.forta.eth');
+    // await reverseRegister(contracts.agentRegistry, 'agents.registries.forta.eth');
+    // await reverseRegister(contracts.scannerRegistry, 'scanners.registries.forta.eth');
+    // await reverseRegister(contracts.scannerPoolRegistry, 'pools.registries.forta.eth');
+    // await reverseRegister(contracts.rewardsDistributor, 'rewards.forta.eth');
+    // await reverseRegister(contracts.stakeAllocator, 'allocator.forta.eth');
+    // await reverseRegister(contracts.scannerToScannerPoolMigration, 'migration.forta.eth');
 
 }
 

@@ -1,5 +1,5 @@
 title: Stake Delegation
-network: polygon
+network: mumbai
 deploy: deploy-and-prepare-upgrade 1.2.0
 verify: verify-deployed
 finish: propose-admin
