@@ -247,6 +247,7 @@ type RewardEvent implements Event @entity {
   amount: BigInt!
   transaction: Transaction!
   timestamp: BigInt!
+  apyForLastEpoch: String
 }
 
 type ScannerPool @entity {

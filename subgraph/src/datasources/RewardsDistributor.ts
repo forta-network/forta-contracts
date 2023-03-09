@@ -29,31 +29,43 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
   if(!nodePool || !nodePool.stakers) return null
 
   log.warning(`Finding delegators for nodePool {}`,[subjectId])
-  // Find all delegators in pool
-  const delegatedStakers: Staker[] = nodePool.stakers
-    .map(stakerId => Staker.load(stakerId))
-    .filter(staker => staker !== null && (staker.account !== nodePool.owner)) as Staker[]
   
+  const rewardDistributor = RewardsDistributorContract.bind(rewardsDistributorAddress);
+  const delegatedStakers: Staker[] = []
+  const totalDelegateRewards: BigInt = BigInt.fromI32(0);
+
+  const nodePoolStakers: string[] = nodePool.stakers as string[]
+  
+  // Find all delegators in pool
+  for(let id = 0; id < nodePoolStakers.length; id++) {
+    const stakerId = (nodePool.stakers as string[])[id]
+    const staker = Staker.load(stakerId)
+
+    if(staker && staker.account !== nodePool.owner) {
+      // Check avalible rewards for thesse delegators at given epoch and sum them
+      const delegateReward = rewardDistributor.availableReward(subjectType as i32, BigInt.fromString(subjectId), epoch ,Address.fromString(staker.account))
+
+      delegatedStakers.push(staker)
+
+      // Add to totalDelegateRewards for current epoch
+      totalDelegateRewards.plus(delegateReward)
+    } 
+  }
+
   log.warning(`Found {} delegators for nodePool {}`,[delegatedStakers.length.toString(),subjectId])
 
-  const rewardDistributor = RewardsDistributorContract.bind(rewardsDistributorAddress);
-
-  // Check avalible rewards for thesse delegators at given epoch and sum them
-  const totalDelegateRewardByStaker = delegatedStakers
-    .map(staker => rewardDistributor.availableReward(subjectType, BigInt.fromString(subjectId), epoch ,Address.fromString(staker.account)))
-
-  // Calculate totalDelegateRewards for current epoch
-  const totalDelegateRewards = totalDelegateRewardByStaker.reduce((sum: BigInt, curVal) => sum.plus(curVal), BigInt.fromI32(0))
-
-  log.warning(`Found {} delegator FORT rewards`,[totalDelegateRewards.toString()])
+  log.warning(`Found {} delegator FORT rewards`,[totalDelegateRewards.toI32().toString()])
 
   // Calculate APY as string
   const totalDelegateStakeInEpoch = nodePool.stakeAllocated.minus(nodePool.stakeOwnedAllocated);
 
-  log.warning(`Found {} delegator stake in this epoch `,[totalDelegateStakeInEpoch.toString()])
+  log.warning(`Found {} delegator stake in this epoch `,[totalDelegateStakeInEpoch.toI32.toString()])
 
   const apy = (1 + (totalDelegateRewards.div(totalDelegateStakeInEpoch)).toI32()) ** (52 - 1);
 
+  nodePool.apyForLastEpoch = apy.toString();
+
+  nodePool.save()
   return apy.toString()
 }
 
