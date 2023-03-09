@@ -89,8 +89,9 @@ export function handleRewardEvent(event: RewardedDistributedEvent): void {
   const rewardDistributorAddress = event.address;
 
   const subject = Subject.load(subjectId);
+  const nodePool = ScannerPool.load(subjectId);
 
-  if(subject) {
+  if(nodePool) {
     const apy = calculatePoolAPYInEpoch(rewardDistributorAddress, subjectId, subjectType, epochNumber)
     const rewardedEvent = new RewardEvent(events.id(event));
     rewardedEvent.subject = subjectId;
@@ -101,6 +102,13 @@ export function handleRewardEvent(event: RewardedDistributedEvent): void {
     rewardedEvent.apyForLastEpoch = apy;
 
     rewardedEvent.save();
+    
+    const pastRewardEvents: string[]  = nodePool.rewardedEvents ? nodePool.rewardedEvents as string[] : []
+    pastRewardEvents.push(rewardedEvent.id)
+    
+    nodePool.rewardedEvents = pastRewardEvents
+
+    nodePool.save()
   } else {
     log.warning(`Failed to save reward event because could not find subject type from transaction {}`, [event.transaction.hash.toHexString()])
   }
