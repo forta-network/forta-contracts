@@ -255,6 +255,7 @@ type ScannerPool @entity {
   registered: Boolean!
   chainId: Int!
   apr: BigDecimal
+  apyForLastEpoch: String
   commission: BigDecimal!
   commissionSinceEpoch: Int!
   oldCommission: BigDecimal!

@@ -178,9 +178,8 @@ function updateStake(
       staker.nodePools = currentPools;
     }
 
-
     if(nodePool.registered) {
-        // Check node pool for existing stakers
+      // Check node pool for existing stakers
       // Add staker if it isn't already there
       const currentStakers = nodePool.stakers;
 
