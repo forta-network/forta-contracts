@@ -7,7 +7,7 @@ dataSources:
     network: mumbai
     source:
       abi: ScannerRegistry
-      address: "0x569c785b4744E582c65A12827726FC03C8D08A4a"
+      address: "0x0FF4A7603EB4FB7A5c8D4cd25199046942fb968B"
       startBlock: 21300000
     mapping:
       kind: ethereum/events
@@ -34,7 +34,7 @@ dataSources:
     network: mumbai
     source:
       abi: AgentRegistry
-      address: "0x4519Eaeb9A5c1a9d870Fe35452E54AD04E6e8428"
+      address: "0x36b6b021CCE5cF26E9462dd3c76F835e12F636F1"
       startBlock: 21300000
     mapping:
       kind: ethereum/events
@@ -58,7 +58,7 @@ dataSources:
     network: mumbai
     source:
       abi: Dispatcher
-      address: "0x4B71C61400F5da35518DE10dEcd21D1Aa4d7f283"
+      address: "0x485F9c35d90E639f5B591DA5281199Ae59A9794F"
       startBlock: 21300000
     mapping:
       kind: ethereum/events
@@ -79,7 +79,7 @@ dataSources:
     network: mumbai
     source:
       abi: FortaStaking
-      address: "0x64d5192F03bD98dB1De2AA8B4abAC5419eaC32CE"
+      address: "0xc02de30306d913C46610ae0ad5C296CE7D3060AE"
       startBlock: 21300000
     mapping:
       kind: ethereum/events
@@ -112,7 +112,7 @@ dataSources:
     network: mumbai
     source:
       abi: ScannerPoolRegistry
-      address: "0xfD745747eC40B439feE9248Ae9D57EB846F7eBF5"
+      address: "0x9BBEBf9CB94666464D8a5978363B4943D36A05E4"
       startBlock: 29281360
     mapping:
       kind: ethereum/events
@@ -137,7 +137,7 @@ dataSources:
     network: mumbai
     source:
       abi: RewardsDistributor
-      address: "0x09D2e66a9Cf405f710137E89a6e97CD3d777932B"
+      address: "0x404afc59Cacd74A28d0D5651460Cc950b42FAf08"
       startBlock: 21300000
     mapping:
       kind: ethereum/events
@@ -157,7 +157,7 @@ dataSources:
     network: mumbai
     source:
       abi: StakeAllocator
-      address: "0x4b4272E78ec45A08D91B495c690078e3B196904C"
+      address: "0x698A6400dE3865fC9E8A6dB22302AAb3372Cebd9"
       startBlock: 21300000
     mapping:
       kind: ethereum/events
