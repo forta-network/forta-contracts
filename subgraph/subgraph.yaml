@@ -7,7 +7,7 @@ dataSources:
     network: mumbai
     source:
       abi: ScannerRegistry
-      address: "0x0FF4A7603EB4FB7A5c8D4cd25199046942fb968B"
+      address: "0x569c785b4744E582c65A12827726FC03C8D08A4a"
       startBlock: 21300000
     mapping:
       kind: ethereum/events
@@ -34,7 +34,7 @@ dataSources:
     network: mumbai
     source:
       abi: AgentRegistry
-      address: "0x36b6b021CCE5cF26E9462dd3c76F835e12F636F1"
+      address: "0x4519Eaeb9A5c1a9d870Fe35452E54AD04E6e8428"
       startBlock: 21300000
     mapping:
       kind: ethereum/events
@@ -79,7 +79,7 @@ dataSources:
     network: mumbai
     source:
       abi: FortaStaking
-      address: "0xc02de30306d913C46610ae0ad5C296CE7D3060AE"
+      address: "0x64d5192F03bD98dB1De2AA8B4abAC5419eaC32CE"
       startBlock: 21300000
     mapping:
       kind: ethereum/events
