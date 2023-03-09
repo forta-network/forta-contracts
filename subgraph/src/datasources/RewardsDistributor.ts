@@ -42,6 +42,7 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
     const staker = Staker.load(stakerId)
 
     if(staker && staker.account !== nodePool.owner) {
+      log.warning(`Found delegator with address:  for nodePool {}`,[staker.account,subjectId])
       // Check avalible rewards for thesse delegators at given epoch and sum them
       const delegateReward = rewardDistributor.availableReward(subjectType as i32, BigInt.fromString(subjectId), epoch ,Address.fromString(staker.account))
 
@@ -52,7 +53,9 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
     } 
   }
 
-  log.warning(`Found {} delegators for nodePool {}`,[delegatedStakers.length.toString(),subjectId])
+  // No APY for nodePools with no delegator rewards
+  if(totalDelegateRewards.equals(BigInt.fromI32(0))) return null;
+
 
   log.warning(`Found {} delegator FORT rewards`,[totalDelegateRewards.toI32().toString()])
 
