@@ -69,7 +69,7 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
   nodePool.apyForLastEpoch = apy.toString();
 
   nodePool.save()
-  return apy.toString()
+  return `${apy.toString()}%`
 }
 
 
