@@ -193,7 +193,6 @@ type Staker @entity {
   id: ID!
   account: Account!
   stakes: [Stake!]! @derivedFrom(field: "staker")
-  releasedRewards: [Reward!] @derivedFrom(field: "staker")
   aggregateActiveStake: AggregateActiveStake! @derivedFrom(field: "staker")
   aggregateTotalStake: AggregateTotalStake! @derivedFrom(field: "staker")
   nodePools: [ScannerPool!]
@@ -240,12 +239,23 @@ type WithdrawalExecutedEvent implements Event @entity {
   amount: BigInt
 }
 
+type RewardEvent implements Event @entity {
+  id: ID!
+  subject: Subject!
+  epochNumber: Int!
+  amount: BigInt!
+  transaction: Transaction!
+  timestamp: BigInt!
+  apyForLastEpoch: String
+}
+
 type ScannerPool @entity {
   id: ID!
   owner: Account!
   registered: Boolean!
   chainId: Int!
   apr: BigDecimal
+  apyForLastEpoch: String
   commission: BigDecimal!
   commissionSinceEpoch: Int!
   oldCommission: BigDecimal!
@@ -255,6 +265,8 @@ type ScannerPool @entity {
   stakeAllocated: BigInt!
   stakeOwnedAllocated: BigInt!
   scanNodes: [ScanNode!] @derivedFrom(field: "scannerPool")
+  rewardedEvents: [RewardEvent!]
+  stakers: [Staker!]
 }
 
 #  New entity to handle scanNodes inside of pools

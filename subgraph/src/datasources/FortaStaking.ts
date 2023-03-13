@@ -27,6 +27,7 @@ import { fetchAccount } from "../fetch/account";
 
 import { events, transactions } from "@amxx/graphprotocol-utils/";
 import { fetchScannerPool } from "../fetch/scannerpool";
+import { formatSubjectId } from "./utils";
 
 function hexToDec(s: string): string {
   var i: i32, j: i32, digits: i32[] = [0], carry: i32;
@@ -71,10 +72,6 @@ function getActiveSharesId(_subjectType: i32, _subject: BigInt): string {
 
 export function getStakeId(subjectId: string, stakerId: string, subjectType: string): string {
   return subjectType + subjectId + stakerId;
-}
-
-function formatSubjectId(subjectId: BigInt, subjectType: i32): string {
-  return subjectType === 2 ? subjectId.toBigDecimal().toString() : subjectId.toHexString();
 }
 
 function updateAggregateStake(stakerId: string, prevStakeTotalShares: BigInt , prevStateInActiveShares: BigInt , updatedStakeTotalShares: BigInt, updatedStakeInActiveShares: BigInt): void {
@@ -123,6 +120,7 @@ function updateStake(
   let stake = Stake.load(getStakeId(_subjectId,_stakerId,_subjectType.toString()));
   let staker = Staker.load(_stakerId);
   const account = fetchAccount(_staker);
+  const nodePool = fetchScannerPool(_subject);
 
   const fortaStaking = FortaStakingContract.bind(_stakingContractAddress);
 
@@ -166,13 +164,12 @@ function updateStake(
   const prevStakeTotalShares: BigInt = stake.shares ? stake.shares as BigInt : BigInt.fromI32(0);
   const prevStateInActiveShares: BigInt = stake.inactiveShares ? stake.inactiveShares as BigInt : BigInt.fromI32(0);
 
-  // Scanner pool
-  if(_subjectType === 2) {
+  // Scanner pool owner or delegation
+  if(_subjectType === 2 || _subjectType === 3) {
     // Check existing pools
     // Add new pool to Staker if it isn't already there
     const currentPools = staker.nodePools;
 
-    const nodePool = fetchScannerPool(_subject);
 
     if(!currentPools) {
       staker.nodePools = [nodePool.id]
@@ -180,6 +177,22 @@ function updateStake(
       currentPools.push(nodePool.id);
       staker.nodePools = currentPools;
     }
+
+    if(nodePool.registered) {
+      // Check node pool for existing stakers
+      // Add staker if it isn't already there
+      const currentStakers = nodePool.stakers;
+
+      if(!currentStakers) {
+        nodePool.stakers = [staker.id]
+      } else if (!currentStakers.includes(staker.id)) {
+        currentStakers.push(staker.id);
+        nodePool.stakers = currentStakers;
+      }
+
+      nodePool.save()
+    }
+
   }
 
   stake.subject = _subjectId;
