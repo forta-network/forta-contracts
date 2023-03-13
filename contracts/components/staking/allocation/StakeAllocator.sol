@@ -261,7 +261,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
 
     /**
      * @notice method to call when substracting activeStake. Will burn unallocatedStake (and allocatedStake if amount is bigger than unallocatedStake).
-     * If withdrawal leads to DELEGATED to be below staking minimum, unallocates delegator's stake.
+     * If withdrawal leads to DELEGATED to be below staking minimum, unallocates delegators' stake.
      * @param activeSharesId ERC1155 id representing the active shares of a subject / subjectType pair.
      * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
@@ -341,8 +341,6 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
             
             // If DELEGATED has staked less than minimum stake, revert cause delegation not unlocked
             if (
-                // allocatedStakeFor(delegatedSubjectType, subject) / subjects <
-                // _subjectGateway.minManagedStakeFor(delegatedSubjectType, subject)
                 _delegatedSubjectStakeIsLessThanMinimum(delegatedSubjectType, subject, subjects)
             ) {
                 revert CannotDelegateStakeUnderMin(delegatedSubjectType, subject);

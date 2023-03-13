@@ -3,11 +3,17 @@ const { expect } = require('chai');
 const { prepare } = require('../fixture');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
 
+const scannerPoolId = ethers.BigNumber.from('1');
 const subjects = [
     [ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), 1], // Agent id, agent type
-    [ethers.BigNumber.from('1'), 2], // ScannerPool id, ScannerPool Type
+    [scannerPoolId, 2], // ScannerPool id, ScannerPool Type
+    [scannerPoolId, 3]  // ScannerPool id, DelegatorScannerPool Type
 ];
-const [[subject1, subjectType1, active1, inactive1], [subject2, subjectType2, active2, inactive2]] = subjects.map((items) => [
+const [
+    [subject1, subjectType1, active1, inactive1], // Agent subject
+    [subject2, subjectType2, active2, inactive2], // Scanner Pool subject
+    [subject3, subjectType3, active3, inactive3]  // Delegator Scanner Pool subject
+] = subjects.map((items) => [
     items[0],
     items[1],
     subjectToActive(items[1], items[0]),
@@ -68,6 +74,21 @@ describe('Forta Staking General', function () {
             await expect(this.staking.connect(this.accounts.user1).withdraw(subjectType1, subject1))
                 .to.emit(this.token, 'Transfer')
                 .withArgs(this.staking.address, this.accounts.user1.address, '100');
+        });
+    });
+
+    describe('Unallocating delegators stake', function () {
+        it('owner stake → delegator stake → owner withdraw → unallocate delegator stake', async function () {
+            // TODO: Check how `this.` is derived
+            const poolOwner = this.accounts.user1;
+            const delegator = this.accounts.user2;
+
+            // ScannerPool owner and delegator stake into the same scanner pool
+            await expect(this.staking.connect(poolOwner).deposit(subjectType2, subject2, '100'));
+            await expect(this.staking.connect(delegator).deposit(subjectType3, subject2, '125'));
+
+            // Owner withdraws all of their stake
+            await expect(this.staking.connect(poolOwner).initiateWithdrawal(subjectType1, subject2, '100'));
         });
     });
 
