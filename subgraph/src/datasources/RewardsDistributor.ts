@@ -1,8 +1,9 @@
-import { Address, BigDecimal, BigInt, log } from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, BigInt, ethereum, log } from "@graphprotocol/graph-ts";
 import {SetDelegationFee as SetDelegationFeeEvent, Rewarded as RewardedDistributedEvent, RewardsDistributor as RewardsDistributorContract } from "../../generated/RewardsDistributor/RewardsDistributor";
 import { ScannerPool, Subject, RewardEvent, Staker } from "../../generated/schema";
 import { formatSubjectId } from "./utils";
 import { events, transactions } from "@amxx/graphprotocol-utils";
+import { newMockEvent } from "matchstick-as";
 
 
 
@@ -28,11 +29,9 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
 
   if(!nodePool || !nodePool.stakers) return null
 
-  log.warning(`Finding delegators for nodePool {}`,[subjectId])
   
   const rewardDistributor = RewardsDistributorContract.bind(rewardsDistributorAddress);
-  const delegatedStakers: Staker[] = []
-  const totalDelegateRewards: BigInt = BigInt.fromI32(0);
+  let totalDelegateRewards: BigInt = BigInt.fromI32(0);
 
   const nodePoolStakers: string[] = nodePool.stakers as string[]
   
@@ -42,14 +41,11 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
     const staker = Staker.load(stakerId)
 
     if(staker && staker.account !== nodePool.owner) {
-      log.warning(`Found delegator with address:  for nodePool {}`,[staker.account,subjectId])
       // Check avalible rewards for thesse delegators at given epoch and sum them
-      const delegateReward = rewardDistributor.availableReward(subjectType as i32, BigInt.fromString(subjectId), epoch ,Address.fromString(staker.account))
-
-      delegatedStakers.push(staker)
+      const delegateReward = rewardDistributor.availableReward(3, BigInt.fromString(subjectId), epoch ,Address.fromString(staker.account))
 
       // Add to totalDelegateRewards for current epoch
-      totalDelegateRewards.plus(delegateReward)
+      totalDelegateRewards = totalDelegateRewards.plus(delegateReward);
     } 
   }
 
@@ -57,19 +53,19 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
   if(totalDelegateRewards.equals(BigInt.fromI32(0))) return null;
 
 
-  log.warning(`Found {} delegator FORT rewards`,[totalDelegateRewards.toI32().toString()])
-
   // Calculate APY as string
   const totalDelegateStakeInEpoch = nodePool.stakeAllocated.minus(nodePool.stakeOwnedAllocated);
 
-  log.warning(`Found {} delegator stake in this epoch `,[totalDelegateStakeInEpoch.toI32.toString()])
+  // APY Pool_i = ({ 1 + ( LastEpochRewardsForDelegators_i / LastEpochDelegatorsTotalStake_i )} ^ 52) - 1
+  const apy = ((parseFloat((BigDecimal.fromString("1").plus(totalDelegateRewards.toBigDecimal().div(totalDelegateStakeInEpoch.toBigDecimal()))).toString()) ** 52) - 1) * 100;
 
-  const apy = (1 + (totalDelegateRewards.div(totalDelegateStakeInEpoch)).toI32()) ** (52 - 1);
+  const wholeIntApy = apy.toString().split(".")[0]
+  const fractionalApy = apy.toString().split(".")[1]
 
-  nodePool.apyForLastEpoch = apy.toString();
+  const truncatedApy = `${wholeIntApy}${fractionalApy.charAt(0) === "0" ? "" : `.${fractionalApy.substr(0,2)}`}`
 
-  nodePool.save()
-  return `${apy.toString()}%`
+  nodePool.apyForLastEpoch = `${truncatedApy.toString()}%`;
+  return `${truncatedApy.toString()}%`
 }
 
 
@@ -88,7 +84,7 @@ export function handleRewardEvent(event: RewardedDistributedEvent): void {
   const amount = event.params.amount;
   const rewardDistributorAddress = event.address;
 
-  const subject = Subject.load(subjectId);
+
   const nodePool = ScannerPool.load(subjectId);
 
   if(nodePool) {
@@ -102,14 +98,54 @@ export function handleRewardEvent(event: RewardedDistributedEvent): void {
     rewardedEvent.apyForLastEpoch = apy;
 
     rewardedEvent.save();
+
+    nodePool.apyForLastEpoch = apy;
     
     const pastRewardEvents: string[]  = nodePool.rewardedEvents ? nodePool.rewardedEvents as string[] : []
+
     pastRewardEvents.push(rewardedEvent.id)
-    
+
     nodePool.rewardedEvents = pastRewardEvents
 
     nodePool.save()
   } else {
     log.warning(`Failed to save reward event because could not find subject type from transaction {}`, [event.transaction.hash.toHexString()])
   }
+}
+
+export function createMockRewardEvent(
+  subjectType: i32,
+  subject: BigInt,
+  amount: BigInt,
+  epochNumber: BigInt
+): RewardedDistributedEvent {
+  const mockRewardedEvent = changetype<RewardedDistributedEvent>(newMockEvent());
+  mockRewardedEvent.parameters = [];
+
+  const subjectTypeParam = new ethereum.EventParam(
+    "subjectType",
+    ethereum.Value.fromI32(subjectType)
+  );
+
+  const subjectParam = new ethereum.EventParam(
+    "subject",
+    ethereum.Value.fromUnsignedBigInt(subject)
+  );
+
+  const accountParam = new ethereum.EventParam(
+    "amount",
+    ethereum.Value.fromUnsignedBigInt(amount)
+  );
+
+  const epochParam = new ethereum.EventParam(
+    "epochNumber",
+    ethereum.Value.fromUnsignedBigInt(epochNumber)
+  );
+
+  mockRewardedEvent.parameters.push(subjectTypeParam);
+  mockRewardedEvent.parameters.push(subjectParam);
+  mockRewardedEvent.parameters.push(accountParam);
+  mockRewardedEvent.parameters.push(epochParam);
+
+  return mockRewardedEvent;
 }
