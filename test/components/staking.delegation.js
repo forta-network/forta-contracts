@@ -400,6 +400,42 @@ describe('Staking - Delegation', function () {
                 expect(await this.stakeAllocator.allocatedStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('0');
                 expect(await this.stakeAllocator.unallocatedStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('500');
             });
+
+            it('unallocates delegators stake when scanner pool owner initiates withdrawal', async function () {
+                scanners = [this.accounts.other, this.accounts.minter, this.accounts.treasure];
+
+                // Confirm scanners in scanner pool are enabled and operational
+                // before the delegation of any stake
+                for(scanner in scanners) {
+                    expect(await this.scannerPools.isScannerDisabled(scanner)).to.eq(false);
+                    expect(await this.scannerPools.isScannerOperational(scanner)).to.eq(true);
+                }
+
+                // delegator stakes into the same scanner pool
+                await this.staking.connect(this.accounts.user2).deposit(delegatorSubjectType, scannerPoolId, '100');
+
+                // Confirm scanner pool has both the owner's and delegator's stake (owner staked 300; delegator staked 100)
+                expect(await this.stakeAllocator.allocatedManagedStake(scannerPoolSubjectType, scannerPoolId)).to.eq('400');
+                // Check the balances individually
+                expect(await this.stakeAllocator.allocatedStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('300');
+                expect(await this.stakeAllocator.allocatedStakeFor(delegatorSubjectType, scannerPoolId)).to.eq('100');
+                // Confirm unallocated stake is zero because the stake is still allocated
+                expect(await this.stakeAllocator.unallocatedStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('0');
+                expect(await this.stakeAllocator.unallocatedStakeFor(delegatorSubjectType, scannerPoolId)).to.eq('0');
+
+
+                // Owner withdraws all of their stake
+                await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(scannerPoolSubjectType, scannerPoolId, '300'));
+                // Confirm all of delegator's stake is now unallocated      
+                expect(await this.stakeAllocator.allocatedStakeFor(delegatorSubjectType, scannerPoolId)).to.eq('0');
+                expect(await this.stakeAllocator.unallocatedStakeFor(delegatorSubjectType, scannerPoolId)).to.eq('100');
+
+                // Confirm scanners in scanner pool are disabled and non-operational
+                for(scanner in scanners) {
+                    expect(await this.scannerPools.isScannerDisabled(scanner)).to.eq(true);
+                    expect(await this.scannerPools.isScannerOperational(scanner)).to.eq(true);
+                }
+            });
         });
 
         describe('On Slashing', function () {
