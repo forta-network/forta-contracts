@@ -30,7 +30,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
       - run: npm run test
   subgraph-test:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     working-directory: ./subgraph
     steps:
