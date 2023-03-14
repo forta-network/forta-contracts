@@ -20,7 +20,7 @@ function updateScannerPoolComission(subjectId: string, subjectType: i32, fee: Bi
   }
 }
 
-const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: string, subjectType: number, epoch: BigInt): string | null => {
+const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: string, subjectType: number, epoch: BigInt): BigDecimal | null => {
 
   // If not a node pool
   if(subjectType !== 2) return null
@@ -66,10 +66,10 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
   const wholeIntApy = apy.toString().split(".")[0]
   const fractionalApy = apy.toString().split(".")[1]
 
-  const truncatedApy = `${wholeIntApy}${fractionalApy.charAt(0) === "0" ? "" : `.${fractionalApy.substr(0,2)}`}`
+  const truncatedApy = BigDecimal.fromString(`${wholeIntApy}${fractionalApy.charAt(0) === "0" ? "" : `.${fractionalApy.substr(0,2)}`}`)
 
-  nodePool.apyForLastEpoch = `${truncatedApy.toString()}%`;
-  return `${truncatedApy.toString()}%`
+  nodePool.apyForLastEpoch = truncatedApy
+  return truncatedApy
 }
 
 
