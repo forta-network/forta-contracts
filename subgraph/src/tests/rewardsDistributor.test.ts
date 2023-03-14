@@ -19,15 +19,7 @@ let mockNodePool: ScannerPool;
 let delegatorOne: Staker;
 let delegatorTwo: Staker;
 
-// Mock methods
 
-/**
- * 
- * 
- * Methods:
- * RewardsDistributorContract.bind()
- * rewardDistributor.avalibleReward()
- */
  beforeEach(() => {
     clearStore()
 
@@ -81,8 +73,11 @@ describe('Rewards distributor', () => {
         handleRewardEvent(mockRewardedEvent)
 
         const updatedScanner = ScannerPool.load(mockPoolId)
+        const actualValue = updatedScanner ? updatedScanner.apyForLastEpoch : null
         
-        assert.assertNull((updatedScanner as ScannerPool).apyForLastEpoch)
+        if(actualValue) {
+            throw new Error("Node pool should not have an apy value")
+        }
     }) 
 
     test('should handle a reward event on a pool with one delegator and return the correct APY', () => {
@@ -124,9 +119,9 @@ describe('Rewards distributor', () => {
         // When
         handleRewardEvent(mockRewardedEvent)
 
-        const expectedApy = `${((parseFloat((BigDecimal.fromString("1").plus(delegateReward.toBigDecimal().div(totalDelegateStakeInEpoch.toBigDecimal()))).toString()) ** 52) - 1) * 100}%`;
+        const expectedApy = `${((parseFloat((BigDecimal.fromString("1").plus(delegateReward.toBigDecimal().div(totalDelegateStakeInEpoch.toBigDecimal()))).toString()) ** 52) - 1) * 100}`;
 
-        const truncatedApy = truncateApy(expectedApy) + "%"
+        const truncatedApy = BigDecimal.fromString(truncateApy(expectedApy))
         
         // Expect
         assert.fieldEquals("ScannerPool", mockPoolId, "apyForLastEpoch", truncatedApy.toString())
@@ -192,13 +187,10 @@ describe('Rewards distributor', () => {
 
         const delegateReward = delegateOneReward.plus(delegateTwoReward)
 
-        const expectedApy = `${((parseFloat((BigDecimal.fromString("1").plus(delegateReward.toBigDecimal().div(totalDelegateStakeInEpoch.toBigDecimal()))).toString()) ** 52) - 1) * 100}%`;
+        const expectedApy = `${((parseFloat((BigDecimal.fromString("1").plus(delegateReward.toBigDecimal().div(totalDelegateStakeInEpoch.toBigDecimal()))).toString()) ** 52) - 1) * 100}`;
 
-
-
-        const truncatedApy = truncateApy(expectedApy) + "%"
+        const truncatedApy = BigDecimal.fromString(truncateApy(expectedApy));
         // Expect
         assert.fieldEquals("ScannerPool", mockPoolId, "apyForLastEpoch", truncatedApy.toString())
     })
-
 })
