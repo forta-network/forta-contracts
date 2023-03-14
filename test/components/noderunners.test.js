@@ -328,6 +328,23 @@ describe('Scanner Pool Registry', function () {
                 expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
             });
 
+            it('revert disable due to scanner already being disabled', async function () {
+                const SCANNER_ADDRESS = this.accounts.scanner.address;
+
+                // First call to `disableScanner, which disables the scanner
+                await expect(this.scannerPools.connect(this.accounts.manager).disableScanner(SCANNER_ADDRESS))
+                    .to.emit(this.scannerPools, 'ScannerEnabled')
+                    .withArgs(SCANNER_ADDRESS, false, this.accounts.manager.address, true);
+
+                // Confirm scanner is non-operational
+                expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
+
+                // Second call to disableScanner should revert because scanner is already disabled
+                await expect(this.scannerPools.connect(this.accounts.manager).disableScanner(SCANNER_ADDRESS))
+                    .to.be.revertedWithCustomError(this.scannerPools, 'ScannerPreviouslyDisabled')
+                    .withArgs(SCANNER_ADDRESS);
+            });
+
             it('re-enable', async function () {
                 const SCANNER_ADDRESS = this.accounts.scanner.address;
                 expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);

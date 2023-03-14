@@ -73,6 +73,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
     error SenderNotScannerPool(address sender, uint256 scannerPoolId);
     error ChainIdMismatch(uint256 expected, uint256 provided);
     error ActionShutsDownPool();
+    error ScannerPreviouslyDisabled(address scanner);
 
     /**
      * @notice Checks sender (or metatx signer) is owner of the ScannerPoolRegistry ERC721 with ID scannerPoolId.
@@ -351,6 +352,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
      */
     function disableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
+        if (isScannerDisabled(scanner)) revert ScannerPreviouslyDisabled(scanner);
         _removeEnabledScanner(_scannerNodes[scanner].scannerPoolId);
         _setScannerDisableFlag(scanner, true);
     }
