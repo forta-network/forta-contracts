@@ -42,10 +42,12 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
 
     if(staker && staker.account !== nodePool.owner) {
       // Check avalible rewards for thesse delegators at given epoch and sum them
-      const delegateReward = rewardDistributor.availableReward(3, BigInt.fromString(subjectId), epoch ,Address.fromString(staker.account))
+      const delegateRewardResult = rewardDistributor.try_availableReward(3, BigInt.fromString(subjectId), epoch ,Address.fromString(staker.account));
 
       // Add to totalDelegateRewards for current epoch
-      totalDelegateRewards = totalDelegateRewards.plus(delegateReward);
+      if(!delegateRewardResult.reverted) {
+        totalDelegateRewards = totalDelegateRewards.plus(delegateRewardResult.value);
+      }
     } 
   }
 
@@ -55,6 +57,8 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
 
   // Calculate APY as string
   const totalDelegateStakeInEpoch = nodePool.stakeAllocated.minus(nodePool.stakeOwnedAllocated);
+
+  if(totalDelegateStakeInEpoch.equals(BigInt.fromI32(0))) return null;
 
   // APY Pool_i = ({ 1 + ( LastEpochRewardsForDelegators_i / LastEpochDelegatorsTotalStake_i )} ^ 52) - 1
   const apy = ((parseFloat((BigDecimal.fromString("1").plus(totalDelegateRewards.toBigDecimal().div(totalDelegateStakeInEpoch.toBigDecimal()))).toString()) ** 52) - 1) * 100;
