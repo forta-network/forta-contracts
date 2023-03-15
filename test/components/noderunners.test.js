@@ -341,8 +341,7 @@ describe('Scanner Pool Registry', function () {
 
                 // Second call to disableScanner should revert because scanner is already disabled
                 await expect(this.scannerPools.connect(this.accounts.manager).disableScanner(SCANNER_ADDRESS))
-                    .to.be.revertedWithCustomError(this.scannerPools, 'ScannerPreviouslyDisabled')
-                    .withArgs(SCANNER_ADDRESS);
+                    .to.be.revertedWith(`ScannerPreviouslyDisabled(${SCANNER_ADDRESS})`);
             });
 
             it('re-enable', async function () {
