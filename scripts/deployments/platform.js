@@ -8,7 +8,7 @@ const SCANNER_SUBJECT = 0;
 const AGENT_SUBJECT = 1;
 const SCANNER_POOL_SUBJECT = 2;
 const deployEnv = require('../loadEnv');
-const loadRoles = require('../utils/loadRoles')
+const loadRoles = require('../utils/loadRoles');
 
 upgrades.silenceWarnings();
 

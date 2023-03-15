@@ -8,17 +8,17 @@ const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRe
 const subjects = [
     [ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), 1], // Agent id, agent type
     [ethers.BigNumber.from('1'), 2], // ScannerPool id, ScannerPool Type
+    [ethers.BigNumber.from('2'), 2], // ScannerPool id, ScannerPool Type
 ];
 const DELEGATOR_SUBJECT_TYPE = 3;
 
 const EPOCH_LENGTH = 7 * 24 * 60 * 60;
 
-const [[subject1, subjectType1, active1, inactive1], [SCANNER_POOL_ID, SCANNER_POOL_SUBJECT_TYPE, active2, inactive2]] = subjects.map((items) => [
-    items[0],
-    items[1],
-    subjectToActive(items[1], items[0]),
-    subjectToInactive(items[1], items[0]),
-]);
+const [
+    [subject1, subjectType1, active1, inactive1],
+    [SCANNER_POOL_ID, SCANNER_POOL_SUBJECT_TYPE, active2, inactive2],
+    [SCANNER_POOL_ID_2, SCANNER_POOL_SUBJECT_TYPE_2, active3, inactive3],
+] = subjects.map((items) => [items[0], items[1], subjectToActive(items[1], items[0]), subjectToInactive(items[1], items[0])]);
 
 const MAX_STAKE = '10000';
 const OFFSET = 4 * 24 * 60 * 60;
@@ -43,6 +43,7 @@ describe('Staking Rewards', function () {
         const args = [subject1, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
         await this.agents.connect(this.accounts.other).createAgent(...args);
         await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
+        await this.scannerPools.connect(this.accounts.user2).registerScannerPool(2);
 
         this.accounts.getAccount('slasher');
         await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
@@ -134,7 +135,6 @@ describe('Staking Rewards', function () {
                 'ZeroAmount("epochRewards")'
             );
         });
-
 
         it('remove stake', async function () {
             // disable automine so deposits are instantaneous to simplify math
@@ -408,7 +408,23 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
         });
-        it('fee can only be set by ScannerPool', async function () {
+
+        it('fee can be set to zero', async function () {
+            await this.rewardsDistributor.connect(this.accounts.user2).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_2, '0');
+
+            // fee not in effect yet - should return the default for the current epoch
+            const defaultFeeBps = await this.rewardsDistributor.defaultFeeBps();
+            const currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            expect(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_2, currentEpoch)).to.be.equal(defaultFeeBps);
+
+            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+
+            // fee is now in effect as zero
+            const nextEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            expect(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_2, nextEpoch)).to.be.equal('0');
+        });
+
+        it('fee can only be set by the owner of the pool', async function () {
             await expect(this.rewardsDistributor.connect(this.accounts.user2).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2500')).to.be.revertedWith(
                 `SenderNotOwner("${this.accounts.user2.address}", ${SCANNER_POOL_ID})`
             );

@@ -22,15 +22,18 @@ const getDefaultProvider = async (hre, baseProvider, feeData = {}) => {
 const getDefaultDeployer = async (hre, provider, networkName, noHardhat) => {
     let mnemonic;
     // TODO: Fix approach to fetching Polygon mainnet mnemonic
-    if(networkName === "Polygon Mainnet") {
+
+    if (networkName === 'Polygon Mainnet') {
+        // first, try to match with polygon mainnet name
         mnemonic = process.env[`POLYGON_MNEMONIC`];
         console.log(`POLYGON_MNEMONIC`);
+    } else if (!networkName && !noHardhat) {
+        // if no network name is specified and hardhat should be used, use the default mnemonic
+        mnemonic = 'test test test test test test test test test test test junk';
     } else {
+        // finally, just try to deduce from the network name
         mnemonic = process.env[`${networkName.toUpperCase()}_MNEMONIC`];
         console.log(`${networkName.toUpperCase()}_MNEMONIC`);
-    }
-    if (!mnemonic && !noHardhat) {
-        mnemonic = 'test test test test test test test test test test test junk';
     }
     const baseDeployer = hre.ethers.Wallet.fromMnemonic(mnemonic);
     const deployer = new NonceManager(baseDeployer).connect(provider);
