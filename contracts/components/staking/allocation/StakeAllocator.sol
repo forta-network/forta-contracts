@@ -290,7 +290,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
             emit UnallocatedStake(subjectType, subject, false, stakeAmount, _unallocatedStake.balanceOf(activeSharesId));
         }
 
-        if(getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
+        if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
             uint256 managedSubjects = _subjectGateway.totalManagedSubjects(subjectType, subject);
             if (_delegatedSubjectStakeIsLessThanMinimum(subjectType, subject, managedSubjects)) {
                 uint8 delegatorSubjectType = getDelegatorSubjectType(subjectType);
@@ -359,6 +359,9 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
      * @return isLess than minimum
      */
     function _delegatedSubjectStakeIsLessThanMinimum(uint8 delegatedSubjectType, uint256 subject, uint256 managedSubjects) private view returns (bool isLess) {
+        if (managedSubjects == 0) {
+            return false;
+        }
         return allocatedStakeFor(delegatedSubjectType, subject) / managedSubjects <
             _subjectGateway.minManagedStakeFor(delegatedSubjectType, subject);
     }
