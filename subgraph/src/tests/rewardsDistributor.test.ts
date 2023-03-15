@@ -65,7 +65,7 @@ describe('Rewards distributor', () => {
     }) 
 
 
-    test('should handle a reward event on a pool with zero delegators and NOT return an APY value', () => {
+    test('should handle a reward event on a pool with zero delegators and return a 0% APY value', () => {
         const reward = BigInt.fromI32(5);
         const mockRewardedEvent = createMockRewardEvent(2, BigInt.fromString(mockNodePool.id), reward, BigInt.fromI32(2770));
         mockRewardedEvent.address = contractAddress;
@@ -76,7 +76,9 @@ describe('Rewards distributor', () => {
         const actualValue = updatedScanner ? updatedScanner.apyForLastEpoch : null
         
         if(actualValue) {
-            throw new Error("Node pool should not have an apy value")
+            assert.fieldEquals("ScannerPool", mockPoolId, "apyForLastEpoch", BigDecimal.fromString("0").toString())
+        } else {
+            throw new Error("Node pool should have a 0% apy value")
         }
     }) 
 

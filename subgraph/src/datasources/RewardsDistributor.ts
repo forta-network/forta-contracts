@@ -99,11 +99,11 @@ export function handleRewardEvent(event: RewardedDistributedEvent): void {
     rewardedEvent.epochNumber = epochNumber.toI32();
     rewardedEvent.transaction = transactions.log(event).id;
     rewardedEvent.timestamp = event.block.timestamp;
-    rewardedEvent.apyForLastEpoch = apy;
+    rewardedEvent.apyForLastEpoch = apy ? apy : BigDecimal.fromString("0");
 
     rewardedEvent.save();
 
-    nodePool.apyForLastEpoch = apy;
+    nodePool.apyForLastEpoch = apy ? apy : BigDecimal.fromString("0");
     
     const pastRewardEvents: string[]  = nodePool.rewardedEvents ? nodePool.rewardedEvents as string[] : []
 
