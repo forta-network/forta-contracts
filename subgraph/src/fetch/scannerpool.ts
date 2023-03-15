@@ -18,6 +18,7 @@ export function fetchScannerPool(id: BigInt): ScannerPool {
     scannerPool.stakeDelegated = BigInt.zero();
     scannerPool.stakeAllocated = BigInt.zero();
     scannerPool.stakeOwnedAllocated = BigInt.zero();
+    scannerPool.apyForLastEpoch = BigDecimal.fromString("0");
     scannerPool.owner = "";
   }
   return scannerPool as ScannerPool;
