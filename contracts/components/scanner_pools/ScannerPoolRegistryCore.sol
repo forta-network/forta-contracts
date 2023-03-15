@@ -208,7 +208,6 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
     function _allocationOnAddedEnabledScanner(uint256 scannerPoolId) private {
         uint256 unallocatedStake = _stakeAllocator.unallocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
         uint256 allocatedStake = _stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
-
         uint256 min = _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].min;
         if (allocatedStake / _enabledScanners[scannerPoolId] >  min) {
             return;
@@ -216,11 +215,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         if ((unallocatedStake + allocatedStake) / _enabledScanners[scannerPoolId] < min) {
             revert ActionShutsDownPool();
         }
-
-        uint256 maxToAllocate = _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].max * _enabledScanners[scannerPoolId];
-        uint256 stakeToAllocate = unallocatedStake < maxToAllocate ? unallocatedStake : maxToAllocate;
-
-        _stakeAllocator.allocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, stakeToAllocate);
+        _stakeAllocator.allocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, unallocatedStake);
     }
 
     function _registerScannerNode(ScannerNodeRegistration calldata req) internal {
