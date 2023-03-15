@@ -110,9 +110,9 @@ describe('Scanner Pool Registry', function () {
             await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
                 .to.emit(this.scannerPools, 'ScannerUpdated')
                 .withArgs(SCANNER_ADDRESS_2, 1, 'metadata2', 1);
-            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('0');
-            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('1000');
-            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('500');
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('500');
+            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('500');
+            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('250');
 
             expect(await this.scannerPools.getScanner(SCANNER_ADDRESS)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), 'metadata']);
             expect(await this.scannerPools.isScannerRegistered(SCANNER_ADDRESS)).to.be.equal(true);
