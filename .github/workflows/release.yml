@@ -192,44 +192,44 @@ jobs:
                   skip_checkout: true
                   # tagging_message: '${{ needs.prepare.outputs.release_version }}'
 
-    verify:
-        name: Verify contracts
-        if: "startsWith(github.head_ref, 'release/') && needs.prepare.outputs.release_verify_cmd != ''"
-        runs-on: ubuntu-22.04
-        timeout-minutes: 60
-        needs:
-            - build
-            - prepare
-            - deploy
-        steps:
-            - uses: actions/checkout@v3
-              with:
-                  ref: ${{ needs.deploy.outputs.deploy_commit || github.event.pull_request.head.sha }}
-            - uses: actions/setup-node@v3
-              with:
-                  node-version: '14'
-                  cache: 'yarn'
-            - run: yarn install --frozen-lockfile
+    # verify:
+    #     name: Verify contracts
+    #     if: "startsWith(github.head_ref, 'release/') && needs.prepare.outputs.release_verify_cmd != ''"
+    #     runs-on: ubuntu-22.04
+    #     timeout-minutes: 60
+    #     needs:
+    #         - build
+    #         - prepare
+    #         - deploy
+    #     steps:
+    #         - uses: actions/checkout@v3
+    #           with:
+    #               ref: ${{ needs.deploy.outputs.deploy_commit || github.event.pull_request.head.sha }}
+    #         - uses: actions/setup-node@v3
+    #           with:
+    #               node-version: '14'
+    #               cache: 'yarn'
+    #         - run: yarn install --frozen-lockfile
 
-            - name: Get build artifacts
-              uses: actions/download-artifact@v3
-              with:
-                  name: contract-artifacts
+    #         - name: Get build artifacts
+    #           uses: actions/download-artifact@v3
+    #           with:
+    #               name: contract-artifacts
 
-            - name: Verify contracts
-              shell: bash
-              run: |
-                yarn hardhat --network ${{ needs.prepare.outputs.release_network }} ${{ needs.prepare.outputs.release_verify_cmd }} ${{ needs.prepare.outputs.release_version }}
-              env:
-                INFURA_PROJECT_ID: '${{ secrets.INFURA_PROJECT_ID }}'
-                MUMBAI_MNEMONIC: '${{ secrets.MUMBAI_MNEMONIC }}'
-                MUMBAI_NODE: '${{ secrets.MUMBAI_NODE }}'
-                POLYGON_MNEMONIC: '${{ secrets.POLYGON_MNEMONIC }}'
-                POLYGON_NODE: '${{ secrets.POLYGON_NODE }}'
-                # ETHERSCAN "${{ secrets.ETHERSCAN }}"
-                POLYSCAN: '${{ secrets.POLYSCAN }}'
-                RELEASE_PATH: '${{ needs.prepare.outputs.release_path }}'
-                ARTIFACT_REFERENCE_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+    #         - name: Verify contracts
+    #           shell: bash
+    #           run: |
+    #             yarn hardhat --network ${{ needs.prepare.outputs.release_network }} ${{ needs.prepare.outputs.release_verify_cmd }} ${{ needs.prepare.outputs.release_version }}
+    #           env:
+    #             INFURA_PROJECT_ID: '${{ secrets.INFURA_PROJECT_ID }}'
+    #             MUMBAI_MNEMONIC: '${{ secrets.MUMBAI_MNEMONIC }}'
+    #             MUMBAI_NODE: '${{ secrets.MUMBAI_NODE }}'
+    #             POLYGON_MNEMONIC: '${{ secrets.POLYGON_MNEMONIC }}'
+    #             POLYGON_NODE: '${{ secrets.POLYGON_NODE }}'
+    #             # ETHERSCAN "${{ secrets.ETHERSCAN }}"
+    #             POLYSCAN: '${{ secrets.POLYSCAN }}'
+    #             RELEASE_PATH: '${{ needs.prepare.outputs.release_path }}'
+    #             ARTIFACT_REFERENCE_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
 
     finish-release:
         name: Finish release
