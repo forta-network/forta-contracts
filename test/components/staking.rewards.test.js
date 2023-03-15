@@ -409,7 +409,7 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
         });
 
-        it('fee can bet set to zero', async function () {
+        it('fee can be set to zero', async function () {
             await this.rewardsDistributor.connect(this.accounts.user2).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_2, '0');
 
             // fee not in effect yet - should return the default for the current epoch
