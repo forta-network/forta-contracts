@@ -92,6 +92,38 @@ describe('Scanner Pool Registry', function () {
             expect(await this.scannerPools.totalScannersRegistered(1)).to.be.equal(2);
         });
 
+        it('should register two scanners when double of max is deposited', async function () {
+            const SCANNER_ADDRESS = this.accounts.scanner.address;
+            await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
+
+            await this.staking.connect(this.accounts.user1).deposit(2, 1, '1000'); // 500 * 2 (double of max)
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('1000');
+            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('0');
+            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('0');
+            await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
+                .to.emit(this.scannerPools, 'ScannerUpdated')
+                .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('500');
+            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('500');
+            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('500');
+
+            await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
+                .to.emit(this.scannerPools, 'ScannerUpdated')
+                .withArgs(SCANNER_ADDRESS_2, 1, 'metadata2', 1);
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('500');
+            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('500');
+            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('250');
+
+            expect(await this.scannerPools.getScanner(SCANNER_ADDRESS)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), 'metadata']);
+            expect(await this.scannerPools.isScannerRegistered(SCANNER_ADDRESS)).to.be.equal(true);
+            expect(await this.scannerPools.registeredScannerAddressAtIndex(1, 0)).to.be.equal(SCANNER_ADDRESS);
+            expect(await this.scannerPools.getScanner(SCANNER_ADDRESS_2)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), 'metadata2']);
+            expect(await this.scannerPools.isScannerRegistered(SCANNER_ADDRESS_2)).to.be.equal(true);
+            expect(await this.scannerPools.registeredScannerAddressAtIndex(1, 1)).to.be.equal(SCANNER_ADDRESS_2);
+            expect(await this.scannerPools.isScannerRegistered(this.accounts.user3.address)).to.be.equal(false);
+            expect(await this.scannerPools.totalScannersRegistered(1)).to.be.equal(2);
+        });
+
         it('fails to register scanner if not enough allocated stake', async function () {
             const SCANNER_ADDRESS = this.accounts.scanner.address;
 
