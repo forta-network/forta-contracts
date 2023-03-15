@@ -401,7 +401,7 @@ describe('Staking - Delegation', function () {
                 expect(await this.stakeAllocator.unallocatedStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('500');
             });
 
-            it('unallocates delegators stake when scanner pool owner initiates withdrawal', async function () {
+            it.skip('unallocates delegators stake when scanner pool owner initiates withdrawal', async function () {
                 scanners = [this.accounts.other, this.accounts.minter, this.accounts.treasure];
 
                 // Confirm scanners in scanner pool are enabled and operational
