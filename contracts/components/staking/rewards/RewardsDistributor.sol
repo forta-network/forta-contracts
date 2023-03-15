@@ -24,7 +24,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     StakeSubjectGateway private immutable _subjectGateway;
 
-    string public constant version = "0.1.0";
+    string public constant version = "0.1.1";
 
     struct DelegatedAccRewards {
         Accumulators.Accumulator delegated;
