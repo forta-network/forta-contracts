@@ -1,0 +1,41 @@
+{
+    "RewardsDistributor": {
+        "impl": {
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.forta", "deployment.stake-subject-gateway"
+                ]
+            }
+            
+        }
+    },
+    "StakeAllocator": {
+        "impl": {
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.stake-subject-gateway", "deployment.rewards-distributor"
+                ]
+            }
+            
+        }
+    },
+    "ScannerPoolRegistry": {
+        "impl": {
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.stake-allocator"
+                ]
+            }
+            
+        }
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "FortaStaking": [
+        {
+            "methodName": "setTreasury",
+            "params": [
+                ["0xC99884BE6eEE5533Be08152C40DF0464B3FAE877"]
+            ]
+        }
+    ]
+}
