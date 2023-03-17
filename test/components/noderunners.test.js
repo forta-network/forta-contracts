@@ -311,6 +311,8 @@ describe('Scanner Pool Registry', function () {
             await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
             await this.staking.connect(this.accounts.user1).deposit(2, 1, '100');
             await this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
+
+            await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, ethers.utils.parseEther('1000'));
         });
 
         describe('manager', async function () {
