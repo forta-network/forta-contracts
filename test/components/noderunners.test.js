@@ -313,6 +313,7 @@ describe('Scanner Pool Registry', function () {
             await this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
 
             await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, ethers.utils.parseEther('1000'));
+            await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
         });
 
         describe('manager', async function () {
