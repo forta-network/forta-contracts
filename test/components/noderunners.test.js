@@ -328,18 +328,15 @@ describe('Scanner Pool Registry', function () {
                 expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
             });
 
-            it('revert disable due to scanner already being disabled', async function () {
+            it('disabling again should fail', async function () {
                 const SCANNER_ADDRESS = this.accounts.scanner.address;
 
-                // First call to `disableScanner, which disables the scanner
                 await expect(this.scannerPools.connect(this.accounts.manager).disableScanner(SCANNER_ADDRESS))
                     .to.emit(this.scannerPools, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, false, this.accounts.manager.address, true);
 
-                // Confirm scanner is non-operational
                 expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
 
-                // Second call to disableScanner should revert because scanner is already disabled
                 await expect(this.scannerPools.connect(this.accounts.manager).disableScanner(SCANNER_ADDRESS)).to.be.revertedWith(
                     `ScannerPreviouslyDisabled("${SCANNER_ADDRESS}")`
                 );
@@ -423,10 +420,36 @@ describe('Scanner Pool Registry', function () {
                     .to.emit(this.scannerPools, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, false, this.accounts.user1.address, true);
 
-                await expect(this.scannerPools.connect(this.accounts.user1).disableScanner(SCANNER_ADDRESS)).to.be.revertedWith(`ScannerPreviouslyDisabled("${SCANNER_ADDRESS}")`);
+                await expect(this.scannerPools.connect(this.accounts.user1).disableScanner(SCANNER_ADDRESS)).to.be.revertedWith(
+                    `ScannerPreviouslyDisabled("${SCANNER_ADDRESS}")`
+                );
 
                 expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
             });
+
+            it('unallocates delegator stake if allocated total exceeds maximum after disabling scanner', async function () {
+                await this.staking.connect(this.accounts.user1).deposit(2, 1, '100');
+                await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
+                    .to.emit(this.scannerPools, 'ScannerUpdated')
+                    .withArgs(SCANNER_ADDRESS_2, 1, 'metadata2', 1);
+                await this.staking.connect(this.accounts.user3).deposit(3, 1, '800');
+
+                expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('200');
+                expect(await this.stakeAllocator.allocatedStakeFor(3, 1)).to.eq('800');
+
+                await expect(this.scannerPools.connect(this.accounts.user1).disableScanner(SCANNER_ADDRESS_2))
+                    .to.emit(this.scannerPools, 'ScannerEnabled')
+                    .withArgs(SCANNER_ADDRESS_2, false, this.accounts.user1.address, true);
+
+                expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('200');
+                expect(await this.stakeAllocator.allocatedStakeFor(3, 1)).to.eq('300');
+            });
+
+            /*
+            it('unallocates delegator and owner stake if allocated total exceeds maximum after disabling scanner and delegator stake is not enough', async function () {
+                //
+            });
+            */
 
             it('enable', async function () {
                 const SCANNER_ADDRESS = this.accounts.scanner.address;

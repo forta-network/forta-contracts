@@ -222,22 +222,31 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
 
     /**
      * @notice Unallocates allocated stake if a there is a scanner disabled on the pool and the stake exceeds the max.
-     * The amount unallocated is the amount over the max.
+     * The amount unallocated is the amount over the max. Unallocates from delegator's allocated stake,
+     * then if needed, from owner allocated stake.
      * @dev this MUST be called after decrementing _enabledScanners
      * @param scannerPoolId ERC721 id of the node runner
      */
     function _unallocationOnDisablingScanner(uint256 scannerPoolId) private {
-        uint256 allocatedStake = _stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
-        uint256 max = _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].max;
-
         if (_enabledScanners[scannerPoolId] == 0) {
             // This is just for disabling the division by zero error - remove it if needed
             return;
         }
 
-        if (allocatedStake / _enabledScanners[scannerPoolId] > max) {
-            uint256 allocatedStakeOverMax = allocatedStake - (_enabledScanners[scannerPoolId] * max);
-            _stakeAllocator.unallocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, allocatedStakeOverMax);
+        uint256 ownerAllocatedStake = _stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
+        uint256 delegatorAllocatedStake = _stakeAllocator.allocatedStakeFor(DELEGATOR_SCANNER_POOL_SUBJECT, scannerPoolId);
+        uint256 totalAllocatedStake = ownerAllocatedStake + delegatorAllocatedStake;
+        uint256 max = _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].max;
+
+        if (totalAllocatedStake / _enabledScanners[scannerPoolId] > max) {
+            uint256 allocatedStakeOverMax = totalAllocatedStake - (_enabledScanners[scannerPoolId] * max);
+            if(delegatorAllocatedStake > allocatedStakeOverMax) { 
+                _stakeAllocator.unallocateOwnStake(DELEGATOR_SCANNER_POOL_SUBJECT, scannerPoolId, allocatedStakeOverMax);
+            } else {
+                uint256 unallocateFromOwner = allocatedStakeOverMax - delegatorAllocatedStake;
+                _stakeAllocator.unallocateOwnStake(DELEGATOR_SCANNER_POOL_SUBJECT, scannerPoolId, delegatorAllocatedStake);
+                _stakeAllocator.unallocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, unallocateFromOwner);
+            }
         }
     }
 
