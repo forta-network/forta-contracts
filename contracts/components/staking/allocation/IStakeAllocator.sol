@@ -27,5 +27,6 @@ interface IStakeAllocator {
     function unallocatedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
 
     function allocateOwnStake(uint8 subjectType, uint256 subject, uint256 amount) external;
+    function unallocateOwnStake(uint8 subjectType, uint256 subject, uint256 amount) external;
     function didTransferShares(uint256 sharesId, uint8 subjectType, address from, address to, uint256 sharesAmount) external;
 }

@@ -219,6 +219,21 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         _stakeAllocator.allocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, unallocatedStake);
     }
 
+    /**
+     * @notice Unallocates allocated stake if a there is a scanner disabled on the pool and the stake exceeds the max.
+     * The amount unallocated is the amount over the max.
+     * @dev this MUST be called after decrementing _enabledScanners
+     * @param scannerPoolId ERC721 id of the node runner
+     */
+    function _unallocationOnDisablingScanner(uint256 scannerPoolId) private {
+        uint256 allocatedStake = _stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
+        uint256 max = _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].max;
+        if (allocatedStake / _enabledScanners[scannerPoolId] > max) {
+            uint256 allocatedStakeOverMax = allocatedStake - (_enabledScanners[scannerPoolId] * max);
+            _stakeAllocator.unallocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, allocatedStakeOverMax);
+        }
+    }
+
     function _registerScannerNode(ScannerNodeRegistration calldata req) internal {
         if (isScannerRegistered(req.scanner)) revert ScannerExists(req.scanner);
         if (_scannerPoolChainId[req.scannerPoolId] != req.chainId)
@@ -354,6 +369,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
         if (isScannerDisabled(scanner)) revert ScannerPreviouslyDisabled(scanner);
         _removeEnabledScanner(_scannerNodes[scanner].scannerPoolId);
+        _unallocationOnDisablingScanner(_scannerNodes[scanner].scannerPoolId);
         _setScannerDisableFlag(scanner, true);
     }
 
