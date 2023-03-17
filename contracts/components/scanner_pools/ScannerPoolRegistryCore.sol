@@ -73,6 +73,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
     error SenderNotScannerPool(address sender, uint256 scannerPoolId);
     error ChainIdMismatch(uint256 expected, uint256 provided);
     error ActionShutsDownPool();
+    error ScannerPreviouslyEnabled(address scanner);
     error ScannerPreviouslyDisabled(address scanner);
 
     /**
@@ -228,6 +229,12 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
     function _unallocationOnDisablingScanner(uint256 scannerPoolId) private {
         uint256 allocatedStake = _stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
         uint256 max = _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].max;
+
+        if (_enabledScanners[scannerPoolId] == 0) {
+            // This is just for disabling the division by zero error - remove it if needed
+            return;
+        }
+
         if (allocatedStake / _enabledScanners[scannerPoolId] > max) {
             uint256 allocatedStakeOverMax = allocatedStake - (_enabledScanners[scannerPoolId] * max);
             _stakeAllocator.unallocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, allocatedStakeOverMax);
@@ -355,6 +362,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
      */
     function enableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
+        if (!isScannerDisabled(scanner)) revert ScannerPreviouslyEnabled(scanner);
         _addEnabledScanner(_scannerNodes[scanner].scannerPoolId);
         _allocationOnAddedEnabledScanner(_scannerNodes[scanner].scannerPoolId);
         _setScannerDisableFlag(scanner, false);

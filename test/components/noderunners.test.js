@@ -340,8 +340,9 @@ describe('Scanner Pool Registry', function () {
                 expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
 
                 // Second call to disableScanner should revert because scanner is already disabled
-                await expect(this.scannerPools.connect(this.accounts.manager).disableScanner(SCANNER_ADDRESS))
-                    .to.be.revertedWith(`ScannerPreviouslyDisabled("${SCANNER_ADDRESS}")`);
+                await expect(this.scannerPools.connect(this.accounts.manager).disableScanner(SCANNER_ADDRESS)).to.be.revertedWith(
+                    `ScannerPreviouslyDisabled("${SCANNER_ADDRESS}")`
+                );
             });
 
             it('re-enable', async function () {
@@ -415,7 +416,19 @@ describe('Scanner Pool Registry', function () {
                 expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
             });
 
-            it('re-enable', async function () {
+            it('disabling again should fail', async function () {
+                const SCANNER_ADDRESS = this.accounts.scanner.address;
+
+                await expect(this.scannerPools.connect(this.accounts.user1).disableScanner(SCANNER_ADDRESS))
+                    .to.emit(this.scannerPools, 'ScannerEnabled')
+                    .withArgs(SCANNER_ADDRESS, false, this.accounts.user1.address, true);
+
+                await expect(this.scannerPools.connect(this.accounts.user1).disableScanner(SCANNER_ADDRESS)).to.be.revertedWith(`ScannerPreviouslyDisabled("${SCANNER_ADDRESS}")`);
+
+                expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
+            });
+
+            it('enable', async function () {
                 const SCANNER_ADDRESS = this.accounts.scanner.address;
 
                 await expect(this.scannerPools.connect(this.accounts.user1).disableScanner(SCANNER_ADDRESS))
@@ -425,6 +438,14 @@ describe('Scanner Pool Registry', function () {
                 await expect(this.scannerPools.connect(this.accounts.user1).enableScanner(SCANNER_ADDRESS))
                     .to.emit(this.scannerPools, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, true, this.accounts.user1.address, false);
+
+                expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);
+            });
+
+            it('enabling again should fail', async function () {
+                const SCANNER_ADDRESS = this.accounts.scanner.address;
+
+                await expect(this.scannerPools.connect(this.accounts.user1).enableScanner(SCANNER_ADDRESS)).to.be.revertedWith(`ScannerPreviouslyEnabled("${SCANNER_ADDRESS}")`);
 
                 expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);
             });
