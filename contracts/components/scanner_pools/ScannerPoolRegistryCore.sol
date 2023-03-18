@@ -241,10 +241,10 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         if (totalAllocatedStake / _enabledScanners[scannerPoolId] > max) {
             uint256 allocatedStakeOverMax = totalAllocatedStake - (_enabledScanners[scannerPoolId] * max);
             if(delegatorAllocatedStake > allocatedStakeOverMax) { 
-                _stakeAllocator.unallocateOwnStake(DELEGATOR_SCANNER_POOL_SUBJECT, scannerPoolId, allocatedStakeOverMax);
+                _stakeAllocator.unallocateDelegatorStake(SCANNER_POOL_SUBJECT, scannerPoolId, allocatedStakeOverMax);
             } else {
                 uint256 unallocateFromOwner = allocatedStakeOverMax - delegatorAllocatedStake;
-                _stakeAllocator.unallocateOwnStake(DELEGATOR_SCANNER_POOL_SUBJECT, scannerPoolId, delegatorAllocatedStake);
+                _stakeAllocator.unallocateDelegatorStake(SCANNER_POOL_SUBJECT, scannerPoolId, delegatorAllocatedStake);
                 _stakeAllocator.unallocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, unallocateFromOwner);
             }
         }
