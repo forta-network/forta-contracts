@@ -227,11 +227,8 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
      * @dev this MUST be called after decrementing _enabledScanners
      * @param scannerPoolId ERC721 id of the node runner
      */
-    function _unallocationOnDisablingScanner(uint256 scannerPoolId) private {
-        if (_enabledScanners[scannerPoolId] == 0) {
-            // This is just for disabling the division by zero error - remove it if needed
-            return;
-        }
+    function _unallocationOnDisabledScanner(uint256 scannerPoolId) private {
+        if (_enabledScanners[scannerPoolId] == 0) { return; }
 
         uint256 ownerAllocatedStake = _stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
         uint256 delegatorAllocatedStake = _stakeAllocator.allocatedStakeFor(DELEGATOR_SCANNER_POOL_SUBJECT, scannerPoolId);
@@ -386,7 +383,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
         if (isScannerDisabled(scanner)) revert ScannerPreviouslyDisabled(scanner);
         _removeEnabledScanner(_scannerNodes[scanner].scannerPoolId);
-        _unallocationOnDisablingScanner(_scannerNodes[scanner].scannerPoolId);
+        _unallocationOnDisabledScanner(_scannerNodes[scanner].scannerPoolId);
         _setScannerDisableFlag(scanner, true);
     }
 
