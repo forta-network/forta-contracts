@@ -312,6 +312,8 @@ describe('Scanner Pool Registry', function () {
             await this.staking.connect(this.accounts.user1).deposit(2, 1, '100');
             await this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature);
 
+            await this.token.connect(this.accounts.minter).mint(this.accounts.manager.address, ethers.utils.parseEther('1000'));
+            await this.token.connect(this.accounts.manager).approve(this.staking.address, ethers.constants.MaxUint256);
             await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, ethers.utils.parseEther('1000'));
             await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
         });
@@ -343,6 +345,43 @@ describe('Scanner Pool Registry', function () {
                 await expect(this.scannerPools.connect(this.accounts.manager).disableScanner(SCANNER_ADDRESS)).to.be.revertedWith(
                     `ScannerPreviouslyDisabled("${SCANNER_ADDRESS}")`
                 );
+            });
+
+            it('disables scanner & unallocates delegator stake because exceeds maximum', async function () {
+                await this.staking.connect(this.accounts.user1).deposit(2, 1, '100');
+                await expect(this.scannerPools.connect(this.accounts.manager).registerScannerNode(scanner2Registration, scanner2Signature))
+                    .to.emit(this.scannerPools, 'ScannerUpdated')
+                    .withArgs(SCANNER_ADDRESS_2, 1, 'metadata2', 1);
+                await this.staking.connect(this.accounts.user3).deposit(3, 1, '800');
+
+                expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('200');
+                expect(await this.stakeAllocator.allocatedStakeFor(3, 1)).to.eq('800');
+
+                await expect(this.scannerPools.connect(this.accounts.manager).disableScanner(SCANNER_ADDRESS_2))
+                    .to.emit(this.scannerPools, 'ScannerEnabled')
+                    .withArgs(SCANNER_ADDRESS_2, false, this.accounts.manager.address, true);
+
+                expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('200');
+                expect(await this.stakeAllocator.allocatedStakeFor(3, 1)).to.eq('300');
+            });
+
+            it('disables scanner & unallocates delegator and owner stake because exceeds maximum and not enough delegator stake', async function () {
+                await this.staking.connect(this.accounts.manager).deposit(2, 1, '400');
+                await expect(this.scannerPools.connect(this.accounts.manager).registerScannerNode(scanner2Registration, scanner2Signature))
+                    .to.emit(this.scannerPools, 'ScannerUpdated')
+                    .withArgs(SCANNER_ADDRESS_2, 1, 'metadata2', 1);
+                await this.staking.connect(this.accounts.manager).deposit(2, 1, '300');
+                await this.staking.connect(this.accounts.user3).deposit(3, 1, '200');
+
+                expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('800');
+                expect(await this.stakeAllocator.allocatedStakeFor(3, 1)).to.eq('200');
+
+                await expect(this.scannerPools.connect(this.accounts.manager).disableScanner(SCANNER_ADDRESS_2))
+                    .to.emit(this.scannerPools, 'ScannerEnabled')
+                    .withArgs(SCANNER_ADDRESS_2, false, this.accounts.manager.address, true);
+
+                expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('500');
+                expect(await this.stakeAllocator.allocatedStakeFor(3, 1)).to.eq('0');
             });
 
             it('re-enable', async function () {
@@ -430,7 +469,7 @@ describe('Scanner Pool Registry', function () {
                 expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
             });
 
-            it('unallocates delegator stake if allocated total exceeds maximum after disabling scanner', async function () {
+            it('disables scanner & unallocates delegator stake because exceeds maximum', async function () {
                 await this.staking.connect(this.accounts.user1).deposit(2, 1, '100');
                 await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
                     .to.emit(this.scannerPools, 'ScannerUpdated')
@@ -448,7 +487,7 @@ describe('Scanner Pool Registry', function () {
                 expect(await this.stakeAllocator.allocatedStakeFor(3, 1)).to.eq('300');
             });
 
-            it('unallocates delegator and owner stake if allocated total exceeds maximum after disabling scanner and delegator stake is not enough', async function () {
+            it('disables scanner & unallocates delegator and owner stake because exceeds maximum and not enough delegator stake', async function () {
                 await this.staking.connect(this.accounts.user1).deposit(2, 1, '400');
                 await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
                     .to.emit(this.scannerPools, 'ScannerUpdated')
