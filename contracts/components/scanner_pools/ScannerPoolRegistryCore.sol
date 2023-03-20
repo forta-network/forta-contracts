@@ -219,9 +219,12 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
             revert ActionShutsDownPool();
         }
 
-        uint256 maxToAllocate = _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].max * _enabledScanners[scannerPoolId];
-        uint256 stakeToAllocate = unallocatedStake < maxToAllocate ? unallocatedStake : maxToAllocate;
-
+        // try to stake up to the capacity but make sure it does not exceed
+        // the available unallocated stake
+        uint256 stakeToAllocate = _getStakeAllocationCapacity(scannerPoolId);
+        if (stakeToAllocate > unallocatedStake) {
+            stakeToAllocate = unallocatedStake;
+        }
         _stakeAllocator.allocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, stakeToAllocate);
     }
 
@@ -238,18 +241,33 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         uint256 ownerAllocatedStake = _stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
         uint256 delegatorAllocatedStake = _stakeAllocator.allocatedStakeFor(DELEGATOR_SCANNER_POOL_SUBJECT, scannerPoolId);
         uint256 totalAllocatedStake = ownerAllocatedStake + delegatorAllocatedStake;
-        uint256 max = _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].max;
+        uint256 stakeCapacity = _getStakeAllocationCapacity(scannerPoolId);
 
-        if (totalAllocatedStake / _enabledScanners[scannerPoolId] > max) {
-            uint256 allocatedStakeOverMax = totalAllocatedStake - (_enabledScanners[scannerPoolId] * max);
-            if(delegatorAllocatedStake > allocatedStakeOverMax) { 
-                _stakeAllocator.unallocateDelegatorStake(SCANNER_POOL_SUBJECT, scannerPoolId, allocatedStakeOverMax);
-            } else {
-                uint256 unallocateFromOwner = allocatedStakeOverMax - delegatorAllocatedStake;
-                _stakeAllocator.unallocateDelegatorStake(SCANNER_POOL_SUBJECT, scannerPoolId, delegatorAllocatedStake);
-                _stakeAllocator.unallocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, unallocateFromOwner);
-            }
+        if (totalAllocatedStake <= stakeCapacity) { return; }
+
+        uint256 stakeToUnallocate = totalAllocatedStake - stakeCapacity;
+
+        // if delegator allocation covers the amount, just unallocate from there
+        if(delegatorAllocatedStake > stakeToUnallocate) {
+            _stakeAllocator.unallocateDelegatorStake(SCANNER_POOL_SUBJECT, scannerPoolId, stakeToUnallocate);
+            return;
         }
+        // delegator allocation does not cover the extra: unallocate all of the delegator stake first
+        if (delegatorAllocatedStake > 0) {
+            _stakeAllocator.unallocateDelegatorStake(SCANNER_POOL_SUBJECT, scannerPoolId, delegatorAllocatedStake);
+            stakeToUnallocate -= delegatorAllocatedStake;
+        }
+        // unallocate the remaining from the owner
+        _stakeAllocator.unallocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, stakeToUnallocate);
+    }
+
+    /**
+     * @notice Returns the max allocatable stake to the pool.
+     * @dev this MUST be called after mutating _enabledScanners
+     * @param scannerPoolId ERC721 id of the node runner
+     */
+    function _getStakeAllocationCapacity(uint256 scannerPoolId) private view returns (uint256) {
+        return _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].max * _enabledScanners[scannerPoolId];
     }
 
     function _registerScannerNode(ScannerNodeRegistration calldata req) internal {

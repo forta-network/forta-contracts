@@ -494,14 +494,13 @@ describe('Scanner Pool Registry', function () {
                     .to.emit(this.scannerPools, 'ScannerEnabled')
                     .withArgs(SCANNER_ADDRESS, false, this.accounts.user1.address, true);
 
-                await expect(this.scannerPools.connect(this.accounts.user1).disableScanner(SCANNER_ADDRESS)).to.be.revertedWith(
-                    `ScannerPreviouslyDisabled("${SCANNER_ADDRESS}")`
-                );
+                await expect(this.scannerPools.connect(this.accounts.user1).disableScanner(SCANNER_ADDRESS))
+                    .to.be.revertedWith(`ScannerPreviouslyDisabled("${SCANNER_ADDRESS}")`); // prettier-ignore
 
                 expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(false);
             });
 
-            it('disables scanner & unallocates delegator stake because exceeds maximum', async function () {
+            it('disabling unallocates only delegator stake when delegated > max)', async function () {
                 await this.staking.connect(this.accounts.user1).deposit(2, 1, '100');
                 await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
                     .to.emit(this.scannerPools, 'ScannerUpdated')
@@ -519,7 +518,7 @@ describe('Scanner Pool Registry', function () {
                 expect(await this.stakeAllocator.allocatedStakeFor(3, 1)).to.eq('300');
             });
 
-            it('disables scanner & unallocates delegator and owner stake because exceeds maximum and not enough delegator stake', async function () {
+            it('disabling unallocates owner and delegator stake when delegated < max)', async function () {
                 await this.staking.connect(this.accounts.user1).deposit(2, 1, '400');
                 await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
                     .to.emit(this.scannerPools, 'ScannerUpdated')
@@ -555,7 +554,8 @@ describe('Scanner Pool Registry', function () {
             it('enabling again should fail', async function () {
                 const SCANNER_ADDRESS = this.accounts.scanner.address;
 
-                await expect(this.scannerPools.connect(this.accounts.user1).enableScanner(SCANNER_ADDRESS)).to.be.revertedWith(`ScannerPreviouslyEnabled("${SCANNER_ADDRESS}")`);
+                await expect(this.scannerPools.connect(this.accounts.user1).enableScanner(SCANNER_ADDRESS))
+                    .to.be.revertedWith(`ScannerPreviouslyEnabled("${SCANNER_ADDRESS}")`); // prettier-ignore
 
                 expect(await this.scannerPools.isScannerOperational(SCANNER_ADDRESS)).to.be.equal(true);
             });
