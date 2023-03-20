@@ -151,6 +151,8 @@ dataSources:
       eventHandlers:
         - event: SetDelegationFee(indexed uint8,indexed uint256,uint256,uint256)
           handler: handleSetDelegationFee
+        - event: Rewarded(indexed uint8,indexed uint256,uint256,uint256)
+          handler: handleRewardEvent
       file: ./src/datasources/RewardsDistributor.ts
   - kind: ethereum
     name: StakeAllocator

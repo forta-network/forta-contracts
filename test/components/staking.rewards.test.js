@@ -135,7 +135,6 @@ describe('Staking Rewards', function () {
             );
         });
 
-
         it('remove stake', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
@@ -379,12 +378,8 @@ describe('Staking Rewards', function () {
     describe('Fee setting', function () {
         it('fee', async function () {
             await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2500');
-            let currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
-            console.log(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, currentEpoch));
 
             await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
-            currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
-            console.log(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, currentEpoch));
             const registration = {
                 scanner: this.SCANNER_ID,
                 scannerPoolId: 1,
