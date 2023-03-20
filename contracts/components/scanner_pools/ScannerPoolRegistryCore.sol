@@ -425,6 +425,15 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         emit EnabledScannersChanged(scannerPoolId, _enabledScanners[scannerPoolId]);
     }
 
+    /**
+     * @notice Updates enabled scanner count of a pool
+     * @param scannerPoolId ERC721 token id of the ScannerPool
+     */
+    function updateEnabledScanners(uint256 scannerPoolId, uint256 count) external onlyRole(SCANNER_POOL_ADMIN_ROLE) {
+        _enabledScanners[scannerPoolId] = count;
+        emit EnabledScannersChanged(scannerPoolId, _enabledScanners[scannerPoolId]);
+    }
+
     // ************* Scanner Getters *************
 
     /// Gets ScannerNode struct for address
