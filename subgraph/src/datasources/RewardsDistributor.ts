@@ -128,6 +128,7 @@ export function handleClaimedRewards(event: ClaimedRewardEvent): void {
   claimedRewardEvent.to = event.params.to.toHexString();
   claimedRewardEvent.transaction = transactions.log(event).id;
   claimedRewardEvent.timestamp = event.block.timestamp;
+  claimedRewardEvent.value = event.params.value;
 
   claimedRewardEvent.save();
 }
