@@ -8,6 +8,7 @@ type Account @entity {
   botUpdatedEvents: [BotUpdated!]! @derivedFrom(field: "by")
   scannerTransferFromEvents: [ScannerTransfer!]! @derivedFrom(field: "from")
   scannerTransferToEvents: [ScannerTransfer!]! @derivedFrom(field: "to")
+  claimedRewardEvents: [RewardClaimedEvent!] @derivedFrom(field: "to")
   scannerManagerEnabledEvents: [ScannerManagerEnabled!]!
     @derivedFrom(field: "manager")
   staker: Staker @derivedFrom(field: "account")
@@ -247,6 +248,16 @@ type RewardEvent implements Event @entity {
   transaction: Transaction!
   timestamp: BigInt!
   apyForLastEpoch: BigDecimal
+}
+
+type RewardClaimedEvent implements Event @entity {
+  id: ID!
+  subject: Subject!
+  epochNumber: BigInt!
+  to: Account!
+  value: BigInt!
+  transaction: Transaction!
+  timestamp: BigInt!
 }
 
 type ScannerPool @entity {
