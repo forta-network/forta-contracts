@@ -175,7 +175,8 @@ export function createMockClaimedRewardEvent(
   subject: BigInt,
   value: BigInt,
   to: Address,
-  epochNumber: BigInt
+  epochNumber: BigInt,
+  timestamp: BigInt
 ): ClaimedRewardEvent {
   const mockClaimedRewardedEvent = changetype<ClaimedRewardEvent>(newMockEvent());
   mockClaimedRewardedEvent.parameters = [];
@@ -201,8 +202,13 @@ export function createMockClaimedRewardEvent(
   );
 
   const toParam = new ethereum.EventParam(
-    "epochNumber",
+    "to",
     ethereum.Value.fromAddress(to)
+  );
+
+  const timeStamp = new ethereum.EventParam(
+    "timestamp",
+    ethereum.Value.fromUnsignedBigInt(timestamp)
   );
 
   mockClaimedRewardedEvent.parameters.push(subjectTypeParam);
@@ -210,6 +216,7 @@ export function createMockClaimedRewardEvent(
   mockClaimedRewardedEvent.parameters.push(valueParam);
   mockClaimedRewardedEvent.parameters.push(epochParam);
   mockClaimedRewardedEvent.parameters.push(toParam);
+  mockClaimedRewardedEvent.parameters.push(timeStamp);
 
   return mockClaimedRewardedEvent;
 }

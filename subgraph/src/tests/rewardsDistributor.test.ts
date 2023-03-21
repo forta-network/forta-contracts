@@ -1,7 +1,7 @@
 import { Address, BigDecimal, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import { describe, test, assert, beforeEach, clearStore, log, createMockedFunction, logStore } from "matchstick-as";
 import { ScannerPool, Staker } from "../../generated/schema";
-import { createMockRewardEvent, handleRewardEvent } from "../datasources/RewardsDistributor";
+import { createMockRewardEvent, createMockClaimedRewardEvent, handleRewardEvent, handleClaimedRewards } from "../datasources/RewardsDistributor";
 
 
 // Address of rewards distributor
@@ -63,6 +63,25 @@ describe('Rewards distributor', () => {
         // Expect
         assert.assertTrue(rewardedEvent.length === 1)
     }) 
+
+    test('should handle a claimed rewards event', () => {
+        // Given
+        const reward = BigInt.fromI32(5);
+        const mockClaimedRewardEvent = createMockClaimedRewardEvent(
+            2,
+            BigInt.fromString(mockNodePool.id),
+            reward,
+            Address.fromString("0x0Fs4F"),
+            BigInt.fromI32(2773),
+            BigInt.fromI32(5)
+        )
+
+        // When
+        handleClaimedRewards(mockClaimedRewardEvent);
+
+        //Expect
+        assert.entityCount("RewardClaimedEvent", 1)
+    })
 
 
     test('should handle a reward event on a pool with zero delegators and return a 0% APY value', () => {
