@@ -1,4 +1,4 @@
-const signERC712ScannerRegistration = (verifyingContractInfo, registration, signer) => {
+const signERC712ScannerRegistration = async (verifyingContractInfo, registration, signer) => {
     const domain = {
         name: 'ScannerPoolRegistry',
         version: '1',
@@ -17,4 +17,14 @@ const signERC712ScannerRegistration = (verifyingContractInfo, registration, sign
     return signer._signTypedData(domain, types, registration);
 };
 
-module.exports = { signERC712ScannerRegistration };
+const createERC712ScannerRegistrationToken = async (verifyingContractInfo, registration, signer) => {
+    const signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, signer);
+    return Buffer.from(
+        JSON.stringify({
+            registrationInput: registration,
+            signature: signature.toString('hex'),
+        })
+    ).toString('base64');
+};
+
+module.exports = { signERC712ScannerRegistration, createERC712ScannerRegistrationToken };
