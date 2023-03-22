@@ -12,16 +12,16 @@ abstract contract AgentRegistryManaged is AgentRegistryCore {
 
     mapping(uint256 => EnumerableSet.AddressSet) private _managers;
 
-    event ManagerEnabled(uint256 indexed scannerPoolId, address indexed manager, bool enabled);
+    event ManagerEnabled(uint256 indexed agentId, address indexed manager, bool enabled);
 
-    error SenderNotManager(address sender, uint256 scannerPoolId);
+    error SenderNotManager(address sender, uint256 agentId);
 
     /**
      * @notice Checks sender (or metatx signer) is manager of the scanner pool token.
-     * @param scannerPoolId ERC721 token id of the ScannerPool
+     * @param agentId ERC721 token id of the agent
      */
-    modifier onlyManagerOf(uint256 scannerPoolId) {
-        if (!isManager(scannerPoolId, _msgSender())) revert SenderNotManager(_msgSender(), scannerPoolId);
+    modifier onlyManagerOf(uint256 agentId) {
+        if (!isManager(agentId, _msgSender())) revert SenderNotManager(_msgSender(), agentId);
         _;
     }
 
@@ -71,7 +71,6 @@ abstract contract AgentRegistryManaged is AgentRegistryCore {
         emit ManagerEnabled(agentId, manager, enable);
     }
 
-    // TODO: Update this to properly function with AgentRegistryCore
     function _canUpdateAgent(uint256 agentId) internal virtual override view returns (bool) {
         return super._canUpdateAgent(agentId) || isManager(agentId, _msgSender());
     }

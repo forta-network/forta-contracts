@@ -9,13 +9,15 @@ import "./AgentRegistryCore.sol";
 import "./AgentRegistryEnable.sol";
 import "./AgentRegistryEnumerable.sol";
 import "./AgentRegistryMetadata.sol";
+import "./AgentRegistryManaged.sol";
 
 contract AgentRegistry is
     BaseComponentUpgradeable,
     AgentRegistryCore,
     AgentRegistryEnable,
     AgentRegistryMetadata,
-    AgentRegistryEnumerable
+    AgentRegistryEnumerable,
+    AgentRegistryManaged
 {
     string public constant version = "0.1.6";
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -88,6 +90,14 @@ contract AgentRegistry is
      */
     function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
         super._agentUpdate(agentId, newMetadata, newChainIds);
+    }
+
+    /**
+     * @notice disambiguation of _canUpdateAgent.
+     * @inheritdoc AgentRegistryManaged
+     */
+    function _canUpdateAgent(uint256 agentId) internal virtual override(AgentRegistryManaged, AgentRegistryCore) view returns (bool) {
+        return super._canUpdateAgent(agentId);
     }
 
     /**
