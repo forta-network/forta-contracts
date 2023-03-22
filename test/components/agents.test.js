@@ -253,6 +253,14 @@ describe('Agent Registry', function () {
 
     describe(`managers`, async function () {
         it('add manager', async function () {
+            const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4]];
+
+            await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
+                .to.emit(this.agents, 'Transfer')
+                .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                .to.emit(this.agents, 'AgentUpdated')
+                .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4]);
+            
             expect(await this.agents.isManager(AGENT_ID, this.accounts.user1.address)).to.be.equal(false);
             expect(await this.agents.isManager(AGENT_ID, this.accounts.user2.address)).to.be.equal(false);
             expect(await this.agents.isManager(AGENT_ID, this.accounts.user3.address)).to.be.equal(false);
@@ -270,6 +278,14 @@ describe('Agent Registry', function () {
         });
 
         it('remove manager', async function () {
+            const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4]];
+
+            await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
+                .to.emit(this.agents, 'Transfer')
+                .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                .to.emit(this.agents, 'AgentUpdated')
+                .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4]);
+            
             expect(await this.agents.isManager(AGENT_ID, this.accounts.user1.address)).to.be.equal(false);
             expect(await this.agents.isManager(AGENT_ID, this.accounts.user2.address)).to.be.equal(false);
             expect(await this.agents.isManager(AGENT_ID, this.accounts.user3.address)).to.be.equal(false);
