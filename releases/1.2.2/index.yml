@@ -1,0 +1,11 @@
+title: Scanner Pool Default Fee Fix
+network: mumbai
+deploy: prepare-upgrade 1.2.2
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deployed new implementations:
+  - RewardsDistributor
+
+  ## Output tx:
+  - Upgrade implementations

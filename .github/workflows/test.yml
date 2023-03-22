@@ -32,14 +32,15 @@ jobs:
   subgraph-test:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    working-directory: ./subgraph
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 16.x
       - name: Install subgraph dependencies
+        working-directory: ./subgraph
         run: npm run install
 
       - name: Run test
+        working-directory: ./subgraph
         run: npm run test
