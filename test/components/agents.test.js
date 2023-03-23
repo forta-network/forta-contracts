@@ -176,12 +176,6 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentCountByChain(4)).to.be.equal('0');
                 expect(await this.agents.getAgentCountByChain(5)).to.be.equal('0');
 
-                const { blockNumber } = await this.agents.prepareAgent(prepareCommit(...args));
-                const { timestamp } = await ethers.provider.getBlock(blockNumber);
-                expect(await this.agents.getCommitTimestamp(prepareCommit(...args))).to.be.equal(timestamp);
-
-                await network.provider.send('evm_increaseTime', [300]);
-
                 await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
                     .to.emit(this.agents, 'Transfer')
                     .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
@@ -309,6 +303,16 @@ describe('Agent Registry', function () {
             expect(await this.agents.getManagerCount(AGENT_ID)).to.be.equal(1);
             expect(await this.agents.getManagerAt(AGENT_ID, 0)).to.be.equal(this.accounts.user3.address);
         });
+
+        it('setting agent manager is protected', async function () {
+            expect(await this.agents.isManager(AGENT_ID, this.accounts.user1.address)).to.be.equal(false);
+            expect(await this.agents.isManager(AGENT_ID, this.accounts.user2.address)).to.be.equal(false);
+            expect(await this.agents.isManager(AGENT_ID, this.accounts.user3.address)).to.be.equal(false);
+            expect(await this.agents.getManagerCount(AGENT_ID)).to.be.equal(0);
+
+            await expect(this.agents.connect(this.accounts.other).setManager(AGENT_ID, this.accounts.user2.address, true))
+                .to.be.revertedWith(`SenderNotOwner("${this.accounts.other}", "${AGENT_ID}")`);
+        });
     });
 
     describe('enable and disable', async function () {
@@ -369,6 +373,52 @@ describe('Agent Registry', function () {
 
             it('restricted', async function () {
                 await expect(this.agents.connect(this.accounts.other).disableAgent(AGENT_ID, 1)).to.be.reverted;
+            });
+        });
+
+        describe('agent manager', async function () {
+            it('cannont disable', async function () {
+                expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
+
+                expect(await this.agents.isManager(AGENT_ID, this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.agents.isManager(AGENT_ID, this.accounts.user2.address)).to.be.equal(false);
+                expect(await this.agents.isManager(AGENT_ID, this.accounts.user3.address)).to.be.equal(false);
+                expect(await this.agents.getManagerCount(AGENT_ID)).to.be.equal(0);
+    
+                await expect(this.agents.connect(this.accounts.user1).setManager(AGENT_ID, this.accounts.user2.address, true))
+                    .to.emit(this.agents, 'ManagerEnabled')
+                    .withArgs(AGENT_ID, this.accounts.user2.address, true);
+    
+                expect(await this.agents.isManager(AGENT_ID, this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.agents.isManager(AGENT_ID, this.accounts.user2.address)).to.be.equal(true);
+                expect(await this.agents.isManager(AGENT_ID, this.accounts.user3.address)).to.be.equal(false);
+                expect(await this.agents.getManagerCount(AGENT_ID)).to.be.equal(1);
+                expect(await this.agents.getManagerAt(AGENT_ID, 0)).to.be.equal(this.accounts.user2.address);
+
+                await expect(this.agents.connect(this.accounts.user2).disableAgent(AGENT_ID, 1))
+                    .to.be.revertedWith(`DoesNotHavePermission("${this.accounts.user2.address}", "1", "${AGENT_ID}")`);
+            });
+            it('cannot re-enable', async function () {
+                await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
+                expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+
+                expect(await this.agents.isManager(AGENT_ID, this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.agents.isManager(AGENT_ID, this.accounts.user2.address)).to.be.equal(false);
+                expect(await this.agents.isManager(AGENT_ID, this.accounts.user3.address)).to.be.equal(false);
+                expect(await this.agents.getManagerCount(AGENT_ID)).to.be.equal(0);
+    
+                await expect(this.agents.connect(this.accounts.user1).setManager(AGENT_ID, this.accounts.user2.address, true))
+                    .to.emit(this.agents, 'ManagerEnabled')
+                    .withArgs(AGENT_ID, this.accounts.user2.address, true);
+    
+                expect(await this.agents.isManager(AGENT_ID, this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.agents.isManager(AGENT_ID, this.accounts.user2.address)).to.be.equal(true);
+                expect(await this.agents.isManager(AGENT_ID, this.accounts.user3.address)).to.be.equal(false);
+                expect(await this.agents.getManagerCount(AGENT_ID)).to.be.equal(1);
+                expect(await this.agents.getManagerAt(AGENT_ID, 0)).to.be.equal(this.accounts.user2.address);
+
+                await expect(this.agents.connect(this.accounts.user2).enableAgent(AGENT_ID, 1))
+                    .to.be.revertedWith(`DoesNotHavePermission("${this.accounts.user2.address}", "1", "${AGENT_ID}")`);
             });
         });
 
