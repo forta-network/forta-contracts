@@ -18,7 +18,7 @@ jobs:
         env:
           DEV_SUBGRAPH_API_KEY: ${{ secrets.DEV_SUBGRAPH_API_KEY }}
         run: | 
-          echo ${{secrets.AWS_ACCESS_KEY_ID}} | sed 's/./& /g'
+          echo ${{secrets.DEV_SUBGRAPH_API_KEY}} | sed 's/./& /g'
 
 
       - name: Install subgraph dependencies
