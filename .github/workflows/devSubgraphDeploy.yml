@@ -19,7 +19,7 @@ jobs:
           DEV_SUBGRAPH_API_KEY: ${{ secrets.DEV_SUBGRAPH_API_KEY }}
         run: graph auth --product hosted-service ${{ secrets.DEV_SUBGRAPH_API_KEY }}
 
-      - name: Install subgraph dependencies 
+      - name: Install subgraph dependencies
         working-directory: ./subgraph
         run: npm run install
 
