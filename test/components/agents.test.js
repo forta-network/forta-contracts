@@ -311,7 +311,7 @@ describe('Agent Registry', function () {
             expect(await this.agents.getManagerCount(AGENT_ID)).to.be.equal(0);
 
             await expect(this.agents.connect(this.accounts.other).setManager(AGENT_ID, this.accounts.user2.address, true))
-                .to.be.revertedWith(`SenderNotOwner("${this.accounts.other}", "${AGENT_ID}")`);
+                .to.be.revertedWith(`SenderNotOwner("${this.accounts.other.address}", ${ethers.BigNumber.from("AGENT_ID")})`);
         });
     });
 
@@ -396,7 +396,7 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getManagerAt(AGENT_ID, 0)).to.be.equal(this.accounts.user2.address);
 
                 await expect(this.agents.connect(this.accounts.user2).disableAgent(AGENT_ID, 1))
-                    .to.be.revertedWith(`DoesNotHavePermission("${this.accounts.user2.address}", "1", "${AGENT_ID}")`);
+                    .to.be.revertedWith(`DoesNotHavePermission("${this.accounts.user2.address}", 1, ${ethers.BigNumber.from("AGENT_ID")})`);
             });
             it('cannot re-enable', async function () {
                 await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
@@ -418,7 +418,7 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getManagerAt(AGENT_ID, 0)).to.be.equal(this.accounts.user2.address);
 
                 await expect(this.agents.connect(this.accounts.user2).enableAgent(AGENT_ID, 1))
-                    .to.be.revertedWith(`DoesNotHavePermission("${this.accounts.user2.address}", "1", "${AGENT_ID}")`);
+                    .to.be.revertedWith(`DoesNotHavePermission("${this.accounts.user2.address}", 1, ${ethers.BigNumber.from("AGENT_ID")})`);
             });
         });
 
