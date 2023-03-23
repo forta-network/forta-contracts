@@ -26,5 +26,5 @@ jobs:
         run: npm run prepare-dev
 
       - name: Deploy dev subgraph 
-          working-directory: ./subgraph
-          run: npm run deploy-dev
+        working-directory: ./subgraph
+        run: npm run deploy-dev
