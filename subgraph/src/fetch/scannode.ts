@@ -5,9 +5,10 @@ import { ScanNode } from "../../generated/schema";
 import { fetchAccount } from "./account";
 
 export function fetchScannode(id: BigInt): ScanNode {
-  let scanner = ScanNode.load(id.toHex());
+  const addr = Address.fromBigInt(id);
+  let scanner = ScanNode.load(addr.toHex());
   if (scanner == null) {
-    scanner = new ScanNode(id.toHex());
+    scanner = new ScanNode(addr.toHex());
     scanner.owner = fetchAccount(Address.zero()).id;
     scanner.enabled = true;
     scanner.disableFlags = 0;
