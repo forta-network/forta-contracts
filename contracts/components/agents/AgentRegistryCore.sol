@@ -97,13 +97,13 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
     }
 
     /**
-     * @notice Updates parameters of an agentId (metadata, image, chain IDs...) if called by the agent owner.
+     * @notice Updates parameters of an agentId (metadata, image, chain IDs...) if called by the agent owner or manager.
      * @dev fires _before and _after hooks within the inheritance tree.
      * @param agentId ERC721 token id of the agent to be updated.
      * @param metadata IPFS pointer to agent's metadata JSON.
      * @param chainIds ordered list of chainIds where the agent wants to run.
      */
-    function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds) public /*onlyOwnerOf(agentId)*/ onlySorted(chainIds) {
+    function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds) public onlySorted(chainIds) {
         if (!_canUpdateAgent(agentId)) revert SenderNotOwner(_msgSender(), agentId);
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);

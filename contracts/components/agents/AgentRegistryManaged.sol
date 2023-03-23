@@ -17,7 +17,7 @@ abstract contract AgentRegistryManaged is AgentRegistryCore {
     error SenderNotManager(address sender, uint256 agentId);
 
     /**
-     * @notice Checks sender (or metatx signer) is manager of the scanner pool token.
+     * @notice Checks sender (or metatx signer) is manager of the agent.
      * @param agentId ERC721 token id of the agent
      */
     modifier onlyManagerOf(uint256 agentId) {
@@ -59,7 +59,7 @@ abstract contract AgentRegistryManaged is AgentRegistryCore {
     /**
      * @notice Adds or removes a manager to a certain agent. Restricted to agent owner.
      * @param agentId ERC721 token id of the agent
-     * @param manager address to be added or removed from manager list for the ScannerPool.
+     * @param manager address to be added or removed from manager list for the agent.
      * @param enable true for adding, false for removing.
      */
     function setManager(uint256 agentId, address manager, bool enable) public onlyOwnerOf(agentId) {
