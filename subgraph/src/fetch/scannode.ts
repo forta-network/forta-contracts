@@ -5,7 +5,7 @@ import { ScanNode } from "../../generated/schema";
 import { fetchAccount } from "./account";
 
 export function fetchScannode(id: BigInt): ScanNode {
-  const addr = Address.fromBigInt(id);
+  const addr = scannerBigIntToAddress(id);
   let scanner = ScanNode.load(addr.toHex());
   if (scanner == null) {
     scanner = new ScanNode(addr.toHex());
@@ -15,4 +15,13 @@ export function fetchScannode(id: BigInt): ScanNode {
     scanner.metadata = "";
   }
   return scanner as ScanNode;
+}
+
+function scannerBigIntToAddress(id: BigInt): Address {
+  const idHex = id.toHex();
+  if (idHex.length == 42) {
+    return Address.fromString(idHex);
+  }
+  const extraZeroes = 42 - idHex.length;
+  return Address.fromString('0x' + '0'.repeat(extraZeroes) + idHex.slice(2));
 }
