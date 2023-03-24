@@ -102,15 +102,9 @@ describe('Upgrades testing', function () {
                 await agents.getAgent(AGENT_ID).then((agent) => [agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
             ).to.be.deep.equal([1, args[2], args[3]]);
             expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
-            await agents.connect(this.accounts.user1).setManager(AGENT_ID, this.accounts.user2.address, true);
-            expect(await agents.isManager(AGENT_ID, this.accounts.user2.address)).to.be.equal(true);
-            expect(await agents.connect(this.accounts.user2).enableAgent(AGENT_ID, 1))
-                .to.be.revertedWith(`DoesNotHavePermission("${this.accounts.user2.address}", 1, ${ethers.BigNumber.from(AGENT_ID)})`);
             await agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1);
             expect(await agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
             expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true);
-            await agents.connect(this.accounts.user1).setManager(AGENT_ID, this.accounts.user2.address, false);
-            expect(await agents.isManager(AGENT_ID, this.accounts.user2.address)).to.be.equal(false);
             expect(await agents.name()).to.be.equal('Forta Agents');
             expect(await agents.symbol()).to.be.equal('FAgents');
         });
