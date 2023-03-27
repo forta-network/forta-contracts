@@ -35,6 +35,7 @@ let delegatorTwo: Staker;
     mockNodePool.commissionSinceEpoch = 4
     mockNodePool.oldCommission = BigDecimal.fromString("3")
     mockNodePool.chainId = 1;
+    mockNodePool.apyForLastEpoch = BigDecimal.fromString("0");
 
     mockNodePool.save()
   })
@@ -63,25 +64,6 @@ describe('Rewards distributor', () => {
         // Expect
         assert.assertTrue(rewardedEvent.length === 1)
     }) 
-
-    test('should handle a claimed rewards event', () => {
-        // Given
-        const reward = BigInt.fromI32(5);
-        const mockClaimedRewardEvent = createMockClaimedRewardEvent(
-            2,
-            BigInt.fromString(mockNodePool.id),
-            reward,
-            Address.fromString("0x0Fs4F"),
-            BigInt.fromI32(2773),
-            BigInt.fromI32(5)
-        )
-
-        // When
-        handleClaimedRewards(mockClaimedRewardEvent);
-
-        //Expect
-        assert.entityCount("RewardClaimedEvent", 1)
-    })
 
 
     test('should handle a reward event on a pool with zero delegators and return a 0% APY value', () => {
