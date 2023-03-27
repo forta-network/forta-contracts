@@ -5,6 +5,11 @@ on: push
 #   push:
 #     branches: [ master ]
 #   workflow_dispatch:
+
+inputs:
+  subgraph_api_key:
+    description: 'api key for subgraph cli'
+    required: true
 jobs:
   deploy-subgraph:
     name: Deploy subgraph
