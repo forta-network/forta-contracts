@@ -1,5 +1,4 @@
 name: Unit test subgraph
-on: push
 jobs:
   test-subgraph:
     name: Run Unit Test

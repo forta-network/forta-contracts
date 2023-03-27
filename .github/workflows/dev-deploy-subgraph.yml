@@ -2,7 +2,7 @@ name: Dev Deploy Subgraph
 on: push
 jobs:
   test-subgraph:
-    name: Run Unit Test
+    name: Run Unit Test Workflow
     runs-on: ubuntu-latest
     environment: development
     steps:
@@ -14,7 +14,7 @@ jobs:
         uses: ./.github/actions/testSubgraph
 
   dev-deploy-subgraph:
-    name: Deploy subgraph
+    name: Deploy subgraph workflow
     runs-on: ubuntu-latest
     environment: development
     steps:
