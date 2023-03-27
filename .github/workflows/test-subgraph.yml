@@ -2,7 +2,7 @@ name: Test Subgraph
 on: push
 jobs:
   test-subgraph:
-    name: Run Unit Test Workflow
+    name: Run Unit Test
     runs-on: ubuntu-latest
     environment: development
     steps:
