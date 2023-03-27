@@ -1,4 +1,4 @@
-name: Dev Deploy Subgraph
+name: Unit test subgraph
 on: push
 jobs:
   test-subgraph:

@@ -1,8 +1,13 @@
 name: Deploy Subgraph
 on: push
+
+# on:
+#   push:
+#     branches: [ master ]
+#   workflow_dispatch:
 jobs:
-  dev-deploy-subgraph:
-    name: Run test
+  deploy-subgraph:
+    name: Deploy subgraph
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
