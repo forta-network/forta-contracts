@@ -13,7 +13,7 @@ jobs:
       
       - name: Install subgraph dependencies
         working-directory: ./subgraph
-        run: npm run install
+        run: npm install
       
       - name: Run test
         working-directory: ./subgraph
