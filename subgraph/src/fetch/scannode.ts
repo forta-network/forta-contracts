@@ -17,7 +17,7 @@ export function fetchScannode(id: BigInt): ScanNode {
   return scanner as ScanNode;
 }
 
-function scannerBigIntToHex(id: BigInt): string {
+export function scannerBigIntToHex(id: BigInt): string {
   const idHex = id.toHex();
   if (idHex.length == 42) {
     return idHex;
