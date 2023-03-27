@@ -28,10 +28,8 @@ jobs:
         run: npm install -g @graphprotocol/graph-cli
 
       - name: Authenticate with dev subgraph
-        env:
-          dev_subgraph_key: ${{ secrets.DEV_SUBGRAPH_API_KEY }}
         run: |
-          graph auth --product hosted-service "$dev_subgraph_key"
+          graph auth --product hosted-service ${{ secrets.DEV_SUBGRAPH_API_KEY }}
 
       - name: Install subgraph dependencies
         working-directory: ./subgraph
