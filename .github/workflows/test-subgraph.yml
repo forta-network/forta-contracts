@@ -1,4 +1,4 @@
-name: DTest Subgraph
+name: Test Subgraph
 on: push
 jobs:
   test-subgraph:
