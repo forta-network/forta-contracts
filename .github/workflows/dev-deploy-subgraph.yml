@@ -1,5 +1,7 @@
 name: Dev Deploy Subgraph
-on: push
+on:
+  push:
+    branches: [ master ]
 jobs:
   test-subgraph:
     name: Run Unit Test Workflow
