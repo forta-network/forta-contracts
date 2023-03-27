@@ -1,0 +1,46 @@
+name: Dev Deploy Subgraph
+on:
+  push:
+    branches: [ master ]
+jobs:
+  test-subgraph:
+    name: Run Unit Test Workflow
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+    
+      - name: Run test
+        id: test
+        uses: ./.github/actions/testSubgraph
+
+  dev-deploy-subgraph:
+    name: Deploy subgraph workflow
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+      
+      - name: Install the graph cli
+        run: npm install -g @graphprotocol/graph-cli
+
+      - name: Authenticate with dev subgraph
+        run: |
+          graph auth --product hosted-service ${{ secrets.DEV_SUBGRAPH_API_KEY }}
+
+      - name: Install subgraph dependencies
+        working-directory: ./subgraph
+        run: npm install
+
+      - name: Prepare for dev subgraph deployment
+        working-directory: ./subgraph
+        run: npm run prepare-dev
+
+      - name: Deploy dev subgraph 
+        working-directory: ./subgraph
+        run: npm run deploy-dev

@@ -1,0 +1,20 @@
+name: Unit test subgraph
+description: "Runs unit test of subgraph"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: "16"
+    
+    - name: Install subgraph dependencies
+      working-directory: ./subgraph
+      shell: bash
+      run: npm install
+    
+    - name: Run test
+      working-directory: ./subgraph
+      shell: bash
+      run: npm run test
