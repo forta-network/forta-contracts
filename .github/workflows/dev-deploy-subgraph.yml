@@ -14,7 +14,7 @@ jobs:
         uses: ./.github/actions/testSubgraph
 
   dev-deploy-subgraph:
-    name: Run dev deploy
+    name: Deploy subgraph
     runs-on: ubuntu-latest
     environment: development
     steps:
@@ -24,8 +24,23 @@ jobs:
         with:
           node-version: "16"
       
-      - name: Deploy dev subgraph
-        id: dev-dubgraph-deploy
-        run: ./.github/actions/subgraphDeploy
-        with:
-          subgraph_api_key: ${{ secrets.DEV_SUBGRAPH_API_KEY }}
+      - name: Install the graph cli
+        run: npm install -g @graphprotocol/graph-cli
+
+      - name: Authenticate with dev subgraph
+        env:
+          dev_subgraph_key: ${{ secrets.DEV_SUBGRAPH_API_KEY }}
+        run: |
+          graph auth --product hosted-service "$dev_subgraph_key"
+
+      - name: Install subgraph dependencies
+        working-directory: ./subgraph
+        run: npm run install
+
+      - name: Prepare for dev subgraph deployment
+        working-directory: ./subgraph
+        run: npm run prepare-dev
+
+      - name: Deploy dev subgraph 
+        working-directory: ./subgraph
+        run: npm run deploy-dev
