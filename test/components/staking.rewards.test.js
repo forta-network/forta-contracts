@@ -130,6 +130,12 @@ describe('Staking Rewards', function () {
         });
 
         it('should appropriately reward delegator based on time delegated in epoch', async function () {
+            await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '1000');
+            let currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            console.log(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, currentEpoch));
+
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
+            
             await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '400');
             await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
 
