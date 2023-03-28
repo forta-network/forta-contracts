@@ -259,7 +259,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         uint256 stakeToUnallocate = totalAllocatedStake - stakeCapacity;
 
         // if delegator allocation covers the amount, just unallocate from there
-        if(delegatorAllocatedStake > stakeToUnallocate) {
+        if(delegatorAllocatedStake >= stakeToUnallocate) {
             _stakeAllocator.unallocateDelegatorStake(SCANNER_POOL_SUBJECT, scannerPoolId, stakeToUnallocate);
             return;
         }
