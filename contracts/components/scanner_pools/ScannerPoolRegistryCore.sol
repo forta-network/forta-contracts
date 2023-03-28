@@ -208,20 +208,31 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
      * @param scannerPoolId ERC721 id of the node runner
      */
     function _allocationOnAddedEnabledScanner(uint256 scannerPoolId) private {
-        uint256 unallocatedStake = _stakeAllocator.unallocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
         uint256 allocatedStake = _stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
 
+        // if the owner's allocated stake satisfies the minimum, no need to allocate extra
         uint256 min = _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].min;
         if (allocatedStake / _enabledScanners[scannerPoolId] >  min) {
             return;
         }
+
+        uint256 unallocatedStake = _stakeAllocator.unallocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
         if ((unallocatedStake + allocatedStake) / _enabledScanners[scannerPoolId] < min) {
             revert ActionShutsDownPool();
         }
 
-        // try to stake up to the capacity but make sure it does not exceed
-        // the available unallocated stake
-        uint256 stakeToAllocate = _getStakeAllocationCapacity(scannerPoolId);
+        uint256 stakeCapacity = _getStakeAllocationCapacity(scannerPoolId);
+        uint256 totalAllocatedStake = _stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT, scannerPoolId);
+
+        // do not try to allocate more if the total is over the capacity somehow
+        if (totalAllocatedStake > stakeCapacity) {
+            return; 
+        }
+
+        // try to stake up to the remaining capacity
+        uint256 stakeToAllocate = stakeCapacity - totalAllocatedStake;
+
+        // make sure that it doesn't exceed the unallocated pool owner stake
         if (stakeToAllocate > unallocatedStake) {
             stakeToAllocate = unallocatedStake;
         }
@@ -248,7 +259,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
         uint256 stakeToUnallocate = totalAllocatedStake - stakeCapacity;
 
         // if delegator allocation covers the amount, just unallocate from there
-        if(delegatorAllocatedStake > stakeToUnallocate) {
+        if(delegatorAllocatedStake >= stakeToUnallocate) {
             _stakeAllocator.unallocateDelegatorStake(SCANNER_POOL_SUBJECT, scannerPoolId, stakeToUnallocate);
             return;
         }

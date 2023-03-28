@@ -11,6 +11,14 @@ describe('Scanner Pool Registry', function () {
     prepare({ stake: { scanners: { min: '100', max: '500', activated: true } } });
 
     beforeEach(async function () {
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('1000'));
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, ethers.utils.parseEther('1000'));
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, ethers.utils.parseEther('1000'));
+
+        await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
+        await this.token.connect(this.accounts.user2).approve(this.staking.address, ethers.constants.MaxUint256);
+        await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
+
         const network = await ethers.provider.getNetwork();
         this.accounts.getAccount('scanner');
 
@@ -92,27 +100,42 @@ describe('Scanner Pool Registry', function () {
             expect(await this.scannerPools.totalScannersRegistered(1)).to.be.equal(2);
         });
 
-        it('should register two scanners when double of max is deposited', async function () {
+        it('should register two scanners when more than double of max is deposited', async function () {
             const SCANNER_ADDRESS = this.accounts.scanner.address;
             await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
 
-            await this.staking.connect(this.accounts.user1).deposit(2, 1, '1000'); // 500 * 2 (double of max)
-            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('1000');
+            // 150 := 100 (min) + 50 (less than min)
+            await this.staking.connect(this.accounts.user1).deposit(2, 1, '150');
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('150');
             expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('0');
             expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('0');
             await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
                 .to.emit(this.scannerPools, 'ScannerUpdated')
                 .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
-            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('500');
-            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('500');
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('0');
+            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('150');
+            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('150');
+
+            // delegator enters and uses the capacity up to the current limit
+            await this.staking.connect(this.accounts.user2).deposit(3, 1, '350');
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('0');
+            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('150');
+            expect(await this.stakeAllocator.allocatedStakeFor(3, 1)).to.eq('350');
             expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('500');
 
+            // owner deposits more: higher than the second scanner's capacity
+            await this.staking.connect(this.accounts.user1).deposit(2, 1, '850');
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('850');
+            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('500');
+
+            // some of the owner stake will remain unallocated
             await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
                 .to.emit(this.scannerPools, 'ScannerUpdated')
                 .withArgs(SCANNER_ADDRESS_2, 1, 'metadata2', 1);
-            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('500');
-            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('500');
-            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('250');
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('350');
+            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('650');
+            expect(await this.stakeAllocator.allocatedStakeFor(3, 1)).to.eq('350');
+            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('500');
 
             expect(await this.scannerPools.getScanner(SCANNER_ADDRESS)).to.be.deep.equal([true, false, BigNumber.from(1), BigNumber.from(1), 'metadata']);
             expect(await this.scannerPools.isScannerRegistered(SCANNER_ADDRESS)).to.be.equal(true);
@@ -124,7 +147,7 @@ describe('Scanner Pool Registry', function () {
             expect(await this.scannerPools.totalScannersRegistered(1)).to.be.equal(2);
         });
 
-        it('fails to register scanner if not enough allocated stake', async function () {
+        it('should not register a scanner if there is not enough allocated stake', async function () {
             const SCANNER_ADDRESS = this.accounts.scanner.address;
 
             await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
@@ -135,6 +158,26 @@ describe('Scanner Pool Registry', function () {
                 .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
 
             await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature)).to.be.revertedWith('ActionShutsDownPool');
+        });
+
+        it('should not register the second scanner if there is not enough allocated stake', async function () {
+            const SCANNER_ADDRESS = this.accounts.scanner.address;
+            await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
+
+            // 150 := min + less than min
+            await this.staking.connect(this.accounts.user1).deposit(2, 1, '150');
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('150');
+            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('0');
+            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('0');
+            await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature))
+                .to.emit(this.scannerPools, 'ScannerUpdated')
+                .withArgs(SCANNER_ADDRESS, 1, 'metadata', 1);
+            expect(await this.stakeAllocator.unallocatedStakeFor(2, 1)).to.eq('0');
+            expect(await this.stakeAllocator.allocatedStakeFor(2, 1)).to.eq('150');
+            expect(await this.stakeAllocator.allocatedStakePerManaged(2, 1)).to.eq('150');
+
+            await expect(this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner2Registration, scanner2Signature))
+                .to.be.revertedWith('ActionShutsDownPool'); // prettier-ignore
         });
     });
 

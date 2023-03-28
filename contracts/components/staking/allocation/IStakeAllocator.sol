@@ -23,6 +23,7 @@ interface IStakeAllocator {
     ) external;
 
     function allocatedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
+    function allocatedManagedStake(uint8 subjectType, uint256 subject) external view returns (uint256);
     function allocatedStakePerManaged(uint8 subjectType, uint256 subject) external view returns (uint256);
     function unallocatedStakeFor(uint8 subjectType, uint256 subject) external view returns (uint256);
 
