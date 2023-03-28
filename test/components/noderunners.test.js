@@ -147,7 +147,7 @@ describe('Scanner Pool Registry', function () {
             expect(await this.scannerPools.totalScannersRegistered(1)).to.be.equal(2);
         });
 
-        it('should not register a scanner when there is not enough allocated stake', async function () {
+        it('should not register a scanner if there is not enough allocated stake', async function () {
             const SCANNER_ADDRESS = this.accounts.scanner.address;
 
             await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
