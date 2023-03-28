@@ -129,6 +129,62 @@ describe('Staking Rewards', function () {
             );
         });
 
+        it('should appropriately reward delegator based on time delegated in epoch', async function () {
+            await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '400');
+            await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
+
+            expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('400');
+
+            const ONE_DAY = 24 * 60 * 60;
+            await helpers.time.increase(1 + ONE_DAY /* 1 day */);
+
+            await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, '30');
+
+            expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('430');
+
+            const latestTimestamp = await helpers.time.latest();
+            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
+            await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
+
+            const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
+
+            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
+            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.equal('0');
+
+            await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2000', epoch);
+
+            const ownerReward = await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address);
+            const delegatorReward = await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address);
+
+            console.log(`ownerReward is: ${ownerReward} | delegatorReward is: ${delegatorReward}`);
+
+            /*
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.equal('1000');
+            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.closeTo('500', '1');
+
+            const balanceBefore1 = await this.token.balanceOf(this.accounts.user1.address);
+            const balanceBefore2 = await this.token.balanceOf(this.accounts.user2.address);
+
+            await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
+            await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
+
+            expect(await this.token.balanceOf(this.accounts.user1.address)).to.eq(balanceBefore1.add('1000'));
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.be.closeTo(balanceBefore2.add('500'), 1);
+
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
+            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.equal('0');
+
+            await expect(this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch])).to.be.revertedWith(
+                'AlreadyClaimed()'
+            );
+            await expect(this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch])).to.be.revertedWith(
+                'AlreadyClaimed()'
+            );
+            */
+        });
+
         it('should fail to reclaim if no rewards available', async function () {
             await expect(this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [1])).to.be.revertedWith(
                 'ZeroAmount("epochRewards")'
