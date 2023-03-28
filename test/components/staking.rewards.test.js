@@ -133,8 +133,6 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '1000');
             let currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
             console.log(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, currentEpoch));
-
-            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
             
             await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '400');
             await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
@@ -142,7 +140,9 @@ describe('Staking Rewards', function () {
             expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('400');
 
             const ONE_DAY = 24 * 60 * 60;
-            await helpers.time.increase(1 + ONE_DAY /* 1 day */);
+            // Increase by two weeks for the fee to go into effect,
+            // and one day so the delegator isn't in the epoch for all seven days
+            await helpers.time.increase((2 * (1 + EPOCH_LENGTH)) + (1 + ONE_DAY)/* 2 weeks and one day */);
 
             await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, '30');
 
