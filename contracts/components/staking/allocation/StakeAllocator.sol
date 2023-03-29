@@ -295,7 +295,9 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
             if (_delegatedSubjectStakeIsLessThanMinimum(subjectType, subject, managedSubjects)) {
                 uint8 delegatorSubjectType = getDelegatorSubjectType(subjectType);
                 uint256 delegatorAllocatedStake = allocatedStakeFor(delegatorSubjectType, subject);
-                _unallocateStake(delegatorSubjectType, subject, delegatorAllocatedStake);
+                if (delegatorAllocatedStake > 0) {
+                    _unallocateStake(delegatorSubjectType, subject, delegatorAllocatedStake);
+                }
             }
         }
     }
