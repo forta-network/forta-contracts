@@ -32,21 +32,22 @@ library Accumulators {
     }
 
     function getValueInEpoch(Accumulator storage acc, uint256 epoch) internal view returns (uint256) {
-        EpochCheckpoint memory latestInCurrent = getAtEpoch(acc, epoch);
-        if (latestInCurrent.timestamp == 0) {
+        EpochCheckpoint memory latestCheckpoint = getAtEpoch(acc, epoch);
+        if (latestCheckpoint.timestamp == 0) {
             return 0;
         }
-        EpochCheckpoint memory latestInPrevious = getAtEpoch(acc, epoch-1);
+        uint256 epochStart = getEpochStartTimestamp(epoch);
+        uint256 epochEnd = getEpochEndTimestamp(epoch);
 
-        // if the current is the first checkpoint (previous is zero epoch)
-        // or the rate did not change since the last epoch (previous checkpoint is the same)
-        // just use the latest rate for the whole epoch
-        if (latestInPrevious.timestamp == 0 || latestInCurrent.timestamp == latestInPrevious.timestamp) {
-            return latestInCurrent.rate * (getEpochEndTimestamp(epoch) - getEpochStartTimestamp(epoch));
+        // if the rate did not change in this epoch, just use the known one
+        if (latestCheckpoint.timestamp <= epochStart) {
+            return latestCheckpoint.rate * (epochEnd - epochStart);
         }
-        // if there is a different checkpoint within this epoch, add up before that and after that
-        uint256 beforeCheckpoint = latestInPrevious.rate * (latestInCurrent.timestamp - getEpochStartTimestamp(epoch));
-        uint256 afterCheckpoint = latestInCurrent.rate * (getEpochEndTimestamp(epoch) - latestInCurrent.timestamp);
+
+        // there is a different checkpoint within this epoch: add up before that and after that
+        EpochCheckpoint memory previousCheckpoint = getAtEpoch(acc, epoch-1);
+        uint256 beforeCheckpoint = previousCheckpoint.rate * (latestCheckpoint.timestamp - epochStart);
+        uint256 afterCheckpoint = latestCheckpoint.rate * (epochEnd - latestCheckpoint.timestamp);
         return (beforeCheckpoint + afterCheckpoint);
     }
 
