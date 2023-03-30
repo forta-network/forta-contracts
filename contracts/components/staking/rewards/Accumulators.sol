@@ -31,6 +31,25 @@ library Accumulators {
         return origin.value + origin.rate * (getEpochEndTimestamp(epoch) - origin.timestamp);
     }
 
+    function getValueInEpoch(Accumulator storage acc, uint256 epoch) internal view returns (uint256) {
+        EpochCheckpoint memory latestInCurrent = getAtEpoch(acc, epoch);
+        if (latestInCurrent.timestamp == 0) {
+            return 0;
+        }
+        EpochCheckpoint memory latestInPrevious = getAtEpoch(acc, epoch-1);
+
+        // if the current is the first checkpoint (previous is zero epoch)
+        // or the rate did not change since the last epoch (previous checkpoint is the same)
+        // just use the latest rate for the whole epoch
+        if (latestInPrevious.timestamp == 0 || latestInCurrent.timestamp == latestInPrevious.timestamp) {
+            return latestInCurrent.rate * (getEpochEndTimestamp(epoch) - getEpochStartTimestamp(epoch));
+        }
+        // if there is a different checkpoint within this epoch, add up before that and after that
+        uint256 beforeCheckpoint = latestInPrevious.rate * (latestInCurrent.timestamp - getEpochStartTimestamp(epoch));
+        uint256 afterCheckpoint = latestInCurrent.rate * (getEpochEndTimestamp(epoch) - latestInCurrent.timestamp);
+        return (beforeCheckpoint + afterCheckpoint);
+    }
+
     function addRate(Accumulator storage acc, uint256 rate) internal {
         setRate(acc, latest(acc).rate + rate);
     }
