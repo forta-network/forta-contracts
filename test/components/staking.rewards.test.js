@@ -212,7 +212,7 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
         });
 
-        it('unallocate stake', async function () {
+        it('unallocate delegator stake', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
@@ -330,14 +330,14 @@ describe('Staking Rewards', function () {
 
             await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '1000', epoch);
 
-            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.closeTo('428', '1');
-            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.closeTo('571', '1');
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.closeTo('333', '1');
+            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.closeTo('666', '1');
 
             await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
         });
 
-        it('share transfer ', async function () {
+        it('delegator share transfer', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
@@ -348,14 +348,24 @@ describe('Staking Rewards', function () {
 
             expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('200');
 
-            const latestTimestamp = await helpers.time.latest();
-            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
-            await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
+            // finish the epoch
+            const latestTimestamp1 = await helpers.time.latest();
+            const timeToNextEpoch1 = EPOCH_LENGTH - ((latestTimestamp1 - OFFSET) % EPOCH_LENGTH);
+            await helpers.time.increase(timeToNextEpoch1);
 
+            // note down the epoch
             const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
 
+            // skip the half of the epoch
+            const latestTimestamp2 = await helpers.time.latest();
+            const timeToNextEpoch2 = EPOCH_LENGTH - ((latestTimestamp2 - OFFSET) % EPOCH_LENGTH);
+            await helpers.time.increase(timeToNextEpoch2 / 2);
+
+            // transfer the shares from one delegator to another delegator
+            // and finish the epoch
             const delegatorShares = subjectToActive(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID);
             await this.staking.connect(this.accounts.user2).safeTransferFrom(this.accounts.user2.address, this.accounts.user3.address, delegatorShares, '50', '0x');
+            await helpers.time.increase(timeToNextEpoch2 / 2);
 
             expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('200');
             expect(await this.stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('100');
@@ -374,6 +384,7 @@ describe('Staking Rewards', function () {
 
             await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
+            await this.rewardsDistributor.connect(this.accounts.user3).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
         });
 
         it('same reward for the same delegation at different times, in much older epochs', async function () {
