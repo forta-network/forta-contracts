@@ -223,13 +223,22 @@ describe('Staking Rewards', function () {
 
             expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('200');
 
-            const latestTimestamp = await helpers.time.latest();
-            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
-            await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
+            // finish the epoch
+            const latestTimestamp1 = await helpers.time.latest();
+            const timeToNextEpoch1 = EPOCH_LENGTH - ((latestTimestamp1 - OFFSET) % EPOCH_LENGTH);
+            await helpers.time.increase(timeToNextEpoch1);
 
+            // note down the epoch
             const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
 
+            // skip the half of the epoch
+            const latestTimestamp2 = await helpers.time.latest();
+            const timeToNextEpoch2 = EPOCH_LENGTH - ((latestTimestamp2 - OFFSET) % EPOCH_LENGTH);
+            await helpers.time.increase(timeToNextEpoch2 / 2);
+
+            // unallocate delegator stake and finish the epoch
             await this.stakeAllocator.connect(this.accounts.user1).unallocateDelegatorStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
+            await helpers.time.increase(timeToNextEpoch2 / 2);
 
             expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('100');
             expect(await this.stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('100');
