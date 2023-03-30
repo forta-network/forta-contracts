@@ -162,8 +162,8 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     function _availableReward(uint256 shareId, bool delegator, uint256 epochNumber, address staker) internal view returns (uint256) {
         DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
 
-        uint256 N = s.delegated.getValueAtEpoch(epochNumber);
-        uint256 D = s.delegators.getValueAtEpoch(epochNumber);
+        uint256 N = s.delegated.getValueInEpoch(epochNumber);
+        uint256 D = s.delegators.getValueInEpoch(epochNumber);
         uint256 T = N + D;
 
         if (T == 0) {
@@ -178,8 +178,8 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
         if (delegator) {
             uint256 r = RD - fee;
-            uint256 d = s.delegatorsPortions[staker].getValueAtEpoch(epochNumber);
-            uint256 DT = s.delegatorsTotal.getValueAtEpoch(epochNumber);
+            uint256 d = s.delegatorsPortions[staker].getValueInEpoch(epochNumber);
+            uint256 DT = s.delegatorsTotal.getValueInEpoch(epochNumber);
             return Math.mulDiv(r, d, DT);
         } else {
             uint256 RN = Math.mulDiv(R, N, T);

@@ -480,7 +480,7 @@ describe('Staking Rewards', function () {
 
             // find the rewarded epoch
             const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
-            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+            await helpers.time.increase(1 * (1 + EPOCH_LENGTH) /* 1 week */);
 
             // there should be no rewards for now
             expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
@@ -488,8 +488,11 @@ describe('Staking Rewards', function () {
 
             await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2000', epoch);
 
-            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.equal('500');
-            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user3.address)).to.be.equal('500');
+            const delegator1Reward = await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address);
+            const delegator2Reward = await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user3.address);
+            expect(delegator1Reward).to.be.equal(delegator2Reward);
+            expect(delegator1Reward).to.be.equal('500');
+            expect(delegator2Reward).to.be.equal('500');
 
             await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
