@@ -11,6 +11,7 @@ import "../../../tools/Distributions.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
+import "hardhat/console.sol";
 
 uint256 constant MAX_BPS = 10000;
 
@@ -92,16 +93,20 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
             uint8 delegatorType = getDelegatorSubjectType(subjectType);
             uint256 shareId = FortaStakingUtils.subjectToActive(delegatorType, subject);
             DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
+            console.log("owner allocating", stakeAmount, sharesAmount);
             s.delegated.addRate(stakeAmount);
         } else {
             uint256 shareId = FortaStakingUtils.subjectToActive(subjectType, subject);
             DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
+            console.log("delegator allocating", stakeAmount, sharesAmount);
             s.delegators.addRate(stakeAmount);
             if (staker != address(0)) {
+                console.log("delegator rates", stakeAmount, sharesAmount);
                 s.delegatorsTotal.addRate(sharesAmount);
                 s.delegatorsPortions[staker].addRate(sharesAmount);
             }
         }
+        console.log("\n");
         emit DidAccumulateRate(subjectType, subject, staker, stakeAmount, sharesAmount);
     }
 
@@ -162,7 +167,9 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     function _availableReward(uint256 shareId, bool delegator, uint256 epochNumber, address staker) internal view returns (uint256) {
         DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
 
+        console.log("getting delegated allocated");
         uint256 N = s.delegated.getValueInEpoch(epochNumber);
+        console.log("getting delegator allocated");
         uint256 D = s.delegators.getValueInEpoch(epochNumber);
         uint256 T = N + D;
 
@@ -178,7 +185,9 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
         if (delegator) {
             uint256 r = RD - fee;
+            console.log("getting delegator portion");
             uint256 d = s.delegatorsPortions[staker].getValueInEpoch(epochNumber);
+            console.log("getting delegators total");
             uint256 DT = s.delegatorsTotal.getValueInEpoch(epochNumber);
             return Math.mulDiv(r, d, DT);
         } else {

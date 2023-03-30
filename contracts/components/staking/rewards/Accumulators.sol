@@ -5,6 +5,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "hardhat/console.sol";
 
 uint256 constant EPOCH_LENGTH = 1 weeks;
 // Timestamp 0 was in Thursday, 1 January 1970 0:00:00 GMT. We start epochs on Monday 0:00:00 GMT
@@ -33,21 +34,27 @@ library Accumulators {
 
     function getValueInEpoch(Accumulator storage acc, uint256 epoch) internal view returns (uint256) {
         EpochCheckpoint memory latestCheckpoint = getAtEpoch(acc, epoch);
+        console.log("latest checkpoint found", latestCheckpoint.timestamp, latestCheckpoint.rate);
         if (latestCheckpoint.timestamp == 0) {
+            console.log("\n");
             return 0;
         }
         uint256 epochStart = getEpochStartTimestamp(epoch);
         uint256 epochEnd = getEpochEndTimestamp(epoch);
+        console.log("epoch ts", epochStart, epochEnd);
 
         // if the rate did not change in this epoch, just use the known one
         if (latestCheckpoint.timestamp <= epochStart) {
+            console.log("single rate", latestCheckpoint.rate * (epochEnd - epochStart), "\n");
             return latestCheckpoint.rate * (epochEnd - epochStart);
         }
 
         // there is a different checkpoint within this epoch: add up before that and after that
         EpochCheckpoint memory previousCheckpoint = getAtEpoch(acc, epoch-1);
+        console.log("previous checkpoint found", previousCheckpoint.timestamp, previousCheckpoint.rate);
         uint256 beforeCheckpoint = previousCheckpoint.rate * (latestCheckpoint.timestamp - epochStart);
         uint256 afterCheckpoint = latestCheckpoint.rate * (epochEnd - latestCheckpoint.timestamp);
+        console.log("before after", beforeCheckpoint, afterCheckpoint, "\n");
         return (beforeCheckpoint + afterCheckpoint);
     }
 
@@ -67,6 +74,7 @@ library Accumulators {
         } else {
             acc.checkpoints.push(ckpt);
         }
+        console.log("rate changed", ckpt.timestamp, ckpt.rate, acc.checkpoints.length);
     }
 
     function latest(Accumulator storage acc) internal view returns (EpochCheckpoint memory) {

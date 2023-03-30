@@ -70,6 +70,7 @@ module.exports = {
     gasReporter: {
         currency: 'USD',
         coinmarketcap: argv.coinmarketcap,
+        enabled: false,
     },
     docgen: {
         pages: (item, file) => (file.absolutePath.startsWith('contracts') ? relative('contracts', file.absolutePath).replace('.sol', '.md') : undefined),

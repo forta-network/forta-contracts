@@ -9,6 +9,7 @@ const subjects = [
     [ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), 1], // Agent id, agent type
     [ethers.BigNumber.from('1'), 2], // ScannerPool id, ScannerPool Type
     [ethers.BigNumber.from('2'), 2], // ScannerPool id, ScannerPool Type
+    [ethers.BigNumber.from('3'), 2], // ScannerPool id, ScannerPool Type
 ];
 const DELEGATOR_SUBJECT_TYPE = 3;
 
@@ -18,6 +19,7 @@ const [
     [subject1, subjectType1, active1, inactive1],
     [SCANNER_POOL_ID, SCANNER_POOL_SUBJECT_TYPE, active2, inactive2],
     [SCANNER_POOL_ID_2, SCANNER_POOL_SUBJECT_TYPE_2, active3, inactive3],
+    [SCANNER_POOL_ID_3, SCANNER_POOL_SUBJECT_TYPE_3, active4, inactive4],
 ] = subjects.map((items) => [items[0], items[1], subjectToActive(items[1], items[0]), subjectToInactive(items[1], items[0])]);
 
 const MAX_STAKE = '10000';
@@ -31,9 +33,9 @@ describe('Staking Rewards', function () {
         },
     });
     beforeEach(async function () {
-        await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, '1000');
-        await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, '1000');
-        await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, '1000');
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, '10000');
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, '10000');
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, '10000');
         await this.token.connect(this.accounts.minter).mint(this.contracts.rewardsDistributor.address, '100000000');
 
         await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
@@ -43,7 +45,8 @@ describe('Staking Rewards', function () {
         const args = [subject1, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
         await this.agents.connect(this.accounts.other).createAgent(...args);
         await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
-        await this.scannerPools.connect(this.accounts.user2).registerScannerPool(2);
+        await this.scannerPools.connect(this.accounts.user2).registerScannerPool(1);
+        await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
 
         this.accounts.getAccount('slasher');
         await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
@@ -363,6 +366,107 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
         });
+
+        it('same reward for the same delegation at different times, in much older epochs', async function () {
+            // zero fee
+            await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, '0');
+
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
+
+            // pool owner sets up the pool, deposits stake, registers
+            const registration = {
+                scanner: this.SCANNER_ID,
+                scannerPoolId: SCANNER_POOL_ID_3,
+                chainId: 1,
+                metadata: 'metadata',
+                timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+            };
+            const signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, this.accounts.scanner);
+            await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, '100');
+            await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
+
+            // delegator 1 deposits
+            await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, '50');
+
+            // wait some time
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
+
+            // delegator 2 deposits
+            await this.staking.connect(this.accounts.user3).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, '50');
+
+            expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3)).to.be.equal('200');
+
+            // find the rewarded epoch
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 1 week */);
+            const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            await helpers.time.increase(1 * (1 + EPOCH_LENGTH) /* 1 week */);
+
+            // there should be no rewards for now
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, epoch, this.accounts.user1.address)).to.be.equal('0');
+            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, epoch, this.accounts.user2.address)).to.be.equal('0');
+
+            await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, '2000', epoch);
+
+            const delegator1Reward = await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, epoch, this.accounts.user2.address);
+            const delegator2Reward = await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, epoch, this.accounts.user3.address);
+            expect(delegator1Reward).to.be.equal(delegator2Reward);
+            expect(delegator1Reward).to.be.equal('500');
+            expect(delegator2Reward).to.be.equal('500');
+
+            await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, [epoch]);
+            await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, [epoch]);
+            await this.rewardsDistributor.connect(this.accounts.user3).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, [epoch]);
+        });
+
+        it('different reward for the same delegation at different times - one in recent epoch', async function () {
+            // zero fee
+            await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, '0');
+
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
+
+            // pool owner sets up the pool, deposits stake, registers
+            const registration = {
+                scanner: this.SCANNER_ID,
+                scannerPoolId: SCANNER_POOL_ID_3,
+                chainId: 1,
+                metadata: 'metadata',
+                timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+            };
+            const signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, this.accounts.scanner);
+            await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, '100');
+            await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
+
+            // delegator 1 deposits
+            await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, '50');
+
+            // wait some time
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
+            // this does the trick to move into the middle of the week
+            await helpers.time.increase(EPOCH_LENGTH / 7 /* 1 day */);
+
+            // delegator 2 deposits
+            await this.staking.connect(this.accounts.user3).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, '50');
+
+            expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3)).to.be.equal('200');
+
+            // second delegator's deposit epoch should be rewarded
+            const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            await helpers.time.increase(1 * (1 + EPOCH_LENGTH) /* 1 week */);
+
+            // there should be no rewards for now
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, epoch, this.accounts.user1.address)).to.be.equal('0');
+            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, epoch, this.accounts.user2.address)).to.be.equal('0');
+
+            await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, '2000', epoch);
+
+            const delegator1Reward = await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, epoch, this.accounts.user2.address);
+            const delegator2Reward = await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, epoch, this.accounts.user3.address);
+            expect(delegator2Reward).to.be.below(delegator1Reward);
+
+            await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, [epoch]);
+            await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, [epoch]);
+            await this.rewardsDistributor.connect(this.accounts.user3).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, [epoch]);
+        });
     });
 
     describe('Fee setting', function () {
@@ -457,56 +561,6 @@ describe('Staking Rewards', function () {
             await expect(this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '3000')).to.be.revertedWith(
                 'SetDelegationFeeNotReady()'
             );
-        });
-
-        it('should reward the same for the same delegation at different times', async function () {
-            // zero fee
-            await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '0');
-
-            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
-
-            // pool owner sets up the pool, deposits stake, registers
-            const registration = {
-                scanner: this.SCANNER_ID,
-                scannerPoolId: 1,
-                chainId: 1,
-                metadata: 'metadata',
-                timestamp: (await ethers.provider.getBlock('latest')).timestamp,
-            };
-            const signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, this.accounts.scanner);
-            await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
-            await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
-
-            // delegator 1 deposits
-            await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, '50');
-
-            // wait some time
-            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
-
-            // delegator 2 deposits
-            await this.staking.connect(this.accounts.user3).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, '50');
-
-            expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('200');
-
-            // find the rewarded epoch
-            const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
-            await helpers.time.increase(1 * (1 + EPOCH_LENGTH) /* 1 week */);
-
-            // there should be no rewards for now
-            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
-            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.equal('0');
-
-            await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2000', epoch);
-
-            const delegator1Reward = await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address);
-            const delegator2Reward = await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user3.address);
-            expect(delegator1Reward).to.be.equal(delegator2Reward);
-            expect(delegator1Reward).to.be.equal('500');
-            expect(delegator2Reward).to.be.equal('500');
-
-            await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
-            await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
-            await this.rewardsDistributor.connect(this.accounts.user3).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
         });
     });
 });
