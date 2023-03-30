@@ -448,5 +448,53 @@ describe('Staking Rewards', function () {
                 'SetDelegationFeeNotReady()'
             );
         });
+
+        it('should reward the same for the same delegation at different times', async function () {
+            // zero fee
+            await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '0');
+
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
+
+            // pool owner sets up the pool, deposits stake, registers
+            const registration = {
+                scanner: this.SCANNER_ID,
+                scannerPoolId: 1,
+                chainId: 1,
+                metadata: 'metadata',
+                timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+            };
+            const signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, this.accounts.scanner);
+            await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
+            await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
+
+            // delegator 1 deposits
+            await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, '50');
+
+            // wait some time
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
+
+            // delegator 2 deposits
+            await this.staking.connect(this.accounts.user3).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, '50');
+
+            expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('200');
+
+            // find the rewarded epoch
+            const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+
+            // there should be no rewards for now
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
+            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.equal('0');
+
+            await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2000', epoch);
+
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.equal('1000');
+            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.equal('500');
+            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user3.address)).to.be.equal('500');
+
+            await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
+            await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
+            await this.rewardsDistributor.connect(this.accounts.user3).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
+        });
     });
 });
