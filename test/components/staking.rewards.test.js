@@ -144,7 +144,7 @@ describe('Staking Rewards', function () {
             );
         });
 
-        it('remove stake', async function () {
+        it('initiate withdrawal as delegator but receive rewards', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
@@ -155,13 +155,22 @@ describe('Staking Rewards', function () {
 
             expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('200');
 
-            const latestTimestamp = await helpers.time.latest();
-            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
-            await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
+            // finish the epoch
+            const latestTimestamp1 = await helpers.time.latest();
+            const timeToNextEpoch1 = EPOCH_LENGTH - ((latestTimestamp1 - OFFSET) % EPOCH_LENGTH);
+            await helpers.time.increase(timeToNextEpoch1);
 
+            // note down the epoch
             const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
 
+            // skip the half of the epoch
+            const latestTimestamp2 = await helpers.time.latest();
+            const timeToNextEpoch2 = EPOCH_LENGTH - ((latestTimestamp2 - OFFSET) % EPOCH_LENGTH);
+            await helpers.time.increase(timeToNextEpoch2 / 2);
+
+            // initiate delegator withdrawal and finish the epoch
             await this.staking.connect(this.accounts.user2).initiateWithdrawal(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
+            await helpers.time.increase(timeToNextEpoch2 / 2);
 
             expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('100');
 

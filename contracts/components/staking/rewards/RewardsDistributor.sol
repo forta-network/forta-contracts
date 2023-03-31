@@ -194,10 +194,13 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256 r = RD - fee;
         console.log("getting checkpoint override");
         uint256 latestChangeTs = s.delegators.getAtEpoch(epochNumber).timestamp;
-        console.log("getting delegator portion");
-        uint256 d = s.delegatorsPortions[staker].getValueInEpoch(epochNumber, latestChangeTs);
         console.log("getting delegators total");
         uint256 DT = s.delegatorsTotal.getValueInEpoch(epochNumber, latestChangeTs);
+        if (DT == 0) {
+            return 0;
+        }
+        console.log("getting delegator portion");
+        uint256 d = s.delegatorsPortions[staker].getValueInEpoch(epochNumber, latestChangeTs);
         console.log("r, D, DT", r, d, DT);
         return Math.mulDiv(r, d, DT);
     }
