@@ -50,11 +50,13 @@ library Accumulators {
         }
 
         // there is a different checkpoint within this epoch: add up before that and after that
-        // this checkpoint time can be overridden at the time of calculation so take that into account
-        if (useCheckpointAround == 0) {
+        EpochCheckpoint memory previousCheckpoint = getAtEpoch(acc, epoch-1);
+
+        // this checkpoint time can be overridden at the time of calculation
+        // if the override value is not within range, always default to latest checkpoint number
+        if (useCheckpointAround > epochEnd || useCheckpointAround < epochStart) {
             useCheckpointAround = latestCheckpoint.timestamp;
         }
-        EpochCheckpoint memory previousCheckpoint = getAtEpoch(acc, epoch-1);
         console.log("previous checkpoint found", previousCheckpoint.timestamp, previousCheckpoint.rate);
         uint256 beforeCheckpoint = previousCheckpoint.rate * (useCheckpointAround - epochStart);
         uint256 afterCheckpoint = latestCheckpoint.rate * (epochEnd - useCheckpointAround);
