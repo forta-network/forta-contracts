@@ -168,9 +168,9 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
 
         console.log("getting delegated allocated");
-        uint256 N = s.delegated.getValueInEpoch(epochNumber, 0);
+        (uint256 N,) = s.delegated.getValueInEpoch(epochNumber, 0);
         console.log("getting delegator allocated");
-        uint256 D = s.delegators.getValueInEpoch(epochNumber, 0);
+        (uint256 D, uint256 latestDelegationChange) = s.delegators.getValueInEpoch(epochNumber, 0);
         uint256 T = N + D;
 
         if (T == 0) {
@@ -184,23 +184,20 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256 fee = (RD * feeBps) / MAX_BPS; // mulDiv not necessary - feeBps is small
 
         if (delegator) {
-            return delegatorRewards(s, RD, fee, epochNumber, staker);
+            return delegatorRewards(s, latestDelegationChange, RD - fee, epochNumber, staker);
         }
         uint256 RN = Math.mulDiv(R, N, T);
         return RN + fee;
     }
 
-    function delegatorRewards(DelegatedAccRewards storage s, uint256 RD, uint256 fee, uint256 epochNumber, address staker) internal view returns (uint256) {
-        uint256 r = RD - fee;
-        console.log("getting checkpoint override");
-        uint256 latestChangeTs = s.delegators.getAtEpoch(epochNumber).timestamp;
+    function delegatorRewards(DelegatedAccRewards storage s, uint256 latestDelegationChange, uint256 r, uint256 epochNumber, address staker) internal view returns (uint256) {
         console.log("getting delegators total");
-        uint256 DT = s.delegatorsTotal.getValueInEpoch(epochNumber, latestChangeTs);
+        (uint256 DT,) = s.delegatorsTotal.getValueInEpoch(epochNumber, latestDelegationChange);
         if (DT == 0) {
             return 0;
         }
         console.log("getting delegator portion");
-        uint256 d = s.delegatorsPortions[staker].getValueInEpoch(epochNumber, latestChangeTs);
+        (uint256 d,) = s.delegatorsPortions[staker].getValueInEpoch(epochNumber, latestDelegationChange);
         console.log("r, D, DT", r, d, DT);
         return Math.mulDiv(r, d, DT);
     }
