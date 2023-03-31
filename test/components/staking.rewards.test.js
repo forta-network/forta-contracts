@@ -83,7 +83,7 @@ describe('Staking Rewards', function () {
             );
         });
 
-        it('should apply equal rewards with comission for stakes added at the same time', async function () {
+        it('different deposit times, different amounts, two delegators', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
@@ -92,6 +92,7 @@ describe('Staking Rewards', function () {
             await network.provider.send('evm_setAutomine', [true]);
             await network.provider.send('evm_mine');
 
+            expect(await this.stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('100');
             expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('150');
 
             const latestTimestamp = await helpers.time.latest();
@@ -109,9 +110,13 @@ describe('Staking Rewards', function () {
 
             await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2000', epoch);
 
-            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.equal('1000');
-            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.closeTo('500', '1');
-            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user3.address)).to.be.closeTo('500', '1');
+            const ownerReward = await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address);
+            const delegator1Reward = await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address);
+            const delegator2Reward = await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user3.address);
+            expect(ownerReward).to.be.closeTo('1142', '1');
+            expect(delegator1Reward).to.be.closeTo('285', '1');
+            expect(delegator2Reward).to.be.closeTo('571', '1');
+            expect(ownerReward.add(delegator1Reward).add(delegator2Reward)).to.be.below('2000');
 
             const balanceBefore1 = await this.token.balanceOf(this.accounts.user1.address);
             const balanceBefore2 = await this.token.balanceOf(this.accounts.user2.address);
@@ -119,8 +124,8 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
 
-            expect(await this.token.balanceOf(this.accounts.user1.address)).to.eq(balanceBefore1.add('1000'));
-            expect(await this.token.balanceOf(this.accounts.user2.address)).to.be.closeTo(balanceBefore2.add('500'), 1);
+            expect(await this.token.balanceOf(this.accounts.user1.address)).to.eq(balanceBefore1.add('1142'));
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.be.closeTo(balanceBefore2.add('285'), 1);
 
             expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
             expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.equal('0');
@@ -174,7 +179,7 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
         });
 
-        it('slash stake', async function () {
+        it('slash the pool', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
             await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
@@ -185,14 +190,23 @@ describe('Staking Rewards', function () {
 
             expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('200');
 
-            const latestTimestamp = await helpers.time.latest();
-            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
-            await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
+            // finish the epoch
+            const latestTimestamp1 = await helpers.time.latest();
+            const timeToNextEpoch1 = EPOCH_LENGTH - ((latestTimestamp1 - OFFSET) % EPOCH_LENGTH);
+            await helpers.time.increase(timeToNextEpoch1);
 
+            // note down the epoch
             const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
 
+            // skip the half of the epoch
+            const latestTimestamp2 = await helpers.time.latest();
+            const timeToNextEpoch2 = EPOCH_LENGTH - ((latestTimestamp2 - OFFSET) % EPOCH_LENGTH);
+            await helpers.time.increase(timeToNextEpoch2 / 2);
+
+            // slash the pool and finish the epoch
             await this.staking.connect(this.accounts.admin).setSlashDelegatorsPercent('20');
             await this.staking.connect(this.accounts.slasher).slash(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '20', ethers.constants.AddressZero, '0');
+            await helpers.time.increase(timeToNextEpoch2 / 2);
 
             expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('180');
             expect(await this.stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('84');

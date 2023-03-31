@@ -32,7 +32,7 @@ library Accumulators {
         return origin.value + origin.rate * (getEpochEndTimestamp(epoch) - origin.timestamp);
     }
 
-    function getValueInEpoch(Accumulator storage acc, uint256 epoch) internal view returns (uint256) {
+    function getValueInEpoch(Accumulator storage acc, uint256 epoch, uint256 useCheckpointAround) internal view returns (uint256) {
         EpochCheckpoint memory latestCheckpoint = getAtEpoch(acc, epoch);
         console.log("latest checkpoint found", latestCheckpoint.timestamp, latestCheckpoint.rate);
         if (latestCheckpoint.timestamp == 0) {
@@ -50,10 +50,14 @@ library Accumulators {
         }
 
         // there is a different checkpoint within this epoch: add up before that and after that
+        // this checkpoint time can be overridden at the time of calculation so take that into account
+        if (useCheckpointAround == 0) {
+            useCheckpointAround = latestCheckpoint.timestamp;
+        }
         EpochCheckpoint memory previousCheckpoint = getAtEpoch(acc, epoch-1);
         console.log("previous checkpoint found", previousCheckpoint.timestamp, previousCheckpoint.rate);
-        uint256 beforeCheckpoint = previousCheckpoint.rate * (latestCheckpoint.timestamp - epochStart);
-        uint256 afterCheckpoint = latestCheckpoint.rate * (epochEnd - latestCheckpoint.timestamp);
+        uint256 beforeCheckpoint = previousCheckpoint.rate * (useCheckpointAround - epochStart);
+        uint256 afterCheckpoint = latestCheckpoint.rate * (epochEnd - useCheckpointAround);
         console.log("before after", beforeCheckpoint, afterCheckpoint, "\n");
         return (beforeCheckpoint + afterCheckpoint);
     }
