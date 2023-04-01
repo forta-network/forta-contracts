@@ -184,13 +184,13 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256 fee = (RD * feeBps) / MAX_BPS; // mulDiv not necessary - feeBps is small
 
         if (delegator) {
-            return delegatorRewards(s, RD - fee, epochNumber, staker);
+            return _availableDelegatorReward(s, RD - fee, epochNumber, staker);
         }
         uint256 RN = Math.mulDiv(R, N, T);
         return RN + fee;
     }
 
-    function delegatorRewards(DelegatedAccRewards storage s, uint256 r, uint256 epochNumber, address staker) internal view returns (uint256) {
+    function _availableDelegatorReward(DelegatedAccRewards storage s, uint256 r, uint256 epochNumber, address staker) private view returns (uint256) {
         console.log("getting delegators total");
         (uint256 DT, uint256 latestDelegationChange) = s.delegatorsTotal.getValueInEpoch(epochNumber, 0);
         if (DT == 0) {
