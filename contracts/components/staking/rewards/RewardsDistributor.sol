@@ -170,7 +170,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         console.log("getting delegated allocated");
         (uint256 N,) = s.delegated.getValueInEpoch(epochNumber, 0);
         console.log("getting delegator allocated");
-        (uint256 D, uint256 latestDelegationChange) = s.delegators.getValueInEpoch(epochNumber, 0);
+        (uint256 D,) = s.delegators.getValueInEpoch(epochNumber, 0);
         uint256 T = N + D;
 
         if (T == 0) {
@@ -184,15 +184,15 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256 fee = (RD * feeBps) / MAX_BPS; // mulDiv not necessary - feeBps is small
 
         if (delegator) {
-            return delegatorRewards(s, latestDelegationChange, RD - fee, epochNumber, staker);
+            return delegatorRewards(s, RD - fee, epochNumber, staker);
         }
         uint256 RN = Math.mulDiv(R, N, T);
         return RN + fee;
     }
 
-    function delegatorRewards(DelegatedAccRewards storage s, uint256 latestDelegationChange, uint256 r, uint256 epochNumber, address staker) internal view returns (uint256) {
+    function delegatorRewards(DelegatedAccRewards storage s, uint256 r, uint256 epochNumber, address staker) internal view returns (uint256) {
         console.log("getting delegators total");
-        (uint256 DT,) = s.delegatorsTotal.getValueInEpoch(epochNumber, latestDelegationChange);
+        (uint256 DT, uint256 latestDelegationChange) = s.delegatorsTotal.getValueInEpoch(epochNumber, 0);
         if (DT == 0) {
             return 0;
         }
