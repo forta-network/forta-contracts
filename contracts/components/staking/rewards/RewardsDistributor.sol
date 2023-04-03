@@ -248,17 +248,20 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     }
 
     function _getFee(DelegationFee[2] storage fees, uint256 index, uint256 epochNumber) private view returns (uint256) {
-        if (fees[index].feeBps == 0) {
-            // No fees set yet
+        // if no fees were set, return the default
+        if (fees[index].sinceEpoch == 0) {
             return defaultFeeBps;
         }
+        // if we are at or beyond the epoch which the fee at index (previous or latest) is eligible, return that
         if (epochNumber >= fees[index].sinceEpoch) {
             return fees[index].feeBps;
-        } else if (index > 0) {
-            return _getFee(fees, index - 1, epochNumber);
-        } else {
-            return defaultFeeBps;
         }
+        // return the previously set fee if the latest fee (index = 1) was not eligible above
+        if (index > 0) {
+            return _getFee(fees, index - 1, epochNumber);
+        }
+        // finally, just return the default
+        return defaultFeeBps;
     }
 
     function _getShareId(uint8 subjectType, uint256 subjectId) private pure returns (uint256 shareId, bool isDelegator) {

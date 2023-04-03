@@ -1,6 +1,10 @@
 import { Address, BigDecimal, BigInt, ethereum, log } from "@graphprotocol/graph-ts";
-import {SetDelegationFee as SetDelegationFeeEvent, Rewarded as RewardedDistributedEvent, RewardsDistributor as RewardsDistributorContract } from "../../generated/RewardsDistributor/RewardsDistributor";
-import { ScannerPool, Subject, RewardEvent, Staker } from "../../generated/schema";
+import {
+  SetDelegationFee as SetDelegationFeeEvent,
+  Rewarded as RewardedDistributedEvent, 
+  RewardsDistributor as RewardsDistributorContract, 
+  ClaimedRewards as ClaimedRewardEvent} from "../../generated/RewardsDistributor/RewardsDistributor";
+import { ScannerPool, Subject, RewardEvent, Staker, RewardClaimedEvent } from "../../generated/schema";
 import { formatSubjectId } from "./utils";
 import { events, transactions } from "@amxx/graphprotocol-utils";
 import { newMockEvent } from "matchstick-as";
@@ -99,11 +103,11 @@ export function handleRewardEvent(event: RewardedDistributedEvent): void {
     rewardedEvent.epochNumber = epochNumber.toI32();
     rewardedEvent.transaction = transactions.log(event).id;
     rewardedEvent.timestamp = event.block.timestamp;
-    rewardedEvent.apyForLastEpoch = apy;
+    rewardedEvent.apyForLastEpoch = apy ? apy : BigDecimal.fromString("0");
 
     rewardedEvent.save();
 
-    nodePool.apyForLastEpoch = apy;
+    nodePool.apyForLastEpoch = apy ? apy : BigDecimal.fromString("0");
     
     const pastRewardEvents: string[]  = nodePool.rewardedEvents ? nodePool.rewardedEvents as string[] : []
 
@@ -115,6 +119,18 @@ export function handleRewardEvent(event: RewardedDistributedEvent): void {
   } else {
     log.warning(`Failed to save reward event because could not find subject type from transaction {}`, [event.transaction.hash.toHexString()])
   }
+}
+
+export function handleClaimedRewards(event: ClaimedRewardEvent): void {
+  const claimedRewardEvent = new RewardClaimedEvent(events.id(event))
+  claimedRewardEvent.subject = formatSubjectId(event.params.subject, event.params.subjectType);
+  claimedRewardEvent.epochNumber = event.params.epochNumber;
+  claimedRewardEvent.to = event.params.to.toHexString();
+  claimedRewardEvent.transaction = transactions.log(event).id;
+  claimedRewardEvent.timestamp = event.block.timestamp;
+  claimedRewardEvent.value = event.params.value;
+
+  claimedRewardEvent.save();
 }
 
 export function createMockRewardEvent(
@@ -152,4 +168,55 @@ export function createMockRewardEvent(
   mockRewardedEvent.parameters.push(epochParam);
 
   return mockRewardedEvent;
+}
+
+export function createMockClaimedRewardEvent(
+  subjectType: i32,
+  subject: BigInt,
+  value: BigInt,
+  to: Address,
+  epochNumber: BigInt,
+  timestamp: BigInt
+): ClaimedRewardEvent {
+  const mockClaimedRewardedEvent = changetype<ClaimedRewardEvent>(newMockEvent());
+  mockClaimedRewardedEvent.parameters = [];
+
+  const subjectTypeParam = new ethereum.EventParam(
+    "subjectType",
+    ethereum.Value.fromI32(subjectType)
+  );
+
+  const subjectParam = new ethereum.EventParam(
+    "subject",
+    ethereum.Value.fromUnsignedBigInt(subject)
+  );
+
+  const valueParam = new ethereum.EventParam(
+    "value",
+    ethereum.Value.fromUnsignedBigInt(value)
+  );
+
+  const epochParam = new ethereum.EventParam(
+    "epochNumber",
+    ethereum.Value.fromUnsignedBigInt(epochNumber)
+  );
+
+  const toParam = new ethereum.EventParam(
+    "to",
+    ethereum.Value.fromAddress(to)
+  );
+
+  const timeStamp = new ethereum.EventParam(
+    "timestamp",
+    ethereum.Value.fromUnsignedBigInt(timestamp)
+  );
+
+  mockClaimedRewardedEvent.parameters.push(subjectTypeParam);
+  mockClaimedRewardedEvent.parameters.push(subjectParam);
+  mockClaimedRewardedEvent.parameters.push(valueParam);
+  mockClaimedRewardedEvent.parameters.push(epochParam);
+  mockClaimedRewardedEvent.parameters.push(toParam);
+  mockClaimedRewardedEvent.parameters.push(timeStamp);
+
+  return mockClaimedRewardedEvent;
 }

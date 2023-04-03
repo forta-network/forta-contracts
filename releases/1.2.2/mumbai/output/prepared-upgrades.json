@@ -1,0 +1,16 @@
+{
+	"rewards-distributor": {
+		"impl": {
+			"address": "0xc482956366E547CE12b01B455c5e7B85F490D54B",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3",
+				"0x02304eC24ba2996a83F595D7cf80e5571a406EFA"
+			],
+			"init-args": [],
+			"name": "RewardsDistributor",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	}
+}

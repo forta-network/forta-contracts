@@ -1,0 +1,14 @@
+name: Test Subgraph
+on: push
+jobs:
+  test-subgraph:
+    name: Run Unit Test
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+    
+      - name: Run test
+        id: test
+        uses: ./.github/actions/testSubgraph
