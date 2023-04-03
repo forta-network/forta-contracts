@@ -12,7 +12,8 @@ const subjects = [
 ];
 const DELEGATOR_SUBJECT_TYPE = 3;
 
-const EPOCH_LENGTH = 7 * 24 * 60 * 60;
+const ONE_DAY = 24 * 60 * 60;
+const EPOCH_LENGTH = 7 * ONE_DAY;
 
 const [
     [subject1, subjectType1, active1, inactive1],
@@ -22,6 +23,19 @@ const [
 
 const MAX_STAKE = '10000';
 const OFFSET = 4 * 24 * 60 * 60;
+
+async function endCurrentEpoch() {
+    const latestTimestamp = await helpers.time.latest();
+    const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
+    await helpers.time.increase(timeToNextEpoch);
+}
+
+async function skipHalfOfRemaining() {
+    const latestTimestamp = await helpers.time.latest();
+    const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
+    await helpers.time.increase(timeToNextEpoch / 2);
+}
+
 let registration, signature, verifyingContractInfo;
 describe('Staking Rewards', function () {
     prepare({
@@ -60,7 +74,7 @@ describe('Staking Rewards', function () {
             scannerPoolId: 1,
             chainId: 1,
             metadata: 'metadata',
-            timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+            timestamp: (await ethers.provider.getBlock('latest')).timestamp * 2, // avoiding expiration
         };
         signature = await signERC712ScannerRegistration(verifyingContractInfo, registration, this.accounts.scanner);
     });
@@ -362,6 +376,53 @@ describe('Staking Rewards', function () {
 
             await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
+        });
+
+        it('use the current accumulated value in the first epoch and the previous rate in the second epoch', async function () {
+            await endCurrentEpoch();
+            const firstEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
+
+            // deposit on the fourth day: 100 tokens deposited for 5 days in the epoch (100 * 4 = 400)
+            await helpers.time.increase(ONE_DAY * 3);
+            await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
+            await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
+
+            // deposit on the seventh day: 400 tokens deposited for one day in the epoch (400 * 1 = 400)
+            await helpers.time.increase(ONE_DAY * 3);
+            await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, '400');
+
+            await endCurrentEpoch();
+
+            // deposit some more amounts to try to break the expected calculation
+            await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
+            await helpers.time.increase(ONE_DAY);
+            await this.staking.connect(this.accounts.user2).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, '200');
+
+            // reward 1000
+            await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '1000', firstEpoch);
+
+            // the rewards should be 500 and equal because of the above `time × stake` logic in accumulation
+            // 100 * 4 == 400 * 1
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, firstEpoch, this.accounts.user1.address)).to.be.closeTo('500', '1');
+            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, firstEpoch, this.accounts.user2.address)).to.be.closeTo('500', '1');
+
+            await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [firstEpoch]);
+            await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [firstEpoch]);
+
+            // note down the current epoch and end it
+            const secondEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            await endCurrentEpoch();
+
+            // reward 1000 again
+            await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '1000', secondEpoch);
+
+            // the rewards should not be equal this time but it should rely on first epoch's numbers
+            // owner had 100, delegator had 400 so the 1000 should be distributed proportionally: 200 and 800
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, secondEpoch, this.accounts.user1.address)).to.be.closeTo('200', '1');
+            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, secondEpoch, this.accounts.user2.address)).to.be.closeTo('800', '1');
+
+            await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [secondEpoch]);
+            await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [secondEpoch]);
         });
     });
 

@@ -162,8 +162,13 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     function _availableReward(uint256 shareId, bool delegator, uint256 epochNumber, address staker) internal view returns (uint256) {
         DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
 
-        uint256 N = s.delegated.getValueAtEpoch(epochNumber);
-        uint256 D = s.delegators.getValueAtEpoch(epochNumber);
+        // for the first epoch, current epoch value should be preferred.
+        // otherwise, the previous epoch value should be used.
+        //
+        // if current epoch value is used for pool owner allocated stake at this time
+        // then use the current epoch value for the rest of the values, too.
+        (uint256 N, bool useCurrent) = s.delegated.getValueForEpoch(epochNumber, false);
+        (uint256 D,) = s.delegators.getValueForEpoch(epochNumber, useCurrent);
         uint256 T = N + D;
 
         if (T == 0) {
@@ -177,14 +182,17 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256 fee = (RD * feeBps) / MAX_BPS; // mulDiv not necessary - feeBps is small
 
         if (delegator) {
-            uint256 r = RD - fee;
-            uint256 d = s.delegatorsPortions[staker].getValueAtEpoch(epochNumber);
-            uint256 DT = s.delegatorsTotal.getValueAtEpoch(epochNumber);
-            return Math.mulDiv(r, d, DT);
+            return _availableDelegatorReward(s, epochNumber, staker, RD - fee, useCurrent);
         } else {
             uint256 RN = Math.mulDiv(R, N, T);
             return RN + fee;
         }
+    }
+
+    function _availableDelegatorReward(DelegatedAccRewards storage s, uint256 epochNumber, address staker, uint256 r, bool useCurrent) private view returns (uint256) {
+        (uint256 d,) = s.delegatorsPortions[staker].getValueForEpoch(epochNumber, useCurrent);
+        (uint256 DT,) = s.delegatorsTotal.getValueForEpoch(epochNumber, useCurrent);
+        return Math.mulDiv(r, d, DT);
     }
 
     function claimRewards(uint8 subjectType, uint256 subjectId, uint256[] calldata epochNumbers) external {
