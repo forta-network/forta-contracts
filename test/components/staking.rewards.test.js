@@ -30,12 +30,6 @@ async function endCurrentEpoch() {
     await helpers.time.increase(timeToNextEpoch);
 }
 
-async function skipHalfOfRemaining() {
-    const latestTimestamp = await helpers.time.latest();
-    const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
-    await helpers.time.increase(timeToNextEpoch / 2);
-}
-
 let registration, signature, verifyingContractInfo;
 describe('Staking Rewards', function () {
     prepare({
