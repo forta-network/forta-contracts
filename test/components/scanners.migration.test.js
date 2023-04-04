@@ -426,7 +426,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
             let nonMigrated, migrated;
             beforeEach(async function () {
                 nonMigrated = SCANNERS[SCANNERS.length - 1].address;
-                migrated = SCANNERS[0].address;
+                migrated = SCANNERS[1].address;
                 const inputScannerPoolId = await this.registryMigration.SCANNER_POOL_NOT_MIGRATED();
 
                 await this.registryMigration.connect(this.accounts.manager).migrate(

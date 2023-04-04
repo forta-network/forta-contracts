@@ -30,12 +30,6 @@ async function endCurrentEpoch() {
     await helpers.time.increase(timeToNextEpoch);
 }
 
-async function skipHalfOfRemaining() {
-    const latestTimestamp = await helpers.time.latest();
-    const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
-    await helpers.time.increase(timeToNextEpoch / 2);
-}
-
 let registration, signature, verifyingContractInfo;
 describe('Staking Rewards', function () {
     prepare({
@@ -424,17 +418,24 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [secondEpoch]);
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [secondEpoch]);
         });
+
+        it('should be able to set delegationParamsEpochDelay', async function () {
+            // Was initialized with a value of 2
+            const previousDelay = await this.rewardsDistributor.delegationParamsEpochDelay();
+
+            const newDelay = 3;
+            await this.rewardsDistributor.connect(this.accounts.admin).setDelegationParams(newDelay, 0);
+
+            expect(await this.rewardsDistributor.delegationParamsEpochDelay()).to.not.be.equal(previousDelay);
+            expect(await this.rewardsDistributor.delegationParamsEpochDelay()).to.be.equal(newDelay);
+        });
     });
 
     describe('Fee setting', function () {
         it('fee', async function () {
             await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2500');
-            let currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
-            console.log(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, currentEpoch));
 
             await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
-            currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
-            console.log(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, currentEpoch));
             const registration = {
                 scanner: this.SCANNER_ID,
                 scannerPoolId: 1,

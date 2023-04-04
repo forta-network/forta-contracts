@@ -1,0 +1,18 @@
+{
+    "FortaStaking": [
+        {
+            "methodName": "setTreasury",
+            "params": [
+                ["0xC99884BE6eEE5533Be08152C40DF0464B3FAE877"]
+            ]
+        }
+    ],
+    "AccessManager": [
+        {
+            "methodName": "grantRole",
+            "params": [
+                ["roles.SCANNER_POOL_ADMIN_ROLE", "0xd1d4FaFd400fCD643132bb7eAF7682eE97E09C3e"]
+            ]
+        }
+    ]
+}

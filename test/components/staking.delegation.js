@@ -7,6 +7,8 @@ const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRe
 const subjects = [
     [ethers.BigNumber.from('1'), 2],
     [ethers.BigNumber.from('1'), 3],
+    [ethers.BigNumber.from('2'), 2],
+    [ethers.BigNumber.from('2'), 3],
 ];
 const [[scannerPoolId, scannerPoolSubjectType, scannerPoolActive, scannerPoolInactive], [_, delegatorSubjectType, delegatorActive, delegatorInactive]] = subjects.map((items) => [
     items[0],
@@ -399,6 +401,76 @@ describe('Staking - Delegation', function () {
                 expect(await this.staking.activeStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('500');
                 expect(await this.stakeAllocator.allocatedStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('0');
                 expect(await this.stakeAllocator.unallocatedStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('500');
+            });
+
+            it('unallocates delegators stake when scanner pool owner initiates withdrawal', async function () {
+                // Confirm scanners in scanner pool are enabled and operational
+                // before the delegation of any stake
+                for (const scanner of SCANNERS) {
+                    expect(await this.scannerPools.isScannerDisabled(scanner.address)).to.eq(false);
+                    expect(await this.scannerPools.isScannerOperational(scanner.address)).to.eq(true);
+                }
+
+                // delegator stakes into the same scanner pool
+                await this.staking.connect(this.accounts.user2).deposit(delegatorSubjectType, scannerPoolId, '100');
+
+                // Confirm scanner pool has both the owner's and delegator's stake (owner staked 300; delegator staked 100)
+                expect(await this.stakeAllocator.allocatedManagedStake(scannerPoolSubjectType, scannerPoolId)).to.eq('400');
+
+                // Check the balances individually
+                expect(await this.stakeAllocator.allocatedStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('300');
+                expect(await this.stakeAllocator.allocatedStakeFor(delegatorSubjectType, scannerPoolId)).to.eq('100');
+                // Confirm unallocated stake is zero because the stake is still allocated
+                expect(await this.stakeAllocator.unallocatedStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('0');
+                expect(await this.stakeAllocator.unallocatedStakeFor(delegatorSubjectType, scannerPoolId)).to.eq('0');
+
+                // Owner withdraws own stake to under minimum
+                expect(await this.staking.connect(this.accounts.user1).initiateWithdrawal(scannerPoolSubjectType, scannerPoolId, '250'));
+                // Confirm all of delegator's stake is now unallocated
+                expect(await this.stakeAllocator.allocatedStakeFor(delegatorSubjectType, scannerPoolId)).to.eq('0');
+                expect(await this.stakeAllocator.unallocatedStakeFor(delegatorSubjectType, scannerPoolId)).to.eq('100');
+
+                // Confirm scanners in scanner pool are not disabled but are non-operational
+                for (const scanner of SCANNERS) {
+                    expect(await this.scannerPools.isScannerDisabled(scanner.address)).to.eq(false);
+                    expect(await this.scannerPools.isScannerOperational(scanner.address)).to.eq(false);
+                }
+            });
+
+            it('does not unallocate delegators stake when scanner pool owner unallocates own stake to under min', async function () {
+                // Confirm scanners in scanner pool are enabled and operational
+                // before the delegation of any stake
+                for (const scanner of SCANNERS) {
+                    expect(await this.scannerPools.isScannerDisabled(scanner.address)).to.eq(false);
+                    expect(await this.scannerPools.isScannerOperational(scanner.address)).to.eq(true);
+                }
+
+                // delegator stakes into the same scanner pool
+                await this.staking.connect(this.accounts.user2).deposit(delegatorSubjectType, scannerPoolId, '100');
+
+                // Confirm scanner pool has both the owner's and delegator's stake (owner staked 300; delegator staked 100)
+                expect(await this.stakeAllocator.allocatedManagedStake(scannerPoolSubjectType, scannerPoolId)).to.eq('400');
+
+                // Check the balances individually
+                expect(await this.stakeAllocator.allocatedStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('300');
+                expect(await this.stakeAllocator.allocatedStakeFor(delegatorSubjectType, scannerPoolId)).to.eq('100');
+                // Confirm unallocated stake is zero because the stake is still allocated
+                expect(await this.stakeAllocator.unallocatedStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('0');
+                expect(await this.stakeAllocator.unallocatedStakeFor(delegatorSubjectType, scannerPoolId)).to.eq('0');
+
+                // Owner unallocates own stake and allocated remains under minimum
+                expect(await this.stakeAllocator.connect(this.accounts.user1).unallocateOwnStake(scannerPoolSubjectType, scannerPoolId, '250'));
+                // Confirm that the part of the owner's and all of the delegator's stake is now unallocated
+                expect(await this.stakeAllocator.allocatedManagedStake(scannerPoolSubjectType, scannerPoolId)).to.eq('150');
+                expect(await this.stakeAllocator.allocatedStakeFor(scannerPoolSubjectType, scannerPoolId)).to.eq('50');
+                expect(await this.stakeAllocator.allocatedStakeFor(delegatorSubjectType, scannerPoolId)).to.eq('100');
+                expect(await this.stakeAllocator.unallocatedStakeFor(delegatorSubjectType, scannerPoolId)).to.eq('0');
+
+                // Confirm scanners in scanner pool are not disabled but are non-operational
+                for (const scanner of SCANNERS) {
+                    expect(await this.scannerPools.isScannerDisabled(scanner.address)).to.eq(false);
+                    expect(await this.scannerPools.isScannerOperational(scanner.address)).to.eq(false);
+                }
             });
         });
 
