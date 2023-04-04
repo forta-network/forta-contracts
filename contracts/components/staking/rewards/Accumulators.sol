@@ -31,6 +31,22 @@ library Accumulators {
         return origin.value + origin.rate * (getEpochEndTimestamp(epoch) - origin.timestamp);
     }
 
+    function getValueForEpoch(Accumulator storage acc, uint256 epoch, bool preferCurrent) internal view returns (uint256 value, bool current) {
+        // if preferring current epoch value, just use the current accumulator value
+        if (preferCurrent) {
+            return (getValueAtEpoch(acc, epoch), true);
+        }
+        // find the latest available checkpoint for the previous epoch
+        // if it is non-zero, use that as a flat rate for the current epoch
+        EpochCheckpoint memory lastEpochCheckpoint = getAtEpoch(acc, epoch-1);
+        if (lastEpochCheckpoint.timestamp > 0) {
+            return (lastEpochCheckpoint.rate * EPOCH_LENGTH, false);
+        }
+        // checkpoint avaiable for the previous epoch was zero
+        // finally, use the current accumulator value
+        return (getValueAtEpoch(acc, epoch), true);
+    }
+
     function addRate(Accumulator storage acc, uint256 rate) internal {
         setRate(acc, latest(acc).rate + rate);
     }
