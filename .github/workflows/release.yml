@@ -40,7 +40,6 @@ jobs:
                   path: |
                       artifacts
                       cache/*.json
-
     test:
         name: Test release
         if: startsWith(github.head_ref, 'release/')
