@@ -167,8 +167,8 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         //
         // if current epoch value is used for pool owner allocated stake at this time
         // then use the current epoch value for the rest of the values, too.
-        (uint256 N, bool useCurrent) = s.delegated.getValueForEpoch(epochNumber, false);
-        (uint256 D,) = s.delegators.getValueForEpoch(epochNumber, useCurrent);
+        (uint256 N, bool useCurrent) = s.delegated.preferValueForEpoch(epochNumber, false);
+        uint256 D = s.delegators.getValueForEpoch(epochNumber, useCurrent);
         uint256 T = N + D;
 
         if (T == 0) {
@@ -190,8 +190,8 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     }
 
     function _availableDelegatorReward(DelegatedAccRewards storage s, uint256 epochNumber, address staker, uint256 r, bool useCurrent) private view returns (uint256) {
-        (uint256 d,) = s.delegatorsPortions[staker].getValueForEpoch(epochNumber, useCurrent);
-        (uint256 DT,) = s.delegatorsTotal.getValueForEpoch(epochNumber, useCurrent);
+        uint256 d = s.delegatorsPortions[staker].getValueForEpoch(epochNumber, useCurrent);
+        uint256 DT = s.delegatorsTotal.getValueForEpoch(epochNumber, useCurrent);
         return Math.mulDiv(r, d, DT);
     }
 
