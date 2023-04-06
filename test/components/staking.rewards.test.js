@@ -403,8 +403,14 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [firstEpoch]);
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [firstEpoch]);
 
-            // note down the current epoch and end it
+            // note down the current epoch as the second one
             const secondEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
+
+            // deposit with a second delegator to try to break the distribution
+            // it should not affect because only first epoch values should be used
+            await this.staking.connect(this.accounts.user3).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, '500');
+
+            // end the current epoch
             await endCurrentEpoch();
 
             // reward 1000 again
@@ -414,6 +420,7 @@ describe('Staking Rewards', function () {
             // owner had 100, delegator had 400 so the 1000 should be distributed proportionally: 200 and 800
             expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, secondEpoch, this.accounts.user1.address)).to.be.closeTo('200', '1');
             expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, secondEpoch, this.accounts.user2.address)).to.be.closeTo('800', '1');
+            expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, secondEpoch, this.accounts.user3.address)).to.be.equal('0');
 
             await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [secondEpoch]);
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [secondEpoch]);
