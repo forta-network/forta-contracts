@@ -1,7 +1,7 @@
 {
 	"rewards-distributor": {
 		"impl": {
-			"address": "0x4100C94D3551D70eD940332DB579E911D3775886",
+			"address": "0x98e664dE6EC29FF7606ab26E05678ab9d34012E4",
 			"constructor-args": [
 				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
 				"0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1",
