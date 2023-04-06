@@ -376,7 +376,7 @@ describe('Staking Rewards', function () {
             await endCurrentEpoch();
             const firstEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
 
-            // deposit on the fourth day: 100 tokens deposited for 5 days in the epoch (100 * 4 = 400)
+            // deposit on the fourth day: 100 tokens deposited for four days in the epoch (100 * 4 = 400)
             await helpers.time.increase(ONE_DAY * 3);
             await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
             await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
