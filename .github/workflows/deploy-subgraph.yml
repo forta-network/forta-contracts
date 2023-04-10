@@ -13,6 +13,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
+      
+      - name: Install the graph cli
+        run: npm install @graphprotocol/graph-cli
 
       - name: Authenticate with prod subgraph
         run: |
