@@ -1,6 +1,7 @@
 import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import { assert, test, createMockedFunction, describe } from "matchstick-as";
 import {
+  addressToHex,
   createFrozeEvent,
   createRewardEvent,
   createSlashedEvent,
@@ -85,37 +86,3 @@ test("Should successfully handle froze event", () => {
     "true"
   );
 });
-
-describe('Delegated staking', () => {
-  test('should handle stake deposited event for new delegated staker', () => {
-
-  })
-
-  test('should handle stake deposited event for delegated staker increasing stake', () => {
-
-  })
-
-  test('should handle withdrawal executed event for delegated staker withdrawing stake', () => {
-
-  })
-
-  test('should update staker on account after stake deposited event', () => {
-
-  })
-
-  test('should increase staker total aggregate after stake deposited event', () => {
-
-  })
-
-  test('should increase staker total active aggregate after stake deposited event', () => {
-
-  })
-
-  test('should reduce staker total aggregate after handle withdrawal executed event', () => {
-
-  })
-
-  test('should reduce staker total active aggregate after handle withdrawal executed event', () => {
-
-  })
-})

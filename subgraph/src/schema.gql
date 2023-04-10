@@ -277,6 +277,7 @@ type ScannerPool @entity {
   stakeOwnedAllocated: BigInt!
   scanNodes: [ScanNode!] @derivedFrom(field: "scannerPool")
   rewardedEvents: [RewardEvent!]
+  rewardClaimedEvents: [RewardClaimedEvent!] @derivedFrom(field: "to")
   stakers: [Staker!]
 }
 
