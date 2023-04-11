@@ -23,12 +23,16 @@ abstract contract ChainSettingsRegistryCore is BaseComponentUpgradeable {
     event ChainSettingsUpdated(uint256 chainId, string metadata);
     event ChainIdSupported(uint256 chainId);
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {}
-
-    // Update supported chain ids, both the amount and the ids themselves
+    /**
+     * @notice Method to update which chains are supported by the network.
+     * @dev Method implements a cap to how many chain ids can be updated
+     * at once, to prevent looping through too many chain ids.
+     * The cap is also a lower number, since it is expected that the
+     * supported chains will not change often.
+     * @param chainIds Array of chain ids that are to be supported.
+     * @param metadata IPFS pointer to chain id's metadata JSON.
+     */
     function updateSupportedChains(uint256[] calldata chainIds, string calldata metadata) external onlyRole(CHAIN_SETTINGS_ROLE) {
-        // Cap on how many chain ids can be updated at once
         if(chainIds.length > MAX_CHAIN_IDS_PER_UPDATE) revert ChainIdsAmountExceeded(chainIds.length - MAX_CHAIN_IDS_PER_UPDATE);
 
         for(uint256 i = 0; i < chainIds.length; i++) {
@@ -40,7 +44,14 @@ abstract contract ChainSettingsRegistryCore is BaseComponentUpgradeable {
         _supportedChainIdsAmount += chainIds.length;
     }
 
-    // Update chain settings to be fetched later
+    /**
+     * @notice Method to update a chain's settings/metadata.
+     * @dev Checks to confirm there aren't more chains attempting to be updated
+     * than there are supported chains. Also checks to confirm that the chains
+     * attempting to be updated are supported.
+     * @param chainIds Array of chain ids that are to have their settings updated.
+     * @param metadata IPFS pointer to chain id's metadata JSON.
+     */
     function updateChainSettings(uint256[] calldata chainIds, string calldata metadata) external onlyRole(CHAIN_SETTINGS_ROLE) {
         if(chainIds.length > _supportedChainIdsAmount) revert ChainIdsAmountExceeded(chainIds.length - _supportedChainIdsAmount);
 
@@ -50,6 +61,12 @@ abstract contract ChainSettingsRegistryCore is BaseComponentUpgradeable {
         }
     }
 
+    /**
+     * @notice Logic for chain metadata update.
+     * @dev Checks chain id's metadata uniqueness and updates chain's metadata.
+     * @param chainId Chain id that is to have its settings updated.
+     * @param metadata IPFS pointer to chain id's metadata JSON.
+     */
     function _chainSettingsUpdate(uint256 chainId, string calldata metadata) private {
         bytes32 newHash = keccak256(bytes(metadata));
         if (_chainIdMetadataUniqueness[chainId][newHash]) revert MetadataNotUnique(newHash);
@@ -66,14 +83,25 @@ abstract contract ChainSettingsRegistryCore is BaseComponentUpgradeable {
         emit ChainIdSupported(chainId);
     }
 
+    /**
+     * @notice Getter for metadata for the `chainId`.
+     */
     function getChainIdSettings(uint256 chainId) public view returns (string memory) {
         return _chainIdMetadata[chainId];
     }
 
+    /**
+     * @notice Getter for the current amount of supported chains.
+     */
     function getSupportedChainIdsAmount() public view returns (uint256) {
         return _supportedChainIdsAmount;
     }
 
+    /**
+     * @notice Checks if chainId is currently supported.
+     * @param chainId Chain id of the specific chain.
+     * @return true if chain is supported, false otherwise.
+     */
     function isChainIdSupported(uint256 chainId) public view returns (bool) {
         return _chainIdSupported[chainId];
     }
