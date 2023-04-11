@@ -26,7 +26,7 @@ contract ChainSettingsRegistry is BaseComponentUpgradeable, ChainSettingsRegistr
      * @notice Helper to get either msg msg.sender if not a meta transaction, signer of forwarder metatx if it is.
      * @inheritdoc ForwardedContext
      */
-    function _msgSender() internal view virtual override(BaseComponentUpgradeable) returns (address sender) {
+    function _msgSender() internal view virtual override(BaseComponentUpgradeable, ChainSettingsRegistryCore) returns (address sender) {
         return super._msgSender();
     }
 
@@ -34,7 +34,7 @@ contract ChainSettingsRegistry is BaseComponentUpgradeable, ChainSettingsRegistr
      * @notice Helper to get msg.data if not a meta transaction, forwarder data in metatx if it is.
      * @inheritdoc ForwardedContext
      */
-    function _msgData() internal view virtual override(BaseComponentUpgradeable) returns (bytes calldata) {
+    function _msgData() internal view virtual override(BaseComponentUpgradeable, ChainSettingsRegistryCore) returns (bytes calldata) {
         return super._msgData();
     }
 
