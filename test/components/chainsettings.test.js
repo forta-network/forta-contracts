@@ -59,6 +59,12 @@ describe('Chain Settings Registry', function () {
     
             expect(await this.chainSettings.connect(this.accounts.manager).getSupportedChainIdsAmount()).to.be.equal(supportedChainIds.length);
         });
+
+        it('should not allow to pass an empty array of chains ids to be supported', async function () {
+            await expect(this.chainSettings.connect(this.accounts.manager).updateSupportedChains([], 'Metadata1')).to.be.revertedWith(
+                `EmptyArray("chainIds")`
+            );
+        });
     });
 
     describe('Updating chain settings', function () {
@@ -102,6 +108,12 @@ describe('Chain Settings Registry', function () {
         it('should not allow to update chain settings for an unsupported chain', async function () {
             await expect(this.chainSettings.connect(this.accounts.manager).updateChainSettings([unsupportedChainIds[0]], 'Metadata1')).to.be.revertedWith(
                 `ChainIdUnsupported(${unsupportedChainIds[0]})`
+            );
+        });
+
+        it('should not allow to pass an empty array of chains ids to update chain settings', async function () {
+            await expect(this.chainSettings.connect(this.accounts.manager).updateChainSettings([], 'Metadata2')).to.be.revertedWith(
+                `EmptyArray("chainIds")`
             );
         });
     });

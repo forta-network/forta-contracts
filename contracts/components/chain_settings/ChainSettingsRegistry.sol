@@ -4,6 +4,7 @@
 pragma solidity ^0.8.9;
 
 import "../BaseComponentUpgradeable.sol";
+import "../../errors/GeneralErrors.sol";
 
 contract ChainSettingsRegistry is BaseComponentUpgradeable {
     string public constant version = "0.1.0";
@@ -46,10 +47,11 @@ contract ChainSettingsRegistry is BaseComponentUpgradeable {
      * @param metadata IPFS pointer to chain id's metadata JSON.
      */
     function updateSupportedChains(uint256[] calldata chainIds, string calldata metadata) external onlyRole(CHAIN_SETTINGS_ROLE) {
-        if(chainIds.length > MAX_CHAIN_IDS_PER_UPDATE) revert ChainIdsAmountExceeded(chainIds.length - MAX_CHAIN_IDS_PER_UPDATE);
+        if (chainIds.length == 0) revert EmptyArray("chainIds");
+        if (chainIds.length > MAX_CHAIN_IDS_PER_UPDATE) revert ChainIdsAmountExceeded(chainIds.length - MAX_CHAIN_IDS_PER_UPDATE);
 
         for(uint256 i = 0; i < chainIds.length; i++) {
-            if(_chainIdSupported[chainIds[i]]) revert ChainIdAlreadySupported(chainIds[i]);
+            if (_chainIdSupported[chainIds[i]]) revert ChainIdAlreadySupported(chainIds[i]);
             _updateSupportedChainIds(chainIds[i]);
             _chainSettingsUpdate(chainIds[i], metadata);
         }
@@ -66,10 +68,11 @@ contract ChainSettingsRegistry is BaseComponentUpgradeable {
      * @param metadata IPFS pointer to chain id's metadata JSON.
      */
     function updateChainSettings(uint256[] calldata chainIds, string calldata metadata) external onlyRole(CHAIN_SETTINGS_ROLE) {
-        if(chainIds.length > _supportedChainIdsAmount) revert ChainIdsAmountExceeded(chainIds.length - _supportedChainIdsAmount);
+        if (chainIds.length == 0) revert EmptyArray("chainIds");
+        if (chainIds.length > _supportedChainIdsAmount) revert ChainIdsAmountExceeded(chainIds.length - _supportedChainIdsAmount);
 
         for(uint256 i = 0; i < chainIds.length; i++) {
-            if(!_chainIdSupported[chainIds[i]]) revert ChainIdUnsupported(chainIds[i]);
+            if (!_chainIdSupported[chainIds[i]]) revert ChainIdUnsupported(chainIds[i]);
             _chainSettingsUpdate(chainIds[i], metadata);
         }
     }
