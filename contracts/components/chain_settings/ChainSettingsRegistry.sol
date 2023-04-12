@@ -8,7 +8,7 @@ import "../../errors/GeneralErrors.sol";
 
 contract ChainSettingsRegistry is BaseComponentUpgradeable {
     string public constant version = "0.1.0";
-    uint256 constant MAX_CHAIN_IDS_PER_UPDATE = 5;
+    uint8 constant MAX_CHAIN_IDS_PER_UPDATE = 5;
 
     uint256 private _supportedChainIdsAmount;
     mapping(uint256 => bool) private _chainIdSupported;
@@ -21,8 +21,8 @@ contract ChainSettingsRegistry is BaseComponentUpgradeable {
     error ChainIdUnsupported(uint256 chainId);
     error MetadataNotUnique(bytes32 hash);
 
-    event ChainSettingsUpdated(uint256 chainId, string metadata);
-    event ChainIdSupported(uint256 chainId);
+    event ChainSettingsUpdated(uint256 indexed chainId, string metadata);
+    event ChainIdSupported(uint256 indexed chainId);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder) {}
