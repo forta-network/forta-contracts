@@ -1,12 +1,13 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 
 import { ScannerPool } from "../../generated/schema";
+import { scannerBigIntToHex } from "./scannode";
 
 export function fetchScannerPool(id: BigInt): ScannerPool {
   
-  let scannerPool = ScannerPool.load(id.toBigDecimal().toString());
+  let scannerPool = ScannerPool.load(scannerBigIntToHex(id));
   if (scannerPool == null) {
-    scannerPool = new ScannerPool(id.toBigDecimal().toString());
+    scannerPool = new ScannerPool(scannerBigIntToHex(id));
     scannerPool.registered = false;
     scannerPool.chainId = 1;
     scannerPool.apr = BigDecimal.zero();
