@@ -274,6 +274,20 @@ async function migrate(config = {}) {
             CACHE
         );
         DEBUG(`[${Object.keys(contracts).length}] dispatch: ${contracts.dispatch.address}`);
+
+        DEBUG(`Deploying Chain Setting Registry...`);
+        contracts.chainSettings = await contractHelpers.tryFetchProxy(
+            hre,
+            'ChainSettingsRegistry',
+            'uups',
+            [contracts.access.address],
+            {
+                constructorArgs: [contracts.forwarder.address],
+                unsafeAllow: 'delegatecall',
+            },
+            CACHE
+        );
+        DEBUG(`[${Object.keys(contracts).length}] chainSettings: ${contracts.dispatch.address}`);
     }
 
     // Roles dictionary
