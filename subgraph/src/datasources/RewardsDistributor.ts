@@ -4,7 +4,7 @@ import {
   Rewarded as RewardedDistributedEvent, 
   RewardsDistributor as RewardsDistributorContract, 
   ClaimedRewards as ClaimedRewardEvent} from "../../generated/RewardsDistributor/RewardsDistributor";
-import { ScannerPool, Subject, RewardEvent, Staker, RewardClaimedEvent } from "../../generated/schema";
+import { ScannerPool, Subject, RewardEvent, Staker, RewardClaimedEvent, DelegateStakeSnapshot, DelegateStakesSnapshot } from "../../generated/schema";
 import { formatSubjectId } from "./utils";
 import { events, transactions } from "@amxx/graphprotocol-utils";
 import { newMockEvent } from "matchstick-as";
@@ -131,6 +131,37 @@ export function handleClaimedRewards(event: ClaimedRewardEvent): void {
   claimedRewardEvent.value = event.params.value;
 
   claimedRewardEvent.save();
+}
+
+
+export function handleBlock(block: ethereum.Block): void {
+  /* 
+    1. Get timestamp of block
+    2. Get current epoch on rewards distributor contract
+    3. Fetch EpochMetaData singleton
+    4. Check if rewards distributor epoch is > current epoch in metadata
+       - If true, update cache of snapshot of delegators stake at the start of an epoch onto each nodePool entity
+    5. Update the epochMetaData singleton 
+  */
+}
+
+// Need to add good logging here
+export function updateNodePoolStakeSnapshots(): void {
+  // Iterate over the all nodepools in the current store
+    // update the delegator stake snapshots on each node pool
+}
+
+// Need to add good logging here
+export function updateDelegatorStakesSnapshot(nodePoolId: BigInt): bool {
+  // Load node pool
+  // Fetch delegateStakesAtTheStartOfCurrentEpoch and save it to delegateStakesAtTheStartOfPrevEpoch
+  // Fetch a snapshot of the current stakes of all delegators and save it to the node pool
+  // return true if successful
+  return true;
+}
+
+export function fetchDelegateStakeSnapshot(nodePool: ScannerPool): DelegateStakeSnapshot {
+
 }
 
 export function createMockRewardEvent(
