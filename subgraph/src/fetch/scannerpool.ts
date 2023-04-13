@@ -4,9 +4,9 @@ import { ScannerPool } from "../../generated/schema";
 
 export function fetchScannerPool(id: BigInt): ScannerPool {
   
-  let scannerPool = ScannerPool.load(id.toHex());
+  let scannerPool = ScannerPool.load(id.toBigDecimal().toString());
   if (scannerPool == null) {
-    scannerPool = new ScannerPool(id.toHex());
+    scannerPool = new ScannerPool(id.toBigDecimal().toString());
     scannerPool.registered = false;
     scannerPool.chainId = 1;
     scannerPool.apr = BigDecimal.zero();
