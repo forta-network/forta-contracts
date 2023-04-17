@@ -89,10 +89,12 @@ const updateNodePoolLatestRewardMetaData = (nodePool: ScannerPool, latestEpochNu
   // Update previous metadata with latest meta data then update latest meta data
   if(previousRewardMetaData && latestRewardMetaData) {
     previousRewardMetaData.epochNumber = latestRewardMetaData.epochNumber;
+    previousRewardMetaData.nodePoolId = nodePool.id;
     previousRewardMetaData.totalDelegatorStakesAtStartOfEpoch = latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch;
     previousRewardMetaData.save();
 
     latestRewardMetaData.epochNumber = latestEpochNumber;
+    latestRewardMetaData.nodePoolId = nodePool.id;
     latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch = totalDelegateRewardAtStartOfCurrentEpoch;
     latestRewardMetaData.save();
   }
