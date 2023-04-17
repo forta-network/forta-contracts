@@ -35,7 +35,11 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
 
   const latestRewardMetaData = NodePoolRewardMetaData.load(nodePool.latestRewardMetaData);
 
-  if(!latestRewardMetaData || latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch.equals(BigInt.fromI32(0))) return null;
+  if(!latestRewardMetaData) return null
+
+  const totalDelegatorStakesAtStartOfEpoch = latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch;
+  if(!totalDelegatorStakesAtStartOfEpoch) return null
+  if(totalDelegatorStakesAtStartOfEpoch.equals(BigInt.fromI32(0))) return null;
 
   
   const rewardDistributor = RewardsDistributorContract.bind(rewardsDistributorAddress);
@@ -66,7 +70,9 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
   // Calculate APY as string
   const totalDelegateStakeInEpoch = latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch;
 
-  if(!totalDelegateStakeInEpoch || totalDelegateStakeInEpoch.equals(BigInt.fromI32(0))) return null;
+  if(!totalDelegateStakeInEpoch) return null;
+
+  if(totalDelegateStakeInEpoch.equals(BigInt.fromI32(0))) return null;
 
   // APY Pool_i = ({ 1 + ( LastEpochRewardsForDelegators_i / LastEpochDelegatorsTotalStake_i )} ^ 52) - 1
   const apy = ((parseFloat((BigDecimal.fromString("1").plus(totalDelegateRewards.toBigDecimal().div(totalDelegateStakeInEpoch.toBigDecimal()))).toString()) ** 52) - 1) * 100;
