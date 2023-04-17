@@ -1,6 +1,6 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 
-import { ScannerPool } from "../../generated/schema";
+import { ScannerPool, NodePoolRewardMetaData } from "../../generated/schema";
 
 export function fetchScannerPool(id: BigInt): ScannerPool {
   
@@ -20,6 +20,19 @@ export function fetchScannerPool(id: BigInt): ScannerPool {
     scannerPool.stakeOwnedAllocated = BigInt.zero();
     scannerPool.apyForLastEpoch = BigDecimal.fromString("0");
     scannerPool.owner = "";
+
+    const latestRewardMetaData = new NodePoolRewardMetaData(`${scannerPool.id}-latest-reward-metadata`)
+    latestRewardMetaData.epochNumber = BigInt.zero();
+    latestRewardMetaData.nodePoolId = scannerPool.id;
+    latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch = BigInt.zero();
+
+    const previousRewardMetaData = new NodePoolRewardMetaData(`${scannerPool.id}-previous-reward-metadata`)
+    latestRewardMetaData.epochNumber = BigInt.zero();
+    latestRewardMetaData.nodePoolId = scannerPool.id;
+    latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch = BigInt.zero();
+
+    scannerPool.latestRewardMetaData = latestRewardMetaData.id;
+    scannerPool.previousRewardMetaData = previousRewardMetaData.id;
   }
   return scannerPool as ScannerPool;
 }
