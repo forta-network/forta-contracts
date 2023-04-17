@@ -262,9 +262,9 @@ type RewardClaimedEvent implements Event @entity {
 
 type NodePoolRewardMetaData @entity{
   id: ID!
-  nodePoolId: String!
-  epochNumber: BigInt!
-  totalDelegatorStakesAtStartOfEpoch: BigInt!
+  nodePoolId: String
+  epochNumber: BigInt
+  totalDelegatorStakesAtStartOfEpoch: BigInt
 }
 
 type ScannerPool @entity {

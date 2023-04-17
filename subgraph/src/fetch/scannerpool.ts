@@ -23,13 +23,13 @@ export function fetchScannerPool(id: BigInt): ScannerPool {
 
     const latestRewardMetaData = new NodePoolRewardMetaData(`${scannerPool.id}-latest-reward-metadata`)
     latestRewardMetaData.epochNumber = BigInt.zero();
-    latestRewardMetaData.nodePoolId = scannerPool.id;
+    latestRewardMetaData.nodePoolId = id.toBigDecimal().toString();
     latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch = BigInt.zero();
     latestRewardMetaData.save();
 
     const previousRewardMetaData = new NodePoolRewardMetaData(`${scannerPool.id}-previous-reward-metadata`)
     latestRewardMetaData.epochNumber = BigInt.zero();
-    latestRewardMetaData.nodePoolId = scannerPool.id;
+    latestRewardMetaData.nodePoolId = id.toBigDecimal().toString();
     latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch = BigInt.zero();
     previousRewardMetaData.save();
 
