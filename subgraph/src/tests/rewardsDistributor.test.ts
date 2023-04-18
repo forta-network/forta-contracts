@@ -1,6 +1,6 @@
 import { Address, BigDecimal, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import { describe, test, assert, beforeEach, clearStore, log, createMockedFunction, logStore } from "matchstick-as";
-import { ScannerPool, Staker } from "../../generated/schema";
+import { NodePoolRewardMetaData, ScannerPool, Staker } from "../../generated/schema";
 import { createMockRewardEvent, createMockClaimedRewardEvent, handleRewardEvent, handleClaimedRewards } from "../datasources/RewardsDistributor";
 
 
@@ -36,6 +36,21 @@ let delegatorTwo: Staker;
     mockNodePool.oldCommission = BigDecimal.fromString("3")
     mockNodePool.chainId = 1;
     mockNodePool.apyForLastEpoch = BigDecimal.fromString("0");
+
+    const latestRewardMetaData = new NodePoolRewardMetaData(`${mockNodePool.id}-latest-reward-metadata`)
+    latestRewardMetaData.epochNumber = BigInt.zero();
+    latestRewardMetaData.nodePoolId = mockPoolId;
+    latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch = BigInt.zero();
+    latestRewardMetaData.save();
+
+    const previousRewardMetaData = new NodePoolRewardMetaData(`${mockPoolId}-previous-reward-metadata`)
+    latestRewardMetaData.epochNumber = BigInt.zero();
+    latestRewardMetaData.nodePoolId = mockPoolId;
+    latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch = BigInt.zero();
+    previousRewardMetaData.save();
+
+    mockNodePool.latestRewardMetaData = latestRewardMetaData.id;
+    mockNodePool.previousRewardMetaData = previousRewardMetaData.id;
 
     mockNodePool.save()
   })
@@ -97,6 +112,21 @@ describe('Rewards distributor', () => {
         mockNodePool.stakeOwnedAllocated = BigInt.fromI32(2500);
         mockNodePool.stakers = [delegatorOne.id]
 
+        const latestRewardMetaData = new NodePoolRewardMetaData(`${mockNodePool.id}-latest-reward-metadata`)
+        latestRewardMetaData.epochNumber = BigInt.fromI32(2770);
+        latestRewardMetaData.nodePoolId = mockPoolId;
+        latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch = BigInt.fromI32(2500);
+        latestRewardMetaData.save();
+
+        const previousRewardMetaData = new NodePoolRewardMetaData(`${mockPoolId}-previous-reward-metadata`)
+        latestRewardMetaData.epochNumber = BigInt.fromI32(2769);
+        latestRewardMetaData.nodePoolId = mockPoolId;
+        latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch = BigInt.fromI32(2500);
+        previousRewardMetaData.save();
+
+        mockNodePool.latestRewardMetaData = latestRewardMetaData.id;
+        mockNodePool.previousRewardMetaData = previousRewardMetaData.id;
+
         mockNodePool.save()
 
         const totalDelegateStakeInEpoch = mockNodePool.stakeAllocated.minus(mockNodePool.stakeOwnedAllocated); 
@@ -150,6 +180,21 @@ describe('Rewards distributor', () => {
         mockNodePool.stakeAllocated = BigInt.fromI32(5000);
         mockNodePool.stakeOwnedAllocated = BigInt.fromI32(2500);
         mockNodePool.stakers = [delegatorOne.id, delegatorTwo.id]
+
+        const latestRewardMetaData = new NodePoolRewardMetaData(`${mockNodePool.id}-latest-reward-metadata`)
+        latestRewardMetaData.epochNumber = BigInt.fromI32(2770);
+        latestRewardMetaData.nodePoolId = mockPoolId;
+        latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch = BigInt.fromI32(2500);
+        latestRewardMetaData.save();
+
+        const previousRewardMetaData = new NodePoolRewardMetaData(`${mockPoolId}-previous-reward-metadata`)
+        latestRewardMetaData.epochNumber = BigInt.fromI32(2769);
+        latestRewardMetaData.nodePoolId = mockPoolId;
+        latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch = BigInt.fromI32(2500);
+        previousRewardMetaData.save();
+
+        mockNodePool.latestRewardMetaData = latestRewardMetaData.id;
+        mockNodePool.previousRewardMetaData = previousRewardMetaData.id;
 
         mockNodePool.save()
 
