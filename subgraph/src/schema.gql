@@ -209,7 +209,7 @@ type Stake @entity {
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
   withdrawalExecutedEvents: [WithdrawalExecutedEvent!] @derivedFrom(field: "stake")
   withdrawalInitiatedEvents: [WithdrawalInitiatedEvent!] @derivedFrom(field: "stake")
-  pendingWithdrawlQueue: [WithdrawalInitiatedEvent!] @derivedFrom(field: "stake")
+  pendingWithdrawlQueue: [WithdrawalInitiatedEvent!]
 }
 
 type AggregateActiveStake @entity {
