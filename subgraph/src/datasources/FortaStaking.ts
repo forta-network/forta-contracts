@@ -22,6 +22,7 @@ import {
   AggregateTotalStake,
   AggregateActiveStake,
   Account,
+  WithdrawalInitiatedEvent,
 } from "../../generated/schema";
 import { fetchAccount } from "../fetch/account";
 
@@ -60,6 +61,19 @@ function getSubjectTypePrefix(subjectType: number): string {
   if(subjectType == 2) return '0x10'
   if(subjectType == 1) return '0x01'
   return '0x00'
+}
+
+function findStakeInactiveShares(_subjectType: i32, _subject: BigInt, _staker: Address): BigInt | null {
+  const _subjectId = formatSubjectId(_subject, _subjectType);
+  const _stakerId = addressToHex(_staker);
+
+  const previousStake = Stake.load(getStakeId(_subjectId,_stakerId,_subjectType.toString()));
+
+  if(!previousStake) {
+    return null
+  } 
+  
+  return previousStake.inactiveShares;
 }
 
 function getActiveSharesId(_subjectType: i32, _subject: BigInt): string {
@@ -252,12 +266,52 @@ export function handleStakeDeposited(event: StakeDepositedEvent): void {
 }
 
 export function handleWithdrawalInitiated(event: WithdrawalInitiated): void {
-  updateStake(
+
+  // Find number of inactive shares stored on stake entity before update
+  const _staker = event.params.account;
+  const _subjectType = event.params.subjectType;
+  const _subject = event.params.subject
+   
+  const previousInactiveShares = findStakeInactiveShares(_subjectType, _subject, _staker)
+
+  const stakeId = updateStake(
     event.address,
-    event.params.subjectType,
-    event.params.subject,
-    event.params.account,
+    _subjectType,
+    _subject,
+    _staker,
   );
+
+  const currentStake = Stake.load(stakeId) as Stake;
+
+  const currentInActiveShares = currentStake.inactiveShares;
+
+  // With a withdrawl the number of inactive shares should increase
+
+  const withdrawalInitiatedEvent = new WithdrawalInitiatedEvent(events.id(event));
+  withdrawalInitiatedEvent.transaction = transactions.log(event).id;
+  withdrawalInitiatedEvent.timestamp = event.block.timestamp;
+  withdrawalInitiatedEvent.stake = stakeId;
+  withdrawalInitiatedEvent.subject = formatSubjectId(event.params.subject, event.params.subjectType);
+  
+    if(previousInactiveShares) {
+      withdrawalInitiatedEvent.amount = (currentInActiveShares as BigInt).minus(previousInactiveShares)
+    } else {
+      withdrawalInitiatedEvent.amount = (currentInActiveShares as BigInt)
+    }
+
+  withdrawalInitiatedEvent.save();
+
+  // Place pending withdrawls as a queue
+  const currentPendingQueue = currentStake.pendingWithdrawlQueue;
+
+  if(currentPendingQueue) {
+    currentPendingQueue.push(withdrawalInitiatedEvent.id)
+    currentStake.pendingWithdrawlQueue = currentPendingQueue;
+  } else {
+    currentStake.pendingWithdrawlQueue = [withdrawalInitiatedEvent.id]
+  }
+
+  currentStake.save()
 }
 
 export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {  
@@ -268,11 +322,24 @@ export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {
     event.params.account,
   );
 
+  // Look up oldest pending withdrawl (with the same subject and subject type) and get amount from there
+  const currentStake = Stake.load(stakeId) as Stake;
+
+  const pendingWithdrawlQueue = currentStake.pendingWithdrawlQueue as string[];
+  const oldestPendingWithdrawl = pendingWithdrawlQueue[0];
+
+  // Remove the oldest pending withdrawl
+  currentStake.pendingWithdrawlQueue = pendingWithdrawlQueue.slice(1);
+  currentStake.save();
+
+  const withdrawalInitiatedEvent = WithdrawalInitiatedEvent.load(oldestPendingWithdrawl) as WithdrawalInitiatedEvent;
+
   const withdrawalExecutedEvent = new WithdrawalExecutedEvent(events.id(event));
   withdrawalExecutedEvent.transaction = transactions.log(event).id;
   withdrawalExecutedEvent.timestamp = event.block.timestamp;
   withdrawalExecutedEvent.stake = stakeId;
   withdrawalExecutedEvent.subject = formatSubjectId(event.params.subject, event.params.subjectType);
+  withdrawalExecutedEvent.amount = withdrawalInitiatedEvent.amount;
   withdrawalExecutedEvent.save();
 }
 
