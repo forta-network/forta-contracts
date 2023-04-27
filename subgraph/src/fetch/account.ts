@@ -11,3 +11,12 @@ export function fetchAccount(address: Address): Account {
   account.save();
   return account;
 }
+
+export function addressToHex(id: Address): string {
+  const idHex = id.toHex();
+  if (idHex.length == 42) {
+    return idHex;
+  }
+  const extraZeroes = 42 - idHex.length;
+  return '0x' + '0'.repeat(extraZeroes) + idHex.slice(2);
+}

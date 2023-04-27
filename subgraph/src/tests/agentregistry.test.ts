@@ -59,7 +59,7 @@ test("Bot is updated successfully to store upon Update event ", () => {
     "Bot",
     BigInt.fromI32(1).toHex(),
     "id",
-    BigInt.fromI32(1).toHex()
+    BigInt.fromI32(1).toHex(),
   );
 
   assert.fieldEquals("Bot", BigInt.fromI32(2).toHex(), "metadata", "Test");

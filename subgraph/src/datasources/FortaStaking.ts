@@ -46,6 +46,15 @@ function hexToDec(s: string): string {
   return digits.reverse().join('');
 }
 
+export function addressToHex(id: Address): string {
+  const idHex = id.toHex();
+  if (idHex.length == 42) {
+    return idHex;
+  }
+  const extraZeroes = 42 - idHex.length;
+  return '0x' + '0'.repeat(extraZeroes) + idHex.slice(2);
+}
+
 function getSubjectTypePrefix(subjectType: number): string {
   if(subjectType == 3) return '0x11'
   if(subjectType == 2) return '0x10'
@@ -115,7 +124,7 @@ function updateStake(
   _staker: Address): string {
   
   const _subjectId = formatSubjectId(_subject, _subjectType);
-  const _stakerId = _staker.toHexString();
+  const _stakerId = addressToHex(_staker);
   let subject = Subject.load(_subjectId);
   let stake = Stake.load(getStakeId(_subjectId,_stakerId,_subjectType.toString()));
   let staker = Staker.load(_stakerId);

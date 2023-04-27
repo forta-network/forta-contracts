@@ -15,3 +15,5 @@ export function fetchScanner(id: BigInt): Scanner {
   }
   return scanner as Scanner;
 }
+
+

@@ -260,6 +260,13 @@ type RewardClaimedEvent implements Event @entity {
   timestamp: BigInt!
 }
 
+type NodePoolRewardMetaData @entity{
+  id: ID!
+  nodePoolId: String
+  epochNumber: BigInt
+  totalDelegatorStakesAtStartOfEpoch: BigInt
+}
+
 type ScannerPool @entity {
   id: ID!
   owner: Account!
@@ -275,6 +282,8 @@ type ScannerPool @entity {
   stakeDelegated: BigInt!
   stakeAllocated: BigInt!
   stakeOwnedAllocated: BigInt!
+  latestRewardMetaData: NodePoolRewardMetaData!
+  previousRewardMetaData: NodePoolRewardMetaData!
   scanNodes: [ScanNode!] @derivedFrom(field: "scannerPool")
   rewardedEvents: [RewardEvent!]
   stakers: [Staker!]
