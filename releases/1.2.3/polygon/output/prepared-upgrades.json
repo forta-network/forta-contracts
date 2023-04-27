@@ -1,0 +1,43 @@
+{
+	"rewards-distributor": {
+		"impl": {
+			"address": "0x98e664dE6EC29FF7606ab26E05678ab9d34012E4",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1",
+				"0x587969Add789c13F64Bcc34Ff253BD9BFB78f38a"
+			],
+			"init-args": [],
+			"name": "RewardsDistributor",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"stake-allocator": {
+		"impl": {
+			"address": "0x3C8DA61348823A59df1C1c2265Cdb8a55f06b4f7",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0x587969Add789c13F64Bcc34Ff253BD9BFB78f38a",
+				"0xf7239f26b79145297737166b0C66F4919af9c507"
+			],
+			"init-args": [],
+			"name": "StakeAllocator",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"scanner-pool-registry": {
+		"impl": {
+			"address": "0xF57ecf24d9Fd1CfA5cCF5BB46d8FF6aB49F5F9c0",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0x5B73756e637A77Fa52e5Ce71EC6189A4C775c6FA"
+			],
+			"init-args": [],
+			"name": "ScannerPoolRegistry",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	}
+}

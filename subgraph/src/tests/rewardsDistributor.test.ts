@@ -1,7 +1,7 @@
 import { Address, BigDecimal, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import { describe, test, assert, beforeEach, clearStore, log, createMockedFunction, logStore } from "matchstick-as";
 import { NodePoolRewardMetaData, ScannerPool, Staker } from "../../generated/schema";
-import { createMockRewardEvent, createMockClaimedRewardEvent, handleRewardEvent, handleClaimedRewards } from "../datasources/RewardsDistributor";
+import { createMockRewardEvent, handleRewardEvent } from "../datasources/RewardsDistributor";
 
 
 // Address of rewards distributor

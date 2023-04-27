@@ -162,8 +162,20 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     function _availableReward(uint256 shareId, bool delegator, uint256 epochNumber, address staker) internal view returns (uint256) {
         DelegatedAccRewards storage s = _rewardsAccumulators[shareId];
 
-        uint256 N = s.delegated.getValueAtEpoch(epochNumber);
-        uint256 D = s.delegators.getValueAtEpoch(epochNumber);
+        // for the first epoch, current epoch's accumulated values should be used.
+        // otherwise, the initial epoch values should be used.
+        // we understand this by looking at the owner's allocation.
+        bool isFirstEpochForThePool = s.delegated.isFirstEpoch(epochNumber);
+
+        uint256 N;
+        uint256 D;
+        if (isFirstEpochForThePool) {
+            N = s.delegated.getAccumulatedForEpoch(epochNumber);
+            D = s.delegators.getAccumulatedForEpoch(epochNumber);
+        } else {
+            N = s.delegated.getEpochTotalFromInitialRate(epochNumber);
+            D = s.delegators.getEpochTotalFromInitialRate(epochNumber);
+        }
         uint256 T = N + D;
 
         if (T == 0) {
@@ -177,14 +189,30 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
         uint256 fee = (RD * feeBps) / MAX_BPS; // mulDiv not necessary - feeBps is small
 
         if (delegator) {
-            uint256 r = RD - fee;
-            uint256 d = s.delegatorsPortions[staker].getValueAtEpoch(epochNumber);
-            uint256 DT = s.delegatorsTotal.getValueAtEpoch(epochNumber);
-            return Math.mulDiv(r, d, DT);
+            return _availableDelegatorReward(s, epochNumber, staker, RD - fee, isFirstEpochForThePool);
         } else {
             uint256 RN = Math.mulDiv(R, N, T);
             return RN + fee;
         }
+    }
+
+    function _availableDelegatorReward(
+        DelegatedAccRewards storage s,
+        uint256 epochNumber,
+        address staker,
+        uint256 r,
+        bool isFirstEpochForThePool
+    ) private view returns (uint256) {
+        uint256 d;
+        uint256 DT;
+        if (isFirstEpochForThePool) {
+            d = s.delegatorsPortions[staker].getAccumulatedForEpoch(epochNumber);
+            DT = s.delegatorsTotal.getAccumulatedForEpoch(epochNumber);
+        } else {
+            d = s.delegatorsPortions[staker].getEpochTotalFromInitialRate(epochNumber);
+            DT = s.delegatorsTotal.getEpochTotalFromInitialRate(epochNumber);
+        }
+        return Math.mulDiv(r, d, DT);
     }
 
     function claimRewards(uint8 subjectType, uint256 subjectId, uint256[] calldata epochNumbers) external {
@@ -208,7 +236,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     function setDelegationParams(uint256 _delegationParamsEpochDelay, uint256 _defaultFeeBps) external onlyRole(STAKING_ADMIN_ROLE) {
         if (_delegationParamsEpochDelay == 0) revert ZeroAmount("_delegationParamsEpochDelay");
         if (_defaultFeeBps > MAX_BPS) revert AmountTooLarge(_defaultFeeBps, MAX_BPS);
-        delegationParamsEpochDelay = delegationParamsEpochDelay;
+        delegationParamsEpochDelay = _delegationParamsEpochDelay;
         // defaultFeeBps could be 0;
         defaultFeeBps = _defaultFeeBps;
         emit SetDelegationParams(delegationParamsEpochDelay, defaultFeeBps);
