@@ -3,20 +3,36 @@
 
 pragma solidity ^0.8.9;
 
-contract BotUnits {
+import "../BaseComponentUpgradeable.sol";
+
+contract BotUnits is BaseComponentUpgradeable {
+    string public constant version = "0.1.0";
     
     struct OwnerBotUnits {
         uint256 activeBotUnits;
-        uint256 botUnitCapacity; 
+        uint256 botUnitCapacity;
     }
 
     mapping(address => OwnerBotUnits) private _ownerBotUnits;
 
     error InsufficientInactiveBotUnits();
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+
+    /**
+     * @notice Initializer method, access point to initialize inheritance tree.
+     * @param __manager address of AccessManager.
+     */
+    function initialize(
+        address __manager
+    ) public initializer {
+        __BaseComponentUpgradeable_init(__manager);
+    }
+
     // Setting rather than adding since membership
     // plans grant a fixed amount of bot units
-    function updateOwnerBotUnitsCapacity(address owner, uint256 amount, bool balanceIncrease) external /** only Unlock hook contract */ {
+    function updateOwnerBotUnitsCapacity(address owner, uint256 amount, bool balanceIncrease) external onlyRole(BOT_UNITS_CAPACITY_ADMIN_ROLE) {
         if (balanceIncrease) {
             _ownerBotUnits[owner].botUnitCapacity = amount;
         } else {
@@ -28,7 +44,7 @@ contract BotUnits {
         }
     }
 
-    function updateOwnerActiveBotUnits(address owner, uint256 amount, bool balanceIncrease) external /** only AgentRegistry contract*/ {
+    function updateOwnerActiveBotUnits(address owner, uint256 amount, bool balanceIncrease) external onlyRole(BOT_ACTIVE_UNITS_ADMIN_ROLE) {
         if (balanceIncrease) {
             if ((_ownerBotUnits[owner].activeBotUnits + amount) > _ownerBotUnits[owner].botUnitCapacity) {
                 revert InsufficientInactiveBotUnits();
