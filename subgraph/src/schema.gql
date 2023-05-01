@@ -208,6 +208,8 @@ type Stake @entity {
   inactiveShares: BigInt
   stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
   withdrawalExecutedEvents: [WithdrawalExecutedEvent!] @derivedFrom(field: "stake")
+  withdrawalInitiatedEvents: [WithdrawalInitiatedEvent!] @derivedFrom(field: "stake")
+  pendingWithdrawalQueue: [WithdrawalInitiatedEvent!]
 }
 
 type AggregateActiveStake @entity {
@@ -229,6 +231,15 @@ type StakeDepositEvent implements Event @entity {
   subject: Subject!
   amount: BigInt!
   stake: Stake!
+}
+
+type WithdrawalInitiatedEvent implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  subject: Subject!
+  stake: Stake!
+  amount: BigInt!
 }
 
 type WithdrawalExecutedEvent implements Event @entity {
