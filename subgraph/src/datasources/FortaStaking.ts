@@ -285,7 +285,7 @@ export function handleWithdrawalInitiated(event: WithdrawalInitiated): void {
 
   const currentInActiveShares = currentStake.inactiveShares;
 
-  // With a withdrawl the number of inactive shares should increase
+  // With a withdrawal the number of inactive shares should increase
 
   const withdrawalInitiatedEvent = new WithdrawalInitiatedEvent(events.id(event));
   withdrawalInitiatedEvent.transaction = transactions.log(event).id;
@@ -301,14 +301,14 @@ export function handleWithdrawalInitiated(event: WithdrawalInitiated): void {
 
   withdrawalInitiatedEvent.save();
 
-  // Place pending withdrawls as a queue
-  const currentPendingQueue = currentStake.pendingWithdrawlQueue;
+  // Place pending withdrawals as a queue
+  const currentPendingQueue = currentStake.pendingWithdrawalQueue;
 
   if(currentPendingQueue) {
     currentPendingQueue.push(withdrawalInitiatedEvent.id)
-    currentStake.pendingWithdrawlQueue = currentPendingQueue;
+    currentStake.pendingWithdrawalQueue = currentPendingQueue;
   } else {
-    currentStake.pendingWithdrawlQueue = [withdrawalInitiatedEvent.id]
+    currentStake.pendingWithdrawalQueue = [withdrawalInitiatedEvent.id]
   }
 
   currentStake.save()
@@ -322,17 +322,17 @@ export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {
     event.params.account,
   );
 
-  // Look up oldest pending withdrawl (with the same subject and subject type) and get amount from there
+  // Look up oldest pending withdrawal (with the same subject and subject type) and get amount from there
   const currentStake = Stake.load(stakeId) as Stake;
 
-  const pendingWithdrawlQueue = currentStake.pendingWithdrawlQueue as string[];
-  const oldestPendingWithdrawl = pendingWithdrawlQueue[0];
+  const pendingWithdrawalQueue = currentStake.pendingWithdrawalQueue as string[];
+  const oldestPendingWithdrawal = pendingWithdrawalQueue[0];
 
-  // Remove the oldest pending withdrawl
-  currentStake.pendingWithdrawlQueue = pendingWithdrawlQueue.slice(1);
+  // Remove the oldest pending withdrawal
+  currentStake.pendingWithdrawalQueue = pendingWithdrawalQueue.slice(1);
   currentStake.save();
 
-  const withdrawalInitiatedEvent = WithdrawalInitiatedEvent.load(oldestPendingWithdrawl) as WithdrawalInitiatedEvent;
+  const withdrawalInitiatedEvent = WithdrawalInitiatedEvent.load(oldestPendingWithdrawal) as WithdrawalInitiatedEvent;
 
   const withdrawalExecutedEvent = new WithdrawalExecutedEvent(events.id(event));
   withdrawalExecutedEvent.transaction = transactions.log(event).id;
@@ -396,7 +396,7 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
   const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
   let sharesId = SharesID.load(event.params.id.toString());
 
-  // Update withdrawl executed event with value
+  // Update withdrawal executed event with value
 
   if(event.params.to.toHex() != ZERO_ADDRESS) {
     const account = Account.load(event.params.to.toString()) // Get account of receiver 
@@ -415,7 +415,7 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
               for(let j = 0; j < events.length; j++) {
                 const withdrawalEvent = WithdrawalExecutedEvent.load(events[j]);
                 if(withdrawalEvent && withdrawalEvent.timestamp === event.block.timestamp) {
-                  log.info(`Updating withdrawl event with value`,[])
+                  log.info(`Updating withdrawal event with value`,[])
                   withdrawalEvent.amount = event.params.value
                   withdrawalEvent.save()
                 }
