@@ -131,6 +131,8 @@ dataSources:
           handler: handleScannerUpdated
         - event: ScannerEnabled(indexed uint256,indexed bool,address,bool)
           handler: handleScannerEnabled
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
       file: ./src/datasources/ScannerPoolRegistry.ts
   - kind: ethereum
     name: RewardsDistributor
