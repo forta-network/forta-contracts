@@ -8,11 +8,9 @@ import "./ILock.sol";
 import "./IBotUnits.sol";
 
 /**
- * TODO
- * 1. Since you can grant or purchase multiple keys, if one of those has a valid key in the other,
- * it will revert. Is this fine? Check exactly which functions would invoke these.
+ * This contract serves to implement the necessary hooks from Unlock
+ * to then adjust a membership owner's bot unit capacity.
  */
-
 contract SubscriptionManager is BaseComponentUpgradeable {
     string public constant version = "0.1.0";
 
@@ -106,7 +104,7 @@ contract SubscriptionManager is BaseComponentUpgradeable {
 
     /**
      * @notice Allows the update of bot units currently in use by a specific membership owner.
-     * @dev Role granted to AgentRegistry contract.
+     * @dev Calls into BotUnits contract, which this contract has the access to do so.
      * @param recipient Address of the membership owner.
      * @param purchasedPlan Uint8 representing the Lock plan from which the subscription was purchased from.
      * @param nonPurchasedPlan Uint8 representing the Lock plan from which the subscription was not purchased from.
@@ -126,7 +124,7 @@ contract SubscriptionManager is BaseComponentUpgradeable {
         bool increasingBotUnitsBalance;
         if(_nonPurchasedPlan.lockContract.totalKeys(recipient) == 0) {
             // Increasing bot units balance because
-            // key recipient doesn't have a subscription with
+            // recipient doesn't have a subscription with
             // with either plan. Valid or otherwise.
             increasingBotUnitsBalance = true;
         } else {
