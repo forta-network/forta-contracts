@@ -20,6 +20,13 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
     event StakeThresholdChanged(uint256 min, uint256 max, bool activated);
     event FrontRunningDelaySet(uint256 delay);
 
+    enum AgentModification {
+        Create,
+        Update,
+        Enable,
+        Disable
+    }
+
     /**
      * @notice Checks sender (or metatx signer) is owner of the agent token.
      * @param agentId ERC721 token id of the agent.
@@ -53,6 +60,7 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
      * @notice Agent registration method. Mints an ERC721 token with the agent id for the sender and stores metadata.
      * @dev Agent Ids are generated through the Forta Bot SDK (by hashing UUIDs) so the agentId collision risk is minimized.
      * Fires _before and _after hooks within the inheritance tree.
+     * As well as _agentUnitsRequirementCheck and possibly _agentUnitsUpdate.
      * If front run protection is enabled (disabled by default), it will check if the keccak256 hash of the parameters
      * has been committed in prepareAgent(bytes32).
      * @param agentId ERC721 token id of the agent to be created.
@@ -64,10 +72,14 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
         string calldata metadata,
         uint256[] calldata chainIds
     ) public onlySorted(chainIds) frontrunProtected(keccak256(abi.encodePacked(agentId, _msgSender(), metadata, chainIds)), frontRunningDelay) {
-        _mint(_msgSender(), agentId);
+        address msgSender = _msgSender();
+        uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length);
+        bool _canBypassNeededAgentUnits = _agentUnitsRequirementCheck(msgSender, agentId, _agentUnits);
+        _mint(msgSender, agentId);
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);
         _afterAgentUpdate(agentId, metadata, chainIds);
+        if (!_canBypassNeededAgentUnits) { _agentUnitsUpdate(msgSender, agentId, _agentUnits, AgentModification.Create); }
     }
 
     /**
@@ -90,14 +102,19 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
     /**
      * @notice Updates parameters of an agentId (metadata, image, chain IDs...) if called by the agent owner.
      * @dev fires _before and _after hooks within the inheritance tree.
+     * As well as _agentUnitsRequirementCheck and possibly _agentUnitsUpdate.
      * @param agentId ERC721 token id of the agent to be updated.
      * @param metadata IPFS pointer to agent's metadata JSON.
      * @param chainIds ordered list of chainIds where the agent wants to run.
      */
     function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds) public onlyOwnerOf(agentId) onlySorted(chainIds) {
+        address msgSender = _msgSender();
+        uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length);
+        bool _canBypassNeededAgentUnits = _agentUnitsRequirementCheck(msgSender, agentId, _agentUnits);
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds);
         _afterAgentUpdate(agentId, metadata, chainIds);
+        if (!_canBypassNeededAgentUnits) { _agentUnitsUpdate(msgSender, agentId, _agentUnits, AgentModification.Update); }
     }
 
     /**
@@ -131,6 +148,17 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
     }
 
     /**
+     * Calculates the amount of agent units a given agent will need
+     * based on the passed arguments
+     * @param chainIds The chain ids that will be supported by the agent
+     * @return amount of agent units that will be needed for the passed
+     * arguments
+     */
+    function calculateAgentUnitsNeeded(uint256 chainIds) public pure returns (uint256) {
+        return chainIds;
+    }
+
+    /**
      * @dev allows AGENT_ADMIN_ROLE to activate frontrunning protection for agents
      * @param delay in seconds
      */
@@ -138,6 +166,17 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
         frontRunningDelay = delay;
         emit FrontRunningDelaySet(delay);
     }
+
+    /**
+     * @notice Hook fired in the process of modifiying an agent
+     * (creating, updating, etc.).
+     * Will check if certain requirements are met.
+     * @dev does nothing in this contract.
+     * @param account Owner of the specific agent.
+     * @param agentId ERC721 token id of the agent to be created or updated.
+     * @param agentUnits Amount of agent units the given agent will need.
+     */
+    function _agentUnitsRequirementCheck(address account, uint256 agentId, uint256 agentUnits) internal virtual returns(bool) {}
 
     /**
      * @notice hook fired before agent creation or update.
@@ -167,6 +206,18 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
      * @param newChainIds ordered list of chainIds where the agent wants to run.
      */
     function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {}
+
+    /**
+     * @notice Hook fired in the process of modifiying an agent
+     * (creating, updating, etc.).
+     * Will update the agent owner's balance of active agent units.
+     * @dev does nothing in this contract.
+     * @param account Owner of the specific agent.
+     * @param agentId ERC721 token id of the agent to be created or updated.
+     * @param agentUnits Amount of agent units the given agent will need.
+     * @param agentMod The type of modification to be done to the agent.
+     */
+    function _agentUnitsUpdate(address account, uint256 agentId, uint256 agentUnits, AgentModification agentMod) internal virtual {}
 
     /**
      * Obligatory inheritance dismambiguation of ForwardedContext's _msgSender()
