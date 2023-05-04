@@ -77,10 +77,6 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
     }
     
     /**
-     * TODO:
-     * 1. Review the logic
-     */
-    /**
      * @notice Function that checks whether the agent and/or owner meets certain criteria.
      * Criteria: Has a valid key in either plan, agent is marked a public good, or if
      * needed agent units for the agent is under free trial threshold.

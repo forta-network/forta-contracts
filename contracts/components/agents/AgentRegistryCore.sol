@@ -174,9 +174,9 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
      * @dev does nothing in this contract.
      * @param account Owner of the specific agent.
      * @param agentId ERC721 token id of the agent to be created or updated.
-     * @param agentUnits Amount of agent units the given agent will need.
+     * @param amount Amount of agent units the given agent will need.
      */
-    function _agentUnitsRequirementCheck(address account, uint256 agentId, uint256 agentUnits) internal virtual returns(bool) {}
+    function _agentUnitsRequirementCheck(address account, uint256 agentId, uint256 amount) internal virtual returns(bool) {}
 
     /**
      * @notice hook fired before agent creation or update.

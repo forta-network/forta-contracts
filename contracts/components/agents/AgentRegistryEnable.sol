@@ -5,6 +5,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "./AgentRegistryCore.sol";
+import "./AgentRegistryMembership.sol";
 
 /**
 * @dev AgentRegistry methods and state handling disabling and enabling agents, and
@@ -12,7 +13,7 @@ import "./AgentRegistryCore.sol";
 * NOTE: This contract was deployed before StakeAwareUpgradeable was created, so __StakeAwareUpgradeable_init
 * is not called.
 */
-abstract contract AgentRegistryEnable is AgentRegistryCore {
+abstract contract AgentRegistryEnable is AgentRegistryCore, AgentRegistryMembership {
     using BitMaps for BitMaps.BitMap;
 
     enum Permission {
@@ -28,11 +29,14 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
     /**
      * @notice Check if agent is enabled
      * @param agentId ERC721 token id of the agent.
-     * @return true if the agent exist, has not been disabled, and is staked over minimum
+     * @return true if agent owner has a valid key in either subscription plan,
+     * the agent exists, has not been disabled, and is staked over minimum
      * Returns false if otherwise
      */
     function isEnabled(uint256 agentId) public view virtual returns (bool) {
+        address agentOwner = super.ownerOf(agentId);
         return (
+            (_individualPlan.getHasValidKey(agentOwner) || _teamPlan.getHasValidKey(agentOwner)) &&
             isRegistered(agentId) &&
             getDisableFlags(agentId) == 0 &&
             (!_isStakeActivated() || _isStakedOverMin(agentId))
@@ -94,9 +98,17 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
      * @param enable true if enabling, false if disabling.
      */
     function _enable(uint256 agentId, Permission permission, bool enable) internal {
+        // Fetching agent owner since admin role
+        // can also enable and disable an agent
+        address agentOwner = super.ownerOf(agentId);
+        (,,,,uint256[] memory chainIds) = super.getAgent(agentId);
+        uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length);
+        bool _canBypassNeededAgentUnits = _agentUnitsRequirementCheck(agentOwner, agentId, _agentUnits);
         _beforeAgentEnable(agentId, permission, enable);
         _agentEnable(agentId, permission, enable);
         _afterAgentEnable(agentId, permission, enable);
+        AgentModification agentMod = enable == true ? AgentModification.Enable : AgentModification.Disable;
+        if (!_canBypassNeededAgentUnits) { _agentUnitsUpdate(agentOwner, agentId, _agentUnits, agentMod); }
     }
 
     /**
@@ -130,6 +142,35 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
      */
     function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
         
+    }
+
+    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMembership) {
+        super._agentUpdate(agentId,newMetadata,newChainIds);
+    }
+
+    /**
+     * @notice Hook fired in the process of modifiying an agent
+     * (creating, updating, etc.).
+     * Will check if certain requirements are met.
+     * @param account Owner of the specific agent.
+     * @param agentId ERC721 token id of the agent to be created or updated.
+     * @param amount Amount of agent units the given agent will need.
+     */
+    function _agentUnitsRequirementCheck(address account, uint256 agentId, uint256 amount) internal virtual override(AgentRegistryCore, AgentRegistryMembership) returns(bool) {
+        return super._agentUnitsRequirementCheck(account, agentId, amount);
+    }
+
+    /**
+     * @notice Hook fired in the process of modifiying an agent
+     * (creating, updating, etc.).
+     * Will update the agent owner's balance of active agent units.
+     * @param account Owner of the specific agent.
+     * @param agentId ERC721 token id of the agent to be created or updated.
+     * @param agentUnits Amount of agent units the given agent will need.
+     * @param agentMod The type of modification to be done to the agent.
+     */
+    function _agentUnitsUpdate(address account, uint256 agentId, uint256 agentUnits, AgentModification agentMod) internal virtual override(AgentRegistryCore, AgentRegistryMembership) {
+        super._agentUnitsUpdate(account, agentId, agentUnits, agentMod);
     }
     
     /**
