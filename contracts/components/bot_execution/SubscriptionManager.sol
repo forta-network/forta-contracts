@@ -56,24 +56,17 @@ contract SubscriptionManager is BaseComponentUpgradeable {
     /**
      * @notice Hook implementation that triggers when a key is purchased. Updates the
      * key recipient's bot units capacity based on the purchased plan.
-     * @param tokenId the id of the purchased key
-     * @param from the msg.sender making the purchase
      * @param recipient the account which will be granted a key
-     * @param referrer the account which referred this key sale
-     * @param data arbitrary data populated by the front-end which initiated the sale
-     * @param minKeyPrice the price including any discount granted from calling this
-     * hook's `keyPurchasePrice` function
-     * @param pricePaid the value/pricePaid included with the purchase transaction
      * @dev the lock's address is the `msg.sender` when this function is called
      */
     function onKeyPurchase(
-        uint tokenId,
-        address from,
+        uint /*tokenId*/,
+        address /*from*/,
         address recipient,
-        address referrer,
-        bytes calldata data,
-        uint minKeyPrice,
-        uint pricePaid
+        address /*referrer*/,
+        bytes calldata /*data*/,
+        uint /*minKeyPrice*/,
+        uint /*pricePaid*/
     ) external {
         (bool isValid, uint8 purchasedPlan, uint8 nonPurchasedPlan) = _isValidLockContract(msg.sender);
         if (!isValid) revert InvalidFunctionCaller(msg.sender);
@@ -83,19 +76,15 @@ contract SubscriptionManager is BaseComponentUpgradeable {
     /**
      * @notice Hook implementation that triggers when a key is granted. Updates the
      * key recipient's bot units capacity based on the purchased plan.
-     * @param tokenId the id of the granted key
-     * @param from the msg.sender granting the key
      * @param recipient the account which will be granted a key
-     * @param keyManager an additional keyManager for the key
-     * @param expiration the expiration timestamp of the key
      * @dev the lock's address is the `msg.sender` when this function is called
      */
     function onKeyGranted(
-        uint tokenId,
-        address from,
+        uint /*tokenId*/,
+        address /*from*/,
         address recipient,
-        address keyManager,
-        uint expiration
+        address /*keyManager*/,
+        uint /*expiration*/
     ) external {
         (bool isValid, uint8 purchasedPlan, uint8 nonPurchasedPlan) = _isValidLockContract(msg.sender);
         if (!isValid) revert InvalidFunctionCaller(msg.sender);
@@ -154,19 +143,14 @@ contract SubscriptionManager is BaseComponentUpgradeable {
   
     /**
      * @notice Fetches the key price for the calling Lock contract.
-     * @param from the msg.sender making the purchase
-     * @param recipient the account which will be granted a key
-     * @param referrer the account which referred this key sale
-     * @param data arbitrary data populated by the front-end which initiated the sale
-     * @return minKeyPrice the minimum value/price required to purchase a key with these settings
      * @dev the lock's address is the `msg.sender` when this function is called via
      * the lock's `purchasePriceFor` function. Necessary to implement to adhere to the interface.
      */
     function keyPurchasePrice(
-        address from,
-        address recipient,
-        address referrer,
-        bytes calldata data
+        address /*from*/,
+        address /*recipient*/,
+        address /*referrer*/,
+        bytes calldata /*data*/
     ) external view returns (uint minKeyPrice) {
         (bool isValid,,) = _isValidLockContract(msg.sender);
         if (!isValid) revert InvalidFunctionCaller(msg.sender);
