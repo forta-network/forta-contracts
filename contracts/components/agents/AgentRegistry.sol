@@ -9,17 +9,22 @@ import "./AgentRegistryCore.sol";
 import "./AgentRegistryEnable.sol";
 import "./AgentRegistryEnumerable.sol";
 import "./AgentRegistryMetadata.sol";
+import "./AgentRegistryMembership.sol";
 
 contract AgentRegistry is
     BaseComponentUpgradeable,
     AgentRegistryCore,
-    AgentRegistryEnable,
     AgentRegistryMetadata,
-    AgentRegistryEnumerable
+    AgentRegistryEnumerable,
+    AgentRegistryMembership,
+    AgentRegistryEnable
 {
     string public constant version = "0.1.6";
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+    constructor(address forwarder, address individualLock, address teamLock, address botUnits)
+    initializer
+    ForwardedContext(forwarder)
+    AgentRegistryMembership(individualLock, teamLock, botUnits) {}
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
@@ -71,6 +76,18 @@ contract AgentRegistry is
     }
 
     /**
+     * @notice Hook fired in the process of modifiying an agent
+     * (creating, updating, etc.).
+     * Will check if certain requirements are met.
+     * @param account Owner of the specific agent.
+     * @param agentId ERC721 token id of the agent to be created or updated.
+     * @param amount Amount of agent units the given agent will need.
+     */
+    function _agentUnitsRequirementCheck(address account, uint256 agentId, uint256 amount) internal virtual override(AgentRegistryCore, AgentRegistryMembership, AgentRegistryEnable) returns(bool) {
+        return super._agentUnitsRequirementCheck(account, agentId, amount);
+    }
+
+    /**
      * @notice Inheritance disambiguation for hook fired befire agent update (and creation).
      * @param agentId id of the agent.
      * @param newMetadata IPFS pointer to agent's metadata
@@ -86,8 +103,21 @@ contract AgentRegistry is
      * @param newMetadata IPFS pointer to agent's metadata
      * @param newChainIds chain ids that the agent wants to scan
      */
-    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
+    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata, AgentRegistryMembership, AgentRegistryEnable) {
         super._agentUpdate(agentId, newMetadata, newChainIds);
+    }
+
+    /**
+     * @notice Hook fired in the process of modifiying an agent
+     * (creating, updating, etc.).
+     * Will update the agent owner's balance of active agent units.
+     * @param account Owner of the specific agent.
+     * @param agentId ERC721 token id of the agent to be created or updated.
+     * @param agentUnits Amount of agent units the given agent will need.
+     * @param agentMod The type of modification to be done to the agent.
+     */
+    function _agentUnitsUpdate(address account, uint256 agentId, uint256 agentUnits, AgentModification agentMod) internal virtual override(AgentRegistryCore, AgentRegistryMembership, AgentRegistryEnable) {
+        super._agentUnitsUpdate(account, agentId, agentUnits, agentMod);
     }
 
     /**
