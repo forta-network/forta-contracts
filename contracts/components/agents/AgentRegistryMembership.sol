@@ -132,12 +132,18 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
      * @return Amount of agent units the given agent uses/requires
      */
     function existingAgentActiveUnitUsage(uint256 agentId) public view returns (uint256) {
-        (,,,,uint256[] memory chainIds) = super.getAgent(agentId);
-        return super.calculateAgentUnitsNeeded(chainIds.length);
+        (,,,,uint256[] memory chainIds, uint8 redundancy, uint8 shards) = super.getAgent(agentId);
+        return super.calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
     }
     
-    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
-        super._agentUpdate(agentId,newMetadata,newChainIds);
+    function _agentUpdate(
+        uint256 agentId,
+        string memory newMetadata,
+        uint256[] calldata newChainIds,
+        uint8 newRedundancy,
+        uint8 newShards
+    ) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
+        super._agentUpdate(agentId,newMetadata,newChainIds,newRedundancy,newShards);
     }
 
     /**

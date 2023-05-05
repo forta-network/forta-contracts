@@ -10,6 +10,8 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
         uint256 version;
         string metadata;
         uint256[] chainIds;
+        uint8 redundancy;
+        uint8 shards;
     }
 
     mapping(uint256 => AgentMetadata) private _agentMetadata;
@@ -25,17 +27,21 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
      * @return agentVersion of the agent.
      * @return metadata IPFS pointer.
      * @return chainIds the agent wants to run in.
+     * @return redundancy level of redundancy for the agent.
+     * @return shards amounts of shards for the agent.
      */
     function getAgent(uint256 agentId)
         public view
-        returns (bool registered, address owner,uint256 agentVersion, string memory metadata, uint256[] memory chainIds) {
+        returns (bool registered, address owner, uint256 agentVersion, string memory metadata, uint256[] memory chainIds, uint8 redundancy, uint8 shards) {
         bool exists = _exists(agentId);
         return (
             exists,
             exists ? ownerOf(agentId) : address(0),
             _agentMetadata[agentId].version,
             _agentMetadata[agentId].metadata,
-            _agentMetadata[agentId].chainIds
+            _agentMetadata[agentId].chainIds,
+            _agentMetadata[agentId].redundancy,
+            _agentMetadata[agentId].shards
         );
     }
 
@@ -45,9 +51,11 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
      * @param agentId ERC721 token id of the agent to be created or updated.
      * @param newMetadata IPFS pointer to agent's metadata JSON.
      * @param newChainIds ordered list of chainIds where the agent wants to run.
+     * @param newRedundancy level of redundancy for the agent.
+     * @param newShards amounts of shards for the agent.
      */
-    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
-        super._agentUpdate(agentId, newMetadata, newChainIds);
+    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds, uint8 newRedundancy, uint8 newShards) internal virtual override {
+        super._agentUpdate(agentId, newMetadata, newChainIds, newRedundancy, newShards);
 
         bytes32 oldHash = keccak256(bytes(_agentMetadata[agentId].metadata));
         bytes32 newHash = keccak256(bytes(newMetadata));
@@ -56,7 +64,7 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
         _agentMetadataUniqueness[oldHash] = false;
 
         uint256 version = _agentMetadata[agentId].version + 1;
-        _agentMetadata[agentId] = AgentMetadata({ version: version, metadata: newMetadata, chainIds: newChainIds });
+        _agentMetadata[agentId] = AgentMetadata({ version: version, metadata: newMetadata, chainIds: newChainIds, redundancy: newRedundancy, shards: newShards });
     }
 
     /**

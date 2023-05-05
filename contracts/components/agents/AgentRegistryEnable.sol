@@ -101,8 +101,8 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, AgentRegistryMembers
         // Fetching agent owner since admin role
         // can also enable and disable an agent
         address agentOwner = super.ownerOf(agentId);
-        (,,,,uint256[] memory chainIds) = super.getAgent(agentId);
-        uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length);
+        (,,,,uint256[] memory chainIds, uint8 redundancy, uint8 shards) = super.getAgent(agentId);
+        uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
         bool _canBypassNeededAgentUnits = _agentUnitsRequirementCheck(agentOwner, agentId, _agentUnits);
         _beforeAgentEnable(agentId, permission, enable);
         _agentEnable(agentId, permission, enable);
@@ -144,8 +144,14 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, AgentRegistryMembers
         
     }
 
-    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMembership) {
-        super._agentUpdate(agentId,newMetadata,newChainIds);
+    function _agentUpdate(
+        uint256 agentId,
+        string memory newMetadata,
+        uint256[] calldata newChainIds,
+        uint8 newRedundancy,
+        uint8 newShards
+    ) internal virtual override(AgentRegistryCore, AgentRegistryMembership) {
+        super._agentUpdate(agentId,newMetadata,newChainIds,newRedundancy,newShards);
     }
 
     /**

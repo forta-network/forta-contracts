@@ -16,7 +16,7 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
     uint256 public frontRunningDelay;
 
     event AgentCommitted(bytes32 indexed commit);
-    event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds);
+    event AgentUpdated(uint256 indexed agentId, address indexed by, string metadata, uint256[] chainIds, uint8 redundancy, uint8 shards);
     event StakeThresholdChanged(uint256 min, uint256 max, bool activated);
     event FrontRunningDelaySet(uint256 delay);
 
@@ -66,18 +66,22 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
      * @param agentId ERC721 token id of the agent to be created.
      * @param metadata IPFS pointer to agent's metadata JSON.
      * @param chainIds ordered list of chainIds where the agent wants to run.
+     * @param redundancy Level of redundancy for the agent.
+     * @param shards Amount of shards for the the agent.
      */
     function registerAgent(
         uint256 agentId,
         string calldata metadata,
-        uint256[] calldata chainIds
-    ) public onlySorted(chainIds) frontrunProtected(keccak256(abi.encodePacked(agentId, _msgSender(), metadata, chainIds)), frontRunningDelay) {
+        uint256[] calldata chainIds,
+        uint8 redundancy,
+        uint8 shards
+    ) public onlySorted(chainIds) frontrunProtected(keccak256(abi.encodePacked(agentId, _msgSender(), metadata, chainIds, redundancy, shards)), frontRunningDelay) {
         address msgSender = _msgSender();
-        uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length);
+        uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
         bool _canBypassNeededAgentUnits = _agentUnitsRequirementCheck(msgSender, agentId, _agentUnits);
         _mint(msgSender, agentId);
         _beforeAgentUpdate(agentId, metadata, chainIds);
-        _agentUpdate(agentId, metadata, chainIds);
+        _agentUpdate(agentId, metadata, chainIds, redundancy, shards);
         _afterAgentUpdate(agentId, metadata, chainIds);
         if (!_canBypassNeededAgentUnits) { _agentUnitsUpdate(msgSender, agentId, _agentUnits, AgentModification.Create); }
     }
@@ -86,8 +90,8 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
      * @dev Create agent method with old signature for backwards compatibility. Owner parameter is ignore in favour of sender.
      * This method is deprecated and it will be removed in future versions of AgentRegistryCore
      */
-    function createAgent(uint256 agentId, address /*owner*/, string calldata metadata, uint256[] calldata chainIds) external {
-        registerAgent(agentId, metadata, chainIds);
+    function createAgent(uint256 agentId, address /*owner*/, string calldata metadata, uint256[] calldata chainIds, uint8 redundancy, uint8 shards) external {
+        registerAgent(agentId, metadata, chainIds, redundancy, shards);
     }
 
     /**
@@ -106,13 +110,15 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
      * @param agentId ERC721 token id of the agent to be updated.
      * @param metadata IPFS pointer to agent's metadata JSON.
      * @param chainIds ordered list of chainIds where the agent wants to run.
+     * @param redundancy Level of redundancy for the agent.
+     * @param shards Amount of shards for the the agent.
      */
-    function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds) public onlyOwnerOf(agentId) onlySorted(chainIds) {
+    function updateAgent(uint256 agentId, string calldata metadata, uint256[] calldata chainIds, uint8 redundancy, uint8 shards) public onlyOwnerOf(agentId) onlySorted(chainIds) {
         address msgSender = _msgSender();
-        uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length);
+        uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
         bool _canBypassNeededAgentUnits = _agentUnitsRequirementCheck(msgSender, agentId, _agentUnits);
         _beforeAgentUpdate(agentId, metadata, chainIds);
-        _agentUpdate(agentId, metadata, chainIds);
+        _agentUpdate(agentId, metadata, chainIds, redundancy, shards);
         _afterAgentUpdate(agentId, metadata, chainIds);
         if (!_canBypassNeededAgentUnits) { _agentUnitsUpdate(msgSender, agentId, _agentUnits, AgentModification.Update); }
     }
@@ -151,11 +157,13 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
      * Calculates the amount of agent units a given agent will need
      * based on the passed arguments
      * @param chainIds The chain ids that will be supported by the agent
+     * @param redundancy Level of redundancy for a given agent
+     * @param shards Amount of shards for a given agent
      * @return amount of agent units that will be needed for the passed
      * arguments
      */
-    function calculateAgentUnitsNeeded(uint256 chainIds) public pure returns (uint256) {
-        return chainIds;
+    function calculateAgentUnitsNeeded(uint256 chainIds, uint8 redundancy, uint8 shards) public pure returns (uint256) {
+        return chainIds * redundancy * shards;
     }
 
     /**
@@ -193,9 +201,11 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
      * @param agentId ERC721 token id of the agent to be created or updated.
      * @param newMetadata IPFS pointer to agent's metadata JSON.
      * @param newChainIds ordered list of chainIds where the agent wants to run.
+     * @param newRedundancy level of redundancy for the agent.
+     * @param newShards amounts of shards for the agent.
      */
-    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual {
-        emit AgentUpdated(agentId, _msgSender(), newMetadata, newChainIds);
+    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds, uint8 newRedundancy, uint8 newShards) internal virtual {
+        emit AgentUpdated(agentId, _msgSender(), newMetadata, newChainIds, newRedundancy, newShards);
     }
 
     /**
