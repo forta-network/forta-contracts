@@ -1,4 +1,4 @@
-import { Address, BigInt, ethereum, crypto, ByteArray, log } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum, crypto, ByteArray, log, store } from "@graphprotocol/graph-ts";
 import { newMockEvent } from "matchstick-as";
 import {
   StakeDeposited as StakeDepositedEvent,
@@ -341,6 +341,15 @@ export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {
   withdrawalExecutedEvent.subject = formatSubjectId(event.params.subject, event.params.subjectType);
   withdrawalExecutedEvent.amount = withdrawalInitiatedEvent.amount;
   withdrawalExecutedEvent.save();
+
+  if (
+    currentStake.shares &&
+    currentStake.inactiveShares &&
+    (currentStake.shares as BigInt).isZero() && 
+    (currentStake.inactiveShares as BigInt).isZero()
+  ) {
+    store.remove("Stake", currentStake.id);
+  }
 }
 
 export function handleRewarded(event: RewardedEvent): void {
