@@ -3,8 +3,9 @@
 
 pragma solidity ^0.8.9;
 
+import "@unlock-protocol/contracts/dist/PublicLock/IPublicLockV13.sol";
+
 import "../BaseComponentUpgradeable.sol";
-import "./ILock.sol";
 import "./IBotUnits.sol";
 
 /**
@@ -19,7 +20,7 @@ contract SubscriptionManager is BaseComponentUpgradeable {
     uint8 constant TEAM_LOCK_PLAN = 2;
 
     struct SubscriptionPlan {
-        ILock lockContract;
+        IPublicLockV13 lockContract;
         uint256 botUnitsCapacity;
     }
 
@@ -154,7 +155,7 @@ contract SubscriptionManager is BaseComponentUpgradeable {
     ) external view returns (uint minKeyPrice) {
         (bool isValid,,) = _isValidLockContract(msg.sender);
         if (!isValid) revert InvalidFunctionCaller(msg.sender);
-        return ILock(msg.sender).keyPrice();
+        return IPublicLockV13(msg.sender).keyPrice();
     }
 
     /**

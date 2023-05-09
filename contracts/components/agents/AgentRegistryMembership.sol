@@ -3,11 +3,11 @@
 
 pragma solidity ^0.8.9;
 
+import "@unlock-protocol/contracts/dist/PublicLock/IPublicLockV13.sol";
 import "../../errors/GeneralErrors.sol";
 
 import "./AgentRegistryCore.sol";
 import "./AgentRegistryMetadata.sol";
-import "../bot_execution/ILock.sol";
 import "../bot_execution/IBotUnits.sol";
 
 /**
@@ -25,8 +25,8 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
     uint8 private _freeTrialAgentUnits;
     uint256 private _executionFeesStartTime;
 
-    ILock _individualPlan;
-    ILock _teamPlan;
+    IPublicLockV13 _individualPlan;
+    IPublicLockV13 _teamPlan;
     IBotUnits _botUnits;
 
     mapping(uint256 => bool) private _isAgentIdPublicGood;
@@ -50,8 +50,8 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
         if (__teamPlan == address(0)) revert ZeroAddress("__teamPlan");
         if (__botUnits == address(0)) revert ZeroAddress("__botUnits");
 
-        _individualPlan = ILock(__individualPlan);
-        _teamPlan = ILock(__teamPlan);
+        _individualPlan = IPublicLockV13(__individualPlan);
+        _teamPlan = IPublicLockV13(__teamPlan);
         _botUnits = IBotUnits(__botUnits);
     }
 
