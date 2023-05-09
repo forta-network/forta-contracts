@@ -102,12 +102,12 @@ contract Dispatch is BaseComponentUpgradeable {
      * @dev helper for external iteration.
      * @param scannerId address of the scanner converted to uint256
      * @param pos index for iteration.
-     * @return registered bool if agent exists, false otherwise.
-     * @return owner address.
      * @return agentId ERC721 token id of the agent.
      * @return agentVersion agent version number.
      * @return metadata IPFS pointer for agent metadata.
      * @return chainIds ordered array of chainId were the agent wants to run.
+     * @return redundancy level of redundancy for the agent.
+     * @return shards amounts of shards for the agent.
      * @return enabled bool if agent is enabled, false otherwise.
      * @return disabledFlags 0 if not disabled, Permission that disabled the scnner otherwise.
      */
@@ -115,19 +115,19 @@ contract Dispatch is BaseComponentUpgradeable {
         external
         view
         returns (
-            bool registered,
-            address owner,
             uint256 agentId,
             uint256 agentVersion,
             string memory metadata,
             uint256[] memory chainIds,
+            uint8 redundancy,
+            uint8 shards,
             bool enabled,
             uint256 disabledFlags
         )
     {
         agentId = agentAt(scannerId, pos);
-        (registered, owner, agentVersion, metadata, chainIds, enabled, disabledFlags) = _agents.getAgentState(agentId);
-        return (registered, owner, agentId, agentVersion, metadata, chainIds, enabled, disabledFlags);
+        (agentVersion, metadata, chainIds, redundancy, shards, enabled, disabledFlags) = _agents.getAgentState(agentId);
+        return (agentId, agentVersion, metadata, chainIds, redundancy, shards, enabled, disabledFlags);
     }
 
     /**
@@ -287,7 +287,7 @@ contract Dispatch is BaseComponentUpgradeable {
         bool[] memory enabled = new bool[](agents.length);
 
         for (uint256 i = 0; i < agents.length; i++) {
-            (, , agentVersion[i], , ) = _agents.getAgent(agents[i]);
+            (, agentVersion[i],,,,) = _agents.getAgent(agents[i]);
             enabled[i] = _agents.isEnabled(agents[i]);
         }
 

@@ -44,32 +44,32 @@ contract AgentRegistry is
     /**
      * @notice Gets all Agent state.
      * @param agentId ERC721 token id of the agent.
-     * @return registered if agent exists.
-     * @return owner address.
      * @return agentVersion of the agent.
      * @return metadata IPFS pointer.
      * @return chainIds the agent wants to run in.
+     * @return redundancy level of redundancy for the agent.
+     * @return shards amounts of shards for the agent.
      * @return enabled true if staked over min and not disabled.
      * @return disabledFlags 0 if not disabled, Permission that disabled the scnner otherwise.
      */
     function getAgentState(uint256 agentId)
         public view
         returns (
-            bool registered,
-            address owner,
             uint256 agentVersion,
             string memory metadata,
             uint256[] memory chainIds,
+            uint8 redundancy,
+            uint8 shards,
             bool enabled,
             uint256 disabledFlags
         ) {
-        (registered, owner, agentVersion, metadata, chainIds) = getAgent(agentId);
+        (, agentVersion, metadata, chainIds, redundancy, shards) = getAgent(agentId);
         return (
-            registered,
-            owner,
             agentVersion,
             metadata,
             chainIds,
+            redundancy,
+            shards,
             isEnabled(agentId),
             getDisableFlags(agentId)
         );
@@ -103,8 +103,8 @@ contract AgentRegistry is
      * @param newMetadata IPFS pointer to agent's metadata
      * @param newChainIds chain ids that the agent wants to scan
      */
-    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata, AgentRegistryMembership, AgentRegistryEnable) {
-        super._agentUpdate(agentId, newMetadata, newChainIds);
+    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds, uint8 newRedundancy, uint8 newShards) internal virtual override(AgentRegistryCore, AgentRegistryMetadata, AgentRegistryMembership, AgentRegistryEnable) {
+        super._agentUpdate(agentId, newMetadata, newChainIds, newRedundancy, newShards);
     }
 
     /**

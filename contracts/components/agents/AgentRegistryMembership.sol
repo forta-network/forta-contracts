@@ -132,7 +132,7 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
      * @return Amount of agent units the given agent uses/requires
      */
     function existingAgentActiveUnitUsage(uint256 agentId) public view returns (uint256) {
-        (,,,,uint256[] memory chainIds, uint8 redundancy, uint8 shards) = super.getAgent(agentId);
+        (,,,uint256[] memory chainIds, uint8 redundancy, uint8 shards) = super.getAgent(agentId);
         return super.calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
     }
     

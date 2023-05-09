@@ -22,7 +22,6 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
     /**
      * @notice Gets agent metadata, version and chain Ids.
      * @param agentId ERC721 token id of the agent.
-     * @return registered if agent exists.
      * @return owner address.
      * @return agentVersion of the agent.
      * @return metadata IPFS pointer.
@@ -32,10 +31,9 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
      */
     function getAgent(uint256 agentId)
         public view
-        returns (bool registered, address owner, uint256 agentVersion, string memory metadata, uint256[] memory chainIds, uint8 redundancy, uint8 shards) {
+        returns (address owner, uint256 agentVersion, string memory metadata, uint256[] memory chainIds, uint8 redundancy, uint8 shards) {
         bool exists = _exists(agentId);
         return (
-            exists,
             exists ? ownerOf(agentId) : address(0),
             _agentMetadata[agentId].version,
             _agentMetadata[agentId].metadata,

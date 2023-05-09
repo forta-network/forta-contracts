@@ -101,7 +101,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, AgentRegistryMembers
         // Fetching agent owner since admin role
         // can also enable and disable an agent
         address agentOwner = super.ownerOf(agentId);
-        (,,,,uint256[] memory chainIds, uint8 redundancy, uint8 shards) = super.getAgent(agentId);
+        (,,,uint256[] memory chainIds, uint8 redundancy, uint8 shards) = super.getAgent(agentId);
         uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
         bool _canBypassNeededAgentUnits = _agentUnitsRequirementCheck(agentOwner, agentId, _agentUnits);
         _beforeAgentEnable(agentId, permission, enable);
