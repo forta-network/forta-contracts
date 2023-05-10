@@ -1,0 +1,14 @@
+title: Contract bug fixes & Setting new Treasury address
+network: mumbai
+deploy: prepare-upgrade 1.2.3
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deployed new implementations:
+  - RewardsDistributor
+  - StakeAllocator
+  - ScannerPoolRegistry
+
+  ## Output tx:
+  - Upgrade implementations
+  - Set Treasury to new address

@@ -260,7 +260,8 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
     }
 
     /**
-     * @notice method to call when substracting activeStake. Will burn unallocatedStake (and allocatedStake if amount is bigger than unallocatedStake)
+     * @notice method to call when substracting activeStake. Will burn unallocatedStake (and allocatedStake if amount is bigger than unallocatedStake).
+     * If withdrawal leads to DELEGATED to be below staking minimum, unallocates delegators' stake.
      * @param activeSharesId ERC1155 id representing the active shares of a subject / subjectType pair.
      * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
      * @param subject id identifying subject (external to FortaStaking).
@@ -287,6 +288,17 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
             _unallocatedStake.burn(activeSharesId, stakeAmount);
             rewardsDistributor.didUnallocate(subjectType, subject, 0, sharesAmount, allocator);
             emit UnallocatedStake(subjectType, subject, false, stakeAmount, _unallocatedStake.balanceOf(activeSharesId));
+        }
+
+        if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
+            uint256 managedSubjects = _subjectGateway.totalManagedSubjects(subjectType, subject);
+            if (_delegatedSubjectStakeIsLessThanMinimum(subjectType, subject, managedSubjects)) {
+                uint8 delegatorSubjectType = getDelegatorSubjectType(subjectType);
+                uint256 delegatorAllocatedStake = allocatedStakeFor(delegatorSubjectType, subject);
+                if (delegatorAllocatedStake > 0) {
+                    _unallocateStake(delegatorSubjectType, subject, delegatorAllocatedStake);
+                }
+            }
         }
     }
 
@@ -331,8 +343,7 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
             
             // If DELEGATED has staked less than minimum stake, revert cause delegation not unlocked
             if (
-                allocatedStakeFor(delegatedSubjectType, subject) / subjects <
-                _subjectGateway.minManagedStakeFor(delegatedSubjectType, subject)
+                _delegatedSubjectStakeIsLessThanMinimum(delegatedSubjectType, subject, subjects)
             ) {
                 revert CannotDelegateStakeUnderMin(delegatedSubjectType, subject);
             }
@@ -340,6 +351,21 @@ contract StakeAllocator is BaseComponentUpgradeable, SubjectTypeValidator, IStak
         }
 
         return (int256(currentlyAllocated + amount) - int256(maxPerManaged * subjects), maxPerManaged * subjects);
+    }
+
+    /**
+     * @notice Checks if DELEGATED has not staked over stakeThreshold.min of managed subject.
+     * @param delegatedSubjectType type id of DELEGATED Stake Subject. See SubjectTypeValidator.sol
+     * @param subject id identifying subject (external to FortaStaking).
+     * @param managedSubjects total amount of managed subjects
+     * @return isLess than minimum
+     */
+    function _delegatedSubjectStakeIsLessThanMinimum(uint8 delegatedSubjectType, uint256 subject, uint256 managedSubjects) private view returns (bool isLess) {
+        if (managedSubjects == 0) {
+            return false;
+        }
+        return allocatedStakeFor(delegatedSubjectType, subject) / managedSubjects <
+            _subjectGateway.minManagedStakeFor(delegatedSubjectType, subject);
     }
 
     function didTransferShares(

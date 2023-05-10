@@ -11,7 +11,6 @@
     "prepare": "yarn prepare:schema && yarn prepare:codegen && yarn prepare:compile",
     "prepare-dev": "yarn prepare-dev:schema && yarn prepare-dev:codegen && yarn prepare-dev:compile",
     "deploy-dev": "graph deploy --network mumbai --node https://api.thegraph.com/deploy/ ivandiazwm/forta-network-dev",
-    "deploy": "graph deploy --network matic --node https://api.thegraph.com/deploy/ forta-network/forta-network",
     "deploy-a": "graph deploy --network matic --node https://api.thegraph.com/deploy/ forta-network/forta-network-a",
     "deploy-b": "graph deploy --network matic --node https://api.thegraph.com/deploy/ forta-network/forta-network-b",
     "create-local": "graph create --node http://localhost:8020/ forta-network/forta-network",

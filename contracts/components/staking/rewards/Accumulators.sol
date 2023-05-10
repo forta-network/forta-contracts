@@ -21,14 +21,26 @@ library Accumulators {
         EpochCheckpoint[] checkpoints;
     }
 
-    function getValue(Accumulator storage acc) internal view returns (uint256) {
+    function getLatestAccumulated(Accumulator storage acc) internal view returns (uint256) {
         EpochCheckpoint memory origin = latest(acc);
         return origin.value + origin.rate * (block.timestamp - origin.timestamp);
     }
 
-    function getValueAtEpoch(Accumulator storage acc, uint256 epoch) internal view returns (uint256) {
-        EpochCheckpoint memory origin = getAtEpoch(acc, epoch);
+    function getAccumulatedForEpoch(Accumulator storage acc, uint256 epoch) internal view returns (uint256) {
+        EpochCheckpoint memory origin = getCheckpointAtEpoch(acc, epoch);
         return origin.value + origin.rate * (getEpochEndTimestamp(epoch) - origin.timestamp);
+    }
+
+    function getEpochTotalFromInitialRate(Accumulator storage acc, uint256 epoch) internal view returns (uint256) {
+        EpochCheckpoint memory lastEpochCheckpoint = getCheckpointAtEpoch(acc, epoch-1);
+        return (lastEpochCheckpoint.rate * EPOCH_LENGTH);
+    }
+
+    function isFirstEpoch(Accumulator storage acc, uint256 epoch) internal view returns (bool) {
+        // if latest checkpoint in the last epoch is a null/zero checkpoint,
+        // then the given epoch is the first epoch for this accumulator
+        EpochCheckpoint memory lastEpochCheckpoint = getCheckpointAtEpoch(acc, epoch-1);
+        return lastEpochCheckpoint.timestamp == 0;
     }
 
     function addRate(Accumulator storage acc, uint256 rate) internal {
@@ -40,7 +52,11 @@ library Accumulators {
     }
 
     function setRate(Accumulator storage acc, uint256 rate) internal {
-        EpochCheckpoint memory ckpt = EpochCheckpoint({ timestamp: SafeCast.toUint32(block.timestamp), rate: SafeCast.toUint224(rate), value: getValue(acc) });
+        EpochCheckpoint memory ckpt = EpochCheckpoint({
+            timestamp: SafeCast.toUint32(block.timestamp),
+            rate: SafeCast.toUint224(rate),
+            value: getLatestAccumulated(acc)
+        });
         uint256 length = acc.checkpoints.length;
         if (length > 0 && isCurrentEpoch(acc.checkpoints[length - 1].timestamp)) {
             acc.checkpoints[length - 1] = ckpt;
@@ -66,7 +82,7 @@ library Accumulators {
      * @dev Returns the most recent checkpoint during a given epoch. If a checkpoint is not available at that
      * epoch, the closest one before it is returned, or a zero epoch checkpoint otherwise.
      */
-    function getAtEpoch(Accumulator storage acc, uint256 epochNumber) internal view returns (EpochCheckpoint memory) {
+    function getCheckpointAtEpoch(Accumulator storage acc, uint256 epochNumber) internal view returns (EpochCheckpoint memory) {
         require(epochNumber < getCurrentEpochNumber(), "Checkpoints: epoch not yet finished");
 
         uint256 epochEnd = getEpochEndTimestamp(epochNumber);

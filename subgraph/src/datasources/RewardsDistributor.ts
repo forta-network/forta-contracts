@@ -4,7 +4,7 @@ import {
   Rewarded as RewardedDistributedEvent, 
   RewardsDistributor as RewardsDistributorContract, 
   ClaimedRewards as ClaimedRewardEvent} from "../../generated/RewardsDistributor/RewardsDistributor";
-import { ScannerPool, Subject, RewardEvent, Staker, RewardClaimedEvent } from "../../generated/schema";
+import { ScannerPool, Subject, RewardEvent, Staker, RewardClaimedEvent, NodePoolRewardMetaData } from "../../generated/schema";
 import { formatSubjectId } from "./utils";
 import { events, transactions } from "@amxx/graphprotocol-utils";
 import { newMockEvent } from "matchstick-as";
@@ -33,6 +33,14 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
 
   if(!nodePool || !nodePool.stakers) return null
 
+  const latestRewardMetaData = NodePoolRewardMetaData.load(nodePool.latestRewardMetaData);
+
+  if(!latestRewardMetaData) return null
+
+  const totalDelegatorStakesAtStartOfEpoch = latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch;
+  if(!totalDelegatorStakesAtStartOfEpoch) return null
+  if(totalDelegatorStakesAtStartOfEpoch.equals(BigInt.fromI32(0))) return null;
+
   
   const rewardDistributor = RewardsDistributorContract.bind(rewardsDistributorAddress);
   let totalDelegateRewards: BigInt = BigInt.fromI32(0);
@@ -60,7 +68,9 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
 
 
   // Calculate APY as string
-  const totalDelegateStakeInEpoch = nodePool.stakeAllocated.minus(nodePool.stakeOwnedAllocated);
+  const totalDelegateStakeInEpoch = latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch;
+
+  if(!totalDelegateStakeInEpoch) return null;
 
   if(totalDelegateStakeInEpoch.equals(BigInt.fromI32(0))) return null;
 
@@ -74,6 +84,29 @@ const calculatePoolAPYInEpoch = (rewardsDistributorAddress: Address,subjectId: s
 
   nodePool.apyForLastEpoch = truncatedApy
   return truncatedApy
+}
+
+const updateNodePoolLatestRewardMetaData = (nodePool: ScannerPool, latestEpochNumber: BigInt): boolean => {
+  const totalDelegateRewardAtStartOfCurrentEpoch = nodePool.stakeAllocated.minus(nodePool.stakeOwnedAllocated);
+
+  const latestRewardMetaData = NodePoolRewardMetaData.load(nodePool.latestRewardMetaData);
+  const previousRewardMetaData = NodePoolRewardMetaData.load(nodePool.previousRewardMetaData);
+
+  // Update previous metadata with latest meta data then update latest meta data
+  if(previousRewardMetaData && latestRewardMetaData) {
+    previousRewardMetaData.epochNumber = latestRewardMetaData.epochNumber;
+    previousRewardMetaData.nodePoolId = nodePool.id;
+    previousRewardMetaData.totalDelegatorStakesAtStartOfEpoch = latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch;
+    previousRewardMetaData.save();
+
+    latestRewardMetaData.epochNumber = latestEpochNumber;
+    latestRewardMetaData.nodePoolId = nodePool.id;
+    latestRewardMetaData.totalDelegatorStakesAtStartOfEpoch = totalDelegateRewardAtStartOfCurrentEpoch;
+    latestRewardMetaData.save();
+  }
+
+  // Need to return a value so that the calling handler waits for this function to execute (handlers aren't promise based in this assemblyscript)
+  return true;
 }
 
 
@@ -110,11 +143,11 @@ export function handleRewardEvent(event: RewardedDistributedEvent): void {
     nodePool.apyForLastEpoch = apy ? apy : BigDecimal.fromString("0");
     
     const pastRewardEvents: string[]  = nodePool.rewardedEvents ? nodePool.rewardedEvents as string[] : []
-
     pastRewardEvents.push(rewardedEvent.id)
 
     nodePool.rewardedEvents = pastRewardEvents
 
+    updateNodePoolLatestRewardMetaData(nodePool, epochNumber);
     nodePool.save()
   } else {
     log.warning(`Failed to save reward event because could not find subject type from transaction {}`, [event.transaction.hash.toHexString()])

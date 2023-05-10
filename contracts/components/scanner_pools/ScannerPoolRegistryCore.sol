@@ -73,6 +73,8 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
     error SenderNotScannerPool(address sender, uint256 scannerPoolId);
     error ChainIdMismatch(uint256 expected, uint256 provided);
     error ActionShutsDownPool();
+    error ScannerPreviouslyEnabled(address scanner);
+    error ScannerPreviouslyDisabled(address scanner);
 
     /**
      * @notice Checks sender (or metatx signer) is owner of the ScannerPoolRegistry ERC721 with ID scannerPoolId.
@@ -206,16 +208,77 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
      * @param scannerPoolId ERC721 id of the node runner
      */
     function _allocationOnAddedEnabledScanner(uint256 scannerPoolId) private {
-        uint256 unallocatedStake = _stakeAllocator.unallocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
         uint256 allocatedStake = _stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
+
+        // if the owner's allocated stake satisfies the minimum, no need to allocate extra
         uint256 min = _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].min;
         if (allocatedStake / _enabledScanners[scannerPoolId] >  min) {
             return;
         }
+
+        uint256 unallocatedStake = _stakeAllocator.unallocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
         if ((unallocatedStake + allocatedStake) / _enabledScanners[scannerPoolId] < min) {
             revert ActionShutsDownPool();
         }
-        _stakeAllocator.allocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, unallocatedStake);
+
+        uint256 stakeCapacity = _getStakeAllocationCapacity(scannerPoolId);
+        uint256 totalAllocatedStake = _stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT, scannerPoolId);
+
+        // do not try to allocate more if the total is over the capacity somehow
+        if (totalAllocatedStake > stakeCapacity) {
+            return; 
+        }
+
+        // try to stake up to the remaining capacity
+        uint256 stakeToAllocate = stakeCapacity - totalAllocatedStake;
+
+        // make sure that it doesn't exceed the unallocated pool owner stake
+        if (stakeToAllocate > unallocatedStake) {
+            stakeToAllocate = unallocatedStake;
+        }
+        _stakeAllocator.allocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, stakeToAllocate);
+    }
+
+    /**
+     * @notice Unallocates allocated stake if a there is a scanner disabled on the pool and the stake exceeds the max.
+     * The amount unallocated is the amount over the max. Unallocates from delegator's allocated stake,
+     * then if needed, from owner allocated stake.
+     * @dev this MUST be called after decrementing _enabledScanners
+     * @param scannerPoolId ERC721 id of the node runner
+     */
+    function _unallocationOnDisabledScanner(uint256 scannerPoolId) private {
+        if (_enabledScanners[scannerPoolId] == 0) { return; }
+
+        uint256 ownerAllocatedStake = _stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT, scannerPoolId);
+        uint256 delegatorAllocatedStake = _stakeAllocator.allocatedStakeFor(DELEGATOR_SCANNER_POOL_SUBJECT, scannerPoolId);
+        uint256 totalAllocatedStake = ownerAllocatedStake + delegatorAllocatedStake;
+        uint256 stakeCapacity = _getStakeAllocationCapacity(scannerPoolId);
+
+        if (totalAllocatedStake <= stakeCapacity) { return; }
+
+        uint256 stakeToUnallocate = totalAllocatedStake - stakeCapacity;
+
+        // if delegator allocation covers the amount, just unallocate from there
+        if(delegatorAllocatedStake >= stakeToUnallocate) {
+            _stakeAllocator.unallocateDelegatorStake(SCANNER_POOL_SUBJECT, scannerPoolId, stakeToUnallocate);
+            return;
+        }
+        // delegator allocation does not cover the extra: unallocate all of the delegator stake first
+        if (delegatorAllocatedStake > 0) {
+            _stakeAllocator.unallocateDelegatorStake(SCANNER_POOL_SUBJECT, scannerPoolId, delegatorAllocatedStake);
+            stakeToUnallocate -= delegatorAllocatedStake;
+        }
+        // unallocate the remaining from the owner
+        _stakeAllocator.unallocateOwnStake(SCANNER_POOL_SUBJECT, scannerPoolId, stakeToUnallocate);
+    }
+
+    /**
+     * @notice Returns the max allocatable stake to the pool.
+     * @dev this MUST be called after mutating _enabledScanners
+     * @param scannerPoolId ERC721 id of the node runner
+     */
+    function _getStakeAllocationCapacity(uint256 scannerPoolId) private view returns (uint256) {
+        return _scannerStakeThresholds[_scannerPoolChainId[scannerPoolId]].max * _enabledScanners[scannerPoolId];
     }
 
     function _registerScannerNode(ScannerNodeRegistration calldata req) internal {
@@ -339,6 +402,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
      */
     function enableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
+        if (!isScannerDisabled(scanner)) revert ScannerPreviouslyEnabled(scanner);
         _addEnabledScanner(_scannerNodes[scanner].scannerPoolId);
         _allocationOnAddedEnabledScanner(_scannerNodes[scanner].scannerPoolId);
         _setScannerDisableFlag(scanner, false);
@@ -351,7 +415,9 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
      */
     function disableScanner(address scanner) public onlyRegisteredScanner(scanner) {
         if (!_canSetEnableState(scanner)) revert CannotSetScannerActivation();
+        if (isScannerDisabled(scanner)) revert ScannerPreviouslyDisabled(scanner);
         _removeEnabledScanner(_scannerNodes[scanner].scannerPoolId);
+        _unallocationOnDisabledScanner(_scannerNodes[scanner].scannerPoolId);
         _setScannerDisableFlag(scanner, true);
     }
 
@@ -367,6 +433,15 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
 
     function _removeEnabledScanner(uint256 scannerPoolId) private {
         _enabledScanners[scannerPoolId] -= 1;
+        emit EnabledScannersChanged(scannerPoolId, _enabledScanners[scannerPoolId]);
+    }
+
+    /**
+     * @notice Updates enabled scanner count of a pool
+     * @param scannerPoolId ERC721 token id of the ScannerPool
+     */
+    function updateEnabledScanners(uint256 scannerPoolId, uint256 count) external onlyRole(SCANNER_POOL_ADMIN_ROLE) {
+        _enabledScanners[scannerPoolId] = count;
         emit EnabledScannersChanged(scannerPoolId, _enabledScanners[scannerPoolId]);
     }
 

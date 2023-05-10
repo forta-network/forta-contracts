@@ -2,7 +2,8 @@ import {
   ScannerPoolRegistered as ScannerPoolRegisteredEvent,
   ScannerPoolRegistry as ScannerPoolRegistryContract,
   ScannerUpdated as ScannerUpdatedEvent,
-  ScannerEnabled as ScannerEnabledEvent
+  ScannerEnabled as ScannerEnabledEvent,
+  Transfer as TransferEvent
 } from "../../generated/ScannerPoolRegistry/ScannerPoolRegistry";
 import { fetchScannerPool } from "../fetch/scannerpool";
 import { fetchScannode } from "../fetch/scannode";
@@ -70,4 +71,11 @@ export function handleScannerEnabled(event: ScannerEnabledEvent): void {
     nodePool.status = areScannersActive(nodePool) ? "Delegating" : "Not Delegating";
     nodePool.save()
   }
+}
+
+export function handleTransfer(event: TransferEvent): void {
+  const scannerPoolId = event.params.tokenId;
+  const scannerPool = fetchScannerPool(scannerPoolId);
+  scannerPool.owner = event.params.to.toHexString();
+  scannerPool.save();
 }
