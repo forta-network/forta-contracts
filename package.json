@@ -23,7 +23,8 @@
     "@ensdomains/ens-contracts": "^0.0.7",
     "@gnosis.pm/safe-ethers-lib": "^1.1.0",
     "@openzeppelin/contracts": "4.7.0",
-    "@openzeppelin/contracts-upgradeable": "4.7.0"
+    "@openzeppelin/contracts-upgradeable": "4.7.0",
+    "@unlock-protocol/contracts": "^0.0.22"
   },
   "devDependencies": {
     "@ethersproject/experimental": "^5.4.0",

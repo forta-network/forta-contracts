@@ -24,7 +24,7 @@ contract SubscriptionManager is BaseComponentUpgradeable {
         uint256 botUnitsCapacity;
     }
 
-    IBotUnits private immutable _botUnits;
+    IBotUnits private _botUnits;
     mapping(uint8 => SubscriptionPlan) private _subscriptionPlans;
 
     event SubscriptionPlanUpdated(address indexed owner, address indexed subscriptionPlan);

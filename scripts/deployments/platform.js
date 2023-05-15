@@ -9,6 +9,7 @@ const AGENT_SUBJECT = 1;
 const SCANNER_POOL_SUBJECT = 2;
 const deployEnv = require('../loadEnv');
 const loadRoles = require('../utils/loadRoles');
+const publicLockAbi = require('../utils/abis/PublicLockV13.json');
 
 upgrades.silenceWarnings();
 
@@ -149,13 +150,68 @@ async function migrate(config = {}) {
             DEBUG(`[${Object.keys(contracts).length}.3] escrow factory: ${contracts.escrowFactory.address}`);
         }
 
+        contracts.publicLock = await contractHelpers.tryFetchContract(hre, 'PublicLock', [], CACHE);
+
+        contracts.unlock = await contractHelpers.tryFetchProxy(
+            hre,
+            'Unlock',
+            'transparent',
+            [deployer.address],
+            {
+                constructorArgs: [],
+                unsafeAllow: ['delegatecall'],
+            },
+            CACHE
+        );
+
+        // TODO: Create encoded function arguments instead of this.
+        // One for each contract
+        const data = "0x6eadde43000000000000000000000000932146c165ed44fc7003f7a46782a72b99b1061c00000000000000000000000000000000000000000000000000000000000d2f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002386f26fc10000000000000000000000000000000000000000000000000000000000000000006400000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000c54657374436f6e74726163740000000000000000000000000000000000000000"
+        const lockVersion = 13;
+
+        await contracts.unlock.addLockTemplate(contracts.publicLock.address, lockVersion);
+        const individualLockAddress = await contracts.unlock.callStatic.createUpgradeableLockAtVersion(data, lockVersion);
+        const teamLockAddress = await contracts.unlock.callStatic.createUpgradeableLockAtVersion(data, lockVersion);
+
+        const individualLockContract = new ethers.Contract(individualLockAddress, publicLockAbi, deployer);
+        const teamLockContract = new ethers.Contract(teamLockAddress, publicLockAbi, deployer);
+
+        console.log(`individualLockContract maxKeysPerAddress: ${await individualLockContract.maxKeysPerAddress()}`);
+
+        const individualPlan = { lockContract: individualLockAddress, botUnitsCapacity: 300 };
+        const teamPlan = { lockContract: teamLockAddress, botUnitsCapacity: 500 };
+
+        contracts.botUnits = await contractHelpers.tryFetchProxy(
+            hre,
+            'BotUnits',
+            'uups',
+            [contracts.access.address],
+            {
+                constructorArgs: [contracts.forwarder.address],
+                unsafeAllow: 'delegatecall',
+            },
+            CACHE
+        );
+
+        contracts.subscriptionManager = await contractHelpers.tryFetchProxy(
+            hre,
+            'SubscriptionManager',
+            'uups',
+            [contracts.access.address],
+            {
+                constructorArgs: [contracts.forwarder.address, individualPlan, teamPlan, contracts.botUnits.address],
+                unsafeAllow: 'delegatecall',
+            },
+            CACHE
+        );
+
         contracts.agents = await contractHelpers.tryFetchProxy(
             hre,
             'AgentRegistry',
             'uups',
             [contracts.access.address, 'Forta Agents', 'FAgents'],
             {
-                constructorArgs: [contracts.forwarder.address],
+                constructorArgs: [contracts.forwarder.address, individualLockAddress, teamLockAddress, contracts.botUnits.address],
                 unsafeAllow: 'delegatecall',
             },
             CACHE

@@ -11,7 +11,9 @@ describe('Agent Registry', function () {
 
     describe('create and update', function () {
         it('missing prepare if delay set', async function () {
-            const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
+            const redundancy = 6;
+            const shards = 10;
+            const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
             await expect(this.agents.connect(this.accounts.manager).setFrontRunningDelay('1800'))
                 .to.emit(this.agents, 'FrontRunningDelaySet')
                 .withArgs(ethers.BigNumber.from('1800'));
