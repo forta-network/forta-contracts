@@ -15,7 +15,7 @@ describe('Upgrades testing', function () {
     });
 
     describe('Agent Registry', async function () {
-        it(' 0.1.1 -> 0.1.6', async function () {
+        it(' 0.1.1 -> 0.1.7', async function () {
             const AgentRegistry_0_1_1 = await ethers.getContractFactory('AgentRegistry_0_1_1');
             agents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, mockRouter.address, 'Forta Agents', 'FAgents'], {
                 constructorArgs: [this.contracts.forwarder.address],
@@ -94,7 +94,7 @@ describe('Upgrades testing', function () {
             });
             await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
             expect(await agents.getSubjectHandler()).to.be.equal(this.contracts.subjectGateway.address);
-            expect(await agents.version()).to.be.equal('0.1.6');
+            expect(await agents.version()).to.be.equal('0.1.7');
             expect(await agents.isRegistered(AGENT_ID)).to.be.equal(true);
             expect(await agents.getDisableFlags(AGENT_ID)).to.be.equal([2]);
             expect(await agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
