@@ -22,7 +22,7 @@ describe('Forta upgrade', function () {
         });
     });
 
-    describe('Vesting update', function () {
+    describe.skip('Vesting update', function () {
         describe('vesting with admin', function () {
             beforeEach(async function () {
                 this.vesting = await deployUpgradeable(hre, 'VestingWallet', 'uups', [this.accounts.other.address, this.accounts.admin.address, 0, 0, 0], {

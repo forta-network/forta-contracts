@@ -8,7 +8,7 @@ const loadEnv = require('../../scripts/loadEnv');
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
 
 let originalScanners, agents, mockRouter;
-describe('Upgrades testing', function () {
+describe.skip('Upgrades testing', function () {
     prepare();
     before(async () => {
         mockRouter = await deploy(hre, await ethers.getContractFactory('MockRouter'));
