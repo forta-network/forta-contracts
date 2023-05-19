@@ -79,9 +79,8 @@ jobs:
                 cache: 'yarn'
           - run: yarn install --frozen-lockfile
 
-          - name: Code coverage
-            run: yarn coverage
-            uses: codecov/codecov-action@v3
+          - run: yarn coverage
+          - uses: codecov/codecov-action@v3
             with:
               token: ${{ secrets.CODECOV_TOKEN }}
 
