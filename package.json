@@ -60,7 +60,7 @@
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "semver": "^7.3.5",
     "solhint-plugin-prettier": "^0.0.5",
-    "solidity-coverage": "^0.7.17",
+    "solidity-coverage": "^0.8.2",
     "solidity-docgen": "^0.6.0-beta.8"
   }
 }
