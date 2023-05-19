@@ -70,6 +70,20 @@ jobs:
                   token: ${{ secrets.CODECOV_TOKEN }}
                   files: ./coverage.json
 
+    coverage:
+        name: Code coverage
+        if: startsWith(github.head_ref, 'release/')
+        runs-on: ubuntu-22.04
+        needs: test
+        steps:
+          - uses: actions/checkout@v3
+          - name: Set up environment
+            uses: ./.github/actions/setup
+          - run: npm run coverage
+          - uses: codecov/codecov-action@v3
+            with:
+              token: ${{ secrets.CODECOV_TOKEN }}
+
     # prepare:
     #     name: Prepare release
     #     if: startsWith(github.head_ref, 'release/')
