@@ -255,7 +255,7 @@ describe('Forta Staking General', function () {
         });
     });
 
-    describe.skip('token sweeping', async function () {
+    describe('token sweeping', async function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
             this.accounts.getAccount('sweeper');
@@ -306,7 +306,7 @@ describe('Forta Staking General', function () {
         });
     });
 
-    describe.skip('attack scenario', function () {
+    describe('attack scenario', function () {
         it('dusting', async function () {
             await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: ethers.utils.parseEther('5000'), min: '1', activated: true });
 

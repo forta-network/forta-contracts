@@ -14,7 +14,7 @@ const txTimestamp = (tx) =>
         .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
         .then(({ timestamp }) => timestamp);
 
-describe.skip('Staking Escrow', function () {
+describe('Staking Escrow', function () {
     prepare({
         adminAsChildChainManagerProxy: true,
         stake: { min: '1', max: ethers.utils.parseEther('10000000'), activated: true },
