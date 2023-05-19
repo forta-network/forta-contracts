@@ -5,6 +5,7 @@ artifacts
 build
 cache
 coverage
+coverage.json
 deploy.*.json
 docs
 .cache-31337.json

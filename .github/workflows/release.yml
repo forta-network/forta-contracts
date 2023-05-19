@@ -63,12 +63,6 @@ jobs:
 
             - name: Run unit tests
               run: yarn test --no-compile
-              
-            - name: Upload coverage reports to Codecov with GitHub Action
-              uses: codecov/codecov-action@v3
-              with:
-                  token: ${{ secrets.CODECOV_TOKEN }}
-                  files: ./coverage.json
 
     coverage:
         name: Code coverage
@@ -77,10 +71,17 @@ jobs:
         needs: test
         steps:
           - uses: actions/checkout@v3
-          # - name: Set up environment
-          #   uses: ./.github/actions/setup
-          - run: yarn coverage
-          - uses: codecov/codecov-action@v3
+            with:
+                ref: ${{ github.event.pull_request.head.sha }}
+          - uses: actions/setup-node@v3
+            with:
+                node-version: '14'
+                cache: 'yarn'
+          - run: yarn install --frozen-lockfile
+
+          - name: Code coverage
+            run: yarn coverage
+            uses: codecov/codecov-action@v3
             with:
               token: ${{ secrets.CODECOV_TOKEN }}
 
