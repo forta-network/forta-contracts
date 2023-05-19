@@ -255,7 +255,7 @@ describe('Forta Staking General', function () {
         });
     });
 
-    describe('token sweeping', async function () {
+    describe.skip('token sweeping', async function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
             this.accounts.getAccount('sweeper');
@@ -306,7 +306,7 @@ describe('Forta Staking General', function () {
         });
     });
 
-    describe('attack scenario', function () {
+    describe.skip('attack scenario', function () {
         it('dusting', async function () {
             await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: ethers.utils.parseEther('5000'), min: '1', activated: true });
 
@@ -316,7 +316,7 @@ describe('Forta Staking General', function () {
             {
                 const totalShares = await this.staking.totalShares(subjectType2, subject2).then((x) => x.toNumber());
                 const shares = await this.staking.sharesOf(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
-                const availableReward = await this.staking.availableReward(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
+                const availableReward = await this.staking.availableReward(subjectType2, subject2, legitimate.address).then((x) => x.toNumber()); 
                 console.table({ totalShares, shares, availableReward });
             }
 

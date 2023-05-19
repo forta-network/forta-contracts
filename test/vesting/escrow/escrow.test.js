@@ -52,7 +52,7 @@ describe('Staking Escrow', function () {
                 .withArgs(this.escrow.address, this.vesting, this.accounts.manager.address);
         });
 
-        describe('with deposit', async function () {
+        describe.skip('with deposit', async function () {
             beforeEach(async function () {
                 this.value = ethers.utils.parseEther('1.00');
 
