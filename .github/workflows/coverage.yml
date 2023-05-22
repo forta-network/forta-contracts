@@ -1,0 +1,74 @@
+---
+name: Code Coverage
+
+on:
+    push:
+        branches:
+            - 'master'
+
+defaults:
+    run:
+        shell: bash
+
+jobs:
+    build:
+        name: Build release
+        runs-on: ubuntu-22.04
+        timeout-minutes: 10
+        env:
+            INFURA_PROJECT_ID: '${{ secrets.INFURA_PROJECT_ID }}'
+
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
+              with:
+                  node-version: '14'
+                  cache: 'yarn'
+            - run: yarn install --frozen-lockfile
+
+            - name: Compile contracts
+              run: yarn compile
+
+            - name: Save build artifacts
+              uses: actions/upload-artifact@v3
+              with:
+                  name: contract-artifacts
+                  path: |
+                      artifacts
+                      cache/*.json
+    test:
+        name: Test release
+        runs-on: ubuntu-22.04
+        needs: build
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
+              with:
+                  node-version: '14'
+                  cache: 'yarn'
+            - run: yarn install --frozen-lockfile
+
+            - name: Get build artifacts
+              uses: actions/download-artifact@v3
+              with:
+                  name: contract-artifacts
+
+            - name: Run unit tests
+              run: yarn test --no-compile
+
+    coverage:
+        name: Code coverage
+        runs-on: ubuntu-22.04
+        needs: test
+        steps:
+          - uses: actions/checkout@v3
+          - uses: actions/setup-node@v3
+            with:
+                node-version: '14'
+                cache: 'yarn'
+          - run: yarn install --frozen-lockfile
+
+          - run: yarn coverage
+          - uses: codecov/codecov-action@v3
+            with:
+              token: ${{ secrets.CODECOV_TOKEN }}
