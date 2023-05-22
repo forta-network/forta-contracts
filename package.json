@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "compile": "yarn hardhat compile",
-    "coverage": "hardhat coverage",
+    "coverage": "yarn hardhat coverage  --testfiles 'test/' --solcoverjs .solcover.js",
     "lint": "npm run lint:solidity && npm run lint:javascript",
     "lint:javascript": "eslint ./",
     "test": "hardhat test"
@@ -60,7 +60,7 @@
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "semver": "^7.3.5",
     "solhint-plugin-prettier": "^0.0.5",
-    "solidity-coverage": "^0.7.17",
+    "solidity-coverage": "^0.8.2",
     "solidity-docgen": "^0.6.0-beta.8"
   }
 }

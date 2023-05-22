@@ -1,10 +1,11 @@
 node_modules
+.DS_Store
 .vscode
 artifacts
 build
 cache
 coverage
-coverage.*
+coverage.json
 deploy.*.json
 docs
 .cache-31337.json

@@ -64,6 +64,26 @@ jobs:
             - name: Run unit tests
               run: yarn test --no-compile
 
+    coverage:
+        name: Code coverage
+        if: startsWith(github.head_ref, 'release/')
+        runs-on: ubuntu-22.04
+        needs: test
+        steps:
+          - uses: actions/checkout@v3
+            with:
+                ref: ${{ github.event.pull_request.head.sha }}
+          - uses: actions/setup-node@v3
+            with:
+                node-version: '14'
+                cache: 'yarn'
+          - run: yarn install --frozen-lockfile
+
+          - run: yarn coverage
+          - uses: codecov/codecov-action@v3
+            with:
+              token: ${{ secrets.CODECOV_TOKEN }}
+
     # prepare:
     #     name: Prepare release
     #     if: startsWith(github.head_ref, 'release/')

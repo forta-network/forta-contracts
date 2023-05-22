@@ -316,7 +316,7 @@ describe('Forta Staking General', function () {
             {
                 const totalShares = await this.staking.totalShares(subjectType2, subject2).then((x) => x.toNumber());
                 const shares = await this.staking.sharesOf(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
-                const availableReward = await this.staking.availableReward(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
+                const availableReward = await this.staking.availableReward(subjectType2, subject2, legitimate.address).then((x) => x.toNumber()); 
                 console.table({ totalShares, shares, availableReward });
             }
 

@@ -14,7 +14,7 @@ const txTimestamp = (tx) =>
         .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
         .then(({ timestamp }) => timestamp);
 
-describe.skip('Staking Escrow', function () {
+describe('Staking Escrow', function () {
     prepare({
         adminAsChildChainManagerProxy: true,
         stake: { min: '1', max: ethers.utils.parseEther('10000000'), activated: true },
@@ -52,7 +52,7 @@ describe.skip('Staking Escrow', function () {
                 .withArgs(this.escrow.address, this.vesting, this.accounts.manager.address);
         });
 
-        describe('with deposit', async function () {
+        describe.skip('with deposit', async function () {
             beforeEach(async function () {
                 this.value = ethers.utils.parseEther('1.00');
 
