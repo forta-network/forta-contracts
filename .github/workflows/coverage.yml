@@ -39,7 +39,6 @@ jobs:
     test:
         name: Test release
         runs-on: ubuntu-22.04
-#       timeout-minutes: 20
         needs: build
         steps:
             - uses: actions/checkout@v3
