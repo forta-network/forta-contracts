@@ -13,7 +13,7 @@ const allocation = {
 describe('VestingWallet ', function () {
     prepare();
 
-    describe.skip('Vesting update', function () {
+    describe('Vesting update', function () {
         describe('vesting with admin', function () {
             beforeEach(async function () {
                 allocation.beneficiary = this.accounts.other.address;
