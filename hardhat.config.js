@@ -13,7 +13,7 @@ require('hardhat-ignore-warnings');
 
 const { task } = require('hardhat/config');
 const { relative } = require('path');
-const { ethers } = require('hardhat');
+const { ethers } = require('ethers');
 
 const argv = require('yargs/yargs')().env('').argv;
 
