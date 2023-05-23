@@ -7,7 +7,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
     prepare();
     let SCANNERS;
     const chainId = 1;
-    it.skip('upgrade: deprecated implementation keeps storage', async function () {
+    it('upgrade: deprecated implementation keeps storage', async function () {
         this.accounts.getAccount('scanner');
 
         const ScannerRegistry_0_1_3 = await ethers.getContractFactory('ScannerRegistry_0_1_3');
@@ -70,7 +70,7 @@ describe('Scanner Registry (Deprecation and migration)', function () {
         }
     });
 
-    describe.skip('Migration', () => {
+    describe('Migration', () => {
         beforeEach(async function () {
             this.accounts.getAccount('scanner');
 
