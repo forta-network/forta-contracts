@@ -106,7 +106,7 @@ async function migratePool(cache, registryMigration, owner, chainId, chunkSize, 
         calls.chunk(callChunkSize).map(async (callChunk) => {
             let tx;
             try {
-                tx = await registryMigration.multicall(callChunk, { gasPrice: 300000000000 });
+                tx = await registryMigration.multicall(callChunk, { gasPrice: 300000000000, gasLimit: 2100000 });
             } catch (e) {
                 console.log('ERROR migratePool');
                 console.log('chainId', chainId);
