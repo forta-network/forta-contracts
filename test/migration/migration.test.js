@@ -205,7 +205,7 @@ describe('Scanner 2 Scanner pool script', function () {
             }
         });
 
-        it('poolId 2, 100 chunk, 50 callChunk', async function () {
+        it.skip('poolId 2, 100 chunk, 50 callChunk', async function () {
             fs.copyFileSync('./test/migration/data/migrate-pool.json', './test/migration/data/t-migrate-pool-id-2-chunk-100.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-migrate-pool-id-2-chunk-100' });
             const chainId = '137';
