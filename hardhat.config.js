@@ -13,7 +13,6 @@ require('hardhat-ignore-warnings');
 
 const { task } = require('hardhat/config');
 const { relative } = require('path');
-const { ethers } = require('ethers');
 
 const argv = require('yargs/yargs')().env('').argv;
 
@@ -84,7 +83,7 @@ module.exports = {
 };
 
 // Set `accountsBalance` for testing only
-const accountsForNetwork = (name) => [argv[`${name}Mnemonic`] && { mnemonic: argv[`${name}Mnemonic`], accountsBalance: ethers.utils.parseEther("1000000") }, argv[`${name}PrivateKey`]].find(Boolean);
+const accountsForNetwork = (name) => [argv[`${name}Mnemonic`] && { mnemonic: argv[`${name}Mnemonic`], accountsBalance: "1000000000000000000000000" }, argv[`${name}PrivateKey`]].find(Boolean);
 
 Object.assign(
     module.exports.networks,
