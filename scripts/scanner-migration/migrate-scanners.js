@@ -132,7 +132,7 @@ async function migrateScannersMintPool(cache, registryMigration, owner, chainId,
     DEBUG('...migrateScannersMintPool...');
     let receipt;
     try {
-        const tx = await registryMigration.migrate(scannerAddresses, 0, owner, chainId, { gasPrice: 300000000000 });
+        const tx = await registryMigration.migrate(scannerAddresses, 0, owner, chainId, { gasPrice: 300000000000, gasLimit: 2100000 });
         receipt = await tx.wait();
     } catch (e) {
         console.log('migrateScannersMintPool');
