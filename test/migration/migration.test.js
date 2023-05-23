@@ -100,7 +100,7 @@ describe('Scanner 2 Scanner pool script', function () {
             expect(await this.staking.activeStakeFor(2, 1)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
         });
     });
-    describe.skip('migrateScannersMintPool', function () {
+    describe('migrateScannersMintPool', function () {
         it('poolId 0, skip migrated and opting out', async function () {
             fs.copyFileSync('./test/migration/data/first-pool.json', './test/migration/data/t-first-pool.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-first-pool' });
@@ -169,7 +169,7 @@ describe('Scanner 2 Scanner pool script', function () {
             expect(await this.staking.activeStakeFor(2, 1)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
         });
     });
-    describe.skip('migratePool', function () {
+    describe('migratePool', function () {
         it('poolId 0, chunk with minting and ignoring prev migrated and opted out', async function () {
             fs.copyFileSync('./test/migration/data/migrate-pool.json', './test/migration/data/t-migrate-pool-id-0-chunk.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-migrate-pool-id-0-chunk' });
@@ -281,7 +281,7 @@ describe('Scanner 2 Scanner pool script', function () {
             expect(await this.staking.activeStakeFor(2, 2)).to.eq(MIN_STAKE_MANAGED * Object.keys(scanners).length);
         });
     });
-    describe.skip('Full test', function () {
+    describe('Full test', function () {
         it('migrate multi chain', async function () {
             fs.copyFileSync('./test/migration/data/multi-chain.json', './test/migration/data/t-multi-chain.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-multi-chain' });
