@@ -51,7 +51,7 @@ describe('Scanner 2 Scanner pool script', function () {
         await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('100000000'));
         await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
     });
-    it.skip('skips migrated, if disabled, if opting out, and if active stake below minimum', function () {
+    it('skips migrated, if disabled, if opting out, and if active stake below minimum', function () {
         const firstPool = require('./data/first-pool.json');
         const scanners = firstPool['137']['0xc29af06142138f893e3f1c1d11aa98c3313b8c1f']['scanner-registry'];
         const ids = Object.keys(scanners);
@@ -59,7 +59,7 @@ describe('Scanner 2 Scanner pool script', function () {
         output[ids[0]] = scanners[ids[0]];
         expect(filterNonMigrations(scanners)).to.deep.eq(output);
     });
-    describe.skip('Migrate First Scanners Mint Pool', function () {
+    describe('Migrate First Scanners Mint Pool', function () {
         it('migrates first pool and updates doc', async function () {
             fs.copyFileSync('./test/migration/data/first-pool.json', './test/migration/data/t-first-pool.json');
             cache = new AsyncConf({ cwd: __dirname, configName: './data/t-first-pool' });
