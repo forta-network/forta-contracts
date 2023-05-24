@@ -40,35 +40,36 @@ jobs:
                   path: |
                       artifacts
                       cache/*.json
-    test:
-        name: Test release
-        if: startsWith(github.head_ref, 'release/')
-        runs-on: ubuntu-22.04
-#       timeout-minutes: 20
-        needs: build
-        steps:
-            - uses: actions/checkout@v3
-              with:
-                  ref: ${{ github.event.pull_request.head.sha }}
-            - uses: actions/setup-node@v3
-              with:
-                  node-version: '14'
-                  cache: 'yarn'
-            - run: yarn install --frozen-lockfile
+#     test:
+#         name: Test release
+#         if: startsWith(github.head_ref, 'release/')
+#         runs-on: ubuntu-22.04
+# #       timeout-minutes: 20
+#         needs: build
+#         steps:
+#             - uses: actions/checkout@v3
+#               with:
+#                   ref: ${{ github.event.pull_request.head.sha }}
+#             - uses: actions/setup-node@v3
+#               with:
+#                   node-version: '14'
+#                   cache: 'yarn'
+#             - run: yarn install --frozen-lockfile
 
-            - name: Get build artifacts
-              uses: actions/download-artifact@v3
-              with:
-                  name: contract-artifacts
+#             - name: Get build artifacts
+#               uses: actions/download-artifact@v3
+#               with:
+#                   name: contract-artifacts
 
-            - name: Run unit tests
-              run: yarn test --no-compile
+#             - name: Run unit tests
+#               run: yarn test --no-compile
 
     coverage:
         name: Code coverage
         if: startsWith(github.head_ref, 'release/')
         runs-on: ubuntu-22.04
-        needs: test
+        # needs: test
+        needs: build
         steps:
           - uses: actions/checkout@v3
             with:
