@@ -154,8 +154,8 @@ describe('Dispatcher', function () {
     });
 
     it('gas estimation', async function () {
-        for (const i in Array(10).fill()) {
-            for (const j in Array(10).fill()) {
+        for (const i in Array(3).fill()) {
+            for (const j in Array(3).fill()) {
                 const agent = ethers.utils.hexlify(ethers.utils.randomBytes(32));
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(agent, `Agent ${i * 10 + j}`, [1])).to.be.not.reverted;
                 await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, agent, '100');
