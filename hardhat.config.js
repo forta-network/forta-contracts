@@ -82,6 +82,7 @@ module.exports = {
     },
 };
 
+// Set `accountsBalance` for testing only
 const accountsForNetwork = (name) => [argv[`${name}Mnemonic`] && { mnemonic: argv[`${name}Mnemonic`] }, argv[`${name}PrivateKey`]].find(Boolean);
 
 Object.assign(

@@ -153,11 +153,12 @@ describe('Dispatcher', function () {
         expect(await this.dispatch.scannerRefAt(this.AGENT_ID, 0)).to.be.deep.equal(expected);
     });
 
-    it.skip('gas estimation', async function () {
-        for (const i in Array(10).fill()) {
-            for (const j in Array(10).fill()) {
+    it('gas estimation', async function () {
+        for (const i in Array(3).fill()) {
+            for (const j in Array(3).fill()) {
                 const agent = ethers.utils.hexlify(ethers.utils.randomBytes(32));
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(agent, `Agent ${i * 10 + j}`, [1])).to.be.not.reverted;
+                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, agent, '100');
                 await expect(this.dispatch.connect(this.accounts.manager).link(agent, this.SCANNER_ID)).to.be.not.reverted;
             }
 

@@ -7,12 +7,12 @@ describe('Forta upgrade', function () {
     prepare();
 
     describe('Token update', function () {
-        it.skip('authorized', async function () {
+        it('authorized', async function () {
             this.token = await performUpgrade(hre, this.token, 'FortaExtendedMock');
             expect(await this.token.version()).to.be.equal('FortaExtendedMock');
         });
 
-        it.skip('unauthorized', async function () {
+        it('unauthorized', async function () {
             const ADMIN_ROLE = await this.token.ADMIN_ROLE();
 
             await this.token.renounceRole(ADMIN_ROLE, this.accounts.admin.address);
@@ -22,7 +22,7 @@ describe('Forta upgrade', function () {
         });
     });
 
-    describe.skip('Vesting update', function () {
+    describe('Vesting update', function () {
         describe('vesting with admin', function () {
             beforeEach(async function () {
                 this.vesting = await deployUpgradeable(hre, 'VestingWallet', 'uups', [this.accounts.other.address, this.accounts.admin.address, 0, 0, 0], {

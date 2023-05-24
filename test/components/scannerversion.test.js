@@ -66,7 +66,7 @@ describe('Scanner Node Software Version', function () {
         });
     });
 
-    describe.skip('upgrade', async function () {
+    describe('upgrade', async function () {
         it('upgrades', async function () {
             const mockRouter = await deploy(hre, await ethers.getContractFactory('MockRouter'));
             const ScannerVersion_0_1_0 = await ethers.getContractFactory('ScannerNodeVersion_0_1_0');

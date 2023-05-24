@@ -106,7 +106,7 @@ async function migratePool(cache, registryMigration, owner, chainId, chunkSize, 
         calls.chunk(callChunkSize).map(async (callChunk) => {
             let tx;
             try {
-                tx = await registryMigration.multicall(callChunk, { gasPrice: 300000000000 });
+                tx = await registryMigration.multicall(callChunk, { gasPrice: 300000000000, gasLimit: 21000000 });
             } catch (e) {
                 console.log('ERROR migratePool');
                 console.log('chainId', chainId);
@@ -132,7 +132,7 @@ async function migrateScannersMintPool(cache, registryMigration, owner, chainId,
     DEBUG('...migrateScannersMintPool...');
     let receipt;
     try {
-        const tx = await registryMigration.migrate(scannerAddresses, 0, owner, chainId, { gasPrice: 300000000000 });
+        const tx = await registryMigration.migrate(scannerAddresses, 0, owner, chainId, { gasPrice: 300000000000, gasLimit: 21000000 });
         receipt = await tx.wait();
     } catch (e) {
         console.log('migrateScannersMintPool');
