@@ -1,0 +1,8 @@
+title: Grant new roles
+network: mumbai
+deploy: prepare-upgrade 1.2.7
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Output tx:
+  - Grant Core Dev multisig role of SCANNER_BETA_VERSION_ROLE
