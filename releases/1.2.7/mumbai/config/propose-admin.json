@@ -3,7 +3,7 @@
         {
             "methodName": "grantRole",
             "params": [
-                ["roles.SCANNER_BETA_VERSION_ROLE", "0xd1d4FaFd400fCD643132bb7eAF7682eE97E09C3e"]
+                ["roles.SCANNER_BETA_VERSION_ROLE", "0x19AD705930B6695812c921f08b16F7DfAF59A536"]
             ]
         }
     ]
