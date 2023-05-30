@@ -298,11 +298,11 @@ describe('Forta Staking General', function () {
             await this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType2, subject2, '50');
             await this.staking.connect(this.accounts.user2).deposit(subjectType3, subject2, '100');
 
-            const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
-            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
-
             await this.rewardsDistributor.connect(this.accounts.manager).reward(subjectType2, subject2, '100', epoch);
             await this.staking.connect(this.accounts.slasher).slash(subjectType2, subject2, '80', ethers.constants.AddressZero, '0');
+
+            const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
         });
 
         it('sweep unrelated token', async function () {
@@ -342,8 +342,19 @@ describe('Forta Staking General', function () {
         });
     });
 
-    describe.skip('attack scenario', function () {
+    describe.only('attack scenario', function () {
         it('dusting', async function () {
+            const network = await ethers.provider.getNetwork();
+            this.accounts.getAccount('scanner');
+            console.log(`current block: ${await helpers.time.latestBlock()}`);
+            // await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+            await helpers.time.increase(1 + (EPOCH_LENGTH * 2) /* 2 weeks */);
+            console.log(`block after first increase: ${await helpers.time.latestBlock()}`);
+            const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+            console.log(`block after second increase: ${await helpers.time.latestBlock()}`);
+
+            // This line may be unnecessary
             await this.agents.connect(this.accounts.manager).setStakeThreshold({ max: ethers.utils.parseEther('5000'), min: '1', activated: true });
 
             const legitimate = this.accounts.user1;
@@ -351,49 +362,92 @@ describe('Forta Staking General', function () {
 
             {
                 const totalShares = await this.staking.totalShares(subjectType2, subject2).then((x) => x.toNumber());
+                const totalDelegatorShares = await this.staking.totalShares(subjectType3, subject2).then((x) => x.toNumber());
                 const shares = await this.staking.sharesOf(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
-                const availableReward = await this.staking.availableReward(subjectType2, subject2, legitimate.address).then((x) => x.toNumber()); 
-                console.table({ totalShares, shares, availableReward });
+                const delegatorShares = await this.staking.sharesOf(subjectType3, subject2, attacker.address).then((x) => x.toNumber());
+                // const availableReward = await this.rewardsDistributor.availableReward(subjectType2, subject2, epoch, legitimate.address).then((x) => x.toNumber());
+                // const availableDelegatorReward = await this.rewardsDistributor.availableReward(subjectType3, subject2, epoch, attacker.address).then((x) => x.toNumber());
+                console.table({ totalShares, totalDelegatorShares, shares, delegatorShares/*, availableReward, availableDelegatorReward */});
             }
 
+            // The reason there may not be any available rewards for `legitimate` is that
+            // the checkpoints that establish time passing since the last `deposit` are
+            // created when subsequent `deposit`s are made. So may need to trigger more
+            // deposits by `user3` to establish checkpoints. However, why are `deposit`s
+            // from the `attacker` not creating checkpoints?
             await this.staking.connect(legitimate).deposit(subjectType2, subject2, '20000000000000');
+            await helpers.mine(51000, { interval: 12 });
+            
 
             {
                 const totalShares = await this.staking.totalShares(subjectType2, subject2).then((x) => x.toNumber());
+                const totalDelegatorShares = await this.staking.totalShares(subjectType3, subject2).then((x) => x.toNumber());
                 const shares = await this.staking.sharesOf(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
-                const availableReward = await this.staking.availableReward(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
-                console.table({ totalShares, shares, availableReward });
+                const delegatorShares = await this.staking.sharesOf(subjectType3, subject2, attacker.address).then((x) => x.toNumber());
+                // const availableReward = await this.rewardsDistributor.availableReward(subjectType2, subject2, epoch, legitimate.address).then((x) => x.toNumber());
+                // const availableDelegatorReward = await this.rewardsDistributor.availableReward(subjectType3, subject2, epoch, attacker.address).then((x) => x.toNumber());
+                console.table({ totalShares, totalDelegatorShares, shares, delegatorShares/*, availableReward, availableDelegatorReward */});
             }
 
-            await this.staking.connect(legitimate).reward(subjectType2, subject2, '10000000000000');
+            await this.rewardsDistributor.connect(this.accounts.manager).reward(subjectType2, subject2, '10000000000000', epoch);
+            console.log(`unclaimed rewards: ${await await this.rewardsDistributor.unclaimedRewards()}`);
+            console.log(`available rewards (owner): ${await this.rewardsDistributor.availableReward(subjectType2, subject2, epoch, legitimate.address)}`);
+
+            /*
+            {
+                const totalShares = await this.staking.totalShares(subjectType2, subject2).then((x) => x.toNumber());
+                const totalDelegatorShares = await this.staking.totalShares(subjectType3, subject2).then((x) => x.toNumber());
+                const shares = await this.staking.sharesOf(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
+                const delegatorShares = await this.staking.sharesOf(subjectType3, subject2, attacker.address).then((x) => x.toNumber());
+                const availableReward = await this.rewardsDistributor.availableReward(subjectType2, subject2, epoch, legitimate.address).then((x) => x.toNumber());
+                const availableDelegatorReward = await this.rewardsDistributor.availableReward(subjectType3, subject2, epoch, attacker.address).then((x) => x.toNumber());
+                console.table({ totalShares, totalDelegatorShares, shares, delegatorShares, availableReward, availableDelegatorReward});
+            }
+
+            /*
+            verifyingContractInfo = {
+                address: this.contracts.scannerPools.address,
+                chainId: network.chainId,
+            };
+            scanner1Registration = {
+                scanner: this.accounts.scanner.address,
+                scannerPoolId: subject2,
+                chainId: 1,
+                metadata: 'metadata',
+                timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+            };
+            scanner1Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner1Registration, this.accounts.scanner);
+            await this.scannerPools.connect(legitimate).registerScannerNode(scanner1Registration, scanner1Signature)
+
+            await this.staking.connect(attacker).deposit(subjectType3, subject2, '3');
 
             {
                 const totalShares = await this.staking.totalShares(subjectType2, subject2).then((x) => x.toNumber());
+                const totalDelegatorShares = await this.staking.totalShares(subjectType3, subject2).then((x) => x.toNumber());
                 const shares = await this.staking.sharesOf(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
-                const availableReward = await this.staking.availableReward(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
-                console.table({ totalShares, shares, availableReward });
+                const delegatorShares = await this.staking.sharesOf(subjectType3, subject2, attacker.address).then((x) => x.toNumber());
+                const availableReward = await this.rewardsDistributor.availableReward(subjectType2, subject2, epoch, legitimate.address).then((x) => x.toNumber());
+                const availableDelegatorReward = await this.rewardsDistributor.availableReward(subjectType3, subject2, epoch, attacker.address).then((x) => x.toNumber());
+                console.table({ totalShares, totalDelegatorShares, shares, delegatorShares, availableReward, availableDelegatorReward });
             }
 
-            await this.staking.connect(attacker).deposit(subjectType2, subject2, '3');
+            await this.staking.connect(attacker).initiateWithdrawal(subjectType3, subject2, '2');
+            await this.staking.connect(attacker).initiateWithdrawal(subjectType3, subject2, '1');
 
             {
                 const totalShares = await this.staking.totalShares(subjectType2, subject2).then((x) => x.toNumber());
+                const totalDelegatorShares = await this.staking.totalShares(subjectType3, subject2).then((x) => x.toNumber());
                 const shares = await this.staking.sharesOf(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
-                const availableReward = await this.staking.availableReward(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
-                console.table({ totalShares, shares, availableReward });
+                const delegatorShares = await this.staking.sharesOf(subjectType3, subject2, attacker.address).then((x) => x.toNumber());
+                const availableReward = await this.rewardsDistributor.availableReward(subjectType2, subject2, epoch, legitimate.address).then((x) => x.toNumber());
+                const availableDelegatorReward = await this.rewardsDistributor.availableReward(subjectType3, subject2, epoch, attacker.address).then((x) => x.toNumber());
+                console.table({ totalShares, totalDelegatorShares, shares, delegatorShares, availableReward, availableDelegatorReward });
             }
 
-            await this.staking.connect(attacker).initiateWithdrawal(subjectType2, subject2, '2');
-            await this.staking.connect(attacker).initiateWithdrawal(subjectType2, subject2, '1');
-
-            {
-                const totalShares = await this.staking.totalShares(subjectType2, subject2).then((x) => x.toNumber());
-                const shares = await this.staking.sharesOf(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
-                const availableReward = await this.staking.availableReward(subjectType2, subject2, legitimate.address).then((x) => x.toNumber());
-                console.table({ totalShares, shares, availableReward });
-            }
-
-            await this.staking.releaseReward(subjectType2, subject2, legitimate.address);
+            // await this.staking.releaseReward(subjectType2, subject2, legitimate.address);
+            await helpers.time.increase(1 + EPOCH_LENGTH);
+            await this.rewardsDistributor.connect(legitimate).claimRewards(subjectType2, subject2, [epoch]);
+            */
         });
     });
 });
