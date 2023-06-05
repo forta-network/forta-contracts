@@ -10,6 +10,8 @@ import "./AgentRegistryCore.sol";
 import "./AgentRegistryMetadata.sol";
 import "../bot_execution/IBotUnits.sol";
 
+import "hardhat/console.sol";
+
 /**
  * This contract has the access and permission to update the balance of active agent units
  * for a specific agent owner. If the balance of active units needs to either increase
@@ -44,8 +46,13 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
     error ExecutionFeesNotLive(uint256 currentTime, uint256 startTime);
     error AgentAlreadyMigratedToExecutionFees(uint256 agentId);
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address __individualPlan, address __teamPlan, address __botUnits) {
+    /**
+     * @notice Initializer method
+     * @param __individualPlan Address of individual plan Lock contract.
+     * @param __teamPlan Address of team plan Lock contract.
+     * @param __botUnits Address of BotUnits contract.
+     */
+    function __AgentRegistryMembership_init(address __individualPlan, address __teamPlan, address __botUnits) internal initializer {
         if (__individualPlan == address(0)) revert ZeroAddress("__individualPlan");
         if (__teamPlan == address(0)) revert ZeroAddress("__teamPlan");
         if (__botUnits == address(0)) revert ZeroAddress("__botUnits");

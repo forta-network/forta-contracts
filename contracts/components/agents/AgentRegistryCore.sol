@@ -10,6 +10,8 @@ import "../staking/stake_subjects/DirectStakeSubject.sol";
 import "../../tools/FrontRunningProtection.sol";
 import "../../errors/GeneralErrors.sol";
 
+import "hardhat/console.sol";
+
 abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningProtection, ERC721Upgradeable, DirectStakeSubjectUpgradeable {
     StakeThreshold private _stakeThreshold; // 3 storage slots
     // Initially 0 because the frontrunning protection starts disabled.

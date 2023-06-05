@@ -21,10 +21,9 @@ contract AgentRegistry is
 {
     string public constant version = "0.1.6";
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder, address individualLock, address teamLock, address botUnits)
+    constructor(address forwarder)
     initializer
-    ForwardedContext(forwarder)
-    AgentRegistryMembership(individualLock, teamLock, botUnits) {}
+    ForwardedContext(forwarder) {}
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
@@ -35,10 +34,14 @@ contract AgentRegistry is
     function initialize(
         address __manager,
         string calldata __name,
-        string calldata __symbol
+        string calldata __symbol,
+        address __individualLock,
+        address __teamLock,
+        address __botUnits
     ) public initializer {
         __BaseComponentUpgradeable_init(__manager);
         __ERC721_init(__name, __symbol);
+        __AgentRegistryMembership_init(__individualLock, __teamLock, __botUnits);
     }
 
     /**

@@ -8,6 +8,8 @@ import "@unlock-protocol/contracts/dist/PublicLock/IPublicLockV13.sol";
 import "../BaseComponentUpgradeable.sol";
 import "./IBotUnits.sol";
 
+import "hardhat/console.sol";
+
 /**
  * This contract serves to implement the necessary hooks from Unlock
  * to then adjust a membership owner's bot unit capacity.
@@ -33,25 +35,30 @@ contract SubscriptionManager is BaseComponentUpgradeable {
     error InvalidFunctionCaller(address caller);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(
-        address forwarder,
-        SubscriptionPlan memory __individualLockPlan,
-        SubscriptionPlan memory __teamLockPlan,
-        address __botUnits
-    ) initializer ForwardedContext(forwarder)  {
-        _subscriptionPlans[INDIVIDUAL_LOCK_PLAN] = __individualLockPlan;
-        _subscriptionPlans[TEAM_LOCK_PLAN] = __teamLockPlan;
-        _botUnits = IBotUnits(__botUnits);
-    }
+    constructor(address forwarder) initializer ForwardedContext(forwarder)  {}
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __manager address of AccessManager.
      */
     function initialize(
-        address __manager
+        address __manager,
+        address __individualLockAddress,
+        uint256 __individualLockBotUnitsCapacity,
+        address __teamLockAddress,
+        uint256 __teamLockBotUnitsCapacity,
+        address __botUnits
     ) public initializer {
         __BaseComponentUpgradeable_init(__manager);
+        _subscriptionPlans[INDIVIDUAL_LOCK_PLAN] = SubscriptionPlan({
+            lockContract: IPublicLockV13(__individualLockAddress),
+            botUnitsCapacity: __individualLockBotUnitsCapacity
+        });
+        _subscriptionPlans[TEAM_LOCK_PLAN] = SubscriptionPlan({
+            lockContract: IPublicLockV13(__teamLockAddress),
+            botUnitsCapacity: __teamLockBotUnitsCapacity
+        });
+        _botUnits = IBotUnits(__botUnits);
     }
 
     /**
@@ -129,15 +136,15 @@ contract SubscriptionManager is BaseComponentUpgradeable {
 
     /**
      * @notice Permission check.
-     * @dev it does not use AccessManager since we are checking for the two instaces of the Lock contract.
+     * @dev Used in lieu of onlyRole since we are checking for the two instaces of the Lock contract.
      * @param caller Calling account.
      * @return isValid Whether the caller is a valid lock plan.
      * @return purchasedPlan Uint8 representing the Lock plan from which the subscription was purchased from.
      * @return nonPurchasedPlan Uint8 representing the Lock plan from which the subscription was not purchased from.
      */
     function _isValidLockContract(address caller) private view returns (bool isValid, uint8 purchasedPlan, uint8 nonPurchasedPlan) {
-        if (hasRole(INDIVIDUAL_LOCK_ROLE, caller)) { return (true, INDIVIDUAL_LOCK_PLAN, TEAM_LOCK_PLAN); }
-        if (hasRole(TEAM_LOCK_ROLE, caller)) { return (true, TEAM_LOCK_PLAN, INDIVIDUAL_LOCK_PLAN); }
+        if (hasRole(INDIVIDUAL_LOCK_ADMIN_ROLE, caller)) { return (true, INDIVIDUAL_LOCK_PLAN, TEAM_LOCK_PLAN); }
+        if (hasRole(TEAM_LOCK_ADMIN_ROLE, caller)) { return (true, TEAM_LOCK_PLAN, INDIVIDUAL_LOCK_PLAN); }
         // Since caller is not a valid lock plan, we return 0 for both plans.
         return (false, NOT_LOCK_PLAN, NOT_LOCK_PLAN);
     }

@@ -549,7 +549,7 @@ abstract contract ScannerPoolRegistryCore is BaseComponentUpgradeable, ERC721Upg
      * @notice disambiguation of ownerOf.
      * @inheritdoc ERC721Upgradeable
      */
-    function ownerOf(uint256 subject) public view virtual override(IStakeSubject, ERC721Upgradeable) returns (address) {
+    function ownerOf(uint256 subject) public view virtual override(IStakeSubject, ERC721Upgradeable, IERC721Upgradeable) returns (address) {
         return super.ownerOf(subject);
     }
 
