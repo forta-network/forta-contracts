@@ -48,8 +48,33 @@ function prepare(config = {}) {
                 this.access.connect(this.accounts.admin).grantRole(this.roles.STAKING_CONTRACT, this.contracts.staking.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.ALLOCATOR_CONTRACT, this.contracts.stakeAllocator.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.MIGRATION_EXECUTOR, this.accounts.manager.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.BOT_UNITS_CAPACITY_ADMIN, this.subscriptionManager.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.BOT_ACTIVE_UNITS_ADMIN, this.agents.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.INDIVIDUAL_LOCK_ADMIN, this.individualLock.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.TEAM_LOCK_ADMIN, this.teamLock.address),
                 this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
                 this.otherToken.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
+                // ERROR: this.{lock contract}.connect(...).updateTransferFree is not a function
+                // this.individualLock.connect(this.deployer).updateTransferFree(10000),
+                // this.teamLock.connect(this.deployer).updateTransferFree(10000),
+                this.individualLock.connect(this.deployer).setEventHooks(
+                    this.subscriptionManager.address,
+                    ethers.constants.AddressZero,
+                    ethers.constants.AddressZero,
+                    ethers.constants.AddressZero,
+                    ethers.constants.AddressZero,
+                    ethers.constants.AddressZero,
+                    this.subscriptionManager.address
+                ),
+                this.teamLock.connect(this.deployer).setEventHooks(
+                    this.subscriptionManager.address,
+                    ethers.constants.AddressZero,
+                    ethers.constants.AddressZero,
+                    ethers.constants.AddressZero,
+                    ethers.constants.AddressZero,
+                    ethers.constants.AddressZero,
+                    this.subscriptionManager.address
+                ),
             ].map((txPromise) => txPromise.then((tx) => tx.wait()).catch(() => {}))
         );
 
