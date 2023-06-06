@@ -88,6 +88,8 @@ function prepare(config = {}) {
             }
             this.accounts.staker = this.accounts.user1;
             await this.token.connect(this.accounts.staker).approve(this.staking.address, ethers.constants.MaxUint256);
+            await this.token.connect(this.accounts.user1).approve(this.individualLock.address, ethers.constants.MaxUint256);
+            await this.token.connect(this.accounts.user1).approve(this.teamLock.address, ethers.constants.MaxUint256);
             this.stakingSubjects = {};
             this.stakingSubjects.SCANNER = 0;
             this.stakingSubjects.AGENT = 1;
