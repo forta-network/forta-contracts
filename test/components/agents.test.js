@@ -21,11 +21,6 @@ describe('Agent Registry', function () {
         });
 
         describe('with prepare', async function () {
-            beforeEach(async function () {
-                await this.token.connect(this.accounts.user1).approve(this.individualLock.address, ethers.constants.MaxUint256);
-                await this.token.connect(this.accounts.user1).approve(this.teamLock.address, ethers.constants.MaxUint256);
-            });
-
             it('early', async function () {
                 const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
                 await expect(this.agents.connect(this.accounts.manager).setFrontRunningDelay('1800'))
@@ -220,9 +215,6 @@ describe('Agent Registry', function () {
 
     describe('enable and disable', async function () {
         beforeEach(async function () {
-            await this.token.connect(this.accounts.user1).approve(this.individualLock.address, ethers.constants.MaxUint256);
-            await this.token.connect(this.accounts.user1).approve(this.teamLock.address, ethers.constants.MaxUint256);
-
             const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
             const individualKeyPrice = await this.individualLock.keyPrice();
             await expect(this.agents.prepareAgent(prepareCommit(...args))).to.be.not.reverted;
