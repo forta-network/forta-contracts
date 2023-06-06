@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "./AgentRegistryCore.sol";
 import "./AgentRegistryMembership.sol";
 
+import "hardhat/console.sol";
+
 /**
 * @dev AgentRegistry methods and state handling disabling and enabling agents, and
 * recognizing stake changes that might disable an agent.
@@ -104,11 +106,11 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, AgentRegistryMembers
         (,,,uint256[] memory chainIds, uint8 redundancy, uint8 shards) = super.getAgent(agentId);
         uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
         bool _canBypassNeededAgentUnits = _agentUnitsRequirementCheck(agentOwner, agentId, _agentUnits);
+        AgentModification agentMod = enable == true ? AgentModification.Enable : AgentModification.Disable;
+        if (!_canBypassNeededAgentUnits) { _agentUnitsUpdate(agentOwner, agentId, _agentUnits, agentMod); }
         _beforeAgentEnable(agentId, permission, enable);
         _agentEnable(agentId, permission, enable);
         _afterAgentEnable(agentId, permission, enable);
-        AgentModification agentMod = enable == true ? AgentModification.Enable : AgentModification.Disable;
-        if (!_canBypassNeededAgentUnits) { _agentUnitsUpdate(agentOwner, agentId, _agentUnits, agentMod); }
     }
 
     /**

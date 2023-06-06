@@ -81,11 +81,11 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
         address msgSender = _msgSender();
         uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
         bool _canBypassNeededAgentUnits = _agentUnitsRequirementCheck(msgSender, agentId, _agentUnits);
+        if (!_canBypassNeededAgentUnits) { _agentUnitsUpdate(msgSender, agentId, _agentUnits, AgentModification.Create); }
         _mint(msgSender, agentId);
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds, redundancy, shards);
         _afterAgentUpdate(agentId, metadata, chainIds);
-        if (!_canBypassNeededAgentUnits) { _agentUnitsUpdate(msgSender, agentId, _agentUnits, AgentModification.Create); }
     }
 
     /**
@@ -119,10 +119,10 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
         address msgSender = _msgSender();
         uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
         bool _canBypassNeededAgentUnits = _agentUnitsRequirementCheck(msgSender, agentId, _agentUnits);
+        if (!_canBypassNeededAgentUnits) { _agentUnitsUpdate(msgSender, agentId, _agentUnits, AgentModification.Update); }
         _beforeAgentUpdate(agentId, metadata, chainIds);
         _agentUpdate(agentId, metadata, chainIds, redundancy, shards);
         _afterAgentUpdate(agentId, metadata, chainIds);
-        if (!_canBypassNeededAgentUnits) { _agentUnitsUpdate(msgSender, agentId, _agentUnits, AgentModification.Update); }
     }
 
     /**

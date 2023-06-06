@@ -114,7 +114,7 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
      * @dev Calls updateOwnerActiveBotUnits in BotUnits, which this contract has access to.
      * @param account Owner of agent being modified.
      * @param agentId ERC721 token id of existing agent to be modified.
-     * @param agentUnits Amount of agent units the owner's active balance needs to increase/decease.
+     * @param agentUnits Amount of agent units the update will require.
      * @param agentMod The modification being done to the agent. Create, Update, Disable, or Enable.
      */
     function _agentUnitsUpdate(address account, uint256 agentId, uint256 agentUnits, AgentModification agentMod) internal virtual override {
@@ -124,12 +124,18 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
             _botUnits.updateOwnerActiveBotUnits(account, agentUnits, true);
         } else if (agentMod == AgentModification.Disable) {
             _botUnits.updateOwnerActiveBotUnits(account, agentUnits, false);
-        } else if (agentMod == AgentModification.Disable) {
+        } else if (agentMod == AgentModification.Update) {
             uint256 existingAgentUnitsUsage = existingAgentActiveUnitUsage(agentId);
-            // Figure out the bool for balanceIncrease since an agent update
-            // could increase or decrease the needed active agent units
-            bool balanceIncrease = agentUnits >= existingAgentUnitsUsage;
-            _botUnits.updateOwnerActiveBotUnits(account, agentUnits, balanceIncrease);
+            bool balanceIncrease;
+            uint256 agentUnitsForUpdate;
+            if(agentUnits >= existingAgentUnitsUsage) {
+                balanceIncrease = true;
+                agentUnitsForUpdate = agentUnits - existingAgentUnitsUsage;
+            } else {
+                balanceIncrease = false;
+                agentUnitsForUpdate = existingAgentUnitsUsage - agentUnits;
+            }
+            _botUnits.updateOwnerActiveBotUnits(account, agentUnitsForUpdate, balanceIncrease);
         }
     }
 
