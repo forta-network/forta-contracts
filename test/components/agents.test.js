@@ -419,6 +419,374 @@ describe('Agent Registry', function () {
                 expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 2, 4, 5].length * redundancy * shards));
             });
         });
+
+        describe('insufficient available bot units', async function () {
+            it('unable to create bot - individual Lock plan', async function () {
+                const higherRedundancy = 10;
+                const higherShards = 15;
+                const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5, 6], higherRedundancy, higherShards];
+                const individualKeyPrice = await this.individualLock.keyPrice();
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+                    [individualKeyPrice],
+                    [this.accounts.user1.address],
+                    [this.accounts.user1.address],
+                    [ethers.constants.AddressZero],
+                    [[]],
+                    { gasLimit: 21000000 }
+                );
+                await txnReceipt.wait();
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args)).to.be.revertedWith(`InsufficientInactiveBotUnits("${this.accounts.user1.address}")`);
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+            });
+
+            it('unable to create bot - team Lock plan', async function () {
+                const higherRedundancy = 10;
+                const higherShards = 15;
+                const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5, 6], higherRedundancy, higherShards];
+                const individualKeyPrice = await this.teamLock.keyPrice();
+
+                expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                const txnReceipt = await this.teamLock.connect(this.accounts.user1).purchase(
+                    [individualKeyPrice],
+                    [this.accounts.user1.address],
+                    [this.accounts.user1.address],
+                    [ethers.constants.AddressZero],
+                    [[]],
+                    { gasLimit: 21000000 }
+                );
+                await txnReceipt.wait();
+
+                expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args)).to.be.revertedWith(`InsufficientInactiveBotUnits("${this.accounts.user1.address}")`);
+
+                expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+            });
+
+            it('create bot, unable to create second - individual Lock plan', async function () {
+                const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
+                const individualKeyPrice = await this.individualLock.keyPrice();
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+                    [individualKeyPrice],
+                    [this.accounts.user1.address],
+                    [this.accounts.user1.address],
+                    [ethers.constants.AddressZero],
+                    [[]],
+                    { gasLimit: 21000000 }
+                );
+                await txnReceipt.wait();
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
+                    .to.emit(this.agents, 'Transfer')
+                    .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                    .to.emit(this.agents, 'AgentUpdated')
+                    .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+
+                const AGENT_ID_TWO = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+                const argsTwo = [AGENT_ID_TWO, this.accounts.user1.address, 'Metadata2', [1, 3, 4, 5, 6], redundancy, shards];
+
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...argsTwo)).to.be.revertedWith(`InsufficientInactiveBotUnits("${this.accounts.user1.address}")`);
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+            });
+
+            it('create bot, unable to create second - team Lock plan', async function () {
+                const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
+                const teamKeyPrice = await this.teamLock.keyPrice();
+
+                expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                const txnReceipt = await this.teamLock.connect(this.accounts.user1).purchase(
+                    [teamKeyPrice],
+                    [this.accounts.user1.address],
+                    [this.accounts.user1.address],
+                    [ethers.constants.AddressZero],
+                    [[]],
+                    { gasLimit: 21000000 }
+                );
+                await txnReceipt.wait();
+
+                expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
+                    .to.emit(this.agents, 'Transfer')
+                    .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                    .to.emit(this.agents, 'AgentUpdated')
+                    .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+
+                const AGENT_ID_TWO = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+                const argsTwo = [AGENT_ID_TWO, this.accounts.user1.address, 'Metadata2', [1, 3, 4, 5, 6], redundancy, shards];
+
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...argsTwo)).to.be.revertedWith(`InsufficientInactiveBotUnits("${this.accounts.user1.address}")`);
+
+                expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+            });
+
+            it('create bot, unable to update - individual Lock plan', async function () {
+                const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
+                const individualKeyPrice = await this.individualLock.keyPrice();
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+                    [individualKeyPrice],
+                    [this.accounts.user1.address],
+                    [this.accounts.user1.address],
+                    [ethers.constants.AddressZero],
+                    [[]],
+                    { gasLimit: 21000000 }
+                );
+                await txnReceipt.wait();
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
+                    .to.emit(this.agents, 'Transfer')
+                    .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                    .to.emit(this.agents, 'AgentUpdated')
+                    .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+
+                const higherRedundancy = 10;
+                const higherShards = 15;
+                const argsTwo = [AGENT_ID, 'Metadata2', [1, 3, 4, 5, 6], higherRedundancy, higherShards];
+
+                await expect(this.agents.connect(this.accounts.user1).updateAgent(...argsTwo)).to.be.revertedWith(`InsufficientInactiveBotUnits("${this.accounts.user1.address}")`);
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+            });
+
+            it('create bot, unable to update - team Lock plan', async function () {
+                const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
+                const teamKeyPrice = await this.teamLock.keyPrice();
+
+                expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                const txnReceipt = await this.teamLock.connect(this.accounts.user1).purchase(
+                    [teamKeyPrice],
+                    [this.accounts.user1.address],
+                    [this.accounts.user1.address],
+                    [ethers.constants.AddressZero],
+                    [[]],
+                    { gasLimit: 21000000 }
+                );
+                await txnReceipt.wait();
+
+                expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
+                    .to.emit(this.agents, 'Transfer')
+                    .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                    .to.emit(this.agents, 'AgentUpdated')
+                    .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+
+                const higherRedundancy = 10;
+                const higherShards = 15;
+                const argsTwo = [AGENT_ID, 'Metadata2', [1, 3, 4, 5, 6], higherRedundancy, higherShards];
+
+                await expect(this.agents.connect(this.accounts.user1).updateAgent(...argsTwo)).to.be.revertedWith(`InsufficientInactiveBotUnits("${this.accounts.user1.address}")`);
+
+                expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+            });
+
+            it('unable to create bot - non-Forta related Lock plan', async function () {
+                const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5, 6], redundancy, shards];
+                const otherKeyPrice = await this.otherLock.keyPrice();
+
+                expect(await this.otherLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                const txnReceipt = await this.otherLock.connect(this.accounts.user1).purchase(
+                    [otherKeyPrice],
+                    [this.accounts.user1.address],
+                    [this.accounts.user1.address],
+                    [ethers.constants.AddressZero],
+                    [[]],
+                    { gasLimit: 21000000 }
+                );
+                await txnReceipt.wait();
+
+                expect(await this.otherLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args)).to.be.revertedWith(`ValidMembershipRequired("${this.accounts.user1.address}")`);
+
+                expect(await this.otherLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+            });
+
+            it('unable to create bot - no valid plan', async function () {
+                const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5, 6], redundancy, shards];
+
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args)).to.be.revertedWith(`ValidMembershipRequired("${this.accounts.user1.address}")`);
+
+                expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+            });
+        });
+
+        describe.only('special case bots', async function () {
+            it('free trial bot', async function () {
+                expect(await this.agents.getFreeTrialAgentUnitsLimit()).to.be.equal(0);
+                await expect(this.agents.connect(this.accounts.admin).setFreeTrialAgentUnits(99))
+                    .to.emit(this.agents, 'FreeTrailAgentUnitsUpdated')
+                    .withArgs(99);
+                expect(await this.agents.getFreeTrialAgentUnitsLimit()).to.be.equal(99);
+
+                const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1], redundancy, shards];
+                const individualKeyPrice = await this.individualLock.keyPrice();
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+                    [individualKeyPrice],
+                    [this.accounts.user1.address],
+                    [this.accounts.user1.address],
+                    [ethers.constants.AddressZero],
+                    [[]],
+                    { gasLimit: 21000000 }
+                );
+                await txnReceipt.wait();
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
+                    .to.emit(this.agents, 'Transfer')
+                    .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                    .to.emit(this.agents, 'AgentUpdated')
+                    .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1], redundancy, shards);
+
+                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
+
+                expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+            });
+
+            it('public goods bot', async function () {
+                expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
+                await expect(this.agents.connect(this.accounts.admin).setAgentAsPublicGood(AGENT_ID))
+                    .to.emit(this.agents, 'PublicGoodAgentDeclared')
+                    .withArgs(AGENT_ID);
+                expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(true);
+
+                const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
+                const individualKeyPrice = await this.individualLock.keyPrice();
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+                const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+                    [individualKeyPrice],
+                    [this.accounts.user1.address],
+                    [this.accounts.user1.address],
+                    [ethers.constants.AddressZero],
+                    [[]],
+                    { gasLimit: 21000000 }
+                );
+                await txnReceipt.wait();
+
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
+                    .to.emit(this.agents, 'Transfer')
+                    .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                    .to.emit(this.agents, 'AgentUpdated')
+                    .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
+
+                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
+                
+                expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+            })
+        });
     });
 
     it('isStakedOverMin false if non existant', async function () {
