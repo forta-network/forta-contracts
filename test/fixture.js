@@ -52,11 +52,12 @@ function prepare(config = {}) {
                 this.access.connect(this.accounts.admin).grantRole(this.roles.BOT_ACTIVE_UNITS_ADMIN, this.agents.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.INDIVIDUAL_LOCK_ADMIN, this.individualLock.address),
                 this.access.connect(this.accounts.admin).grantRole(this.roles.TEAM_LOCK_ADMIN, this.teamLock.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.FREE_TRIAL_ADMIN, this.accounts.admin.address),
+                this.access.connect(this.accounts.admin).grantRole(this.roles.PUBLIC_GOOD_ADMIN, this.accounts.admin.address),
                 this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
                 this.otherToken.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
-                // ERROR: this.{lock contract}.connect(...).updateTransferFree is not a function
-                // this.individualLock.connect(this.deployer).updateTransferFree(10000),
-                // this.teamLock.connect(this.deployer).updateTransferFree(10000),
+                this.individualLock.connect(this.deployer).updateTransferFee(10000),
+                this.teamLock.connect(this.deployer).updateTransferFee(10000),
                 this.individualLock.connect(this.deployer).setEventHooks(
                     this.subscriptionManager.address,
                     ethers.constants.AddressZero,
@@ -90,6 +91,7 @@ function prepare(config = {}) {
             await this.token.connect(this.accounts.staker).approve(this.staking.address, ethers.constants.MaxUint256);
             await this.token.connect(this.accounts.user1).approve(this.individualLock.address, ethers.constants.MaxUint256);
             await this.token.connect(this.accounts.user1).approve(this.teamLock.address, ethers.constants.MaxUint256);
+            await this.token.connect(this.accounts.user1).approve(this.otherLock.address, ethers.constants.MaxUint256);
             this.stakingSubjects = {};
             this.stakingSubjects.SCANNER = 0;
             this.stakingSubjects.AGENT = 1;
