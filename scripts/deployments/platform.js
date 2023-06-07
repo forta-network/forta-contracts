@@ -177,18 +177,13 @@ async function migrate(config = {}) {
 
         const lockVersion = 13;
         await contracts.unlock.connect(deployer).addLockTemplate(contracts.publicLock.address, lockVersion);
-
+        const [locksOnwer] = await ethers.getSigners();
         const lockIFace = new ethers.utils.Interface(publicLockAbi);
+
         const individualLockData = lockIFace.encodeFunctionData(
             "initialize",
             [deployer.address, 604800, contracts.token.address, ethers.utils.parseEther("0.1"), 100, "TestLock01"]
         );
-        const teamLockData = lockIFace.encodeFunctionData(
-            "initialize",
-            [deployer.address, 604800, contracts.token.address, ethers.utils.parseEther("0.25"), 100, "TestLock02"]
-        );
-        const [locksOnwer] = await ethers.getSigners();
-
         const individualLockReceipt = await contracts.unlock.connect(locksOnwer).createUpgradeableLockAtVersion(individualLockData, lockVersion);
         const individualLockTxn = await individualLockReceipt.wait();
         const individualLockAddress = individualLockTxn.logs[0].address;
@@ -196,12 +191,28 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}] individualLock: ${individualLockAddress}`);
 
+        const teamLockData = lockIFace.encodeFunctionData(
+            "initialize",
+            [deployer.address, 604800, contracts.token.address, ethers.utils.parseEther("0.25"), 100, "TestLock02"]
+        );
         const teamLockReceipt = await contracts.unlock.connect(locksOnwer).createUpgradeableLockAtVersion(teamLockData, lockVersion);
         const teamLockTxn = await teamLockReceipt.wait();
         const teamLockAddress = await teamLockTxn.logs[0].address;
         contracts.teamLock = new ethers.Contract(teamLockAddress, publicLockAbi, provider);
 
         DEBUG(`[${Object.keys(contracts).length}] teamLock: ${teamLockAddress}`);
+
+        // Mock Lock Plan
+        const mockLockData = lockIFace.encodeFunctionData(
+            "initialize",
+            [deployer.address, 604800, contracts.token.address, ethers.utils.parseEther("0.25"), 100, "MockLock02"]
+        );
+        const mockLockReceipt = await contracts.unlock.connect(locksOnwer).createUpgradeableLockAtVersion(mockLockData, lockVersion);
+        const mockLockTxn = await mockLockReceipt.wait();
+        const mockLockAddress = await mockLockTxn.logs[0].address;
+        contracts.otherLock = new ethers.Contract(mockLockAddress, publicLockAbi, provider);
+
+        DEBUG(`[${Object.keys(contracts).length}] otherLock: ${teamLockAddress}`);
 
         contracts.botUnits = await contractHelpers.tryFetchProxy(
             hre,
