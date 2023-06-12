@@ -1560,4 +1560,32 @@ describe('Agent Registry', function () {
             });
         });
     });
+
+    describe('access control', async function () {
+        it('only FREE_TRIAL_ADMIN_ROLE can set the free trial bot units', async function () {
+            expect(await this.agents.getFreeTrialAgentUnitsLimit()).to.be.equal(0);
+            
+            await expect(this.agents.connect(this.accounts.other).setFreeTrialAgentUnits(99))
+                .to.be.revertedWith(`MissingRole("${this.roles.FREE_TRIAL_ADMIN}", "${this.accounts.other.address}")`);
+
+            await expect(this.agents.connect(this.accounts.admin).setFreeTrialAgentUnits(99))
+                .to.emit(this.agents, 'FreeTrailAgentUnitsUpdated')
+                .withArgs(99);
+
+            expect(await this.agents.getFreeTrialAgentUnitsLimit()).to.be.equal(99);
+        });
+
+        it('only PUBLIC_GOOD_ADMIN_ROLE can declare a public goods bot', async function () {
+            expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
+            
+            await expect(this.agents.connect(this.accounts.other).setAgentAsPublicGood(AGENT_ID))
+                .to.be.revertedWith(`MissingRole("${this.roles.PUBLIC_GOOD_ADMIN}", "${this.accounts.other.address}")`);
+
+            await expect(this.agents.connect(this.accounts.admin).setAgentAsPublicGood(AGENT_ID))
+                .to.emit(this.agents, 'PublicGoodAgentDeclared')
+                .withArgs(AGENT_ID);
+
+            expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(true);
+        });
+    });
 });
