@@ -8,8 +8,12 @@ const { prepare } = require('../fixture');
 const individualLockPlanBotUnits = 300;
 const teamLockPlanBotUnits = 500;
 
+const AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+const redundancy = 6;
+const shards = 10;
+
 describe('Bot Execution - Subscription & Units', async function () {
-    prepare({ stake: {} });
+    prepare({ stake: { agents: { min: '100', max: '500', activated: true } } });
 
     describe('Cannot hold subscription to both plans simultaneously', async function () {
         it('Individual -> Team', async function () {
@@ -267,7 +271,7 @@ describe('Bot Execution - Subscription & Units', async function () {
         });
     });
 
-    describe.only('Transfer for subscription', async function () {
+    describe('Transfer of subscription', async function () {
         it('Subscription owner unable to transfer', async function () {
             const individualKeyPrice = await this.individualLock.keyPrice();
 
@@ -301,65 +305,150 @@ describe('Bot Execution - Subscription & Units', async function () {
             )).to.be.revertedWith('KEY_TRANSFERS_DISABLED()');
         });
 
-        it.only('Lock manager able to transfer keys', async function () {
-            const individualKeyPrice = await this.individualLock.keyPrice();
+        describe('Key transfer by Lock manager', async function () {
+            it('Lock manager able to transfer keys', async function () {
+                const individualKeyPrice = await this.individualLock.keyPrice();
+    
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+    
+                const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+                    [individualKeyPrice],
+                    [this.accounts.user1.address],
+                    [this.accounts.user1.address],
+                    [ethers.constants.AddressZero],
+                    [[]],
+                    { gasLimit: 21000000 }
+                );
+                const purchaseTxn = await txnReceipt.wait();
+                const individualKeyId = ethers.BigNumber.from(purchaseTxn.logs[0].topics[3]);
+    
+                expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(1);
+                expect(await this.individualLock.ownerOf(individualKeyId)).to.be.equal(this.accounts.user1.address);
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+    
+                const txnReceiptTwo = await this.individualLock.connect(this.accounts.admin).transferFrom(
+                    this.accounts.user1.address,
+                    this.accounts.user2.address,
+                    individualKeyId,
+                    { gasLimit: 21000000 }
+                );
+                await txnReceiptTwo.wait();
+    
+                // Extending user2's newly acquired key since the `transferFrom`
+                // is setting the expiration timestamp to the current time stamp
+                //
+                // TODO: Figure out if this is supposed
+                // to occur with the transfer of keys
+                const txnReceiptThree = await this.individualLock.connect(this.accounts.user2).extend(
+                    individualKeyPrice,
+                    individualKeyId,
+                    this.accounts.user2.address,
+                    "0x",
+                    { gasLimit: 21000000 }
+                );
+                await txnReceiptThree.wait();
+    
+                expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+    
+                expect(await this.individualLock.balanceOf(this.accounts.user2.address)).to.be.equal(1);
+                expect(await this.individualLock.ownerOf(individualKeyId)).to.be.equal(this.accounts.user2.address);
+                expect(await this.individualLock.getHasValidKey(this.accounts.user2.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user2.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user2.address)).to.be.equal(individualLockPlanBotUnits);
+            });
 
-            expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-            expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(0);
-            expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-            expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+            it('Bot owner must disable bot before Lock manager can transfer', async function () {
+                const individualKeyPrice = await this.individualLock.keyPrice();
+    
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+    
+                const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+                    [individualKeyPrice],
+                    [this.accounts.user1.address],
+                    [this.accounts.user1.address],
+                    [ethers.constants.AddressZero],
+                    [[]],
+                    { gasLimit: 21000000 }
+                );
+                const purchaseTxn = await txnReceipt.wait();
+                const individualKeyId = ethers.BigNumber.from(purchaseTxn.logs[0].topics[3]);
+    
+                expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(1);
+                expect(await this.individualLock.ownerOf(individualKeyId)).to.be.equal(this.accounts.user1.address);
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
 
-            const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
-                [individualKeyPrice],
-                [this.accounts.user1.address],
-                [this.accounts.user1.address],
-                [ethers.constants.AddressZero],
-                [[]],
-                { gasLimit: 21000000 }
-            );
-            const purchaseTxn = await txnReceipt.wait();
-            const individualKeyId = ethers.BigNumber.from(purchaseTxn.logs[0].topics[3]);
+                const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
+                await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
+                    .to.emit(this.agents, 'Transfer')
+                    .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                    .to.emit(this.agents, 'AgentUpdated')
+                    .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
 
-            expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(1);
-            expect(await this.individualLock.ownerOf(individualKeyId)).to.be.equal(this.accounts.user1.address);
-            expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-            expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-            expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
+                expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
 
-            const txnReceiptTwo = await this.individualLock.connect(this.accounts.admin).transferFrom(
-                this.accounts.user1.address,
-                this.accounts.user2.address,
-                individualKeyId,
-                { gasLimit: 21000000 }
-            );
-            await txnReceiptTwo.wait();
+                await expect(this.individualLock.connect(this.accounts.admin).transferFrom(
+                    this.accounts.user1.address,
+                    this.accounts.user2.address,
+                    individualKeyId,
+                    { gasLimit: 21000000 }
+                )).to.be.revertedWith(`MustHaveNoActiveBotUnits("${this.accounts.user1.address}")`);
 
-            // Extending user2's newly acquired key since the `transferFrom`
-            // is setting the expiration timestamp to the current time stamp
-            //
-            // TODO: Figure out if this is supposed
-            // to occur with the transfer of keys
-            const txnReceiptThree = await this.individualLock.connect(this.accounts.user2).extend(
-                individualKeyPrice,
-                individualKeyId,
-                this.accounts.user2.address,
-                "0x",
-                { gasLimit: 21000000 }
-            );
-            await txnReceiptThree.wait();
+                await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
 
-            expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(0);
-            expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-
-            // TODO: Incorporate a transfer hook into the `SubscriptionManager` in the
-            // cases where the Lock admin transfer the key from one account to another. 
-            // The recipient should have a balance of bot units.
-            console.log(`user1 bot units: ${await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)}`);
-            console.log(`user2 bot units: ${await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user2.address)}`);
-
-            expect(await this.individualLock.balanceOf(this.accounts.user2.address)).to.be.equal(1);
-            expect(await this.individualLock.ownerOf(individualKeyId)).to.be.equal(this.accounts.user2.address);
-            expect(await this.individualLock.getHasValidKey(this.accounts.user2.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+                expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([2]);
+    
+                const txnReceiptTwo = await this.individualLock.connect(this.accounts.admin).transferFrom(
+                    this.accounts.user1.address,
+                    this.accounts.user2.address,
+                    individualKeyId,
+                    { gasLimit: 21000000 }
+                );
+                await txnReceiptTwo.wait();
+    
+                // Extending user2's newly acquired key since the `transferFrom`
+                // is setting the expiration timestamp to the current time stamp
+                //
+                // TODO: Figure out if this is supposed
+                // to occur with the transfer of keys
+                const txnReceiptThree = await this.individualLock.connect(this.accounts.user2).extend(
+                    individualKeyPrice,
+                    individualKeyId,
+                    this.accounts.user2.address,
+                    "0x",
+                    { gasLimit: 21000000 }
+                );
+                await txnReceiptThree.wait();
+    
+                expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+    
+                expect(await this.individualLock.balanceOf(this.accounts.user2.address)).to.be.equal(1);
+                expect(await this.individualLock.ownerOf(individualKeyId)).to.be.equal(this.accounts.user2.address);
+                expect(await this.individualLock.getHasValidKey(this.accounts.user2.address)).to.be.equal(true);
+                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user2.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user2.address)).to.be.equal(individualLockPlanBotUnits);
+            });
         });
     });
 })
