@@ -63,7 +63,7 @@ function prepare(config = {}) {
                     ethers.constants.AddressZero,
                     ethers.constants.AddressZero,
                     ethers.constants.AddressZero,
-                    ethers.constants.AddressZero,
+                    this.subscriptionManager.address,
                     ethers.constants.AddressZero,
                     this.subscriptionManager.address
                 ),
@@ -72,7 +72,7 @@ function prepare(config = {}) {
                     ethers.constants.AddressZero,
                     ethers.constants.AddressZero,
                     ethers.constants.AddressZero,
-                    ethers.constants.AddressZero,
+                    this.subscriptionManager.address,
                     ethers.constants.AddressZero,
                     this.subscriptionManager.address
                 ),
