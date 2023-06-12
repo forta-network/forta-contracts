@@ -86,12 +86,14 @@ function prepare(config = {}) {
             if (!config.adminAsChildChainManagerProxy) {
                 //Bridged FORT does not have mint()
                 await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));
+                await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, ethers.utils.parseEther('10000'));
             }
             this.accounts.staker = this.accounts.user1;
             await this.token.connect(this.accounts.staker).approve(this.staking.address, ethers.constants.MaxUint256);
             await this.token.connect(this.accounts.user1).approve(this.individualLock.address, ethers.constants.MaxUint256);
             await this.token.connect(this.accounts.user1).approve(this.teamLock.address, ethers.constants.MaxUint256);
             await this.token.connect(this.accounts.user1).approve(this.otherLock.address, ethers.constants.MaxUint256);
+            await this.token.connect(this.accounts.user2).approve(this.individualLock.address, ethers.constants.MaxUint256);
             this.stakingSubjects = {};
             this.stakingSubjects.SCANNER = 0;
             this.stakingSubjects.AGENT = 1;
