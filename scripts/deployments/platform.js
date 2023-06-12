@@ -9,6 +9,7 @@ const AGENT_SUBJECT = 1;
 const SCANNER_POOL_SUBJECT = 2;
 const deployEnv = require('../loadEnv');
 const loadRoles = require('../utils/loadRoles');
+const publicLockAbi = require('../utils/abis/PublicLockV13.json');
 
 upgrades.silenceWarnings();
 
@@ -149,11 +150,103 @@ async function migrate(config = {}) {
             DEBUG(`[${Object.keys(contracts).length}.3] escrow factory: ${contracts.escrowFactory.address}`);
         }
 
+        /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Unlock integration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+        contracts.unlock = await contractHelpers.tryFetchProxy(
+            hre,
+            'Unlock',
+            'transparent',
+            [deployer.address],
+            {
+                constructorArgs: [],
+                unsafeAllow: ['delegatecall'],
+            },
+            CACHE
+        );
+
+        DEBUG(`[${Object.keys(contracts).length}] unlock: ${contracts.unlock.address}`);
+
+        contracts.publicLock = await contractHelpers.tryFetchContract(
+            hre,
+            'PublicLock',
+            [], 
+            CACHE
+        );
+
+        DEBUG(`[${Object.keys(contracts).length}] publicLock: ${contracts.publicLock.address}`);
+
+        const lockVersion = 13;
+        await contracts.unlock.connect(deployer).addLockTemplate(contracts.publicLock.address, lockVersion);
+        const [admin] = await ethers.getSigners();
+        const lockIFace = new ethers.utils.Interface(publicLockAbi);
+
+        const individualLockData = lockIFace.encodeFunctionData(
+            "initialize",
+            [deployer.address, 604800, contracts.token.address, ethers.utils.parseEther("0.1"), 100, "TestLock01"]
+        );
+        const individualLockReceipt = await contracts.unlock.connect(admin).createUpgradeableLockAtVersion(individualLockData, lockVersion);
+        const individualLockTxn = await individualLockReceipt.wait();
+        const individualLockAddress = individualLockTxn.logs[0].address;
+        contracts.individualLock = new ethers.Contract(individualLockAddress, publicLockAbi, provider);
+
+        DEBUG(`[${Object.keys(contracts).length}] individualLock: ${individualLockAddress}`);
+
+        const teamLockData = lockIFace.encodeFunctionData(
+            "initialize",
+            [deployer.address, 604800, contracts.token.address, ethers.utils.parseEther("0.25"), 100, "TestLock02"]
+        );
+        const teamLockReceipt = await contracts.unlock.connect(admin).createUpgradeableLockAtVersion(teamLockData, lockVersion);
+        const teamLockTxn = await teamLockReceipt.wait();
+        const teamLockAddress = await teamLockTxn.logs[0].address;
+        contracts.teamLock = new ethers.Contract(teamLockAddress, publicLockAbi, provider);
+
+        DEBUG(`[${Object.keys(contracts).length}] teamLock: ${teamLockAddress}`);
+
+        // Mock Lock Plan
+        const mockLockData = lockIFace.encodeFunctionData(
+            "initialize",
+            [deployer.address, 604800, contracts.token.address, ethers.utils.parseEther("0.25"), 100, "MockLock02"]
+        );
+        const mockLockReceipt = await contracts.unlock.connect(admin).createUpgradeableLockAtVersion(mockLockData, lockVersion);
+        const mockLockTxn = await mockLockReceipt.wait();
+        const mockLockAddress = await mockLockTxn.logs[0].address;
+        contracts.otherLock = new ethers.Contract(mockLockAddress, publicLockAbi, provider);
+
+        DEBUG(`[${Object.keys(contracts).length}] otherLock: ${teamLockAddress}`);
+
+        contracts.botUnits = await contractHelpers.tryFetchProxy(
+            hre,
+            'BotUnits',
+            'uups',
+            [contracts.access.address],
+            {
+                constructorArgs: [contracts.forwarder.address],
+                unsafeAllow: 'delegatecall',
+            },
+            CACHE
+        );
+
+        DEBUG(`[${Object.keys(contracts).length}] botUnits: ${contracts.botUnits.address}`);
+
+        contracts.subscriptionManager = await contractHelpers.tryFetchProxy(
+            hre,
+            'SubscriptionManager',
+            'uups',
+            [contracts.access.address, individualLockAddress, 300, teamLockAddress, 500, contracts.botUnits.address],
+            {
+                constructorArgs: [contracts.forwarder.address],
+                unsafeAllow: 'delegatecall',
+            },
+            CACHE
+        );
+
+        DEBUG(`[${Object.keys(contracts).length}] subscription manager: ${contracts.subscriptionManager.address}`);
+
         contracts.agents = await contractHelpers.tryFetchProxy(
             hre,
             'AgentRegistry',
             'uups',
-            [contracts.access.address, 'Forta Agents', 'FAgents'],
+            [contracts.access.address, 'Forta Agents', 'FAgents', individualLockAddress, teamLockAddress, contracts.botUnits.address],
             {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: 'delegatecall',
@@ -162,6 +255,8 @@ async function migrate(config = {}) {
         );
 
         DEBUG(`[${Object.keys(contracts).length}] agents: ${contracts.agents.address}`);
+
+        /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
         // Upgrades
         // Agents v0.1.2

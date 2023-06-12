@@ -9,17 +9,21 @@ import "./AgentRegistryCore.sol";
 import "./AgentRegistryEnable.sol";
 import "./AgentRegistryEnumerable.sol";
 import "./AgentRegistryMetadata.sol";
+import "./AgentRegistryMembership.sol";
 
 contract AgentRegistry is
     BaseComponentUpgradeable,
     AgentRegistryCore,
-    AgentRegistryEnable,
     AgentRegistryMetadata,
-    AgentRegistryEnumerable
+    AgentRegistryEnumerable,
+    AgentRegistryMembership,
+    AgentRegistryEnable
 {
     string public constant version = "0.1.6";
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address forwarder) initializer ForwardedContext(forwarder) {}
+    constructor(address forwarder)
+    initializer
+    ForwardedContext(forwarder) {}
 
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
@@ -30,44 +34,60 @@ contract AgentRegistry is
     function initialize(
         address __manager,
         string calldata __name,
-        string calldata __symbol
+        string calldata __symbol,
+        address __individualLock,
+        address __teamLock,
+        address __botUnits
     ) public initializer {
         __BaseComponentUpgradeable_init(__manager);
         __ERC721_init(__name, __symbol);
+        __AgentRegistryMembership_init(__individualLock, __teamLock, __botUnits);
     }
 
     /**
      * @notice Gets all Agent state.
      * @param agentId ERC721 token id of the agent.
-     * @return registered if agent exists.
-     * @return owner address.
      * @return agentVersion of the agent.
      * @return metadata IPFS pointer.
      * @return chainIds the agent wants to run in.
+     * @return redundancy level of redundancy for the agent.
+     * @return shards amounts of shards for the agent.
      * @return enabled true if staked over min and not disabled.
      * @return disabledFlags 0 if not disabled, Permission that disabled the scnner otherwise.
      */
     function getAgentState(uint256 agentId)
         public view
         returns (
-            bool registered,
-            address owner,
             uint256 agentVersion,
             string memory metadata,
             uint256[] memory chainIds,
+            uint8 redundancy,
+            uint8 shards,
             bool enabled,
             uint256 disabledFlags
         ) {
-        (registered, owner, agentVersion, metadata, chainIds) = getAgent(agentId);
+        (, agentVersion, metadata, chainIds, redundancy, shards) = getAgent(agentId);
         return (
-            registered,
-            owner,
             agentVersion,
             metadata,
             chainIds,
+            redundancy,
+            shards,
             isEnabled(agentId),
             getDisableFlags(agentId)
         );
+    }
+
+    /**
+     * @notice Hook fired in the process of modifiying an agent
+     * (creating, updating, etc.).
+     * Will check if certain requirements are met.
+     * @param account Owner of the specific agent.
+     * @param agentId ERC721 token id of the agent to be created or updated.
+     * @param amount Amount of agent units the given agent will need.
+     */
+    function _agentUnitsRequirementCheck(address account, uint256 agentId, uint256 amount) internal virtual override(AgentRegistryCore, AgentRegistryMembership, AgentRegistryEnable) returns(bool) {
+        return super._agentUnitsRequirementCheck(account, agentId, amount);
     }
 
     /**
@@ -86,8 +106,21 @@ contract AgentRegistry is
      * @param newMetadata IPFS pointer to agent's metadata
      * @param newChainIds chain ids that the agent wants to scan
      */
-    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
-        super._agentUpdate(agentId, newMetadata, newChainIds);
+    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds, uint8 newRedundancy, uint8 newShards) internal virtual override(AgentRegistryCore, AgentRegistryMetadata, AgentRegistryMembership, AgentRegistryEnable) {
+        super._agentUpdate(agentId, newMetadata, newChainIds, newRedundancy, newShards);
+    }
+
+    /**
+     * @notice Hook fired in the process of modifiying an agent
+     * (creating, updating, etc.).
+     * Will update the agent owner's balance of active agent units.
+     * @param account Owner of the specific agent.
+     * @param agentId ERC721 token id of the agent to be created or updated.
+     * @param agentUnits Amount of agent units the given agent will need.
+     * @param agentMod The type of modification to be done to the agent.
+     */
+    function _agentUnitsUpdate(address account, uint256 agentId, uint256 agentUnits, AgentModification agentMod) internal virtual override(AgentRegistryCore, AgentRegistryMembership, AgentRegistryEnable) {
+        super._agentUnitsUpdate(account, agentId, agentUnits, agentMod);
     }
 
     /**
