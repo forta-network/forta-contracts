@@ -1561,6 +1561,22 @@ describe('Agent Registry', function () {
         });
     });
 
+    describe.only('bot migration to execution fees', async function () {
+        // Bot owner registers on the previous version of the AgentRegistry
+        // then bot still exists in new implementation
+        beforeEach();
+
+        it('existing bot enabled after migrating', async function () {
+            //
+        });
+
+        it.skip('cannot migrate bot before execution fees start time', async function () {
+            //
+        });
+
+        it.skip('cannot migrate non-existing bot');
+    });
+
     describe('access control', async function () {
         it('only FREE_TRIAL_ADMIN_ROLE can set the free trial bot units', async function () {
             expect(await this.agents.getFreeTrialAgentUnitsLimit()).to.be.equal(0);

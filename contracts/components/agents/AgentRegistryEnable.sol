@@ -41,7 +41,8 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, AgentRegistryMembers
             (_individualPlan.getHasValidKey(agentOwner) || _teamPlan.getHasValidKey(agentOwner)) &&
             isRegistered(agentId) &&
             getDisableFlags(agentId) == 0 &&
-            (!_isStakeActivated() || _isStakedOverMin(agentId))
+            (!_isStakeActivated() || _isStakedOverMin(agentId)) &&
+            isAgentUtilizingAgentUnits(agentId)
         );
     }
 
@@ -143,7 +144,9 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, AgentRegistryMembers
      * @param value true if enabling, false if disabling.
      */
     function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
-        
+        if(value) {
+            _setAgentToUtilizeAgentUnits(agentId, value);
+        }
     }
 
     function _agentUpdate(
@@ -154,6 +157,14 @@ abstract contract AgentRegistryEnable is AgentRegistryCore, AgentRegistryMembers
         uint8 newShards
     ) internal virtual override(AgentRegistryCore, AgentRegistryMembership) {
         super._agentUpdate(agentId,newMetadata,newChainIds,newRedundancy,newShards);
+    }
+
+    function _afterAgentUpdate(
+        uint256 agentId,
+        string memory newMetadata,
+        uint256[] calldata newChainIds
+    ) internal virtual override(AgentRegistryCore, AgentRegistryMembership) {
+        super._afterAgentUpdate(agentId,newMetadata,newChainIds);
     }
 
     /**

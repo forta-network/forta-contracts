@@ -33,9 +33,9 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
 
     mapping(uint256 => bool) private _isAgentIdPublicGood;
     mapping(uint256 => bool) private _isAgentPartOfFreeTrial;
-    mapping(uint256 => bool) private _isExistingAgentMigratedToExecutionFees;
+    mapping(uint256 => bool) private _isAgentUtilizingAgentUnits;
 
-    event ExistingAgentMigrated(address indexed owner, uint256 indexed agentId);
+    event AgentOnExecutionFeesSystem(uint256 indexed agentId);
     event PublicGoodAgentDeclared(uint256 indexed agentId);
     event FreeTrailAgentUnitsUpdated(uint256 indexed amount);
 
@@ -45,6 +45,7 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
     error ValueAlreadySet(uint8 value);
     error ExecutionFeesNotLive(uint256 currentTime, uint256 startTime);
     error AgentAlreadyMigratedToExecutionFees(uint256 agentId);
+    error UnregisteredAgent(uint256 agentId);
 
     /**
      * @notice Initializer method
@@ -52,35 +53,35 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
      * @param __teamPlan Address of team plan Lock contract.
      * @param __botUnits Address of BotUnits contract.
      */
-    function __AgentRegistryMembership_init(address __individualPlan, address __teamPlan, address __botUnits) internal initializer {
+    function __AgentRegistryMembership_init(address __individualPlan, address __teamPlan, address __botUnits, uint256 __executionFeesStartTime) internal initializer {
         if (__individualPlan == address(0)) revert ZeroAddress("__individualPlan");
         if (__teamPlan == address(0)) revert ZeroAddress("__teamPlan");
         if (__botUnits == address(0)) revert ZeroAddress("__botUnits");
+        if (__executionFeesStartTime == 0) revert ZeroAmount("__executionFeesStartTime");
 
         _individualPlan = IPublicLockV13(__individualPlan);
         _teamPlan = IPublicLockV13(__teamPlan);
         _botUnits = IBotUnits(__botUnits);
+        _executionFeesStartTime = __executionFeesStartTime;
     }
 
     /**
-     * @notice Allows an agent owner to migrate their existing agents to the execution fees sytem.
+     * @notice Allows an agent owner to migrate their existing agents to the execution fees system.
      * @dev Only an agent owner has the permission to carry this out.
      * @param agentId ERC721 token id of existing agent to be "migrated" to execution fees system.
      */
     function activateExecutionFeesFor(uint256 agentId) external onlyOwnerOf(agentId) {
         uint256 executionFeesStartTime = _executionFeesStartTime;
-        if (block.timestamp > executionFeesStartTime) revert ExecutionFeesNotLive(block.timestamp, executionFeesStartTime);
+        if (block.timestamp < executionFeesStartTime) revert ExecutionFeesNotLive(block.timestamp, executionFeesStartTime);
         address msgSender = _msgSender();
         if (!(_individualPlan.getHasValidKey(msgSender) || _teamPlan.getHasValidKey(msgSender))) {
             revert ValidMembershipRequired(msgSender);
         }
-        if(isExistingAgentMigratedToExecutionFees(agentId)) revert AgentAlreadyMigratedToExecutionFees(agentId);
+        if (!isRegistered(agentId)) { revert UnregisteredAgent(agentId); }
+        if(isAgentUtilizingAgentUnits(agentId)) revert AgentAlreadyMigratedToExecutionFees(agentId);
         uint256 agentUnitsNeeded = existingAgentActiveUnitUsage(agentId);
-        // Passing AgentModification.Create for agentMod since
-        // existing agent doesn't "exist" in new system
-        _agentUnitsUpdate(msgSender, agentId, agentUnitsNeeded, AgentModification.Create);
-        _isExistingAgentMigratedToExecutionFees[agentId] = true;
-        emit ExistingAgentMigrated(msgSender, agentId);
+        _agentUnitsUpdate(msgSender, agentId, agentUnitsNeeded, AgentModification.Enable);
+        _setAgentToUtilizeAgentUnits(agentId, true);
     }
     
     /**
@@ -160,6 +161,37 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
     }
 
     /**
+     * @notice Updates an agent's status to indicate it is a participant
+     * in the execution fees system.
+     * @param agentId ERC721 token id of the agent.
+     * @param newMetadata IPFS pointer to agent's metadata JSON.
+     * @param newChainIds ordered list of chainIds where the agent wants to run.
+     */
+    function _afterAgentUpdate(
+        uint256 agentId,
+        string memory newMetadata,
+        uint256[] calldata newChainIds
+    ) internal virtual override(AgentRegistryCore) {
+        super._afterAgentUpdate(agentId,newMetadata,newChainIds);
+
+        if(!_isAgentUtilizingAgentUnits[agentId]) {
+            _setAgentToUtilizeAgentUnits(agentId, true);
+        }
+    }
+
+    /**
+     * @notice Updates an agent's status to indicate whether it
+     * is a participant in the execution fees system or not.
+     * @param agentId ERC721 token id of the agent.
+     * @param utilizingAgentUnits whether the agent will utilize
+     * agent units.
+     */
+    function _setAgentToUtilizeAgentUnits(uint256 agentId, bool utilizingAgentUnits) internal {
+        _isAgentUtilizingAgentUnits[agentId] = utilizingAgentUnits;
+        emit AgentOnExecutionFeesSystem(agentId);
+    }
+
+    /**
      * @notice Setter to allow ability to declare a specific agent a public good.
      * @dev Behind access control to mentioned role.
      * @param agentId ERC721 token id of agent that is to be declared a public good.
@@ -213,13 +245,13 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
     }
     
     /**
-     * @notice Getter returning whether or not the specific agent has "migrated"
-     * to the execution fees system.
+     * @notice Getter returning whether or not a specific agent is a participant
+     * in the execution fees system.
      * @param agentId ERC721 token id of agent.
      * @return bool indicating whether or not the given agent has migrated.
      */
-    function isExistingAgentMigratedToExecutionFees(uint256 agentId) public view returns (bool) {
-        return _isExistingAgentMigratedToExecutionFees[agentId];
+    function isAgentUtilizingAgentUnits(uint256 agentId) public view returns (bool) {
+        return _isAgentUtilizingAgentUnits[agentId];
     }
 
     /**
@@ -231,7 +263,7 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
      * - 1 _botUnits
      * - 1 _isAgentIdPublicGood
      * - 1 _isAgentPartOfFreeTrial
-     * - 1 _isExistingAgentMigratedToExecutionFees
+     * - 1 __isAgentUtilizingAgentUnits
      * --------------------------
      *  42 __gap
      */

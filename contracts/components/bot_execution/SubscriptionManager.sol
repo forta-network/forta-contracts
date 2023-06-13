@@ -33,6 +33,7 @@ contract SubscriptionManager is BaseComponentUpgradeable {
 
     error LimitOneValidSubscription(address existingSubscriptionPlan, address subscriptionOwner);
     error InvalidFunctionCaller(address caller);
+    error MustHaveNoActiveBotUnits(address keySender);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder)  {}
@@ -97,6 +98,31 @@ contract SubscriptionManager is BaseComponentUpgradeable {
         (bool isValid, uint8 purchasedPlan, uint8 nonPurchasedPlan) = _isValidLockContract(msg.sender);
         if (!isValid) revert InvalidFunctionCaller(msg.sender);
         _updateRecipientBotUnitsCapacity(recipient, purchasedPlan, nonPurchasedPlan);
+    }
+
+    /**
+     * @notice If the lock owner has registered an implementer then this hook
+     * is called every time balanceOf is called
+     * @param lockAddress the address of the current lock
+     * @param from the previous owner of transferred key
+     * @param to the new owner of the key
+     */
+    function onKeyTransfer(
+        address lockAddress,
+        uint /*tokenId*/,
+        address /*operator*/,
+        address from,
+        address to,
+        uint /*expirationTimestamp*/
+    ) external {
+        (bool isValid, uint8 purchasedPlan, uint8 nonPurchasedPlan) = _isValidLockContract(lockAddress);
+        if (!isValid) revert InvalidFunctionCaller(lockAddress);
+
+        uint256 fromActiveBotUnits = _botUnits.getOwnerActiveBotUnits(from);
+        if (fromActiveBotUnits > 0) revert MustHaveNoActiveBotUnits(from);
+
+        _botUnits.updateOwnerBotUnitsCapacity(from, 0, false);
+        _updateRecipientBotUnitsCapacity(to, purchasedPlan, nonPurchasedPlan);
     }
 
     /**

@@ -37,11 +37,12 @@ contract AgentRegistry is
         string calldata __symbol,
         address __individualLock,
         address __teamLock,
-        address __botUnits
+        address __botUnits,
+        uint256 __executionFeesStartTime
     ) public initializer {
         __BaseComponentUpgradeable_init(__manager);
         __ERC721_init(__name, __symbol);
-        __AgentRegistryMembership_init(__individualLock, __teamLock, __botUnits);
+        __AgentRegistryMembership_init(__individualLock, __teamLock, __botUnits, __executionFeesStartTime);
     }
 
     /**
@@ -86,7 +87,11 @@ contract AgentRegistry is
      * @param agentId ERC721 token id of the agent to be created or updated.
      * @param amount Amount of agent units the given agent will need.
      */
-    function _agentUnitsRequirementCheck(address account, uint256 agentId, uint256 amount) internal virtual override(AgentRegistryCore, AgentRegistryMembership, AgentRegistryEnable) returns(bool) {
+    function _agentUnitsRequirementCheck(
+        address account,
+        uint256 agentId,
+        uint256 amount
+    ) internal virtual override(AgentRegistryCore, AgentRegistryMembership, AgentRegistryEnable) returns(bool) {
         return super._agentUnitsRequirementCheck(account, agentId, amount);
     }
 
@@ -96,7 +101,11 @@ contract AgentRegistry is
      * @param newMetadata IPFS pointer to agent's metadata
      * @param newChainIds chain ids that the agent wants to scan
      */
-    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override(AgentRegistryCore, AgentRegistryEnumerable) {
+    function _beforeAgentUpdate(
+        uint256 agentId,
+        string memory newMetadata,
+        uint256[] calldata newChainIds
+    ) internal virtual override(AgentRegistryCore, AgentRegistryEnumerable) {
         super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
     }
 
@@ -106,8 +115,28 @@ contract AgentRegistry is
      * @param newMetadata IPFS pointer to agent's metadata
      * @param newChainIds chain ids that the agent wants to scan
      */
-    function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds, uint8 newRedundancy, uint8 newShards) internal virtual override(AgentRegistryCore, AgentRegistryMetadata, AgentRegistryMembership, AgentRegistryEnable) {
+    function _agentUpdate(
+        uint256 agentId,
+        string memory newMetadata,
+        uint256[] calldata newChainIds,
+        uint8 newRedundancy,
+        uint8 newShards
+    ) internal virtual override(AgentRegistryCore, AgentRegistryMetadata, AgentRegistryMembership, AgentRegistryEnable) {
         super._agentUpdate(agentId, newMetadata, newChainIds, newRedundancy, newShards);
+    }
+
+    /**
+     * @notice Obligatory inheritance disambiguation for hook fired for agent update (and creation).
+     * @param agentId id of the agent.
+     * @param newMetadata IPFS pointer to agent's metadata
+     * @param newChainIds chain ids that the agent wants to scan
+     */
+    function _afterAgentUpdate(
+        uint256 agentId,
+        string memory newMetadata,
+        uint256[] calldata newChainIds
+    ) internal virtual override(AgentRegistryCore, AgentRegistryMembership, AgentRegistryEnable) {
+        super._afterAgentUpdate(agentId,newMetadata,newChainIds);
     }
 
     /**
