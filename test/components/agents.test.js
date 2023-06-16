@@ -1,10 +1,16 @@
 const { ethers, network } = require('hardhat');
+const helpers = require('@nomicfoundation/hardhat-network-helpers');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 
 const AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
 const redundancy = 6;
 const shards = 10;
+
+// TODO:
+// 1. Update calls to `activateExecutionFeesFor` to include `redundancy` and `shards`
+// 2. Look into updating the three setters in `AgentRegistryMembership` to be a single one
+// 3. Look into `activateExecutionFeesFor` and see if it can just call `updateAgent` internally
 
 // Also passed to SubscriptionManager
 // during deployment in platform.js
@@ -1561,22 +1567,6 @@ describe('Agent Registry', function () {
         });
     });
 
-    describe.only('bot migration to execution fees', async function () {
-        // Bot owner registers on the previous version of the AgentRegistry
-        // then bot still exists in new implementation
-        beforeEach();
-
-        it('existing bot enabled after migrating', async function () {
-            //
-        });
-
-        it.skip('cannot migrate bot before execution fees start time', async function () {
-            //
-        });
-
-        it.skip('cannot migrate non-existing bot');
-    });
-
     describe('access control', async function () {
         it('only FREE_TRIAL_ADMIN_ROLE can set the free trial bot units', async function () {
             expect(await this.agents.getFreeTrialAgentUnitsLimit()).to.be.equal(0);
@@ -1603,5 +1593,208 @@ describe('Agent Registry', function () {
 
             expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(true);
         });
+    });
+});
+
+describe.only('Bot Migration - Execution Fees', async function () {
+    prepare();
+    let migrationExecutionFeesStartTime;
+
+    // Bot owner registers on the previous version of the AgentRegistry
+    // then bot still exists in new implementation
+    beforeEach(async function () {
+        const AgentRegistry_0_1_6 = await ethers.getContractFactory('AgentRegistry_0_1_6');
+        this.agents = await upgrades.deployProxy(AgentRegistry_0_1_6, [this.contracts.access.address, 'Forta Agents', 'FAgents'], {
+            kind: 'uups',
+            constructorArgs: [this.contracts.forwarder.address],
+            unsafeAllow: ['delegatecall'],
+        });
+        await this.agents.deployed();
+
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.BOT_UNITS_CAPACITY_ADMIN, this.subscriptionManager.address);
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.BOT_ACTIVE_UNITS_ADMIN, this.agents.address);
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.INDIVIDUAL_LOCK_ADMIN, this.individualLock.address);
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.TEAM_LOCK_ADMIN, this.teamLock.address);
+
+        const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5]];
+
+        await this.subjectGateway.connect(this.accounts.admin).setStakeSubject(1, this.agents.address);
+        await this.agents.connect(this.accounts.admin).setSubjectHandler(this.subjectGateway.address);
+        await this.agents.connect(this.accounts.manager).setStakeThreshold({ min: '100', max: '500', activated: true });
+        await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));
+        await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
+        await this.token.connect(this.accounts.user1).approve(this.individualLock.address, ethers.constants.MaxUint256);
+        await this.token.connect(this.accounts.user1).approve(this.teamLock.address, ethers.constants.MaxUint256);
+
+        await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
+            .to.emit(this.agents, 'Transfer')
+            .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+            .to.emit(this.agents, 'AgentUpdated')
+            .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]);
+
+        expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+        expect(await this.agents.isRegistered(AGENT_ID)).to.be.equal(true);
+
+        await this.staking.connect(this.accounts.user1).deposit(1, AGENT_ID, '100');
+
+        expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
+        expect(await this.agents.isRegistered(AGENT_ID)).to.be.equal(true);
+
+        this.agents = await upgrades.upgradeProxy(
+            this.agents.address,
+            await ethers.getContractFactory('AgentRegistry'),
+            {
+                constructorArgs: [this.contracts.forwarder.address],
+                unsafeAllow: ['delegatecall'],
+            }
+        );
+
+        migrationExecutionFeesStartTime = (await helpers.time.latest()) + 1000;
+
+        await this.agents.connect(this.accounts.admin).setSubscriptionPlans(this.individualLock.address, this.teamLock.address);
+        await this.agents.connect(this.accounts.admin).setBotUnits(this.botUnits.address);
+        await this.agents.connect(this.accounts.admin).setExecutionFeesStartTime(migrationExecutionFeesStartTime);
+
+        expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+        expect(await this.agents.isRegistered(AGENT_ID)).to.be.equal(true);
+    });
+
+    it.skip('cannot migrate without first acquiring a valid subscription', async function () {
+        await network.provider.send('evm_increaseTime', [1000]);
+
+        await expect(this.agents.connect(this.accounts.user1).activateExecutionFeesFor(AGENT_ID)).to.be.revertedWith(`ValidMembershipRequired("${this.accounts.user1.address}")`);
+    });
+
+    it.skip('cannot migrate non-existing bot', async function () {
+        await network.provider.send('evm_increaseTime', [1000]);
+
+        const nonExistingBot = '123456789';
+        await expect(this.agents.connect(this.accounts.user1).activateExecutionFeesFor(nonExistingBot)).to.be.revertedWith('ERC721: invalid token ID');
+    });
+
+    it.skip('cannot migrate already-migrated bot', async function () {
+        await network.provider.send('evm_increaseTime', [1000]);
+
+        const individualKeyPrice = await this.individualLock.keyPrice();
+
+        expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+        expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+        const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+            [individualKeyPrice],
+            [this.accounts.user1.address],
+            [this.accounts.user1.address],
+            [ethers.constants.AddressZero],
+            [[]],
+            { gasLimit: 21000000 }
+        );
+        await txnReceipt.wait();
+
+        expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+        expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+
+        await expect(this.agents.connect(this.accounts.user1).activateExecutionFeesFor(AGENT_ID, redundancy, shards))
+            .to.emit(this.agents, 'AgentOnExecutionFeesSystem')
+            .withArgs(ethers.BigNumber.from(AGENT_ID));
+
+        expect(await this.agents.isAgentUtilizingAgentUnits(AGENT_ID)).to.be.equal(true);
+        expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+
+        await expect(this.agents.connect(this.accounts.user1).activateExecutionFeesFor(AGENT_ID, redundancy, shards)).to.be.revertedWith(`AgentAlreadyMigratedToExecutionFees(${ethers.BigNumber.from(AGENT_ID)})`);
+    });
+
+    it.skip('cannot migrate bot already on execution fees system', async function () {
+        await network.provider.send('evm_increaseTime', [1000]);
+
+        const AGENT_ID_TWO = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+        const argsTwo = [AGENT_ID_TWO, this.accounts.user1.address, 'Metadata2', [1, 3, 4, 5, 6], redundancy, shards];
+        const individualKeyPrice = await this.individualLock.keyPrice();
+
+        expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+        expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+        const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+            [individualKeyPrice],
+            [this.accounts.user1.address],
+            [this.accounts.user1.address],
+            [ethers.constants.AddressZero],
+            [[]],
+            { gasLimit: 21000000 }
+        );
+        await txnReceipt.wait();
+
+        expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+        expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+
+        await expect(this.agents.connect(this.accounts.user1).createAgent(...argsTwo))
+            .to.emit(this.agents, 'Transfer')
+            .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID_TWO)
+            .to.emit(this.agents, 'AgentUpdated')
+            .withArgs(AGENT_ID_TWO, this.accounts.user1.address, 'Metadata2', [1, 3, 4, 5, 6], redundancy, shards);
+        expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5, 6].length * redundancy * shards);
+        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5, 6].length * redundancy * shards));
+
+        await expect(this.agents.connect(this.accounts.user1).activateExecutionFeesFor(AGENT_ID_TWO)).to.be.revertedWith(`AgentAlreadyMigratedToExecutionFees(${ethers.BigNumber.from(AGENT_ID_TWO)})`);
+    });
+
+    it.skip('cannot migrate bot before execution fees start time', async function () {
+        // Adding `1` to latest timestamp because of a slight delay in invocations
+        await expect(this.agents.connect(this.accounts.user1).activateExecutionFeesFor(AGENT_ID)).to.be.revertedWith(`ExecutionFeesNotLive(${(await helpers.time.latest()) + 1}, ${migrationExecutionFeesStartTime})`);
+    });
+
+    it('existing bot enabled after migrating', async function () {
+        await network.provider.send('evm_increaseTime', [1000]);
+
+        const individualKeyPrice = await this.individualLock.keyPrice();
+
+        expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+        expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+        const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+            [individualKeyPrice],
+            [this.accounts.user1.address],
+            [this.accounts.user1.address],
+            [ethers.constants.AddressZero],
+            [[]],
+            { gasLimit: 21000000 }
+        );
+        await txnReceipt.wait();
+
+        expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+        expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+
+        await expect(this.agents.connect(this.accounts.user1).activateExecutionFeesFor(AGENT_ID, 'metadata2', [1, 3, 4, 5], redundancy, shards))
+            .to.emit(this.agents, 'AgentOnExecutionFeesSystem')
+            .withArgs(ethers.BigNumber.from(AGENT_ID));
+
+        expect(await this.agents.isRegistered(AGENT_ID)).to.be.equal(true);
+        expect(await this.agents.isAgentUtilizingAgentUnits(AGENT_ID)).to.be.equal(true);
+        expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
+        expect(await this.agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
+        expect(
+            await this.agents
+                .getAgent(AGENT_ID)
+                .then((agent) => [agent.owner, agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber()), agent.redundancy, agent.shards])
+        ).to.be.deep.equal([this.accounts.user1.address, 2, 'metadata2', [1, 3, 4, 5], redundancy, shards]);
+        expect(await this.agents.getAgentCount()).to.be.equal('1');
+        expect(await this.agents.getAgentCountByChain(1)).to.be.equal('1');
+        expect(await this.agents.getAgentCountByChain(2)).to.be.equal('0');
+        expect(await this.agents.getAgentCountByChain(3)).to.be.equal('1');
+        expect(await this.agents.getAgentCountByChain(4)).to.be.equal('1');
+        expect(await this.agents.getAgentCountByChain(5)).to.be.equal('1');
+        expect(await this.agents.getAgentByIndex(0)).to.be.equal(AGENT_ID);
+        expect(await this.agents.getAgentByChainAndIndex(1, 0)).to.be.equal(AGENT_ID);
+        expect(await this.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
+        expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
+        expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
+        expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
     });
 });
