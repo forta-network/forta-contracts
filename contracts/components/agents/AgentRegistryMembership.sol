@@ -8,6 +8,7 @@ import "../../errors/GeneralErrors.sol";
 
 import "./AgentRegistryCore.sol";
 import "./AgentRegistryMetadata.sol";
+import "./AgentRegistryEnable.sol";
 import "../bot_execution/IBotUnits.sol";
 
 import "hardhat/console.sol";
@@ -21,7 +22,7 @@ import "hardhat/console.sol";
  * limit, which allows a agent to also function and execute without the need for agent units
  * if it falls below the limit set by the free trial.
  */
-abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMetadata {
+abstract contract AgentRegistryMembership is AgentRegistryEnable {
 
     uint8 constant MAX_FREE_TRIAL_AGENT_UNITS = 100;
     uint8 private _freeTrialAgentUnits;
@@ -65,23 +66,24 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
         _executionFeesStartTime = __executionFeesStartTime;
     }
 
-    /**
-     * @notice Allows an agent owner to migrate their existing agents to the execution fees system.
-     * @dev Only an agent owner has the permission to carry this out.
-     * @param agentId ERC721 token id of existing agent to be "migrated" to execution fees system.
-     */
-    function activateExecutionFeesFor(uint256 agentId) external onlyOwnerOf(agentId) {
-        uint256 executionFeesStartTime = _executionFeesStartTime;
-        if (block.timestamp < executionFeesStartTime) revert ExecutionFeesNotLive(block.timestamp, executionFeesStartTime);
-        address msgSender = _msgSender();
-        if (!(_individualPlan.getHasValidKey(msgSender) || _teamPlan.getHasValidKey(msgSender))) {
-            revert ValidMembershipRequired(msgSender);
-        }
-        if (!isRegistered(agentId)) { revert UnregisteredAgent(agentId); }
-        if(isAgentUtilizingAgentUnits(agentId)) revert AgentAlreadyMigratedToExecutionFees(agentId);
-        uint256 agentUnitsNeeded = existingAgentActiveUnitUsage(agentId);
-        _agentUnitsUpdate(msgSender, agentId, agentUnitsNeeded, AgentModification.Enable);
-        _setAgentToUtilizeAgentUnits(agentId, true);
+    function setSubscriptionPlans(address __individualPlan, address __teamPlan) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (__individualPlan == address(0)) revert ZeroAddress("_individualPlan");
+        if (__teamPlan == address(0)) revert ZeroAddress("_teamPlan");
+
+        _individualPlan = IPublicLockV13(__individualPlan);
+        _teamPlan = IPublicLockV13(__teamPlan);
+    }
+
+    function setBotUnits(address __botUnits) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (__botUnits == address(0)) revert ZeroAddress("__botUnits");
+
+        _botUnits = IBotUnits(__botUnits);
+    }
+
+    function setExecutionFeesStartTime(uint256 __executionFeesStartTime) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (__executionFeesStartTime == 0) revert ZeroAmount("__executionFeesStartTime");
+
+        _executionFeesStartTime = __executionFeesStartTime;
     }
     
     /**
@@ -145,10 +147,7 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
      * @param agentId ERC721 token id of given agent.
      * @return Amount of agent units the given agent uses/requires
      */
-    function existingAgentActiveUnitUsage(uint256 agentId) public view returns (uint256) {
-        (,,,uint256[] memory chainIds, uint8 redundancy, uint8 shards) = super.getAgent(agentId);
-        return super.calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
-    }
+    function existingAgentActiveUnitUsage(uint256 agentId) public view virtual returns (uint256) { }
     
     function _agentUpdate(
         uint256 agentId,
@@ -156,7 +155,7 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
         uint256[] calldata newChainIds,
         uint8 newRedundancy,
         uint8 newShards
-    ) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
+    ) internal virtual override {
         super._agentUpdate(agentId,newMetadata,newChainIds,newRedundancy,newShards);
     }
 
@@ -177,6 +176,32 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
         if(!_isAgentUtilizingAgentUnits[agentId]) {
             _setAgentToUtilizeAgentUnits(agentId, true);
         }
+    }
+
+    /**
+     * @notice Hook _after agent enable
+     * @dev emits Router hook
+     * @param agentId ERC721 token id of the agent.
+     * @param permission the sender claims to have to enable the agent.
+     * @param value true if enabling, false if disabling.
+     */
+    function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual override {
+        super._afterAgentEnable(agentId,permission,value);
+
+        if(value) {
+            _setAgentToUtilizeAgentUnits(agentId, value);
+        }
+    }
+
+    /**
+     * @notice Internal methods for enabling the agent.
+     * @dev fires hook _before and _after enable within the inheritance tree.
+     * @param agentId ERC721 token id of the agent.
+     * @param permission the sender claims to have to enable the agent.
+     * @param enable true if enabling, false if disabling.
+     */
+    function _enable(uint256 agentId, Permission permission, bool enable) internal virtual override {
+        super._enable(agentId, permission, enable);
     }
 
     /**
@@ -216,6 +241,34 @@ abstract contract AgentRegistryMembership is AgentRegistryCore, AgentRegistryMet
         if (_freeTrialAgentUnits == agentUnits) revert ValueAlreadySet(agentUnits);
         _freeTrialAgentUnits = agentUnits;
         emit FreeTrailAgentUnitsUpdated(agentUnits);
+    }
+
+    /**
+     * @notice Check if agent is enabled
+     * @param agentId ERC721 token id of the agent.
+     * @return true if agent owner has a valid key in either subscription plan,
+     * the agent exists, has not been disabled, and is staked over minimum
+     * Returns false if otherwise
+     */
+    function isEnabled(uint256 agentId) public view virtual override returns (bool) {
+        super.isEnabled(agentId);
+
+        address agentOwner = super.ownerOf(agentId);
+        return (
+            (_individualPlan.getHasValidKey(agentOwner) || _teamPlan.getHasValidKey(agentOwner)) &&
+            isRegistered(agentId) &&
+            getDisableFlags(agentId) == 0 &&
+            (!_isStakeActivated() || _isStakedOverMin(agentId)) &&
+            isAgentUtilizingAgentUnits(agentId)
+        );
+    }
+
+    /**
+     * @notice Internal getter for when bot execution fees goes live
+     * @return uint256 timestamp of when bot execution fees goes live
+     */
+    function _getExecutionFeesStartTime() internal view returns (uint256) {
+        return _executionFeesStartTime;
     }
 
     /**
