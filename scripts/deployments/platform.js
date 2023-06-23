@@ -243,13 +243,11 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}] subscription manager: ${contracts.subscriptionManager.address}`);
 
-        const latestTimestamp = await helpers.time.latest();
-
         contracts.agents = await contractHelpers.tryFetchProxy(
             hre,
             'AgentRegistry',
             'uups',
-            [contracts.access.address, 'Forta Agents', 'FAgents', individualLockAddress, teamLockAddress, contracts.botUnits.address, latestTimestamp],
+            [contracts.access.address, 'Forta Agents', 'FAgents'],
             {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: 'delegatecall',
