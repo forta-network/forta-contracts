@@ -1,4 +1,4 @@
-const { ethers, network } = require('hardhat');
+const { ethers } = require('hardhat');
 const helpers = require('@nomicfoundation/hardhat-network-helpers');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
@@ -312,6 +312,7 @@ describe('Bot Execution - Subscription & Units', async function () {
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
                 expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
     
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
@@ -329,6 +330,7 @@ describe('Bot Execution - Subscription & Units', async function () {
                 expect(await this.individualLock.ownerOf(individualKeyId)).to.be.equal(this.accounts.user1.address);
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
                 expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
     
                 const txnReceiptTwo = await this.individualLock.connect(this.accounts.admin).transferFrom(
@@ -371,6 +373,7 @@ describe('Bot Execution - Subscription & Units', async function () {
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
                 expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
     
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
@@ -388,10 +391,11 @@ describe('Bot Execution - Subscription & Units', async function () {
                 expect(await this.individualLock.ownerOf(individualKeyId)).to.be.equal(this.accounts.user1.address);
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
                 expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
 
-                const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
-                await expect(this.agents.connect(this.accounts.user1).createAgent(...args))
+                const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
+                await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
                     .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
                     .to.emit(this.agents, 'AgentUpdated')
@@ -441,14 +445,36 @@ describe('Bot Execution - Subscription & Units', async function () {
                 expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
                 expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
     
                 expect(await this.individualLock.balanceOf(this.accounts.user2.address)).to.be.equal(1);
                 expect(await this.individualLock.ownerOf(individualKeyId)).to.be.equal(this.accounts.user2.address);
                 expect(await this.individualLock.getHasValidKey(this.accounts.user2.address)).to.be.equal(true);
                 expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user2.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user2.address)).to.be.equal(0);
                 expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user2.address)).to.be.equal(individualLockPlanBotUnits);
             });
+        });
+    });
+
+    describe('Access control', async function () {
+        it('only BOT_UNITS_ADMIN_ROLE can call setSubscriptionPlan', async function () {
+            await expect(this.subscriptionManager.connect(this.accounts.other).setSubscriptionPlan(this.individualLock.address, 600, 1))
+                .to.be.revertedWith(`MissingRole("${this.roles.BOT_UNITS_ADMIN}", "${this.accounts.other.address}")`);
+
+            await expect(this.subscriptionManager.connect(this.accounts.manager).setSubscriptionPlan(this.individualLock.address, 600, 1))
+                .to.emit(this.subscriptionManager, 'SubscriptionPlanUpdated')
+                .withArgs(this.individualLock.address, 600, 1);
+        });
+
+        it('only BOT_UNITS_ADMIN_ROLE can call setBotUnits', async function () {
+            await expect(this.subscriptionManager.connect(this.accounts.other).setBotUnits(this.botUnits.address))
+                .to.be.revertedWith(`MissingRole("${this.roles.BOT_UNITS_ADMIN}", "${this.accounts.other.address}")`);
+
+            await expect(this.subscriptionManager.connect(this.accounts.manager).setBotUnits(this.botUnits.address))
+                .to.emit(this.subscriptionManager, 'BotUnitsContractUpdated')
+                .withArgs(this.botUnits.address);
         });
     });
 })
