@@ -34,15 +34,10 @@ contract AgentRegistry is
     function initialize(
         address __manager,
         string calldata __name,
-        string calldata __symbol,
-        address __individualLock,
-        address __teamLock,
-        address __botUnits,
-        uint256 __executionFeesStartTime
+        string calldata __symbol
     ) public initializer {
         __BaseComponentUpgradeable_init(__manager);
         __ERC721_init(__name, __symbol);
-        __AgentRegistryMembership_init(__individualLock, __teamLock, __botUnits, __executionFeesStartTime);
     }
 
     /**
@@ -80,29 +75,6 @@ contract AgentRegistry is
     }
 
     /**
-     * @notice Allows an agent owner to migrate their existing agents to the execution fees system.
-     * @dev Only an agent owner has the permission to carry this out.
-     * @param agentId ERC721 token id of existing agent to be "migrated" to execution fees system.
-     * @param metadata IPFS pointer to agent's metadata JSON.
-     * @param chainIds ordered list of chainIds where the agent wants to run.
-     * @param redundancy Level of redundancy for a given agent
-     * @param shards Amount of shards for a given agent
-     */
-    function activateExecutionFeesFor(uint256 agentId, string calldata metadata, uint256[] calldata chainIds, uint8 redundancy, uint8 shards) external onlyOwnerOf(agentId) {
-        uint256 executionFeesStartTime = _getExecutionFeesStartTime();
-        if (block.timestamp < executionFeesStartTime) revert ExecutionFeesNotLive(block.timestamp, executionFeesStartTime);
-        address msgSender = _msgSender();
-        if (!(_individualPlan.getHasValidKey(msgSender) || _teamPlan.getHasValidKey(msgSender))) {
-            revert ValidMembershipRequired(msgSender);
-        }
-        if(isAgentUtilizingAgentUnits(agentId)) revert AgentAlreadyMigratedToExecutionFees(agentId);
-        uint256 agentUnitsNeeded = super.calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
-        _agentUnitsUpdate(msgSender, agentId, agentUnitsNeeded, AgentModification.Enable);
-        _agentUpdate(agentId, metadata, chainIds, redundancy, shards);
-        _setAgentToUtilizeAgentUnits(agentId, true);
-    }
-
-    /**
      * @notice Hook fired in the process of modifiying an agent
      * (creating, updating, etc.).
      * Will check if certain requirements are met.
@@ -110,26 +82,12 @@ contract AgentRegistry is
      * @param agentId ERC721 token id of the agent to be created or updated.
      * @param amount Amount of agent units the given agent will need.
      */
-    function _agentUnitsRequirementCheck(
+    function _agentBypassesAgentUnitsRequirement(
         address account,
         uint256 agentId,
         uint256 amount
     ) internal virtual override(AgentRegistryCore, AgentRegistryMembership) returns(bool) {
-        return super._agentUnitsRequirementCheck(account, agentId, amount);
-    }
-
-    /**
-     * @notice Inheritance disambiguation for hook fired befire agent update (and creation).
-     * @param agentId id of the agent.
-     * @param newMetadata IPFS pointer to agent's metadata
-     * @param newChainIds chain ids that the agent wants to scan
-     */
-    function _beforeAgentUpdate(
-        uint256 agentId,
-        string memory newMetadata,
-        uint256[] calldata newChainIds
-    ) internal virtual override(AgentRegistryCore, AgentRegistryEnumerable) {
-        super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
+        return super._agentBypassesAgentUnitsRequirement(account, agentId, amount);
     }
 
     /**
@@ -144,22 +102,8 @@ contract AgentRegistry is
         uint256[] calldata newChainIds,
         uint8 newRedundancy,
         uint8 newShards
-    ) internal virtual override(AgentRegistryCore, AgentRegistryMetadata, AgentRegistryMembership) {
+    ) internal virtual override(AgentRegistryCore, AgentRegistryMetadata) {
         super._agentUpdate(agentId, newMetadata, newChainIds, newRedundancy, newShards);
-    }
-
-    /**
-     * @notice Obligatory inheritance disambiguation for hook fired for agent update (and creation).
-     * @param agentId id of the agent.
-     * @param newMetadata IPFS pointer to agent's metadata
-     * @param newChainIds chain ids that the agent wants to scan
-     */
-    function _afterAgentUpdate(
-        uint256 agentId,
-        string memory newMetadata,
-        uint256[] calldata newChainIds
-    ) internal virtual override(AgentRegistryCore, AgentRegistryMembership) {
-        super._afterAgentUpdate(agentId,newMetadata,newChainIds);
     }
 
     /**
@@ -169,7 +113,7 @@ contract AgentRegistry is
      * @param permission the sender claims to have to enable the agent.
      * @param enable true if enabling, false if disabling.
      */
-    function _enable(uint256 agentId, Permission permission, bool enable) internal virtual override(AgentRegistryEnable, AgentRegistryMembership) {
+    function _enable(uint256 agentId, Permission permission, bool enable) internal virtual override {
         super._enable(agentId,permission,enable);
 
         // Fetching agent owner since admin role
@@ -177,9 +121,9 @@ contract AgentRegistry is
         address agentOwner = super.ownerOf(agentId);
         (,,,uint256[] memory chainIds, uint8 redundancy, uint8 shards) = super.getAgent(agentId);
         uint256 _agentUnits = calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
-        bool _canBypassNeededAgentUnits = _agentUnitsRequirementCheck(agentOwner, agentId, _agentUnits);
+        bool _canBypassNeededAgentUnits = _agentBypassesAgentUnitsRequirement(agentOwner, agentId, _agentUnits);
         AgentModification agentMod = enable == true ? AgentModification.Enable : AgentModification.Disable;
-        if (!_canBypassNeededAgentUnits) { _agentUnitsUpdate(agentOwner, agentId, _agentUnits, agentMod); }
+        if (!_canBypassNeededAgentUnits) { _activeAgentUnitsBalanceUpdate(agentOwner, agentId, _agentUnits, agentMod); }
         _beforeAgentEnable(agentId, permission, enable);
         _agentEnable(agentId, permission, enable);
         _afterAgentEnable(agentId, permission, enable);
@@ -196,17 +140,29 @@ contract AgentRegistry is
     }
 
     /**
-     * Calculates the amount of agent units a given agent will need
-     * to migrate based on the passed arguments
-     * @param agentId ERC721 token id of given agent
-     * @param redundancy Level of redundancy for a given agent
-     * @param shards Amount of shards for a given agent
-     * @return amount of agent units that will be needed for the passed
-     * arguments
+     * @notice hook fired before agent creation or update.
+     * @dev does nothing in this contract.
+     * @param agentId ERC721 token id of the agent to be created or updated.
+     * @param newMetadata IPFS pointer to agent's metadata JSON.
+     * @param newChainIds ordered list of chainIds where the agent wants to run.
+     * @param newRedundancy Level of redundancy for the agent.
+     * @param newShards Amount of shards for the the agent.
      */
-    function _calculateAgentUnitsNeededForMigration(uint256 agentId, uint8 redundancy, uint8 shards) internal returns (uint256) {
-        (,,,uint256[] memory chainIds,,) = super.getAgent(agentId);
-        return super.calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
+    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds, uint8 newRedundancy, uint8 newShards) internal virtual override(AgentRegistryCore, AgentRegistryEnumerable) {
+        super._beforeAgentUpdate(agentId,newMetadata,newChainIds,newRedundancy,newShards);
+    }
+
+    /**
+     * @notice hook fired after agent creation or update.
+     * @dev emits Router hook.
+     * @param agentId ERC721 token id of the agent to be created or updated.
+     * @param newMetadata IPFS pointer to agent's metadata JSON.
+     * @param newChainIds ordered list of chainIds where the agent wants to run.
+     * @param newRedundancy level of redundancy for the agent.
+     * @param newShards amounts of shards for the agent.
+     */
+    function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds, uint8 newRedundancy, uint8 newShards) internal virtual override(AgentRegistryCore, AgentRegistryMembership) {
+        super._afterAgentUpdate(agentId,newMetadata,newChainIds,newRedundancy,newShards);
     }
 
     /**
@@ -240,8 +196,8 @@ contract AgentRegistry is
      * @param agentUnits Amount of agent units the given agent will need.
      * @param agentMod The type of modification to be done to the agent.
      */
-    function _agentUnitsUpdate(address account, uint256 agentId, uint256 agentUnits, AgentModification agentMod) internal virtual override(AgentRegistryCore, AgentRegistryMembership) {
-        super._agentUnitsUpdate(account, agentId, agentUnits, agentMod);
+    function _activeAgentUnitsBalanceUpdate(address account, uint256 agentId, uint256 agentUnits, AgentModification agentMod) internal virtual override(AgentRegistryCore, AgentRegistryMembership) {
+        super._activeAgentUnitsBalanceUpdate(account, agentId, agentUnits, agentMod);
     }
 
     /**
@@ -260,5 +216,5 @@ contract AgentRegistry is
         return super._msgData();
     }
 
-    uint256[50] private __gap;
+    // uint256[1] private __gap;
 }

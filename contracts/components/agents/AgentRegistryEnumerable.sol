@@ -58,9 +58,11 @@ abstract contract AgentRegistryEnumerable is AgentRegistryMetadata {
      * @param agentId ERC721 token id of the agent to be created or updated.
      * @param newMetadata IPFS pointer to agent's metadata JSON.
      * @param newChainIds ordered list of chainIds where the agent wants to run.
+     * @param newRedundancy Level of redundancy for the agent.
+     * @param newShards Amount of shards for the the agent.
      */
-    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds) internal virtual override {
-        super._beforeAgentUpdate(agentId, newMetadata, newChainIds);
+    function _beforeAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds, uint8 newRedundancy, uint8 newShards) internal virtual override {
+        super._beforeAgentUpdate(agentId, newMetadata, newChainIds, newRedundancy, newShards);
 
         (,uint256 version,, uint256[] memory oldChainIds,,) = getAgent(agentId);
 

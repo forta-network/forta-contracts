@@ -23,6 +23,7 @@ import "hardhat/console.sol";
  * if it falls below the limit set by the free trial.
  */
 abstract contract AgentRegistryMembership is AgentRegistryEnable {
+    using BitMaps for BitMaps.BitMap;
 
     uint8 constant MAX_FREE_TRIAL_AGENT_UNITS = 100;
     uint8 private _freeTrialAgentUnits;
@@ -32,82 +33,92 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
     IPublicLockV13 _teamPlan;
     IBotUnits _botUnits;
 
-    mapping(uint256 => bool) private _isAgentIdPublicGood;
-    mapping(uint256 => bool) private _isAgentPartOfFreeTrial;
-    mapping(uint256 => bool) private _isAgentUtilizingAgentUnits;
+    mapping(uint256 => BitMaps.BitMap) private _isAgentPublicGood;
+    mapping(uint256 => BitMaps.BitMap) private _isAgentPartOfFreeTrial;
+    mapping(uint256 => BitMaps.BitMap) private _isAgentUtilizingAgentUnits;
 
+    event SubscriptionPlansUpdated(address indexed individualPlan, address indexed teamPlan);
+    event BotUnitsUpdated(address indexed botUnits);
+    event ExecutionFeesStartTimeUpdated(uint256 indexed executionFeesStartTime);
     event AgentOnExecutionFeesSystem(uint256 indexed agentId);
     event PublicGoodAgentDeclared(uint256 indexed agentId);
     event FreeTrailAgentUnitsUpdated(uint256 indexed amount);
 
     error ValidMembershipRequired(address account);
     error FreeTrialUnitsExceedsMax(uint8 maxFreeTrialUnits, uint8 exceedingAmount);
-    error AgentIsAlreadyPublicGood(uint256 agentId);
+    error AgentAlreadyPublicGood(uint256 agentId);
     error ValueAlreadySet(uint8 value);
     error ExecutionFeesNotLive(uint256 currentTime, uint256 startTime);
     error AgentAlreadyMigratedToExecutionFees(uint256 agentId);
-    error UnregisteredAgent(uint256 agentId);
 
     /**
-     * @notice Initializer method
-     * @param __individualPlan Address of individual plan Lock contract.
-     * @param __teamPlan Address of team plan Lock contract.
-     * @param __botUnits Address of BotUnits contract.
+     * @dev allows AGENT_ADMIN_ROLE to set the two subscription plans
+     * for the bot execution fees
+     * @param __individualPlan The plan that grants a lower amount
+     * of bot units to a subscriber
+     * @param __teamPlan The plan that grants a higher amount
+     * of bot units to a subscriber
      */
-    function __AgentRegistryMembership_init(address __individualPlan, address __teamPlan, address __botUnits, uint256 __executionFeesStartTime) internal initializer {
+    function setSubscriptionPlans(address __individualPlan, address __teamPlan) external onlyRole(AGENT_ADMIN_ROLE) {
         if (__individualPlan == address(0)) revert ZeroAddress("__individualPlan");
         if (__teamPlan == address(0)) revert ZeroAddress("__teamPlan");
-        if (__botUnits == address(0)) revert ZeroAddress("__botUnits");
-        if (__executionFeesStartTime == 0) revert ZeroAmount("__executionFeesStartTime");
 
         _individualPlan = IPublicLockV13(__individualPlan);
         _teamPlan = IPublicLockV13(__teamPlan);
-        _botUnits = IBotUnits(__botUnits);
-        _executionFeesStartTime = __executionFeesStartTime;
+        emit SubscriptionPlansUpdated(__individualPlan, __teamPlan);
     }
 
-    function setSubscriptionPlans(address __individualPlan, address __teamPlan) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (__individualPlan == address(0)) revert ZeroAddress("_individualPlan");
-        if (__teamPlan == address(0)) revert ZeroAddress("_teamPlan");
-
-        _individualPlan = IPublicLockV13(__individualPlan);
-        _teamPlan = IPublicLockV13(__teamPlan);
-    }
-
-    function setBotUnits(address __botUnits) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /**
+     * @dev allows AGENT_ADMIN_ROLE to set the contract that will
+     * handle the accounting for bot units for a subscriber.
+     * @param __botUnits The contract that will handle
+     * the bot unit accounting
+     */
+    function setBotUnits(address __botUnits) external onlyRole(AGENT_ADMIN_ROLE) {
         if (__botUnits == address(0)) revert ZeroAddress("__botUnits");
 
         _botUnits = IBotUnits(__botUnits);
+        emit BotUnitsUpdated(__botUnits);
     }
-
-    function setExecutionFeesStartTime(uint256 __executionFeesStartTime) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    
+    
+    /**
+     * @dev allows AGENT_ADMIN_ROLE to set the time timestamp
+     * of when agent execution fees will go live.
+     * @param __executionFeesStartTime The timestamp afterwhich
+     * agent execution fees will be live
+     */
+    function setExecutionFeesStartTime(uint256 __executionFeesStartTime) external onlyRole(AGENT_ADMIN_ROLE) {
         if (__executionFeesStartTime == 0) revert ZeroAmount("__executionFeesStartTime");
 
         _executionFeesStartTime = __executionFeesStartTime;
+        emit ExecutionFeesStartTimeUpdated(__executionFeesStartTime);
     }
     
     /**
-     * @notice Function that checks whether the agent and/or owner meets certain criteria.
+     * @notice Function that checks whether an agent and/or owner meets certain criteria
+     * to bypass the need for agent units.
      * Criteria: Has a valid key in either plan, agent is marked a public good, or if
      * needed agent units for the agent is under free trial threshold.
      * @param account Address of agent owner.
      * @param agentId ERC721 token id of existing agent to be "migrated" to execution fees system.
      * @param amount Agent units needed.
+     * @return bool indicating whether the specific agent requires agent units
      */
-    function _agentUnitsRequirementCheck(address account, uint256 agentId, uint256 amount) internal virtual override returns(bool) {
-        super._agentUnitsRequirementCheck(account, agentId, amount);
+    function _agentBypassesAgentUnitsRequirement(address account, uint256 agentId, uint256 amount) internal virtual override returns(bool) {
+        super._agentBypassesAgentUnitsRequirement(account, agentId, amount);
         if(!(_individualPlan.getHasValidKey(account) || _teamPlan.getHasValidKey(account))) {
             revert ValidMembershipRequired(account);
         }
-        if(_isAgentIdPublicGood[agentId]) {
-            _isAgentPartOfFreeTrial[agentId] = false;
-            return true;
-        }
         if(amount <= _freeTrialAgentUnits) {
-            _isAgentPartOfFreeTrial[agentId] = true;
+            _isAgentPartOfFreeTrial[agentId].setTo(1, true);
             return true;
         }
-        _isAgentPartOfFreeTrial[agentId] = false;
+        if(isPublicGoodAgent(agentId)) {
+            _isAgentPartOfFreeTrial[agentId].setTo(1, false);
+            return true;
+        }
+        _isAgentPartOfFreeTrial[agentId].setTo(1, false);
         return false;
     }
 
@@ -118,10 +129,10 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
      * @param account Owner of agent being modified.
      * @param agentId ERC721 token id of existing agent to be modified.
      * @param agentUnits Amount of agent units the update will require.
-     * @param agentMod The modification being done to the agent. Create, Update, Disable, or Enable.
+     * @param agentMod Modification being done to the agent: create, update, disable, or enable.
      */
-    function _agentUnitsUpdate(address account, uint256 agentId, uint256 agentUnits, AgentModification agentMod) internal virtual override {
-        super._agentUnitsUpdate(account, agentId, agentUnits, agentMod);
+    function _activeAgentUnitsBalanceUpdate(address account, uint256 agentId, uint256 agentUnits, AgentModification agentMod) internal virtual override {
+        super._activeAgentUnitsBalanceUpdate(account, agentId, agentUnits, agentMod);
         
         if(agentMod == AgentModification.Create || agentMod == AgentModification.Enable) {
             _botUnits.updateOwnerActiveBotUnits(account, agentUnits, true);
@@ -129,35 +140,26 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
             _botUnits.updateOwnerActiveBotUnits(account, agentUnits, false);
         } else if (agentMod == AgentModification.Update) {
             uint256 existingAgentUnitsUsage = existingAgentActiveUnitUsage(agentId);
-            bool balanceIncrease;
+            bool balanceIncreasing;
             uint256 agentUnitsForUpdate;
             if(agentUnits >= existingAgentUnitsUsage) {
-                balanceIncrease = true;
+                balanceIncreasing = true;
                 agentUnitsForUpdate = agentUnits - existingAgentUnitsUsage;
             } else {
-                balanceIncrease = false;
+                balanceIncreasing = false;
                 agentUnitsForUpdate = existingAgentUnitsUsage - agentUnits;
             }
-            _botUnits.updateOwnerActiveBotUnits(account, agentUnitsForUpdate, balanceIncrease);
+            _botUnits.updateOwnerActiveBotUnits(account, agentUnitsForUpdate, balanceIncreasing);
         }
     }
 
     /**
      * @notice Fetch the amount of active agent units a given agent uses/requires.
+     * @dev does nothing in this contract.
      * @param agentId ERC721 token id of given agent.
      * @return Amount of agent units the given agent uses/requires
      */
-    function existingAgentActiveUnitUsage(uint256 agentId) public view virtual returns (uint256) { }
-    
-    function _agentUpdate(
-        uint256 agentId,
-        string memory newMetadata,
-        uint256[] calldata newChainIds,
-        uint8 newRedundancy,
-        uint8 newShards
-    ) internal virtual override {
-        super._agentUpdate(agentId,newMetadata,newChainIds,newRedundancy,newShards);
-    }
+    function existingAgentActiveUnitUsage(uint256 agentId) public view virtual returns (uint256) {}
 
     /**
      * @notice Updates an agent's status to indicate it is a participant
@@ -169,71 +171,59 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
     function _afterAgentUpdate(
         uint256 agentId,
         string memory newMetadata,
-        uint256[] calldata newChainIds
+        uint256[] calldata newChainIds,
+        uint8 newRedundancy,
+        uint8 newShards
     ) internal virtual override(AgentRegistryCore) {
-        super._afterAgentUpdate(agentId,newMetadata,newChainIds);
+        super._afterAgentUpdate(agentId, newMetadata, newChainIds, newRedundancy, newShards);
 
-        if(!_isAgentUtilizingAgentUnits[agentId]) {
-            _setAgentToUtilizeAgentUnits(agentId, true);
+        if(!isAgentUtilizingAgentUnits(agentId)) {
+            // Passing `1` since each agent will only
+            // have one `key` in its BitMap
+            _isAgentUtilizingAgentUnits[agentId].setTo(1, true);
+            emit AgentOnExecutionFeesSystem(agentId);
         }
     }
 
     /**
-     * @notice Hook _after agent enable
-     * @dev emits Router hook
+     * @notice Function called during enabling of an agent
+     * that updates an agent to be a participant in the execution
+     * fees system.
      * @param agentId ERC721 token id of the agent.
      * @param permission the sender claims to have to enable the agent.
      * @param value true if enabling, false if disabling.
      */
     function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual override {
-        super._afterAgentEnable(agentId,permission,value);
+        super._afterAgentEnable(agentId, permission, value);
 
         if(value) {
-            _setAgentToUtilizeAgentUnits(agentId, value);
+            // Passing `1` since each agent will only
+            // have one `key` in its BitMap
+            _isAgentUtilizingAgentUnits[agentId].setTo(1, true);
+            emit AgentOnExecutionFeesSystem(agentId);
         }
     }
 
     /**
-     * @notice Internal methods for enabling the agent.
-     * @dev fires hook _before and _after enable within the inheritance tree.
-     * @param agentId ERC721 token id of the agent.
-     * @param permission the sender claims to have to enable the agent.
-     * @param enable true if enabling, false if disabling.
-     */
-    function _enable(uint256 agentId, Permission permission, bool enable) internal virtual override {
-        super._enable(agentId, permission, enable);
-    }
-
-    /**
-     * @notice Updates an agent's status to indicate whether it
-     * is a participant in the execution fees system or not.
-     * @param agentId ERC721 token id of the agent.
-     * @param utilizingAgentUnits whether the agent will utilize
-     * agent units.
-     */
-    function _setAgentToUtilizeAgentUnits(uint256 agentId, bool utilizingAgentUnits) internal {
-        _isAgentUtilizingAgentUnits[agentId] = utilizingAgentUnits;
-        emit AgentOnExecutionFeesSystem(agentId);
-    }
-
-    /**
-     * @notice Setter to allow ability to declare a specific agent a public good.
-     * @dev Behind access control to mentioned role.
+     * @notice Allows PUBLIC_GOOD_ADMIN_ROLE to declare a specific agent a public good.
      * @param agentId ERC721 token id of agent that is to be declared a public good.
      */
     function setAgentAsPublicGood(uint256 agentId) external onlyRole(PUBLIC_GOOD_ADMIN_ROLE) {
-        if (_isAgentIdPublicGood[agentId]) revert AgentIsAlreadyPublicGood(agentId);
-        _isAgentIdPublicGood[agentId] = true;
+        if (isPublicGoodAgent(agentId)) revert AgentAlreadyPublicGood(agentId);
+
+        // Passing `1` since each agent will only
+        // have one `key` in its BitMap
+        _isAgentPublicGood[agentId].setTo(1, true);
+        // _disabled[agentId].setTo(uint8(permission), !value);
         emit PublicGoodAgentDeclared(agentId);
     }
 
     /**
-     * @notice Setter to allow ability to change the allowable
+     * @notice Allows FREE_TRIAL_ADMIN_ROLE to change the allowable
      * amount of agent units as part of the "free trial".
-     * @dev Behind access control to mentioned role. Also cannot exceed the maximum
-     * allowable amount.
-     * @param agentUnits Amount of agent units that are granted to an agent as part
-     * of a "free trial".
+     * @dev Cannot exceed the maximum allowable amount.
+     * @param agentUnits Amount of agent units that are granted to
+     * an agent as part of a "free trial".
      */
     function setFreeTrialAgentUnits(uint8 agentUnits) external onlyRole(FREE_TRIAL_ADMIN_ROLE) {
         if (agentUnits == 0) revert ZeroAmount("agentUnits");
@@ -245,29 +235,44 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
 
     /**
      * @notice Check if agent is enabled
+     * @dev first checking if agent is registered
+     * so as to not fail when calling `ownerOf` on
+     * an invalid ERC721.
      * @param agentId ERC721 token id of the agent.
-     * @return true if agent owner has a valid key in either subscription plan,
-     * the agent exists, has not been disabled, and is staked over minimum
+     * @return true if agent has been registered,
+     * agent owner has a valid key in either subscription plan,
+     * agent has not been disabled, is staked over minimum,
+     * and is a participant in the execution fees system.
      * Returns false if otherwise
      */
     function isEnabled(uint256 agentId) public view virtual override returns (bool) {
         super.isEnabled(agentId);
 
-        address agentOwner = super.ownerOf(agentId);
-        return (
-            (_individualPlan.getHasValidKey(agentOwner) || _teamPlan.getHasValidKey(agentOwner)) &&
-            isRegistered(agentId) &&
-            getDisableFlags(agentId) == 0 &&
-            (!_isStakeActivated() || _isStakedOverMin(agentId)) &&
-            isAgentUtilizingAgentUnits(agentId)
-        );
+        if (isRegistered(agentId)) {
+            if (block.timestamp > _executionFeesStartTime) {
+                address agentOwner = super.ownerOf(agentId);
+                return (
+                    (_individualPlan.getHasValidKey(agentOwner) || _teamPlan.getHasValidKey(agentOwner)) &&
+                    getDisableFlags(agentId) == 0 &&
+                    (!_isStakeActivated() || _isStakedOverMin(agentId)) &&
+                    isAgentUtilizingAgentUnits(agentId)
+                );
+            } else {
+                return (
+                    getDisableFlags(agentId) == 0 &&
+                    (!_isStakeActivated() || _isStakedOverMin(agentId))
+                );
+            }
+        } else {
+            return false;
+        }
     }
 
     /**
      * @notice Internal getter for when bot execution fees goes live
      * @return uint256 timestamp of when bot execution fees goes live
      */
-    function _getExecutionFeesStartTime() internal view returns (uint256) {
+    function getExecutionFeesStartTime() public view returns (uint256) {
         return _executionFeesStartTime;
     }
 
@@ -277,7 +282,9 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
      * @return bool indicating whether the specific agent is a public good or not
      */
     function isPublicGoodAgent(uint256 agentId) public view returns(bool) {
-        return _isAgentIdPublicGood[agentId];
+        // Passing `1` since that
+        // is what we set it with
+        return _isAgentPublicGood[agentId].get(1);
     }
 
     /**
@@ -294,7 +301,9 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
      * @return bool indicating whether the specific agent is under the free trial or not.
      */
     function isAgentPartOfFreeTrial(uint256 agentId) public view returns(bool) {
-        return _isAgentPartOfFreeTrial[agentId];
+        // Passing `1` since that
+        // is what we set it with
+        return _isAgentPartOfFreeTrial[agentId].get(1);
     }
     
     /**
@@ -304,7 +313,9 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
      * @return bool indicating whether or not the given agent has migrated.
      */
     function isAgentUtilizingAgentUnits(uint256 agentId) public view returns (bool) {
-        return _isAgentUtilizingAgentUnits[agentId];
+        // Passing `1` since that
+        // is what we set it with
+        return _isAgentUtilizingAgentUnits[agentId].get(1);
     }
 
     /**
@@ -314,9 +325,9 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
      * - 1 _individualPlan
      * - 1 _teamPlan
      * - 1 _botUnits
-     * - 1 _isAgentIdPublicGood
+     * - 1 _isAgentPublicGood
      * - 1 _isAgentPartOfFreeTrial
-     * - 1 __isAgentUtilizingAgentUnits
+     * - 1 _isAgentUtilizingAgentUnits
      * --------------------------
      *  42 __gap
      */

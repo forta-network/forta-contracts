@@ -29,12 +29,11 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
 
     /**
      * @notice Check if agent is enabled
+     * @dev does nothing in this contract.
      * @param agentId ERC721 token id of the agent.
-     * @return true if agent owner has a valid key in either subscription plan,
-     * the agent exists, has not been disabled, and is staked over minimum
-     * Returns false if otherwise
+     * @return true if agent meets certain criteria to be considered enabled
      */
-    function isEnabled(uint256 agentId) public view virtual returns (bool) { }
+    function isEnabled(uint256 agentId) public view virtual returns (bool) {}
 
     /**
      * @notice Enable an agent if sender has correct permission and the agent is staked over minimum stake.
@@ -71,7 +70,7 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
 
     /**
      * @notice Permission check.
-     * @dev it does not uses AccessManager since it is agent specific
+     * @dev it does not use AccessManager since it is agent specific
      * @param agentId ERC721 token id of the agent.
      * @param permission the sender claims to have to enable the agent.
      * @return true if: permission.ADMIN and _msgSender is ADMIN_ROLE, Permission.OWNER and owner of agentId,
@@ -85,12 +84,12 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
 
     /**
      * @notice Internal methods for enabling the agent.
-     * @dev fires hook _before and _after enable within the inheritance tree.
+     * @dev does nothing in this contract.
      * @param agentId ERC721 token id of the agent.
      * @param permission the sender claims to have to enable the agent.
      * @param enable true if enabling, false if disabling.
      */
-    function _enable(uint256 agentId, Permission permission, bool enable) internal virtual { }
+    function _enable(uint256 agentId, Permission permission, bool enable) internal virtual {}
 
     /**
      * @notice Hook _before agent enable
@@ -99,12 +98,10 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
      * @param permission the sender claims to have to enable the agent.
      * @param value true if enabling, false if disabling.
      */
-    function _beforeAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
-    }
+    function _beforeAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {}
 
     /**
      * @notice Logic for enabling agents, sets flag corresponding to permission.
-     * @dev does nothing in this contract
      * @param agentId ERC721 token id of the agent.
      * @param permission the sender claims to have to enable the agent.
      * @param value true if enabling, false if disabling.
@@ -116,14 +113,12 @@ abstract contract AgentRegistryEnable is AgentRegistryCore {
 
     /**
      * @notice Hook _after agent enable
-     * @dev emits Router hook
+     * @dev does nothing in this contract.
      * @param agentId ERC721 token id of the agent.
      * @param permission the sender claims to have to enable the agent.
      * @param value true if enabling, false if disabling.
      */
-    function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {
-
-    }
+    function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual {}
     
     /**
      * Obligatory inheritance dismambiguation of ForwardedContext's _msgSender()

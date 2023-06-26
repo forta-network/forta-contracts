@@ -20,7 +20,7 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
     error MetadataNotUnique(bytes32 hash);
 
     /**
-     * @notice Gets agent metadata, version and chain Ids.
+     * @notice Gets agent metadata, version, chain Ids, redundancy, and shards.
      * @param agentId ERC721 token id of the agent.
      * @return owner address.
      * @return agentVersion of the agent.
@@ -31,7 +31,8 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
      */
     function getAgent(uint256 agentId)
         public view
-        returns (address owner, uint256 agentVersion, string memory metadata, uint256[] memory chainIds, uint8 redundancy, uint8 shards) {
+        returns (address owner, uint256 agentVersion, string memory metadata, uint256[] memory chainIds, uint8 redundancy, uint8 shards)
+    {
         bool exists = _exists(agentId);
         return (
             exists ? ownerOf(agentId) : address(0),
@@ -45,7 +46,8 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
 
     /**
      * @notice logic for agent update.
-     * @dev checks metadata uniqueness and updates agent metadata and version.
+     * @dev checks metadata uniqueness and updates agent metadata, version,
+     * chain Ids, redundancy, and shards.
      * @param agentId ERC721 token id of the agent to be created or updated.
      * @param newMetadata IPFS pointer to agent's metadata JSON.
      * @param newChainIds ordered list of chainIds where the agent wants to run.

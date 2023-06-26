@@ -41,9 +41,10 @@ contract BotUnits is BaseComponentUpgradeable {
     }
 
     /**
-     * @notice Allows the update of maximum bot units granted to a specific membership owner.
+     * @notice Updates a specific membership owner's bot units capacity.
      * @dev Role granted to SubscriptionManager contract, which confirms
-     * subscription to any of the given plans.
+     * subscription to any of the given plans and utilizes hooks from the
+     * Lock contracts.
      * @param owner Owner of given subscription plan NFT.
      * @param newCapacity New capacity of maximum bot units
      * being granted to owner.
@@ -64,7 +65,7 @@ contract BotUnits is BaseComponentUpgradeable {
     }
 
     /**
-     * @notice Allows the update of bot units currently in use by a specific membership owner.
+     * @notice Updates a specific membership owner's active bot units currently in use.
      * @dev Role granted to AgentRegistry contract.
      * @param owner Owner of a given detection bot.
      * @param amount Active bot units amount by which
