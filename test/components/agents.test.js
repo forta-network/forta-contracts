@@ -712,7 +712,7 @@ describe('Agent Registry', function () {
         describe('special case bots', async function () {
             it('free trial bot', async function () {
                 expect(await this.agents.getFreeTrialAgentUnitsLimit()).to.be.equal(0);
-                await expect(this.agents.connect(this.accounts.admin).setFreeTrialAgentUnits(99))
+                await expect(this.agents.connect(this.accounts.manager).setFreeTrialAgentUnits(99))
                     .to.emit(this.agents, 'FreeTrailAgentUnitsUpdated')
                     .withArgs(99);
                 expect(await this.agents.getFreeTrialAgentUnitsLimit()).to.be.equal(99);
@@ -1571,9 +1571,9 @@ describe('Agent Registry', function () {
             expect(await this.agents.getFreeTrialAgentUnitsLimit()).to.be.equal(0);
             
             await expect(this.agents.connect(this.accounts.other).setFreeTrialAgentUnits(99))
-                .to.be.revertedWith(`MissingRole("${this.roles.FREE_TRIAL_ADMIN}", "${this.accounts.other.address}")`);
+                .to.be.revertedWith(`MissingRole("${this.roles.AGENT_ADMIN}", "${this.accounts.other.address}")`);
 
-            await expect(this.agents.connect(this.accounts.admin).setFreeTrialAgentUnits(99))
+            await expect(this.agents.connect(this.accounts.manager).setFreeTrialAgentUnits(99))
                 .to.emit(this.agents, 'FreeTrailAgentUnitsUpdated')
                 .withArgs(99);
 
