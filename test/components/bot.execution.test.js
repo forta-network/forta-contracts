@@ -459,18 +459,18 @@ describe('Bot Execution - Subscription & Units', async function () {
     });
 
     describe('Access control', async function () {
-        it('only BOT_UNITS_ADMIN_ROLE can call setSubscriptionPlan', async function () {
+        it('only SUBSCRIPTION_ADMIN_ROLE can call setSubscriptionPlan', async function () {
             await expect(this.subscriptionManager.connect(this.accounts.other).setSubscriptionPlan(this.individualLock.address, 600, 1))
-                .to.be.revertedWith(`MissingRole("${this.roles.BOT_UNITS_ADMIN}", "${this.accounts.other.address}")`);
+                .to.be.revertedWith(`MissingRole("${this.roles.SUBSCRIPTION_ADMIN}", "${this.accounts.other.address}")`);
 
             await expect(this.subscriptionManager.connect(this.accounts.manager).setSubscriptionPlan(this.individualLock.address, 600, 1))
                 .to.emit(this.subscriptionManager, 'SubscriptionPlanUpdated')
                 .withArgs(this.individualLock.address, 600, 1);
         });
 
-        it('only BOT_UNITS_ADMIN_ROLE can call setBotUnits', async function () {
+        it('only SUBSCRIPTION_ADMIN_ROLE can call setBotUnits', async function () {
             await expect(this.subscriptionManager.connect(this.accounts.other).setBotUnits(this.botUnits.address))
-                .to.be.revertedWith(`MissingRole("${this.roles.BOT_UNITS_ADMIN}", "${this.accounts.other.address}")`);
+                .to.be.revertedWith(`MissingRole("${this.roles.SUBSCRIPTION_ADMIN}", "${this.accounts.other.address}")`);
 
             await expect(this.subscriptionManager.connect(this.accounts.manager).setBotUnits(this.botUnits.address))
                 .to.emit(this.subscriptionManager, 'BotUnitsContractUpdated')
