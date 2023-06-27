@@ -81,7 +81,6 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
         emit BotUnitsUpdated(__botUnits);
     }
     
-    
     /**
      * @dev allows AGENT_ADMIN_ROLE to set the time timestamp
      * of when agent execution fees will go live.
@@ -93,6 +92,86 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
 
         _executionFeesStartTime = __executionFeesStartTime;
         emit ExecutionFeesStartTimeUpdated(__executionFeesStartTime);
+    }
+
+    /**
+     * @notice Allows PUBLIC_GOOD_ADMIN_ROLE to declare a specific agent a public good.
+     * @param agentId ERC721 token id of agent that is to be declared a public good.
+     */
+    function setAgentAsPublicGood(uint256 agentId) external onlyRole(PUBLIC_GOOD_ADMIN_ROLE) {
+        if (isPublicGoodAgent(agentId)) revert AgentAlreadyPublicGood(agentId);
+
+        // Passing `1` since each agent will only
+        // have one `key` in its BitMap
+        _isAgentPublicGood[agentId].setTo(1, true);
+        // _disabled[agentId].setTo(uint8(permission), !value);
+        emit PublicGoodAgentDeclared(agentId);
+    }
+
+    /**
+     * @notice Allows AGENT_ADMIN_ROLE to change the allowable
+     * amount of agent units as part of the "free trial".
+     * @dev Cannot exceed the maximum allowable amount.
+     * @param agentUnits Amount of agent units that are granted to
+     * an agent as part of a "free trial".
+     */
+    function setFreeTrialAgentUnits(uint8 agentUnits) external onlyRole(AGENT_ADMIN_ROLE) {
+        if (agentUnits == 0) revert ZeroAmount("agentUnits");
+        if (agentUnits > MAX_FREE_TRIAL_AGENT_UNITS) revert FreeTrialUnitsExceedsMax(MAX_FREE_TRIAL_AGENT_UNITS, agentUnits);
+        if (_freeTrialAgentUnits == agentUnits) revert ValueAlreadySet(agentUnits);
+        _freeTrialAgentUnits = agentUnits;
+        emit FreeTrailAgentUnitsUpdated(agentUnits);
+    }
+
+    /**
+     * @notice Fetch the amount of active agent units a given agent uses/requires.
+     * @dev does nothing in this contract.
+     * @param agentId ERC721 token id of given agent.
+     * @return Amount of agent units the given agent uses/requires
+     */
+    function existingAgentActiveUnitUsage(uint256 agentId) public view virtual returns (uint256) {}
+
+    /**
+     * @notice Updates an agent's status to indicate it is a participant
+     * in the execution fees system.
+     * @param agentId ERC721 token id of the agent.
+     * @param newMetadata IPFS pointer to agent's metadata JSON.
+     * @param newChainIds ordered list of chainIds where the agent wants to run.
+     */
+    function _afterAgentUpdate(
+        uint256 agentId,
+        string memory newMetadata,
+        uint256[] calldata newChainIds,
+        uint8 newRedundancy,
+        uint8 newShards
+    ) internal virtual override(AgentRegistryCore) {
+        super._afterAgentUpdate(agentId, newMetadata, newChainIds, newRedundancy, newShards);
+
+        if(!isAgentUtilizingAgentUnits(agentId)) {
+            // Passing `1` since each agent will only
+            // have one `key` in its BitMap
+            _isAgentUtilizingAgentUnits[agentId].setTo(1, true);
+            emit AgentOnExecutionFeesSystem(agentId);
+        }
+    }
+
+    /**
+     * @notice Function called during enabling of an agent
+     * that updates an agent to be a participant in the execution
+     * fees system.
+     * @param agentId ERC721 token id of the agent.
+     * @param permission the sender claims to have to enable the agent.
+     * @param value true if enabling, false if disabling.
+     */
+    function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual override {
+        super._afterAgentEnable(agentId, permission, value);
+
+        if(value) {
+            // Passing `1` since each agent will only
+            // have one `key` in its BitMap
+            _isAgentUtilizingAgentUnits[agentId].setTo(1, true);
+            emit AgentOnExecutionFeesSystem(agentId);
+        }
     }
     
     /**
@@ -151,86 +230,6 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
             }
             _botUnits.updateOwnerActiveBotUnits(account, agentUnitsForUpdate, balanceIncreasing);
         }
-    }
-
-    /**
-     * @notice Fetch the amount of active agent units a given agent uses/requires.
-     * @dev does nothing in this contract.
-     * @param agentId ERC721 token id of given agent.
-     * @return Amount of agent units the given agent uses/requires
-     */
-    function existingAgentActiveUnitUsage(uint256 agentId) public view virtual returns (uint256) {}
-
-    /**
-     * @notice Updates an agent's status to indicate it is a participant
-     * in the execution fees system.
-     * @param agentId ERC721 token id of the agent.
-     * @param newMetadata IPFS pointer to agent's metadata JSON.
-     * @param newChainIds ordered list of chainIds where the agent wants to run.
-     */
-    function _afterAgentUpdate(
-        uint256 agentId,
-        string memory newMetadata,
-        uint256[] calldata newChainIds,
-        uint8 newRedundancy,
-        uint8 newShards
-    ) internal virtual override(AgentRegistryCore) {
-        super._afterAgentUpdate(agentId, newMetadata, newChainIds, newRedundancy, newShards);
-
-        if(!isAgentUtilizingAgentUnits(agentId)) {
-            // Passing `1` since each agent will only
-            // have one `key` in its BitMap
-            _isAgentUtilizingAgentUnits[agentId].setTo(1, true);
-            emit AgentOnExecutionFeesSystem(agentId);
-        }
-    }
-
-    /**
-     * @notice Function called during enabling of an agent
-     * that updates an agent to be a participant in the execution
-     * fees system.
-     * @param agentId ERC721 token id of the agent.
-     * @param permission the sender claims to have to enable the agent.
-     * @param value true if enabling, false if disabling.
-     */
-    function _afterAgentEnable(uint256 agentId, Permission permission, bool value) internal virtual override {
-        super._afterAgentEnable(agentId, permission, value);
-
-        if(value) {
-            // Passing `1` since each agent will only
-            // have one `key` in its BitMap
-            _isAgentUtilizingAgentUnits[agentId].setTo(1, true);
-            emit AgentOnExecutionFeesSystem(agentId);
-        }
-    }
-
-    /**
-     * @notice Allows PUBLIC_GOOD_ADMIN_ROLE to declare a specific agent a public good.
-     * @param agentId ERC721 token id of agent that is to be declared a public good.
-     */
-    function setAgentAsPublicGood(uint256 agentId) external onlyRole(PUBLIC_GOOD_ADMIN_ROLE) {
-        if (isPublicGoodAgent(agentId)) revert AgentAlreadyPublicGood(agentId);
-
-        // Passing `1` since each agent will only
-        // have one `key` in its BitMap
-        _isAgentPublicGood[agentId].setTo(1, true);
-        // _disabled[agentId].setTo(uint8(permission), !value);
-        emit PublicGoodAgentDeclared(agentId);
-    }
-
-    /**
-     * @notice Allows FREE_TRIAL_ADMIN_ROLE to change the allowable
-     * amount of agent units as part of the "free trial".
-     * @dev Cannot exceed the maximum allowable amount.
-     * @param agentUnits Amount of agent units that are granted to
-     * an agent as part of a "free trial".
-     */
-    function setFreeTrialAgentUnits(uint8 agentUnits) external onlyRole(FREE_TRIAL_ADMIN_ROLE) {
-        if (agentUnits == 0) revert ZeroAmount("agentUnits");
-        if (agentUnits > MAX_FREE_TRIAL_AGENT_UNITS) revert FreeTrialUnitsExceedsMax(MAX_FREE_TRIAL_AGENT_UNITS, agentUnits);
-        if (_freeTrialAgentUnits == agentUnits) revert ValueAlreadySet(agentUnits);
-        _freeTrialAgentUnits = agentUnits;
-        emit FreeTrailAgentUnitsUpdated(agentUnits);
     }
 
     /**

@@ -66,7 +66,7 @@ contract SubscriptionManager is BaseComponentUpgradeable {
     }
 
     /**
-     * @dev allows DEFAULT_ADMIN_ROLE to update a subscription plan
+     * @dev allows SUBSCRIPTION_ADMIN_ROLE to update a subscription plan
      * for the bot execution fees
      * @param subscriptionPlan The plan being updated
      * @param botUnitsCapacity The about of total bot units that would
@@ -75,7 +75,7 @@ contract SubscriptionManager is BaseComponentUpgradeable {
      * is the one being updated. Has to equal to either INDIVIDUAL_LOCK_PLAN
      * or TEAM_LOCK_PLAN.
      */
-    function setSubscriptionPlan(address subscriptionPlan, uint256 botUnitsCapacity, uint8 subscriptionPlanId) external onlyRole(BOT_UNITS_ADMIN_ROLE) {
+    function setSubscriptionPlan(address subscriptionPlan, uint256 botUnitsCapacity, uint8 subscriptionPlanId) external onlyRole(SUBSCRIPTION_ADMIN_ROLE) {
         if ((subscriptionPlanId != INDIVIDUAL_LOCK_PLAN) && (subscriptionPlanId != TEAM_LOCK_PLAN)) revert InvalidSubscriptionPlanId(subscriptionPlanId);
         if (subscriptionPlan == address(0)) revert ZeroAddress("subscriptionPlan");
         if (botUnitsCapacity == 0) revert ZeroAmount("botUnitsCapacity");
@@ -88,12 +88,12 @@ contract SubscriptionManager is BaseComponentUpgradeable {
     }
 
     /**
-     * @dev allows DEFAULT_ADMIN_ROLE to set the contract that will
+     * @dev allows SUBSCRIPTION_ADMIN_ROLE to set the contract that will
      * handle the accounting for bot units for a subscriber.
      * @param botUnits The contract that will handle
      * the bot unit accounting
      */
-    function setBotUnits(address botUnits) external onlyRole(BOT_UNITS_ADMIN_ROLE) {
+    function setBotUnits(address botUnits) external onlyRole(SUBSCRIPTION_ADMIN_ROLE) {
         if (botUnits == address(0)) revert ZeroAddress("botUnits");
 
         _botUnits = IBotUnits(botUnits);

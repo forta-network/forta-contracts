@@ -148,6 +148,19 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
         return _stakeThreshold;
     }
 
+    /**
+     * Calculates the amount of agent units a given agent will need
+     * based on the passed arguments
+     * @param chainIdsAmount Amount of chain ids that the agent will support
+     * @param redundancy Level of redundancy for a given agent
+     * @param shards Amount of shards for a given agent
+     * @return amount of agent units that will be needed for the passed
+     * arguments
+     */
+    function calculateAgentUnitsNeeded(uint256 chainIdsAmount, uint8 redundancy, uint8 shards) public pure returns (uint256) {
+        return chainIdsAmount * redundancy * shards;
+    }
+
     function _isStakeActivated() internal view returns (bool) {
         return address(getSubjectHandler()) != address(0) && _stakeThreshold.activated;
     }
@@ -160,19 +173,6 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
      */
     function _isStakedOverMin(uint256 subject) internal view override returns (bool) {
         return getSubjectHandler().activeStakeFor(AGENT_SUBJECT, subject) >= _stakeThreshold.min && _exists(subject);
-    }
-
-    /**
-     * Calculates the amount of agent units a given agent will need
-     * based on the passed arguments
-     * @param chainIdsAmount Amount of chain ids that the agent will support
-     * @param redundancy Level of redundancy for a given agent
-     * @param shards Amount of shards for a given agent
-     * @return amount of agent units that will be needed for the passed
-     * arguments
-     */
-    function calculateAgentUnitsNeeded(uint256 chainIdsAmount, uint8 redundancy, uint8 shards) public pure returns (uint256) {
-        return chainIdsAmount * redundancy * shards;
     }
 
     /**
@@ -195,6 +195,18 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
      * @param amount Amount of agent units the given agent will need.
      */
     function _agentBypassesAgentUnitsRequirement(address account, uint256 agentId, uint256 amount) internal virtual returns(bool) {}
+
+    /**
+     * @notice Hook fired in the process of modifiying an agent
+     * (creating, updating, etc.).
+     * Will update the agent owner's balance of active agent units.
+     * @dev does nothing in this contract.
+     * @param account Owner of the specific agent.
+     * @param agentId ERC721 token id of the agent to be created or updated.
+     * @param agentUnits Amount of agent units the given agent will need.
+     * @param agentMod The type of modification to be done to the agent.
+     */
+    function _activeAgentUnitsBalanceUpdate(address account, uint256 agentId, uint256 agentUnits, AgentModification agentMod) internal virtual {}
 
     /**
      * @notice hook fired before agent creation or update.
@@ -230,18 +242,6 @@ abstract contract AgentRegistryCore is BaseComponentUpgradeable, FrontRunningPro
      * @param newShards amounts of shards for the agent.
      */
     function _afterAgentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds, uint8 newRedundancy, uint8 newShards) internal virtual {}
-
-    /**
-     * @notice Hook fired in the process of modifiying an agent
-     * (creating, updating, etc.).
-     * Will update the agent owner's balance of active agent units.
-     * @dev does nothing in this contract.
-     * @param account Owner of the specific agent.
-     * @param agentId ERC721 token id of the agent to be created or updated.
-     * @param agentUnits Amount of agent units the given agent will need.
-     * @param agentMod The type of modification to be done to the agent.
-     */
-    function _activeAgentUnitsBalanceUpdate(address account, uint256 agentId, uint256 agentUnits, AgentModification agentMod) internal virtual {}
 
     /**
      * Obligatory inheritance dismambiguation of ForwardedContext's _msgSender()
