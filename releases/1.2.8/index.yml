@@ -1,5 +1,5 @@
 title: Delegation fee update (live after two epochs)
-network: mumbai
+network: polygon
 deploy: prepare-upgrade 1.2.8
 verify: verify-deployed
 finish: propose-admin
