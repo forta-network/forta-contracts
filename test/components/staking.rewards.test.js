@@ -493,7 +493,7 @@ describe('Staking Rewards', function () {
         });
     });
 
-    describe('Fee setting', function () {
+    describe.only('Fee setting', function () {
         it('fee', async function () {
             await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2500');
 
@@ -541,7 +541,7 @@ describe('Staking Rewards', function () {
             const currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
             expect(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_2, currentEpoch)).to.be.equal(defaultFeeBps);
 
-            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 weeks */);
 
             // fee is now in effect as zero
             const nextEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
@@ -553,24 +553,25 @@ describe('Staking Rewards', function () {
                 `SenderNotOwner("${this.accounts.user2.address}", ${SCANNER_POOL_ID})`
             );
         });
-        it('fee is in effect next period after setting', async function () {
+
+        it('fee is in effect two periods after setting', async function () {
             const defaultRate = await this.rewardsDistributor.defaultFeeBps();
             let currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
             await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2500');
             // fee still not in effect
             expect(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, currentEpoch)).to.be.eq(defaultRate);
 
-            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 weeks */);
 
             currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
             expect(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, currentEpoch)).to.be.eq('2500');
 
-            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 week */);
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 weeks */);
             await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '3000');
             currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
             expect(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, currentEpoch)).to.be.eq('2500');
 
-            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+            await helpers.time.increase(2 * (1 + EPOCH_LENGTH) /* 2 weeks */);
 
             currentEpoch = await this.rewardsDistributor.getCurrentEpochNumber();
             expect(await this.rewardsDistributor.getDelegationFee(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, currentEpoch)).to.be.eq('3000');

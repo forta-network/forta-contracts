@@ -1,0 +1,11 @@
+title: Delegation fee update (live after two epochs)
+network: polygon
+deploy: prepare-upgrade 1.2.8
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deployed new implementations:
+  - RewardsDistributor
+
+  ## Output tx:
+  - Upgrade implementations
