@@ -14,7 +14,7 @@ describe('Upgrades testing', function () {
         mockRouter = await deploy(hre, await ethers.getContractFactory('MockRouter'));
     });
 
-    describe('Agent Registry', async function () {
+    describe.only('Agent Registry', async function () {
         it(' 0.1.1 -> 0.1.6', async function () {
             const AgentRegistry_0_1_1 = await ethers.getContractFactory('AgentRegistry_0_1_1');
             agents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, mockRouter.address, 'Forta Agents', 'FAgents'], {
@@ -259,18 +259,33 @@ describe('Upgrades testing', function () {
             await this.scanners.connect(this.accounts.manager).setStakeThreshold(STAKING_PARAMS, 1);
 
             this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.admin.address),
-                await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, '100000000');
+            await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));
             await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, '100000000');
             await this.token.connect(this.accounts.minter).mint(this.accounts.admin.address, '100000000');
 
             await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
             await this.token.connect(this.accounts.user2).approve(this.staking.address, ethers.constants.MaxUint256);
             await this.token.connect(this.accounts.admin).approve(this.staking.address, ethers.constants.MaxUint256);
+            await this.token.connect(this.accounts.user1).approve(this.individualLock.address, ethers.constants.MaxUint256);
 
             await this.scanners.connect(this.accounts.scanner).register(this.accounts.user1.address, 1, 'Scanner Metadata');
             const AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
-            const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
-            await this.agents.createAgent(...args);
+            const redundancy = 6;
+            const shards = 10;
+
+            const individualKeyPrice = await this.individualLock.keyPrice();
+            const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+                [individualKeyPrice],
+                [this.accounts.user1.address],
+                [this.accounts.user1.address],
+                [ethers.constants.AddressZero],
+                [[]],
+                { gasLimit: 21000000 }
+            );
+            await txnReceipt.wait();
+
+            const args = [AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
+            await this.agents.connect(this.accounts.user1).createAgent(...args);
 
             await this.staking.setStakingParametersManager(this.subjectGateway.address);
             await this.staking.connect(this.accounts.user1).deposit(0, this.accounts.scanner.address, '100');

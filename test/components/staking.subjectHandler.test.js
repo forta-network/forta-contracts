@@ -3,8 +3,10 @@ const { expect } = require('chai');
 const { prepare } = require('../fixture');
 
 const AGENT_SUBJECT = 1;
+const redundancy = 6;
+const shards = 10;
 
-const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
+const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]', 'uint8', 'uint8'], args);
 
 describe('Forta Staking Parameters', function () {
     prepare();
@@ -19,11 +21,25 @@ describe('Forta Staking Parameters', function () {
         const AGENT_ID_2 = ethers.utils.hexlify(ethers.utils.randomBytes(32));
 
         beforeEach(async function () {
-            const args1 = [AGENT_ID_1, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
+            await this.token.connect(this.accounts.minter).mint(this.accounts.other.address, ethers.utils.parseEther('1000'));
+            await this.token.connect(this.accounts.other).approve(this.teamLock.address, ethers.constants.MaxUint256);
+
+            const teamKeyPrice = await this.teamLock.keyPrice();
+            const txnReceipt = await this.teamLock.connect(this.accounts.other).purchase(
+                [teamKeyPrice],
+                [this.accounts.other.address],
+                [this.accounts.other.address],
+                [ethers.constants.AddressZero],
+                [[]],
+                { gasLimit: 21000000 }
+            );
+            await txnReceipt.wait();
+            
+            const args1 = [AGENT_ID_1, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
             await this.agents.prepareAgent(prepareCommit(...args1));
             await network.provider.send('evm_increaseTime', [300]);
             await this.agents.connect(this.accounts.other).createAgent(...args1);
-            const args2 = [AGENT_ID_2, this.accounts.user1.address, 'Metadata2', [1, 3, 4, 500]];
+            const args2 = [AGENT_ID_2, this.accounts.user1.address, 'Metadata2', [1, 3, 4, 500], redundancy, shards];
             await this.agents.prepareAgent(prepareCommit(...args2));
             await network.provider.send('evm_increaseTime', [300]);
             await this.agents.connect(this.accounts.other).createAgent(...args2);

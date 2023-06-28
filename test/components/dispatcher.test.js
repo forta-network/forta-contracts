@@ -4,6 +4,10 @@ const { prepare } = require('../fixture');
 const { BigNumber } = require('@ethersproject/bignumber');
 const { signERC712ScannerRegistration } = require('../../scripts/utils/scannerRegistration');
 
+
+const redundancy = 6;
+const shards = 10;
+
 let verifyingContractInfo;
 describe('Dispatcher', function () {
     prepare({
@@ -18,8 +22,20 @@ describe('Dispatcher', function () {
         this.SCANNER_ID = this.accounts.scanner.address;
         this.AGENT_ID = ethers.utils.hexlify(ethers.utils.randomBytes(32));
         this.SCANNER_SUBJECT_ID = BigNumber.from(this.SCANNER_ID);
+
+        const individualKeyPrice = await this.individualLock.keyPrice();
+        const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+            [individualKeyPrice],
+            [this.accounts.user1.address],
+            [this.accounts.user1.address],
+            [ethers.constants.AddressZero],
+            [[]],
+            { gasLimit: 21000000 }
+        );
+        await txnReceipt.wait();
+
         // Create Agent and Scanner
-        await this.agents.connect(this.accounts.user1).registerAgent(this.AGENT_ID, 'Metadata1', [1, 3, 4, 5]);
+        await this.agents.connect(this.accounts.user1).registerAgent(this.AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
         await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, this.AGENT_ID, '100');
 
         await this.scannerPools.connect(this.accounts.user1).registerScannerPool(1);
@@ -116,7 +132,7 @@ describe('Dispatcher', function () {
     it('update', async function () {
         await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.be.not.reverted;
         const hashBefore = await this.dispatch.scannerHash(this.SCANNER_ID);
-        await expect(this.agents.connect(this.accounts.user1).updateAgent(this.AGENT_ID, 'Metadata2', [1])).to.be.not.reverted;
+        await expect(this.agents.connect(this.accounts.user1).updateAgent(this.AGENT_ID, 'Metadata2', [1], redundancy, shards)).to.be.not.reverted;
         expect(await this.dispatch.scannerHash(this.SCANNER_ID)).to.not.be.deep.equal(hashBefore);
     });
 
@@ -129,12 +145,12 @@ describe('Dispatcher', function () {
         await expect(this.dispatch.connect(this.accounts.manager).link(this.AGENT_ID, this.SCANNER_ID)).to.be.not.reverted;
 
         const expected = [
-            true,
-            this.accounts.user1.address,
             BigNumber.from(this.AGENT_ID),
             BigNumber.from(1),
             'Metadata1',
             [BigNumber.from(1), BigNumber.from(3), BigNumber.from(4), BigNumber.from(5)],
+            redundancy,
+            shards,
             true,
             BigNumber.from('0'),
         ];

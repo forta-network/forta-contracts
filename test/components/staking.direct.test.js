@@ -21,6 +21,8 @@ const txTimestamp = (tx) =>
         .then(({ timestamp }) => timestamp);
 
 const MAX_STAKE = '10000';
+const redundancy = 6;
+const shards = 10;
 
 describe('Staking - DIRECT', function () {
     prepare({
@@ -32,12 +34,25 @@ describe('Staking - DIRECT', function () {
         await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('1000'));
         await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, ethers.utils.parseEther('1000'));
         await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, ethers.utils.parseEther('1000'));
+        await this.token.connect(this.accounts.minter).mint(this.accounts.other.address, ethers.utils.parseEther('1000'));
 
         await this.token.connect(this.accounts.user1).approve(this.staking.address, ethers.constants.MaxUint256);
         await this.token.connect(this.accounts.user2).approve(this.staking.address, ethers.constants.MaxUint256);
         await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
+        await this.token.connect(this.accounts.other).approve(this.individualLock.address, ethers.constants.MaxUint256);
 
-        const args = [subject2, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
+        const individualKeyPrice = await this.individualLock.keyPrice();
+        const txnReceipt = await this.individualLock.connect(this.accounts.other).purchase(
+            [individualKeyPrice],
+            [this.accounts.other.address],
+            [this.accounts.other.address],
+            [ethers.constants.AddressZero],
+            [[]],
+            { gasLimit: 21000000 }
+        );
+        await txnReceipt.wait();
+
+        const args = [subject2, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
         await this.agents.connect(this.accounts.other).createAgent(...args);
     });
 

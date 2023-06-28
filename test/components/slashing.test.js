@@ -9,6 +9,9 @@ const subjects = [
     { id: ethers.BigNumber.from(ethers.utils.id('135a782d-c263-43bd-b70b-920873ed7e9d')), type: 1 }, // Agent id, agent type
 ];
 
+const redundancy = 6;
+const shards = 10;
+
 const MAX_STAKE = parseEther('10000');
 const MIN_STAKE = parseEther('100');
 const STAKING_DEPOSIT = parseEther('1000');
@@ -62,6 +65,7 @@ describe('Slashing Proposals', function () {
         await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, parseEther('100000'));
         await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, parseEther('100000'));
         await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, parseEther('100000'));
+        await this.token.connect(this.accounts.minter).mint(this.accounts.other.address, parseEther('100000'));
 
         await this.token.connect(this.accounts.user1).approve(this.slashing.address, ethers.constants.MaxUint256);
         await this.token.connect(this.accounts.user2).approve(this.slashing.address, ethers.constants.MaxUint256);
@@ -71,7 +75,20 @@ describe('Slashing Proposals', function () {
         await this.token.connect(this.accounts.user2).approve(this.staking.address, ethers.constants.MaxUint256);
         await this.token.connect(this.accounts.user3).approve(this.staking.address, ethers.constants.MaxUint256);
 
-        const args = [subjects[1].id, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5]];
+        await this.token.connect(this.accounts.other).approve(this.individualLock.address, ethers.constants.MaxUint256);
+
+        const individualKeyPrice = await this.individualLock.keyPrice();
+        const txnReceipt = await this.individualLock.connect(this.accounts.other).purchase(
+            [individualKeyPrice],
+            [this.accounts.other.address],
+            [this.accounts.other.address],
+            [ethers.constants.AddressZero],
+            [[]],
+            { gasLimit: 21000000 }
+        );
+        await txnReceipt.wait();
+
+        const args = [subjects[1].id, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
         await this.agents.connect(this.accounts.other).createAgent(...args);
         await this.scannerPools.connect(this.accounts.user2).registerScannerPool(1);
 
