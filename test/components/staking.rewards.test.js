@@ -493,7 +493,7 @@ describe('Staking Rewards', function () {
         });
     });
 
-    describe.only('Fee setting', function () {
+    describe('Fee setting', function () {
         it('fee', async function () {
             await this.rewardsDistributor.connect(this.accounts.user1).setDelegationFeeBps(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2500');
 
