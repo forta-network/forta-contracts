@@ -15,7 +15,7 @@ describe('Upgrades testing', function () {
         mockRouter = await deploy(hre, await ethers.getContractFactory('MockRouter'));
     });
 
-    describe.only('Agent Registry', async function () {
+    describe('Agent Registry', async function () {
         it(' 0.1.1 -> 0.1.7', async function () {
             const AgentRegistry_0_1_1 = await ethers.getContractFactory('AgentRegistry_0_1_1');
             agents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, mockRouter.address, 'Forta Agents', 'FAgents'], {
