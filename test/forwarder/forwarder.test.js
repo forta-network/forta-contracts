@@ -5,7 +5,7 @@ const { prepare } = require('../fixture');
 describe('Forwarder', function () {
     prepare();
 
-    describe.only('forward transactions', async function () {
+    describe('forward transactions', async function () {
         let domain, types, defaultRequest, grantee;
         before(async function () {
             const { chainId } = await ethers.provider.getNetwork();
@@ -38,7 +38,7 @@ describe('Forwarder', function () {
             };
             grantee = ethers.Wallet.createRandom();
         });
-        it.skip('forwards correctly', async function () {
+        it('forwards correctly', async function () {
             // Gas the relayer will forward to the external contract to execute grantRole. Tx gasLimit is estimated by ethers.js
             const gas = await this.contracts.access.estimateGas.grantRole(this.roles.STAKING_ADMIN, grantee.address);
             const { data } = await this.contracts.access.populateTransaction.grantRole(this.roles.STAKING_ADMIN, grantee.address);
@@ -54,7 +54,7 @@ describe('Forwarder', function () {
             await expect(this.contracts.forwarder.connect(this.accounts.other).execute(forwardRequest, signature)).to.emit(this.contracts.access, 'RoleGranted');
         });
 
-        it.only('fails if deadline is already passed', async function () {
+        it('fails if deadline is already passed', async function () {
             // Gas the relayer will forward to the external contract to execute grantRole. Tx gasLimit is estimated by ethers.js
             const gas = await this.contracts.access.estimateGas.grantRole(this.roles.STAKING_ADMIN, grantee.address);
             const { data } = await this.contracts.access.populateTransaction.grantRole(this.roles.STAKING_ADMIN, grantee.address);
@@ -91,7 +91,7 @@ describe('Forwarder', function () {
             await expect(this.contracts.forwarder.connect(this.accounts.other).execute(forwardRequest, diffSignature)).to.be.revertedWith('SignatureDoesNotMatch()');
         });
 
-        it.skip('consumes all gas on failure', async function () {
+        it('consumes all gas on failure', async function () {
             const gasCallee = await this.contracts.access.estimateGas.grantRole(this.roles.STAKING_ADMIN, grantee.address);
             const { data } = await this.contracts.access.populateTransaction.grantRole(this.roles.STAKING_ADMIN, grantee.address);
 
@@ -128,7 +128,7 @@ describe('Forwarder', function () {
             await expect(this.contracts.forwarder.connect(this.accounts.other).execute(forwardRequest, signature)).to.be.revertedWith('InvalidNonce(0)');
         });
 
-        it.skip('nonce is updated', async function () {
+        it('nonce is updated', async function () {
             {
                 const forwardRequest = defaultRequest;
                 const signature = await this.accounts.admin._signTypedData(domain, types, forwardRequest);
@@ -147,7 +147,7 @@ describe('Forwarder', function () {
             }
         });
 
-        it.skip('out of order relaying', async function () {
+        it('out of order relaying', async function () {
             const forwardRequest1a = { ...defaultRequest, nonce: 0 };
             const forwardRequest1b = { ...defaultRequest, nonce: 1 };
             const forwardRequest2a = { ...defaultRequest, nonce: ethers.BigNumber.from(1).shl(128).add(0) };

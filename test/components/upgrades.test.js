@@ -4,6 +4,7 @@ const { expect } = require('chai');
 const { prepare, deploy } = require('../fixture');
 const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
 const loadEnv = require('../../scripts/loadEnv');
+const helpers = require('@nomicfoundation/hardhat-network-helpers');
 
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]'], args);
 
@@ -15,7 +16,7 @@ describe('Upgrades testing', function () {
     });
 
     describe.only('Agent Registry', async function () {
-        it(' 0.1.1 -> 0.1.6', async function () {
+        it(' 0.1.1 -> 0.1.7', async function () {
             const AgentRegistry_0_1_1 = await ethers.getContractFactory('AgentRegistry_0_1_1');
             agents = await upgrades.deployProxy(AgentRegistry_0_1_1, [this.contracts.access.address, mockRouter.address, 'Forta Agents', 'FAgents'], {
                 constructorArgs: [this.contracts.forwarder.address],
@@ -41,6 +42,7 @@ describe('Upgrades testing', function () {
             await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
             expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
             expect(await agents.connect(this.accounts.user1).getAgentCount()).to.be.equal(1);
+
             const AgentRegistry_0_1_2 = await ethers.getContractFactory('AgentRegistry_0_1_2');
             agents = await upgrades.upgradeProxy(agents.address, AgentRegistry_0_1_2, {
                 call: {
@@ -87,10 +89,33 @@ describe('Upgrades testing', function () {
             expect(await agents.name()).to.be.equal('Forta Agents');
             expect(await agents.symbol()).to.be.equal('FAgents');
 
-            const AgentRegistry = await ethers.getContractFactory('AgentRegistry');
-            agents = await upgrades.upgradeProxy(agents.address, AgentRegistry, {
+            const AgentRegistry_0_1_5 = await ethers.getContractFactory('AgentRegistry_0_1_5');
+            agents = await upgrades.upgradeProxy(agents.address, AgentRegistry_0_1_5, {
                 constructorArgs: [this.contracts.forwarder.address],
                 unsafeAllow: ['delegatecall'],
+                unsafeSkipStorageCheck: true,
+            });
+            await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
+            expect(await agents.getStakeController()).to.be.equal(this.contracts.subjectGateway.address);
+            expect(await agents.version()).to.be.equal('0.1.5');
+            expect(await agents.isRegistered(AGENT_ID)).to.be.equal(true);
+            expect(await agents.getDisableFlags(AGENT_ID)).to.be.equal([2]);
+            expect(await agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
+            expect(
+                await agents.getAgent(AGENT_ID).then((agent) => [agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
+            ).to.be.deep.equal([1, args[2], args[3]]);
+            expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
+            await agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1);
+            expect(await agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
+            expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true);
+            expect(await agents.name()).to.be.equal('Forta Agents');
+            expect(await agents.symbol()).to.be.equal('FAgents');
+
+            const AgentRegistry_0_1_6 = await ethers.getContractFactory('AgentRegistry_0_1_6');
+            agents = await upgrades.upgradeProxy(agents.address, AgentRegistry_0_1_6, {
+                constructorArgs: [this.contracts.forwarder.address],
+                unsafeAllow: ['delegatecall'],
+                unsafeSkipStorageCheck: true,
             });
             await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
             expect(await agents.getSubjectHandler()).to.be.equal(this.contracts.subjectGateway.address);
@@ -107,6 +132,96 @@ describe('Upgrades testing', function () {
             expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true);
             expect(await agents.name()).to.be.equal('Forta Agents');
             expect(await agents.symbol()).to.be.equal('FAgents');
+
+            const AgentRegistry = await ethers.getContractFactory('AgentRegistry');
+            agents = await upgrades.upgradeProxy(agents.address, AgentRegistry, {
+                constructorArgs: [this.contracts.forwarder.address],
+                unsafeAllow: ['delegatecall'],
+            });
+
+            await this.access.connect(this.accounts.admin).grantRole(this.roles.BOT_UNITS_CAPACITY_ADMIN, this.subscriptionManager.address);
+            await this.access.connect(this.accounts.admin).grantRole(this.roles.BOT_ACTIVE_UNITS_ADMIN, agents.address);
+            await this.access.connect(this.accounts.admin).grantRole(this.roles.INDIVIDUAL_LOCK_ADMIN, this.individualLock.address);
+            await this.access.connect(this.accounts.admin).grantRole(this.roles.TEAM_LOCK_ADMIN, this.teamLock.address);
+
+            const currentTimestamp = await helpers.time.latest();
+            await agents.connect(this.accounts.manager).setExecutionFeesStartTime(currentTimestamp + 1000);
+            await agents.connect(this.accounts.manager).setSubscriptionPlans(this.individualLock.address, this.teamLock.address);
+            await agents.connect(this.accounts.manager).setBotUnits(this.botUnits.address);
+
+            // TODO: Move these two lines to after the bot execution fees go live
+            // await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
+            // expect(await agents.getDisableFlags(AGENT_ID)).to.be.equal([2]);
+            expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(true);
+            expect(await agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
+            expect(await agents.getSubjectHandler()).to.be.equal(this.contracts.subjectGateway.address);
+            expect(await agents.version()).to.be.equal('0.1.7');
+            expect(await agents.isRegistered(AGENT_ID)).to.be.equal(true);
+            expect(await agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
+            expect(
+                await agents.getAgent(AGENT_ID).then((agent) => [agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber())])
+            ).to.be.deep.equal([1, args[2], args[3]]);
+            expect(await agents.name()).to.be.equal('Forta Agents');
+            expect(await agents.symbol()).to.be.equal('FAgents');
+
+            await network.provider.send('evm_increaseTime', [1100]);
+            await network.provider.send('evm_mine');
+
+            expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
+            expect(await agents.isRegistered(AGENT_ID)).to.be.equal(true);
+            expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+            expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+            expect(await agents.isAgentUtilizingAgentUnits(AGENT_ID)).to.be.equal(false);
+
+            const individualKeyPrice = await this.individualLock.keyPrice();
+            expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+            expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+
+            const individualLockPlanBotUnits = 300;
+            await this.token.connect(this.accounts.minter).mint(this.accounts.user1.address, ethers.utils.parseEther('10000'));
+            await this.token.connect(this.accounts.user1).approve(this.individualLock.address, ethers.constants.MaxUint256);
+            const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+                [individualKeyPrice],
+                [this.accounts.user1.address],
+                [this.accounts.user1.address],
+                [ethers.constants.AddressZero],
+                [[]],
+                { gasLimit: 21000000 }
+            );
+            await txnReceipt.wait();
+    
+            expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+            expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+            expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+    
+            expect(await agents.isEnabled(AGENT_ID)).to.be.equal(false);
+            expect(await agents.isRegistered(AGENT_ID)).to.be.equal(true);
+            expect(await agents.isAgentUtilizingAgentUnits(AGENT_ID)).to.be.equal(false);
+
+            const redundancy = 6;
+            const shards = 10;
+            await expect(agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 'metadata2', [1, 3, 4, 5], redundancy, shards))
+                .to.emit(agents, 'AgentOnExecutionFeesSystem')
+                .withArgs(ethers.BigNumber.from(AGENT_ID));
+
+            expect(await agents.isRegistered(AGENT_ID)).to.be.equal(true);
+            expect(await agents.isAgentUtilizingAgentUnits(AGENT_ID)).to.be.equal(true);
+            expect(await agents.isEnabled(AGENT_ID)).to.be.equal(true);
+            expect(await agents.ownerOf(AGENT_ID)).to.be.equal(this.accounts.user1.address);
+            expect(
+                await agents
+                    .getAgent(AGENT_ID)
+                    .then((agent) => [agent.owner, agent.agentVersion.toNumber(), agent.metadata, agent.chainIds.map((chainId) => chainId.toNumber()), agent.redundancy, agent.shards])
+            ).to.be.deep.equal([this.accounts.user1.address, 2, 'metadata2', [1, 3, 4, 5], redundancy, shards]);
+            expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+            expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+
+
+            await agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1);
+            expect(await agents.connect(this.accounts.user1).isEnabled(AGENT_ID)).to.be.equal(false);
+            expect(await agents.getDisableFlags(AGENT_ID)).to.be.equal([2]);
+            expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+            expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
         });
     });
 
