@@ -1,0 +1,10 @@
+{
+    "RewardsDistributor": [
+        {
+            "methodName": "setDelegationParams",
+            "params": [
+                ["1", "10000"]
+            ]
+        }
+    ]
+}
