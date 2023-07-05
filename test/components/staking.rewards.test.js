@@ -491,6 +491,32 @@ describe('Staking Rewards', function () {
             expect(await this.rewardsDistributor.delegationParamsEpochDelay()).to.not.be.equal(previousDelay);
             expect(await this.rewardsDistributor.delegationParamsEpochDelay()).to.be.equal(newDelay);
         });
+
+        it('should be able to set defaultFeeBps, and set again to same value, but update delegationParamsEpochDelay', async function () {
+            // Was initialized with a value of 1000
+            const previousFeeBps = await this.rewardsDistributor.defaultFeeBps();
+            // Was initialized with a value of 2
+            const previousDelay = await this.rewardsDistributor.delegationParamsEpochDelay();
+
+            console.log(`previousFeeBps: ${previousFeeBps}`);
+
+            const newFeeBps = 10000;
+            await this.rewardsDistributor.connect(this.accounts.admin).setDelegationParams(previousDelay, newFeeBps);
+
+            expect(await this.rewardsDistributor.defaultFeeBps()).to.not.be.equal(previousFeeBps);
+            expect(await this.rewardsDistributor.defaultFeeBps()).to.be.equal(newFeeBps);
+            expect(await this.rewardsDistributor.delegationParamsEpochDelay()).to.be.equal(previousDelay);
+
+            const newDelay = 1;
+
+            await expect(this.rewardsDistributor.connect(this.accounts.admin).setDelegationParams(newDelay, newFeeBps))
+                .to.emit(this.rewardsDistributor, 'SetDelegationParams')
+                .withArgs(newDelay, newFeeBps);
+
+            expect(await this.rewardsDistributor.defaultFeeBps()).to.be.equal(newFeeBps);
+            expect(await this.rewardsDistributor.delegationParamsEpochDelay()).to.not.be.equal(previousDelay);
+            expect(await this.rewardsDistributor.delegationParamsEpochDelay()).to.be.equal(newDelay);
+        });
     });
 
     describe('Fee setting', function () {
