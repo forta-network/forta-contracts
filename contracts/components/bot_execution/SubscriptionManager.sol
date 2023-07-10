@@ -141,19 +141,18 @@ contract SubscriptionManager is BaseComponentUpgradeable {
     /**
      * @notice If the lock owner has registered an implementer then this hook
      * is called every time balanceOf is called
-     * @param lockAddress the address of the current lock
      * @param from the previous owner of transferred key
      * @param to the new owner of the key
      */
     function onKeyTransfer(
-        address lockAddress,
+        address /*lockAddress*/,
         uint /*tokenId*/,
         address /*operator*/,
         address from,
         address to,
         uint /*expirationTimestamp*/
     ) external {
-        (bool isValid, uint8 purchasedPlan, uint8 nonPurchasedPlan) = _isValidLockContract(lockAddress);
+        (bool isValid, uint8 purchasedPlan, uint8 nonPurchasedPlan) = _isValidLockContract(msg.sender);
         if (!isValid) revert InvalidFunctionCaller(lockAddress);
 
         uint256 fromActiveBotUnits = _botUnits.getOwnerActiveBotUnits(from);
