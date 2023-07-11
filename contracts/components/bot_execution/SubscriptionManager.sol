@@ -153,7 +153,7 @@ contract SubscriptionManager is BaseComponentUpgradeable {
         uint /*expirationTimestamp*/
     ) external {
         (bool isValid, uint8 purchasedPlan, uint8 nonPurchasedPlan) = _isValidLockContract(msg.sender);
-        if (!isValid) revert InvalidFunctionCaller(lockAddress);
+        if (!isValid) revert InvalidFunctionCaller(msg.sender);
 
         uint256 fromActiveBotUnits = _botUnits.getOwnerActiveBotUnits(from);
         if (fromActiveBotUnits > 0) revert MustHaveNoActiveBotUnits(from);
@@ -205,8 +205,8 @@ contract SubscriptionManager is BaseComponentUpgradeable {
      * @return nonPurchasedPlan Uint8 representing the Lock plan from which the subscription was not purchased from.
      */
     function _isValidLockContract(address caller) private view returns (bool isValid, uint8 purchasedPlan, uint8 nonPurchasedPlan) {
-        if (hasRole(INDIVIDUAL_LOCK_ADMIN_ROLE, caller)) { return (true, INDIVIDUAL_LOCK_PLAN, TEAM_LOCK_PLAN); }
-        if (hasRole(TEAM_LOCK_ADMIN_ROLE, caller)) { return (true, TEAM_LOCK_PLAN, INDIVIDUAL_LOCK_PLAN); }
+        if (hasRole(INDIVIDUAL_LOCK_ROLE, caller)) { return (true, INDIVIDUAL_LOCK_PLAN, TEAM_LOCK_PLAN); }
+        if (hasRole(TEAM_LOCK_ROLE, caller)) { return (true, TEAM_LOCK_PLAN, INDIVIDUAL_LOCK_PLAN); }
         // Since caller is not a valid lock plan, we return 0 for both plans.
         return (false, INVALID_LOCK_PLAN, INVALID_LOCK_PLAN);
     }

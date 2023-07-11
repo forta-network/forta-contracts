@@ -34,13 +34,14 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
         returns (address owner, uint256 agentVersion, string memory metadata, uint256[] memory chainIds, uint8 redundancy, uint8 shards)
     {
         bool exists = _exists(agentId);
+        AgentMetadata memory _agentData = _agentMetadata[agentId];
         return (
             exists ? ownerOf(agentId) : address(0),
-            _agentMetadata[agentId].version,
-            _agentMetadata[agentId].metadata,
-            _agentMetadata[agentId].chainIds,
-            _agentMetadata[agentId].redundancy,
-            _agentMetadata[agentId].shards
+            _agentData.version,
+            _agentData.metadata,
+            _agentData.chainIds,
+            _agentData.redundancy,
+            _agentData.shards
         );
     }
 
@@ -57,13 +58,14 @@ abstract contract AgentRegistryMetadata is AgentRegistryCore {
     function _agentUpdate(uint256 agentId, string memory newMetadata, uint256[] calldata newChainIds, uint8 newRedundancy, uint8 newShards) internal virtual override {
         super._agentUpdate(agentId, newMetadata, newChainIds, newRedundancy, newShards);
 
-        bytes32 oldHash = keccak256(bytes(_agentMetadata[agentId].metadata));
+        AgentMetadata memory _agentData = _agentMetadata[agentId];
+        bytes32 oldHash = keccak256(bytes(_agentData.metadata));
         bytes32 newHash = keccak256(bytes(newMetadata));
         if (_agentMetadataUniqueness[newHash]) revert MetadataNotUnique(newHash);
         _agentMetadataUniqueness[newHash] = true;
         _agentMetadataUniqueness[oldHash] = false;
 
-        uint256 version = _agentMetadata[agentId].version + 1;
+        uint256 version = _agentData.version + 1;
         _agentMetadata[agentId] = AgentMetadata({ version: version, metadata: newMetadata, chainIds: newChainIds, redundancy: newRedundancy, shards: newShards });
     }
 

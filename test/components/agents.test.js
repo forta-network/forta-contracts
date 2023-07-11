@@ -1624,8 +1624,8 @@ describe('Bot Migration - Execution Fees', async function () {
 
         await this.access.connect(this.accounts.admin).grantRole(this.roles.BOT_UNITS_CAPACITY_ADMIN, this.subscriptionManager.address);
         await this.access.connect(this.accounts.admin).grantRole(this.roles.BOT_ACTIVE_UNITS_ADMIN, this.testAgents.address);
-        await this.access.connect(this.accounts.admin).grantRole(this.roles.INDIVIDUAL_LOCK_ADMIN, this.individualLock.address);
-        await this.access.connect(this.accounts.admin).grantRole(this.roles.TEAM_LOCK_ADMIN, this.teamLock.address);
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.INDIVIDUAL_LOCK, this.individualLock.address);
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.TEAM_LOCK, this.teamLock.address);
 
         const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5]];
 
@@ -1663,7 +1663,6 @@ describe('Bot Migration - Execution Fees', async function () {
         const currentTimestamp = await helpers.time.latest();
 
         await this.testAgents.connect(this.accounts.manager).setExecutionFeesStartTime(currentTimestamp + 1000);
-        await this.testAgents.connect(this.accounts.manager).setSubscriptionPlans(this.individualLock.address, this.teamLock.address);
         await this.testAgents.connect(this.accounts.manager).setBotUnits(this.botUnits.address);
 
         expect(await this.testAgents.getExecutionFeesStartTime()).to.be.equal(currentTimestamp + 1000);

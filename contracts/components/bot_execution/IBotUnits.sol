@@ -11,4 +11,5 @@ interface IBotUnits {
     function getOwnerBotUnitsCapacity(address owner) external view returns (uint256);
     function getOwnerActiveBotUnits(address owner) external view returns (uint256);
     function getOwnerInactiveBotUnits(address owner) external view returns (uint256);
+    function isOwnerInGoodStanding(address owner) external view returns (bool);
 }

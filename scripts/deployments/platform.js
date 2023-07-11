@@ -219,7 +219,7 @@ async function migrate(config = {}) {
             hre,
             'BotUnits',
             'uups',
-            [contracts.access.address],
+            [contracts.access.address, individualLockAddress, teamLockAddress],
             {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: 'delegatecall',
