@@ -12,6 +12,7 @@
     "prepare-dev": "yarn prepare-dev:schema && yarn prepare-dev:codegen && yarn prepare-dev:compile",
     "deploy-dev": "graph deploy --node https://api.graph-eu.p2pify.com/765768b776199f59bb7f1bf37253e73f/deploy --ipfs https://api.graph-eu.p2pify.com/765768b776199f59bb7f1bf37253e73f/ipfs forta-dev",
     "deploy": "graph deploy -l v0.0.1 --node https://api.graph-eu.p2pify.com/3e3485fa2703678549290ce52f45ef9c/deploy --ipfs https://api.graph-eu.p2pify.com/3e3485fa2703678549290ce52f45ef9c/ipfs forta-b",
+    "deploy-theGraph": "graph deploy --network matic --node https://api.thegraph.com/deploy/ forta-network/forta-network",
     "create-local": "graph create --node http://localhost:8020/ forta-network/forta-network",
     "remove-local": "graph remove --node http://localhost:8020/ forta-network/forta-network",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 forta-network/forta-network",
