@@ -159,14 +159,20 @@ function updateStake(
     sharesId.subject = _subjectId;
     sharesId.save();
   }
-  subject.activeStake = fortaStaking.activeStakeFor(
+
+  const activeStake = fortaStaking.try_activeStakeFor(
     _subjectType,
     _subject
   );
-  subject.inactiveStake = fortaStaking.inactiveStakeFor(
+
+  const inActiveStake = fortaStaking.try_inactiveStakeFor(
     _subjectType,
     _subject
   );
+
+  subject.activeStake = activeStake.reverted ? BigInt.fromI32(0) : activeStake.value;
+  subject.inactiveStake = inActiveStake.reverted ? BigInt.fromI32(0) : inActiveStake.value;
+  
   subject.activeShares = fortaStaking.totalShares(
     _subjectType,
     _subject
