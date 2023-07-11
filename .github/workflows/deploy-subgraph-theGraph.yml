@@ -30,4 +30,4 @@ jobs:
 
       - name: Deploy subgraph 
         working-directory: ./subgraph
-        run: npm run deploy
+        run: npm run deploy-theGraph
