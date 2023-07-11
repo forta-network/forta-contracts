@@ -1,7 +1,6 @@
 name: Prod Deploy Subgraph
 on:
   workflow_dispatch:
-    branches: [ master ]
 jobs:
   deploy-subgraph:
     name: Deploy subgraph workflow
