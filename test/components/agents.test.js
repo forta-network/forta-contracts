@@ -9,8 +9,8 @@ const shards = 10;
 
 // Also passed to SubscriptionManager
 // during deployment in platform.js
-const individualLockPlanBotUnits = 300;
-const teamLockPlanBotUnits = 500;
+const individualLockPlanAgentUnits = 300;
+const teamLockPlanAgentUnits = 500;
 
 const prepareCommit = (...args) => ethers.utils.solidityKeccak256(['bytes32', 'address', 'string', 'uint256[]', 'uint8', 'uint8'], args);
 
@@ -52,8 +52,8 @@ describe('Agent Registry', function () {
                 const individualKeyPrice = await this.individualLock.keyPrice();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -66,16 +66,16 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
                     .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
                     .to.emit(this.agents, 'AgentUpdated')
                     .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
             });
 
             it('no delay - team Lock plan', async function () {
@@ -83,8 +83,8 @@ describe('Agent Registry', function () {
                 const teamKeyPrice = await this.teamLock.keyPrice();
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.teamLock.connect(this.accounts.user1).purchase(
                     [teamKeyPrice],
@@ -97,16 +97,16 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
                     .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
                     .to.emit(this.agents, 'AgentUpdated')
                     .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
             });
 
             it('on time - individual Lock plan', async function () {
@@ -132,8 +132,8 @@ describe('Agent Registry', function () {
                 await network.provider.send('evm_increaseTime', [300]);
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -146,8 +146,8 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
@@ -172,8 +172,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
             });
 
             it('on time - team Lock plan', async function () {
@@ -199,8 +199,8 @@ describe('Agent Registry', function () {
                 await network.provider.send('evm_increaseTime', [300]);
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.teamLock.connect(this.accounts.user1).purchase(
                     [teamKeyPrice],
@@ -213,8 +213,8 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
@@ -239,8 +239,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
             });
 
             it('unordered chainIds', async function () {
@@ -275,8 +275,8 @@ describe('Agent Registry', function () {
                 await network.provider.send('evm_increaseTime', [300]);
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -289,8 +289,8 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
@@ -314,8 +314,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(1, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4].length * redundancy * shards));
 
                 await expect(this.agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 'Metadata2', [1, 2, 4, 5], redundancy, shards))
                     .to.emit(this.agents, 'AgentUpdated')
@@ -337,8 +337,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(1, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 2, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 2, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 2, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 2, 4, 5].length * redundancy * shards));
             });
 
             it('update - team Lock plan', async function () {
@@ -360,8 +360,8 @@ describe('Agent Registry', function () {
                 await network.provider.send('evm_increaseTime', [300]);
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.teamLock.connect(this.accounts.user1).purchase(
                     [teamKeyPrice],
@@ -374,8 +374,8 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
@@ -399,8 +399,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(1, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 3, 4].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 3, 4].length * redundancy * shards));
 
                 await expect(this.agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 'Metadata2', [1, 2, 4, 5], redundancy, shards))
                     .to.emit(this.agents, 'AgentUpdated')
@@ -422,21 +422,21 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(1, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 2, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 2, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 2, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 2, 4, 5].length * redundancy * shards));
             });
         });
 
-        describe('insufficient available bot units', async function () {
-            it('unable to create bot - individual Lock plan', async function () {
+        describe('insufficient available agent units', async function () {
+            it('unable to create agent - individual Lock plan', async function () {
                 const higherRedundancy = 10;
                 const higherShards = 15;
                 const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5, 6], higherRedundancy, higherShards];
                 const individualKeyPrice = await this.individualLock.keyPrice();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -449,25 +449,25 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
-                await expect(this.agents.connect(this.accounts.user1).registerAgent(...args)).to.be.revertedWith(`InsufficientInactiveBotUnits("${this.accounts.user1.address}")`);
+                await expect(this.agents.connect(this.accounts.user1).registerAgent(...args)).to.be.revertedWith(`InsufficientInactiveAgentUnits("${this.accounts.user1.address}")`);
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
             });
 
-            it('unable to create bot - team Lock plan', async function () {
+            it('unable to create agent - team Lock plan', async function () {
                 const higherRedundancy = 10;
                 const higherShards = 15;
                 const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5, 6], higherRedundancy, higherShards];
                 const individualKeyPrice = await this.teamLock.keyPrice();
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.teamLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -480,24 +480,24 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
 
-                await expect(this.agents.connect(this.accounts.user1).registerAgent(...args)).to.be.revertedWith(`InsufficientInactiveBotUnits("${this.accounts.user1.address}")`);
+                await expect(this.agents.connect(this.accounts.user1).registerAgent(...args)).to.be.revertedWith(`InsufficientInactiveAgentUnits("${this.accounts.user1.address}")`);
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
             });
 
-            it('create bot, unable to create second - individual Lock plan', async function () {
+            it('create agent, unable to create second - individual Lock plan', async function () {
                 const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
                 const individualKeyPrice = await this.individualLock.keyPrice();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -510,37 +510,37 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
                     .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
                     .to.emit(this.agents, 'AgentUpdated')
                     .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
 
                 const AGENT_ID_TWO = ethers.utils.hexlify(ethers.utils.randomBytes(32));
                 const argsTwo = [AGENT_ID_TWO, 'Metadata2', [1, 3, 4, 5, 6], redundancy, shards];
 
-                await expect(this.agents.connect(this.accounts.user1).registerAgent(...argsTwo)).to.be.revertedWith(`InsufficientInactiveBotUnits("${this.accounts.user1.address}")`);
+                await expect(this.agents.connect(this.accounts.user1).registerAgent(...argsTwo)).to.be.revertedWith(`InsufficientInactiveAgentUnits("${this.accounts.user1.address}")`);
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
             });
 
-            it('create bot, unable to create second - team Lock plan', async function () {
+            it('create agent, unable to create second - team Lock plan', async function () {
                 const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
                 const teamKeyPrice = await this.teamLock.keyPrice();
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.teamLock.connect(this.accounts.user1).purchase(
                     [teamKeyPrice],
@@ -553,37 +553,37 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
                     .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
                     .to.emit(this.agents, 'AgentUpdated')
                     .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
 
                 const AGENT_ID_TWO = ethers.utils.hexlify(ethers.utils.randomBytes(32));
                 const argsTwo = [AGENT_ID_TWO, 'Metadata2', [1, 3, 4, 5, 6], redundancy, shards];
 
-                await expect(this.agents.connect(this.accounts.user1).registerAgent(...argsTwo)).to.be.revertedWith(`InsufficientInactiveBotUnits("${this.accounts.user1.address}")`);
+                await expect(this.agents.connect(this.accounts.user1).registerAgent(...argsTwo)).to.be.revertedWith(`InsufficientInactiveAgentUnits("${this.accounts.user1.address}")`);
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
             });
 
-            it('create bot, unable to update - individual Lock plan', async function () {
+            it('create agent, unable to update - individual Lock plan', async function () {
                 const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
                 const individualKeyPrice = await this.individualLock.keyPrice();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -596,38 +596,38 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
                     .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
                     .to.emit(this.agents, 'AgentUpdated')
                     .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
 
                 const higherRedundancy = 10;
                 const higherShards = 15;
                 const argsTwo = [AGENT_ID, 'Metadata2', [1, 3, 4, 5, 6], higherRedundancy, higherShards];
 
-                await expect(this.agents.connect(this.accounts.user1).updateAgent(...argsTwo)).to.be.revertedWith(`InsufficientInactiveBotUnits("${this.accounts.user1.address}")`);
+                await expect(this.agents.connect(this.accounts.user1).updateAgent(...argsTwo)).to.be.revertedWith(`InsufficientInactiveAgentUnits("${this.accounts.user1.address}")`);
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
             });
 
-            it('create bot, unable to update - team Lock plan', async function () {
+            it('create agent, unable to update - team Lock plan', async function () {
                 const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
                 const teamKeyPrice = await this.teamLock.keyPrice();
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.teamLock.connect(this.accounts.user1).purchase(
                     [teamKeyPrice],
@@ -640,39 +640,39 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
                     .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
                     .to.emit(this.agents, 'AgentUpdated')
                     .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
 
                 const higherRedundancy = 10;
                 const higherShards = 15;
                 const argsTwo = [AGENT_ID, 'Metadata2', [1, 3, 4, 5, 6], higherRedundancy, higherShards];
 
-                await expect(this.agents.connect(this.accounts.user1).updateAgent(...argsTwo)).to.be.revertedWith(`InsufficientInactiveBotUnits("${this.accounts.user1.address}")`);
+                await expect(this.agents.connect(this.accounts.user1).updateAgent(...argsTwo)).to.be.revertedWith(`InsufficientInactiveAgentUnits("${this.accounts.user1.address}")`);
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
             });
 
-            it('unable to create bot - non-Forta related Lock plan', async function () {
+            it('unable to create agent - non-Forta related Lock plan', async function () {
                 const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5, 6], redundancy, shards];
                 const otherKeyPrice = await this.otherLock.keyPrice();
 
                 expect(await this.otherLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.otherLock.connect(this.accounts.user1).purchase(
                     [otherKeyPrice],
@@ -687,30 +687,30 @@ describe('Agent Registry', function () {
                 expect(await this.otherLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args)).to.be.revertedWith(`ValidMembershipRequired("${this.accounts.user1.address}")`);
 
                 expect(await this.otherLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
             });
 
-            it('unable to create bot - no valid plan', async function () {
+            it('unable to create agent - no valid plan', async function () {
                 const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5, 6], redundancy, shards];
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args)).to.be.revertedWith(`ValidMembershipRequired("${this.accounts.user1.address}")`);
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
             });
         });
 
-        describe('special case bots', async function () {
-            it('free trial bot', async function () {
+        describe('special case agents', async function () {
+            it('free trial agent', async function () {
                 expect(await this.agents.getFreeTrialAgentUnitsLimit()).to.be.equal(0);
                 await expect(this.agents.connect(this.accounts.manager).setFreeTrialAgentUnits(99))
                     .to.emit(this.agents, 'FreeTrailAgentUnitsUpdated')
@@ -721,9 +721,9 @@ describe('Agent Registry', function () {
                 const individualKeyPrice = await this.individualLock.keyPrice();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -736,8 +736,8 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
@@ -748,11 +748,11 @@ describe('Agent Registry', function () {
                 await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
 
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
             });
 
-            it('public goods bot', async function () {
+            it('public goods agent', async function () {
                 expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
                 await expect(this.agents.connect(this.accounts.admin).setAgentAsPublicGood(AGENT_ID))
                     .to.emit(this.agents, 'PublicGoodAgentDeclared')
@@ -763,9 +763,9 @@ describe('Agent Registry', function () {
                 const individualKeyPrice = await this.individualLock.keyPrice();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -778,8 +778,8 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
@@ -790,8 +790,8 @@ describe('Agent Registry', function () {
                 await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
                 
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
             })
         });
 
@@ -809,8 +809,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentCountByChain(5)).to.be.equal('0');
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -827,8 +827,8 @@ describe('Agent Registry', function () {
                 expect(await this.teamLock.balanceOf(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.individualLock.ownerOf(individualKeyId)).to.be.equal(this.accounts.user1.address);
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
@@ -852,8 +852,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(1, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4].length * redundancy * shards));
 
                 await expect(this.agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 'Metadata2', [1, 2, 4, 5], redundancy, shards))
                     .to.emit(this.agents, 'AgentUpdated')
@@ -876,8 +876,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(2, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 2, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 2, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 2, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 2, 4, 5].length * redundancy * shards));
 
                 await expect(this.agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 'Metadata3', [1, 2], redundancy, shards))
                     .to.emit(this.agents, 'AgentUpdated')
@@ -898,8 +898,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByIndex(0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(1, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(2, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 2].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 2].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 2].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 2].length * redundancy * shards));
 
                 await expect(this.teamLock.connect(this.accounts.user1).purchase(
                     [teamKeyPrice],
@@ -934,8 +934,8 @@ describe('Agent Registry', function () {
                 expect(await this.teamLock.balanceOf(this.accounts.user1.address)).to.be.equal(1);
                 expect(await this.teamLock.ownerOf(teamKeyId)).to.be.equal(this.accounts.user1.address);
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 2].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 2].length * redundancy * shards));
 
                 await expect(this.agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 'Metadata4', [1, 4, 5], redundancy, shards))
                     .to.emit(this.agents, 'AgentUpdated')
@@ -957,11 +957,11 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(1, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 4, 5].length * redundancy * shards));
             });
 
-            it('unable to switch plans - active bot units balance too high', async function () {
+            it('unable to switch plans - active agent units balance too high', async function () {
                 const args = [AGENT_ID, 'Metadata1', [1, 2, 4, 5], redundancy, shards];
                 const individualKeyPrice = await this.individualLock.keyPrice();
                 const teamKeyPrice = await this.teamLock.keyPrice();
@@ -974,8 +974,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentCountByChain(5)).to.be.equal('0');
 
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.teamLock.connect(this.accounts.user1).purchase(
                     [teamKeyPrice],
@@ -992,8 +992,8 @@ describe('Agent Registry', function () {
                 expect(await this.individualLock.balanceOf(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.teamLock.ownerOf(teamKeyId)).to.be.equal(this.accounts.user1.address);
                 expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
@@ -1018,8 +1018,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(2, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 2, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 2, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 2, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 2, 4, 5].length * redundancy * shards));
 
                 await expect(this.agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 'Metadata2', [1, 2, 4], redundancy, shards))
                     .to.emit(this.agents, 'AgentUpdated')
@@ -1041,8 +1041,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(1, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(2, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 2, 4].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 2, 4].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 2, 4].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 2, 4].length * redundancy * shards));
 
                 await expect(this.agents.connect(this.accounts.user1).updateAgent(AGENT_ID, 'Metadata3', [1, 2, 4, 5, 6, 7], redundancy, shards))
                     .to.emit(this.agents, 'AgentUpdated')
@@ -1069,8 +1069,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(6, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(7, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 2, 4, 5, 6, 7].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanBotUnits - ([1, 2, 4, 5, 6, 7].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 2, 4, 5, 6, 7].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(teamLockPlanAgentUnits - ([1, 2, 4, 5, 6, 7].length * redundancy * shards));
 
                 await expect(this.individualLock.connect(this.accounts.user1).purchase(
                     [teamKeyPrice],
@@ -1097,13 +1097,13 @@ describe('Agent Registry', function () {
                     [[]],
                     { gasLimit: 21000000 }
                 )).to.be.revertedWith(
-                    `InsufficientInactiveBotUnits("${this.accounts.user1.address}")`
+                    `InsufficientInactiveAgentUnits("${this.accounts.user1.address}")`
                 );
             });
         });
 
         describe('key expiry', async function () {
-            it('key expires, bot is not enabled', async function () {
+            it('key expires, agent is not enabled', async function () {
                 const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
                 const individualKeyPrice = await this.individualLock.keyPrice();
 
@@ -1115,8 +1115,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentCountByChain(5)).to.be.equal('0');
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -1129,8 +1129,8 @@ describe('Agent Registry', function () {
                 await txnReceipt.wait();
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
@@ -1156,8 +1156,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
                 
                 await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
                 expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
@@ -1170,7 +1170,7 @@ describe('Agent Registry', function () {
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
             });
 
-            it('key expires, owner renews, bot is enabled', async function () {
+            it('key expires, owner renews, agent is enabled', async function () {
                 const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
                 const individualKeyPrice = await this.individualLock.keyPrice();
 
@@ -1182,8 +1182,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentCountByChain(5)).to.be.equal('0');
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -1197,8 +1197,8 @@ describe('Agent Registry', function () {
                 const individualKeyId = ethers.BigNumber.from(purchaseTxn.logs[0].topics[3]);
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
@@ -1224,8 +1224,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
                 
                 await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
                 expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
@@ -1250,7 +1250,7 @@ describe('Agent Registry', function () {
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
             });
 
-            it('key expires, renewed by other account, bot is enabled', async function () {
+            it('key expires, renewed by other account, agent is enabled', async function () {
                 const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
                 const individualKeyPrice = ethers.BigNumber.from(await this.individualLock.keyPrice());
 
@@ -1262,8 +1262,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentCountByChain(5)).to.be.equal('0');
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -1277,8 +1277,8 @@ describe('Agent Registry', function () {
                 const individualKeyId = ethers.BigNumber.from(purchaseTxn.logs[0].topics[3]);
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
@@ -1304,8 +1304,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
                 
                 await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
                 expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
@@ -1331,7 +1331,7 @@ describe('Agent Registry', function () {
                 expect(await this.token.balanceOf(this.accounts.user1.address)).to.be.equal(ownerBalancePreRenewal.sub(individualKeyPrice));
             });
 
-            it('key expires, renewed by Lock manager, bot is enabled', async function () {
+            it('key expires, renewed by Lock manager, agent is enabled', async function () {
                 const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
                 const individualKeyPrice = ethers.BigNumber.from(await this.individualLock.keyPrice());
 
@@ -1343,8 +1343,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentCountByChain(5)).to.be.equal('0');
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
                 const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
                     [individualKeyPrice],
@@ -1358,8 +1358,8 @@ describe('Agent Registry', function () {
                 const individualKeyId = ethers.BigNumber.from(purchaseTxn.logs[0].topics[3]);
 
                 expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
                 await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
                     .to.emit(this.agents, 'Transfer')
@@ -1385,8 +1385,8 @@ describe('Agent Registry', function () {
                 expect(await this.agents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
                 expect(await this.agents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
                 
                 await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
                 expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
@@ -1444,12 +1444,12 @@ describe('Agent Registry', function () {
             await individualTxnReceipt.wait();
 
             expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-            expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-            expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
-            expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+            expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+            expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+            expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
             await expect(this.agents.connect(this.accounts.user1).registerAgent(...args)).to.be.not.reverted;
-            expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+            expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
             await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
         });
 
@@ -1465,8 +1465,8 @@ describe('Agent Registry', function () {
 
                 await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
 
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
                 expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([1]);
             });
@@ -1474,14 +1474,14 @@ describe('Agent Registry', function () {
             it('re-enable', async function () {
                 await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
 
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
 
                 await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 0, true);
 
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
             });
 
@@ -1496,8 +1496,8 @@ describe('Agent Registry', function () {
 
                 await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
 
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
                 expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([2]);
             });
@@ -1505,14 +1505,14 @@ describe('Agent Registry', function () {
             it('re-enable', async function () {
                 await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
 
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
 
                 await expect(this.agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, true, 1, true);
 
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
             });
 
@@ -1525,32 +1525,32 @@ describe('Agent Registry', function () {
             it('owner cannot re-enable after admin disable', async function () {
                 await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
 
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
 
                 await expect(this.agents.connect(this.accounts.user1).enableAgent(AGENT_ID, 1)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, true);
 
-                // If a bot owner enables their bot after an admin
-                // disabled it, their bot units balance will be
-                // affected, but their bot will still be disabled
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                // If a agent owner enables their agent after an admin
+                // disabled it, their agent units balance will be
+                // affected, but their agent will still be disabled
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
             });
 
             it('admin cannot re-enable after owner disable', async function () {
                 await expect(this.agents.connect(this.accounts.user1).disableAgent(AGENT_ID, 1)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 1, false);
 
-                expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
 
                 await expect(this.agents.connect(this.accounts.manager).enableAgent(AGENT_ID, 0)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, true);
 
-                // If an admin enables a bot after a bot owner
-                // disabled it, owner's bot units balance will be
-                // affected, but their bot will still be disabled
-                expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                // If an admin enables a agent after a agent owner
+                // disabled it, owner's agent units balance will be
+                // affected, but their agent will still be disabled
+                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
                 expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
             });
         });
@@ -1567,7 +1567,7 @@ describe('Agent Registry', function () {
     });
 
     describe('access control', async function () {
-        it('only AGENT_ADMIN_ROLE can set the free trial bot units', async function () {
+        it('only AGENT_ADMIN_ROLE can set the free trial agent units', async function () {
             expect(await this.agents.getFreeTrialAgentUnitsLimit()).to.be.equal(0);
             
             await expect(this.agents.connect(this.accounts.other).setFreeTrialAgentUnits(99))
@@ -1580,7 +1580,7 @@ describe('Agent Registry', function () {
             expect(await this.agents.getFreeTrialAgentUnitsLimit()).to.be.equal(99);
         });
 
-        it('only AGENT_ADMIN_ROLE can declare a public goods bot', async function () {
+        it('only AGENT_ADMIN_ROLE can declare a public goods agent', async function () {
             expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
             
             await expect(this.agents.connect(this.accounts.other).setAgentAsPublicGood(AGENT_ID))
@@ -1608,11 +1608,11 @@ describe('Agent Registry', function () {
     });
 });
 
-describe('Bot Migration - Execution Fees', async function () {
+describe('agent Migration - Execution Fees', async function () {
     prepare();
 
-    // Bot owner registers on the previous version of the AgentRegistry
-    // then bot still exists in new implementation
+    // agent owner registers on the previous version of the AgentRegistry
+    // then agent still exists in new implementation
     beforeEach(async function () {
         const AgentRegistry_0_1_6 = await ethers.getContractFactory('AgentRegistry_0_1_6');
         this.testAgents = await upgrades.deployProxy(AgentRegistry_0_1_6, [this.contracts.access.address, 'Forta Agents', 'FAgents'], {
@@ -1622,8 +1622,8 @@ describe('Bot Migration - Execution Fees', async function () {
         });
         await this.testAgents.deployed();
 
-        await this.access.connect(this.accounts.admin).grantRole(this.roles.BOT_UNITS_CAPACITY_ADMIN, this.subscriptionManager.address);
-        await this.access.connect(this.accounts.admin).grantRole(this.roles.BOT_ACTIVE_UNITS_ADMIN, this.testAgents.address);
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.AGENT_UNITS_CAPACITY_ADMIN, this.subscriptionManager.address);
+        await this.access.connect(this.accounts.admin).grantRole(this.roles.AGENT_ACTIVE_UNITS_ADMIN, this.testAgents.address);
         await this.access.connect(this.accounts.admin).grantRole(this.roles.INDIVIDUAL_LOCK, this.individualLock.address);
         await this.access.connect(this.accounts.admin).grantRole(this.roles.TEAM_LOCK, this.teamLock.address);
 
@@ -1663,14 +1663,14 @@ describe('Bot Migration - Execution Fees', async function () {
         const currentTimestamp = await helpers.time.latest();
 
         await this.testAgents.connect(this.accounts.manager).setExecutionFeesStartTime(currentTimestamp + 1000);
-        await this.testAgents.connect(this.accounts.manager).setBotUnits(this.botUnits.address);
+        await this.testAgents.connect(this.accounts.manager).setAgentUnits(this.agentUnits.address);
 
         expect(await this.testAgents.getExecutionFeesStartTime()).to.be.equal(currentTimestamp + 1000);
         expect(await this.testAgents.isEnabled(AGENT_ID)).to.be.equal(true);
         expect(await this.testAgents.isRegistered(AGENT_ID)).to.be.equal(true);
     });
 
-    it('isEnabled false - execution fees start, owner has no valid key, bot is not updated to execution fees', async function () {
+    it('isEnabled false - execution fees start, owner has no valid key, agent is not updated to execution fees', async function () {
         await network.provider.send('evm_increaseTime', [1100]);
         await network.provider.send('evm_mine');
 
@@ -1681,7 +1681,7 @@ describe('Bot Migration - Execution Fees', async function () {
         expect(await this.testAgents.isAgentUtilizingAgentUnits(AGENT_ID)).to.be.equal(false);
     });
 
-    it('isEnabled false - execution fees start, owner HAS valid key, bot is not updated to execution fees', async function () {
+    it('isEnabled false - execution fees start, owner HAS valid key, agent is not updated to execution fees', async function () {
         await network.provider.send('evm_increaseTime', [1100]);
         await network.provider.send('evm_mine');
 
@@ -1692,8 +1692,8 @@ describe('Bot Migration - Execution Fees', async function () {
         expect(await this.testAgents.isAgentUtilizingAgentUnits(AGENT_ID)).to.be.equal(false);
 
         const individualKeyPrice = await this.individualLock.keyPrice();
-        expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+        expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+        expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
         const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
             [individualKeyPrice],
@@ -1706,15 +1706,15 @@ describe('Bot Migration - Execution Fees', async function () {
         await txnReceipt.wait();
 
         expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-        expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+        expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+        expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
         expect(await this.testAgents.isEnabled(AGENT_ID)).to.be.equal(false);
         expect(await this.testAgents.isRegistered(AGENT_ID)).to.be.equal(true);
         expect(await this.testAgents.isAgentUtilizingAgentUnits(AGENT_ID)).to.be.equal(false);
     });
 
-    it('isEnabled false - execution fees start, owner has no valid key, bot is not updated to execution fees. Cannot update bot without valid key', async function () {
+    it('isEnabled false - execution fees start, owner has no valid key, agent is not updated to execution fees. Cannot update agent without valid key', async function () {
         await network.provider.send('evm_increaseTime', [1100]);
         await network.provider.send('evm_mine');
 
@@ -1728,7 +1728,7 @@ describe('Bot Migration - Execution Fees', async function () {
         await expect(this.testAgents.connect(this.accounts.user1).updateAgent(...args)).to.be.revertedWith(`ValidMembershipRequired("${this.accounts.user1.address}")`);
     });
 
-    it('isEnabled true - execution fees start, owner HAS valid key, bot IS updated to execution fees', async function () {
+    it('isEnabled true - execution fees start, owner HAS valid key, agent IS updated to execution fees', async function () {
         await network.provider.send('evm_increaseTime', [1100]);
         await network.provider.send('evm_mine');
 
@@ -1740,8 +1740,8 @@ describe('Bot Migration - Execution Fees', async function () {
 
         const individualKeyPrice = await this.individualLock.keyPrice();
 
-        expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(0);
+        expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+        expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
 
         const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
             [individualKeyPrice],
@@ -1754,8 +1754,8 @@ describe('Bot Migration - Execution Fees', async function () {
         await txnReceipt.wait();
 
         expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-        expect(await this.botUnits.getOwnerBotUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
-        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits);
+        expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+        expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
         expect(await this.testAgents.isEnabled(AGENT_ID)).to.be.equal(false);
         expect(await this.testAgents.isRegistered(AGENT_ID)).to.be.equal(true);
@@ -1785,7 +1785,7 @@ describe('Bot Migration - Execution Fees', async function () {
         expect(await this.testAgents.getAgentByChainAndIndex(3, 0)).to.be.equal(AGENT_ID);
         expect(await this.testAgents.getAgentByChainAndIndex(4, 0)).to.be.equal(AGENT_ID);
         expect(await this.testAgents.getAgentByChainAndIndex(5, 0)).to.be.equal(AGENT_ID);
-        expect(await this.botUnits.getOwnerActiveBotUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
-        expect(await this.botUnits.getOwnerInactiveBotUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanBotUnits - ([1, 3, 4, 5].length * redundancy * shards));
+        expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+        expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
     });
 });

@@ -215,9 +215,9 @@ async function migrate(config = {}) {
 
         DEBUG(`[${Object.keys(contracts).length}] otherLock: ${teamLockAddress}`);
 
-        contracts.botUnits = await contractHelpers.tryFetchProxy(
+        contracts.agentUnits = await contractHelpers.tryFetchProxy(
             hre,
-            'BotUnits',
+            'AgentUnits',
             'uups',
             [contracts.access.address, individualLockAddress, teamLockAddress],
             {
@@ -227,13 +227,13 @@ async function migrate(config = {}) {
             CACHE
         );
 
-        DEBUG(`[${Object.keys(contracts).length}] botUnits: ${contracts.botUnits.address}`);
+        DEBUG(`[${Object.keys(contracts).length}] agentUnits: ${contracts.agentUnits.address}`);
 
         contracts.subscriptionManager = await contractHelpers.tryFetchProxy(
             hre,
             'SubscriptionManager',
             'uups',
-            [contracts.access.address, individualLockAddress, 300, teamLockAddress, 500, contracts.botUnits.address],
+            [contracts.access.address, individualLockAddress, 300, teamLockAddress, 500, contracts.agentUnits.address],
             {
                 constructorArgs: [contracts.forwarder.address],
                 unsafeAllow: 'delegatecall',
