@@ -9,14 +9,14 @@ import "../../errors/GeneralErrors.sol";
 import "./AgentRegistryCore.sol";
 import "./AgentRegistryMetadata.sol";
 import "./AgentRegistryEnable.sol";
-import "../bot_execution/IBotUnits.sol";
+import "../agent_execution/IAgentUnits.sol";
 
 import "hardhat/console.sol";
 
 /**
  * This contract has the access and permission to update the balance of active agent units
  * for a specific agent owner. If the balance of active units needs to either increase
- * or decrease, this contract will call into BotUnits to update that. It also includes
+ * or decrease, this contract will call into AgentUnits to update that. It also includes
  * functionality to allow specific agents to be declared public goods, which means they
  * would not need agent units to function and execute. It also allows for a free trial
  * limit, which allows a agent to also function and execute without the need for agent units
@@ -29,14 +29,14 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
     uint8 private _freeTrialAgentUnits;
     uint256 private _executionFeesStartTime;
 
-    IBotUnits _botUnits;
+    IAgentUnits _agentUnits;
 
     mapping(uint256 => BitMaps.BitMap) private _isAgentPublicGood;
     mapping(uint256 => BitMaps.BitMap) private _isAgentPartOfFreeTrial;
     mapping(uint256 => BitMaps.BitMap) private _isAgentUtilizingAgentUnits;
 
     event SubscriptionPlansUpdated(address indexed individualPlan, address indexed teamPlan);
-    event BotUnitsUpdated(address indexed botUnits);
+    event AgentUnitsUpdated(address indexed agentUnits);
     event ExecutionFeesStartTimeUpdated(uint256 indexed executionFeesStartTime);
     event AgentOnExecutionFeesSystem(uint256 indexed agentId);
     event PublicGoodAgentDeclared(uint256 indexed agentId);
@@ -50,15 +50,15 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
 
     /**
      * @dev allows AGENT_ADMIN_ROLE to set the contract that will
-     * handle the accounting for bot units for a subscriber.
-     * @param __botUnits The contract that will handle
-     * the bot unit accounting
+     * handle the accounting for agent units for a subscriber.
+     * @param __agentUnits The contract that will handle
+     * the agent unit accounting
      */
-    function setBotUnits(address __botUnits) external onlyRole(AGENT_ADMIN_ROLE) {
-        if (__botUnits == address(0)) revert ZeroAddress("__botUnits");
+    function setAgentUnits(address __agentUnits) external onlyRole(AGENT_ADMIN_ROLE) {
+        if (__agentUnits == address(0)) revert ZeroAddress("__agentUnits");
 
-        _botUnits = IBotUnits(__botUnits);
-        emit BotUnitsUpdated(__botUnits);
+        _agentUnits = IAgentUnits(__agentUnits);
+        emit AgentUnitsUpdated(__agentUnits);
     }
     
     /**
@@ -186,7 +186,7 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
     /**
      * @notice Internal function that updates an agent's owner balance of active agent units
      * depending on whether an agent is created, updated, disabled, or enabled.
-     * @dev Calls updateOwnerActiveBotUnits in BotUnits, which this contract has access to.
+     * @dev Calls updateOwnerActiveAgentUnits in AgentUnits, which this contract has access to.
      * @param account Owner of agent being modified.
      * @param agentId ERC721 token id of existing agent to be modified.
      * @param agentUnits Amount of agent units required.
@@ -196,9 +196,9 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
         super._activeAgentUnitsBalanceUpdate(account, agentId, agentUnits, agentMod);
         
         if(agentMod == AgentModification.Create || agentMod == AgentModification.Enable) {
-            _botUnits.updateOwnerActiveBotUnits(account, agentUnits, true);
+            _agentUnits.updateOwnerActiveAgentUnits(account, agentUnits, true);
         } else if (agentMod == AgentModification.Disable) {
-            _botUnits.updateOwnerActiveBotUnits(account, agentUnits, false);
+            _agentUnits.updateOwnerActiveAgentUnits(account, agentUnits, false);
         } else if (agentMod == AgentModification.Update) {
             uint256 existingAgentUnitsUsage = existingAgentActiveUnitUsage(agentId);
             bool balanceIncreasing;
@@ -210,7 +210,7 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
                 balanceIncreasing = false;
                 agentUnitsForUpdate = existingAgentUnitsUsage - agentUnits;
             }
-            _botUnits.updateOwnerActiveBotUnits(account, agentUnitsForUpdate, balanceIncreasing);
+            _agentUnits.updateOwnerActiveAgentUnits(account, agentUnitsForUpdate, balanceIncreasing);
         }
     }
 
@@ -233,7 +233,7 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
             if (block.timestamp > _executionFeesStartTime) {
                 address agentOwner = super.ownerOf(agentId);
                 return (
-                    _botUnits.isOwnerInGoodStanding(agentOwner) &&
+                    _agentUnits.isOwnerInGoodStanding(agentOwner) &&
                     getDisableFlags(agentId) == 0 &&
                     (!_isStakeActivated() || _isStakedOverMin(agentId)) &&
                     isAgentUtilizingAgentUnits(agentId)
@@ -250,8 +250,8 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
     }
 
     /**
-     * @notice Internal getter for when bot execution fees goes live
-     * @return uint256 timestamp of when bot execution fees goes live
+     * @notice Internal getter for when agent execution fees goes live
+     * @return uint256 timestamp of when agent execution fees goes live
      */
     function getExecutionFeesStartTime() public view returns (uint256) {
         return _executionFeesStartTime;
@@ -303,7 +303,7 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
      *  50
      * - 1 _freeTrialAgentUnits
      * - 1 _executionFeesStartTime
-     * - 1 _botUnits
+     * - 1 _agentUnits
      * - 1 _isAgentPublicGood
      * - 1 _isAgentPartOfFreeTrial
      * - 1 _isAgentUtilizingAgentUnits

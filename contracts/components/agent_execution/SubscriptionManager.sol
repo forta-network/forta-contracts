@@ -7,7 +7,7 @@ import "@unlock-protocol/contracts/dist/PublicLock/IPublicLockV13.sol";
 import "../../errors/GeneralErrors.sol";
 
 import "../BaseComponentUpgradeable.sol";
-import "./IBotUnits.sol";
+import "./IAgentUnits.sol";
 
 import "hardhat/console.sol";
 
@@ -17,26 +17,26 @@ uint8 constant TEAM_LOCK_PLAN = 2;
 
 /**
  * This contract serves to implement the necessary hooks from Unlock
- * to then adjust a membership owner's bot unit capacity.
+ * to then adjust a membership owner's agent unit capacity.
  */
 contract SubscriptionManager is BaseComponentUpgradeable {
     string public constant version = "0.1.0";
 
     struct SubscriptionPlan {
         IPublicLockV13 lockContract;
-        uint256 botUnitsCapacity;
+        uint256 agentUnitsCapacity;
     }
 
-    IBotUnits private _botUnits;
+    IAgentUnits private _agentUnits;
     mapping(uint8 => SubscriptionPlan) private _subscriptionPlans;
 
-    event SubscriptionPlanUpdated(address indexed subscriptionPlan, uint256 botUnitsCapacity, uint8 subscriptionPlanId);
-    event BotUnitsContractUpdated(address indexed botUnitsContract);
+    event SubscriptionPlanUpdated(address indexed subscriptionPlan, uint256 agentUnitsCapacity, uint8 subscriptionPlanId);
+    event AgentUnitsContractUpdated(address indexed agentUnitsContract);
 
     error InvalidSubscriptionPlanId(uint8 invalidId);
     error LimitOneValidSubscription(address existingSubscriptionPlan, address subscriptionOwner);
     error InvalidFunctionCaller(address caller);
-    error MustHaveNoActiveBotUnits(address keySender);
+    error MustHaveNoActiveAgentUnits(address keySender);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address forwarder) initializer ForwardedContext(forwarder)  {}
@@ -48,61 +48,61 @@ contract SubscriptionManager is BaseComponentUpgradeable {
     function initialize(
         address __manager,
         address __individualLockAddress,
-        uint256 __individualLockBotUnitsCapacity,
+        uint256 __individualLockAgentUnitsCapacity,
         address __teamLockAddress,
-        uint256 __teamLockBotUnitsCapacity,
-        address __botUnits
+        uint256 __teamLockAgentUnitsCapacity,
+        address __agentUnits
     ) public initializer {
         __BaseComponentUpgradeable_init(__manager);
         _subscriptionPlans[INDIVIDUAL_LOCK_PLAN] = SubscriptionPlan({
             lockContract: IPublicLockV13(__individualLockAddress),
-            botUnitsCapacity: __individualLockBotUnitsCapacity
+            agentUnitsCapacity: __individualLockAgentUnitsCapacity
         });
         _subscriptionPlans[TEAM_LOCK_PLAN] = SubscriptionPlan({
             lockContract: IPublicLockV13(__teamLockAddress),
-            botUnitsCapacity: __teamLockBotUnitsCapacity
+            agentUnitsCapacity: __teamLockAgentUnitsCapacity
         });
-        _botUnits = IBotUnits(__botUnits);
+        _agentUnits = IAgentUnits(__agentUnits);
     }
 
     /**
      * @dev allows SUBSCRIPTION_ADMIN_ROLE to update a subscription plan
-     * for the bot execution fees
+     * for the agent execution fees
      * @param subscriptionPlan The plan being updated
-     * @param botUnitsCapacity The about of total bot units that would
+     * @param agentUnitsCapacity The about of total agent units that would
      * be granted to a suscriber to the plan
      * @param subscriptionPlanId An identifier used to know which plan
      * is the one being updated. Has to equal to either INDIVIDUAL_LOCK_PLAN
      * or TEAM_LOCK_PLAN.
      */
-    function setSubscriptionPlan(address subscriptionPlan, uint256 botUnitsCapacity, uint8 subscriptionPlanId) external onlyRole(SUBSCRIPTION_ADMIN_ROLE) {
+    function setSubscriptionPlan(address subscriptionPlan, uint256 agentUnitsCapacity, uint8 subscriptionPlanId) external onlyRole(SUBSCRIPTION_ADMIN_ROLE) {
         if ((subscriptionPlanId != INDIVIDUAL_LOCK_PLAN) && (subscriptionPlanId != TEAM_LOCK_PLAN)) revert InvalidSubscriptionPlanId(subscriptionPlanId);
         if (subscriptionPlan == address(0)) revert ZeroAddress("subscriptionPlan");
-        if (botUnitsCapacity == 0) revert ZeroAmount("botUnitsCapacity");
+        if (agentUnitsCapacity == 0) revert ZeroAmount("agentUnitsCapacity");
 
         _subscriptionPlans[subscriptionPlanId] = SubscriptionPlan({
             lockContract: IPublicLockV13(subscriptionPlan),
-            botUnitsCapacity: botUnitsCapacity
+            agentUnitsCapacity: agentUnitsCapacity
         });
-        emit SubscriptionPlanUpdated(subscriptionPlan, botUnitsCapacity, subscriptionPlanId);
+        emit SubscriptionPlanUpdated(subscriptionPlan, agentUnitsCapacity, subscriptionPlanId);
     }
 
     /**
      * @dev allows SUBSCRIPTION_ADMIN_ROLE to set the contract that will
-     * handle the accounting for bot units for a subscriber.
-     * @param botUnits The contract that will handle
-     * the bot unit accounting
+     * handle the accounting for agent units for a subscriber.
+     * @param agentUnits The contract that will handle
+     * the agent unit accounting
      */
-    function setBotUnits(address botUnits) external onlyRole(SUBSCRIPTION_ADMIN_ROLE) {
-        if (botUnits == address(0)) revert ZeroAddress("botUnits");
+    function setAgentUnits(address agentUnits) external onlyRole(SUBSCRIPTION_ADMIN_ROLE) {
+        if (agentUnits == address(0)) revert ZeroAddress("agentUnits");
 
-        _botUnits = IBotUnits(botUnits);
-        emit BotUnitsContractUpdated(botUnits);
+        _agentUnits = IAgentUnits(agentUnits);
+        emit AgentUnitsContractUpdated(agentUnits);
     }
 
     /**
      * @notice Hook implementation that triggers when a key is purchased. Updates the
-     * key recipient's bot units capacity based on the purchased plan.
+     * key recipient's agent units capacity based on the purchased plan.
      * @param recipient the account which will be granted a key
      * @dev the lock's address is the `msg.sender` when this function is called
      */
@@ -117,12 +117,12 @@ contract SubscriptionManager is BaseComponentUpgradeable {
     ) external {
         (bool isValid, uint8 purchasedPlan, uint8 nonPurchasedPlan) = _isValidLockContract(msg.sender);
         if (!isValid) revert InvalidFunctionCaller(msg.sender);
-        _updateKeyRecipientBotUnitsCapacity(recipient, purchasedPlan, nonPurchasedPlan);
+        _updateKeyRecipientAgentUnitsCapacity(recipient, purchasedPlan, nonPurchasedPlan);
     }
 
     /**
      * @notice Hook implementation that triggers when a key is granted. Updates the
-     * key recipient's bot units capacity based on the purchased plan.
+     * key recipient's agent units capacity based on the purchased plan.
      * @param recipient the account which will be granted a key
      * @dev the lock's address is the `msg.sender` when this function is called
      */
@@ -135,7 +135,7 @@ contract SubscriptionManager is BaseComponentUpgradeable {
     ) external {
         (bool isValid, uint8 purchasedPlan, uint8 nonPurchasedPlan) = _isValidLockContract(msg.sender);
         if (!isValid) revert InvalidFunctionCaller(msg.sender);
-        _updateKeyRecipientBotUnitsCapacity(recipient, purchasedPlan, nonPurchasedPlan);
+        _updateKeyRecipientAgentUnitsCapacity(recipient, purchasedPlan, nonPurchasedPlan);
     }
 
     /**
@@ -155,21 +155,21 @@ contract SubscriptionManager is BaseComponentUpgradeable {
         (bool isValid, uint8 purchasedPlan, uint8 nonPurchasedPlan) = _isValidLockContract(msg.sender);
         if (!isValid) revert InvalidFunctionCaller(msg.sender);
 
-        uint256 fromActiveBotUnits = _botUnits.getOwnerActiveBotUnits(from);
-        if (fromActiveBotUnits > 0) revert MustHaveNoActiveBotUnits(from);
+        uint256 fromActiveAgentUnits = _agentUnits.getOwnerActiveAgentUnits(from);
+        if (fromActiveAgentUnits > 0) revert MustHaveNoActiveAgentUnits(from);
 
-        _botUnits.updateOwnerBotUnitsCapacity(from, 0, false);
-        _updateKeyRecipientBotUnitsCapacity(to, purchasedPlan, nonPurchasedPlan);
+        _agentUnits.updateOwnerAgentUnitsCapacity(from, 0, false);
+        _updateKeyRecipientAgentUnitsCapacity(to, purchasedPlan, nonPurchasedPlan);
     }
 
     /**
-     * @notice Updates bot units capacity granted to a specific membership owner.
-     * @dev Calls into BotUnits contract, which this contract has the access to do so.
+     * @notice Updates agent units capacity granted to a specific membership owner.
+     * @dev Calls into AgentUnits contract, which this contract has the access to do so.
      * @param recipient Address of the membership owner.
      * @param purchasedPlan Uint8 representing the Lock plan from which the subscription WAS purchased from.
      * @param nonPurchasedPlan Uint8 representing the Lock plan from which the subscription WAS NOT purchased from.
      */
-    function _updateKeyRecipientBotUnitsCapacity(
+    function _updateKeyRecipientAgentUnitsCapacity(
         address recipient,
         uint8 purchasedPlan,
         uint8 nonPurchasedPlan
@@ -181,19 +181,19 @@ contract SubscriptionManager is BaseComponentUpgradeable {
             revert LimitOneValidSubscription(address(_nonPurchasedPlan.lockContract), recipient);
         }
 
-        bool increasingBotUnitsBalance;
+        bool increasingAgentUnitsBalance;
         if(_nonPurchasedPlan.lockContract.totalKeys(recipient) == 0) {
-            // Increasing bot units balance because
+            // Increasing agent units balance because
             // recipient doesn't have a subscription with
             // with either plan. Valid or otherwise.
-            increasingBotUnitsBalance = true;
+            increasingAgentUnitsBalance = true;
         } else {
-            // Determining whether they're going from a plan with higher bot units capacity
+            // Determining whether they're going from a plan with higher agent units capacity
             // to a lower capacity plan and vice versa.
-            increasingBotUnitsBalance = _purchasedPlan.botUnitsCapacity > _nonPurchasedPlan.botUnitsCapacity;
+            increasingAgentUnitsBalance = _purchasedPlan.agentUnitsCapacity > _nonPurchasedPlan.agentUnitsCapacity;
         }
 
-        _botUnits.updateOwnerBotUnitsCapacity(recipient, _purchasedPlan.botUnitsCapacity, increasingBotUnitsBalance);
+        _agentUnits.updateOwnerAgentUnitsCapacity(recipient, _purchasedPlan.agentUnitsCapacity, increasingAgentUnitsBalance);
     }
 
     /**
@@ -229,7 +229,7 @@ contract SubscriptionManager is BaseComponentUpgradeable {
 
     /**
      *  50
-     * - 1 _botUnits
+     * - 1 _agentUnits
      * - 1 _subscriptionPlans
      * --------------------------
      *  48 __gap
