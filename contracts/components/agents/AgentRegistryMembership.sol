@@ -40,10 +40,12 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
     event ExecutionFeesStartTimeUpdated(uint256 indexed executionFeesStartTime);
     event AgentOnExecutionFeesSystem(uint256 indexed agentId);
     event PublicGoodAgentDeclared(uint256 indexed agentId);
+    event PublicGoodAgentUndeclared(uint256 indexed agentId);
     event FreeTrailAgentUnitsUpdated(uint256 indexed amount);
 
     error FreeTrialUnitsExceedsMax(uint8 maxFreeTrialUnits, uint8 exceedingAmount);
     error AgentAlreadyPublicGood(uint256 agentId);
+    error AgentAlreadyNotPublicGood(uint256 agentId);
     error ValueAlreadySet(uint8 value);
     error ExecutionFeesNotLive(uint256 currentTime, uint256 startTime);
     error AgentAlreadyMigratedToExecutionFees(uint256 agentId);
@@ -80,11 +82,31 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
      */
     function setAgentAsPublicGood(uint256 agentId) external onlyRole(PUBLIC_GOOD_ADMIN_ROLE) {
         if (isPublicGoodAgent(agentId)) revert AgentAlreadyPublicGood(agentId);
+        _agentAsPublicGood(agentId, true);
+        emit PublicGoodAgentDeclared(agentId);
+    }
 
+    /**
+     * @notice Allows PUBLIC_GOOD_ADMIN_ROLE to undeclare a specific agent a public good.
+     * @param agentId ERC721 token id of agent that is to be declared a public good.
+     */
+    function unsetAgentAsPublicGood(uint256 agentId) external onlyRole(PUBLIC_GOOD_ADMIN_ROLE) {
+        if (!isPublicGoodAgent(agentId)) revert AgentAlreadyNotPublicGood(agentId);
+        _agentAsPublicGood(agentId, false);
+        emit PublicGoodAgentUndeclared(agentId);
+    }
+
+    function _agentAsPublicGood(uint256 agentId, bool publicGood) private {
         // Passing `1` since each agent will only
         // have one `key` in its BitMap
-        _isAgentPublicGood[agentId].setTo(1, true);
-        emit PublicGoodAgentDeclared(agentId);
+        _isAgentPublicGood[agentId].setTo(1, publicGood);
+
+        // If agent does not exist, will equal zero
+        uint256 activeAgentUnitsInUseByAgent = calculateExistingAgentActiveUnitUsage(agentId);
+        if (activeAgentUnitsInUseByAgent > 0) {
+            address agentOwner = super.ownerOf(agentId);
+            _agentUnits.updateOwnerActiveAgentUnits(agentOwner, activeAgentUnitsInUseByAgent, !publicGood);
+        }
     }
 
     /**
@@ -103,12 +125,12 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
     }
 
     /**
-     * @notice Fetch the amount of active agent units a given agent uses/requires.
+     * @notice Calculate the amount of active agent units for an existing agent.
      * @dev does nothing in this contract.
      * @param agentId ERC721 token id of given agent.
      * @return Amount of agent units the given agent uses/requires
      */
-    function existingAgentActiveUnitUsage(uint256 agentId) public view virtual returns (uint256) {}
+    function calculateExistingAgentActiveUnitUsage(uint256 agentId) public view virtual returns (uint256) {}
 
     /**
      * @notice Updates an agent's status to indicate it is a participant
@@ -200,7 +222,7 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
         } else if (agentMod == AgentModification.Disable) {
             _agentUnits.updateOwnerActiveAgentUnits(account, agentUnits, false);
         } else if (agentMod == AgentModification.Update) {
-            uint256 existingAgentUnitsUsage = existingAgentActiveUnitUsage(agentId);
+            uint256 existingAgentUnitsUsage = calculateExistingAgentActiveUnitUsage(agentId);
             bool balanceIncreasing;
             uint256 agentUnitsForUpdate;
             if(agentUnits >= existingAgentUnitsUsage) {
@@ -232,8 +254,9 @@ abstract contract AgentRegistryMembership is AgentRegistryEnable {
         if (isRegistered(agentId)) {
             if (block.timestamp > _executionFeesStartTime) {
                 address agentOwner = super.ownerOf(agentId);
+                bool isAgentPublicGood = isPublicGoodAgent(agentId);
                 return (
-                    _agentUnits.isOwnerInGoodStanding(agentOwner) &&
+                    (isAgentPublicGood ? true : _agentUnits.isOwnerInGoodStanding(agentOwner)) &&
                     getDisableFlags(agentId) == 0 &&
                     (!_isStakeActivated() || _isStakedOverMin(agentId)) &&
                     isAgentUtilizingAgentUnits(agentId)

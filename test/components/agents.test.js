@@ -752,46 +752,207 @@ describe('Agent Registry', function () {
                 expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
             });
 
-            it('public goods agent', async function () {
-                expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
-                await expect(this.agents.connect(this.accounts.admin).setAgentAsPublicGood(AGENT_ID))
-                    .to.emit(this.agents, 'PublicGoodAgentDeclared')
-                    .withArgs(AGENT_ID);
-                expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(true);
+            describe('public good agents', async function () {
+                it('agent registered as public good', async function () {
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
+                    await expect(this.agents.connect(this.accounts.admin).setAgentAsPublicGood(AGENT_ID))
+                        .to.emit(this.agents, 'PublicGoodAgentDeclared')
+                        .withArgs(AGENT_ID);
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(true);
+    
+                    const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
+    
+                    await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
+                        .to.emit(this.agents, 'Transfer')
+                        .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                        .to.emit(this.agents, 'AgentUpdated')
+                        .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
+    
+                    await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
+                    
+                    expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
+                    expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                    expect(await this.teamLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                    expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                });
 
-                const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
-                const individualKeyPrice = await this.individualLock.keyPrice();
 
-                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
-                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                it('agent registered normally, then converted to public good', async function () {
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
+    
+                    const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
+                    const individualKeyPrice = await this.individualLock.keyPrice();
+    
+                    expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                    expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                    expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+    
+                    const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+                        [individualKeyPrice],
+                        [this.accounts.user1.address],
+                        [this.accounts.user1.address],
+                        [ethers.constants.AddressZero],
+                        [[]],
+                        { gasLimit: 21000000 }
+                    );
+                    await txnReceipt.wait();
+    
+                    expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                    expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+    
+                    await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
+                        .to.emit(this.agents, 'Transfer')
+                        .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                        .to.emit(this.agents, 'AgentUpdated')
+                        .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
+    
+                    await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
+                    
+                    expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
+                    expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                    expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
 
-                const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
-                    [individualKeyPrice],
-                    [this.accounts.user1.address],
-                    [this.accounts.user1.address],
-                    [ethers.constants.AddressZero],
-                    [[]],
-                    { gasLimit: 21000000 }
-                );
-                await txnReceipt.wait();
+                    await expect(this.agents.connect(this.accounts.admin).setAgentAsPublicGood(AGENT_ID))
+                        .to.emit(this.agents, 'PublicGoodAgentDeclared')
+                        .withArgs(AGENT_ID);
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(true);
+                    expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);  
+                });
 
-                expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
-                expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
-                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                it('agent registered normally, then converted to public good, then converted back to non-public good', async function () {
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
+    
+                    const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
+                    const individualKeyPrice = await this.individualLock.keyPrice();
+    
+                    expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                    expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                    expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+    
+                    const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+                        [individualKeyPrice],
+                        [this.accounts.user1.address],
+                        [this.accounts.user1.address],
+                        [ethers.constants.AddressZero],
+                        [[]],
+                        { gasLimit: 21000000 }
+                    );
+                    await txnReceipt.wait();
+    
+                    expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                    expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+    
+                    await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
+                        .to.emit(this.agents, 'Transfer')
+                        .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                        .to.emit(this.agents, 'AgentUpdated')
+                        .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
+    
+                    await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
+                    
+                    expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
+                    expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                    expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
 
-                await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
-                    .to.emit(this.agents, 'Transfer')
-                    .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
-                    .to.emit(this.agents, 'AgentUpdated')
-                    .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
+                    await expect(this.agents.connect(this.accounts.admin).setAgentAsPublicGood(AGENT_ID))
+                        .to.emit(this.agents, 'PublicGoodAgentDeclared')
+                        .withArgs(AGENT_ID);
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(true);
+                    expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
 
-                await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
-                
-                expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
-                expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
-                expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                    await expect(this.agents.connect(this.accounts.admin).unsetAgentAsPublicGood(AGENT_ID))
+                        .to.emit(this.agents, 'PublicGoodAgentUndeclared')
+                        .withArgs(AGENT_ID);
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
+                    expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                });
+
+                it.only('agent registered normally, converted to public good, second agent registered, first cannot be coverted to non-public good so disabled by admin instead', async function () {
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
+    
+                    const args = [AGENT_ID, 'Metadata1', [1, 3, 4, 5], redundancy, shards];
+                    const individualKeyPrice = await this.individualLock.keyPrice();
+    
+                    expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(false);
+                    expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(0);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                    expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+    
+                    const txnReceipt = await this.individualLock.connect(this.accounts.user1).purchase(
+                        [individualKeyPrice],
+                        [this.accounts.user1.address],
+                        [this.accounts.user1.address],
+                        [ethers.constants.AddressZero],
+                        [[]],
+                        { gasLimit: 21000000 }
+                    );
+                    await txnReceipt.wait();
+    
+                    expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                    expect(await this.agentUnits.getOwnerAgentUnitsCapacity(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+    
+                    await expect(this.agents.connect(this.accounts.user1).registerAgent(...args))
+                        .to.emit(this.agents, 'Transfer')
+                        .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID)
+                        .to.emit(this.agents, 'AgentUpdated')
+                        .withArgs(AGENT_ID, this.accounts.user1.address, 'Metadata1', [1, 3, 4, 5], redundancy, shards);
+    
+                    await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID, '100');
+                    
+                    expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(true);
+                    expect(await this.individualLock.getHasValidKey(this.accounts.user1.address)).to.be.equal(true);
+                    expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(false);
+
+                    await expect(this.agents.connect(this.accounts.admin).setAgentAsPublicGood(AGENT_ID))
+                        .to.emit(this.agents, 'PublicGoodAgentDeclared')
+                        .withArgs(AGENT_ID);
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(true);
+                    expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal(0);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits);
+    
+                    const AGENT_ID_TWO = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+                    const argsTwo = [AGENT_ID_TWO, 'Metadata2', [1, 3, 4, 5], redundancy, shards];
+                    await expect(this.agents.connect(this.accounts.user1).registerAgent(...argsTwo))
+                        .to.emit(this.agents, 'Transfer')
+                        .withArgs(ethers.constants.AddressZero, this.accounts.user1.address, AGENT_ID_TWO)
+                        .to.emit(this.agents, 'AgentUpdated')
+                        .withArgs(AGENT_ID_TWO, this.accounts.user1.address, 'Metadata2', [1, 3, 4, 5], redundancy, shards);
+    
+                    await this.staking.connect(this.accounts.staker).deposit(this.stakingSubjects.AGENT, AGENT_ID_TWO, '100');
+                    
+                    expect(await this.agents.isEnabled(AGENT_ID_TWO)).to.be.equal(true);
+                    expect(await this.agentUnits.getOwnerActiveAgentUnits(this.accounts.user1.address)).to.be.equal([1, 3, 4, 5].length * redundancy * shards);
+                    expect(await this.agentUnits.getOwnerInactiveAgentUnits(this.accounts.user1.address)).to.be.equal(individualLockPlanAgentUnits - ([1, 3, 4, 5].length * redundancy * shards));
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID_TWO)).to.be.equal(false);
+
+                    await expect(this.agents.connect(this.accounts.admin).unsetAgentAsPublicGood(AGENT_ID))
+                        .to.be.revertedWith(
+                            `InsufficientInactiveAgentUnits("${this.accounts.user1.address}")`
+                        );
+                    expect(await this.agents.isPublicGoodAgent(AGENT_ID)).to.be.equal(true);
+
+                    expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([0]);
+                    await expect(this.agents.connect(this.accounts.manager).disableAgent(AGENT_ID, 0)).to.emit(this.agents, 'AgentEnabled').withArgs(AGENT_ID, false, 0, false);
+                    expect(await this.agents.isEnabled(AGENT_ID)).to.be.equal(false);
+                    expect(await this.agents.getDisableFlags(AGENT_ID)).to.be.equal([1]);
+                    expect(await this.agents.isEnabled(AGENT_ID_TWO)).to.be.equal(true);
+                    
+                });
             })
         });
 

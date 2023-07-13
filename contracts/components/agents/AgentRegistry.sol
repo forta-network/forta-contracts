@@ -130,11 +130,11 @@ contract AgentRegistry is
     }
 
     /**
-     * @notice Fetch the amount of active agent units a given agent uses/requires.
+     * @notice Calculate the amount of active agent units for an existing agent.
      * @param agentId ERC721 token id of given agent.
      * @return Amount of agent units the given agent uses/requires
      */
-    function existingAgentActiveUnitUsage(uint256 agentId) public view virtual override returns (uint256) {
+    function calculateExistingAgentActiveUnitUsage(uint256 agentId) public view virtual override returns (uint256) {
         (,,,uint256[] memory chainIds, uint8 redundancy, uint8 shards) = super.getAgent(agentId);
         return super.calculateAgentUnitsNeeded(chainIds.length, redundancy, shards);
     }
