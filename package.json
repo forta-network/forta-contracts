@@ -55,6 +55,7 @@
     "hardhat-gas-reporter": "^1.0.9",
     "hardhat-ignore-warnings": "^0.2.4",
     "hardhat-log-remover": "^2.0.2",
+    "js-yaml": "^4.1.0",
     "lodash": "^4.17.21",
     "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
