@@ -9,7 +9,8 @@
     "coverage": "yarn hardhat coverage  --testfiles 'test/' --solcoverjs .solcover.js",
     "lint": "npm run lint:solidity && npm run lint:javascript",
     "lint:javascript": "eslint ./",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "unlock:propose": "node scripts/unlock-admin/propose.js"
   },
   "repository": {
     "type": "git",

@@ -10,19 +10,19 @@ config:
     publicLock: '0xbC2B60393e81B1F5399977030ba4e2165A2e213A'
 
 proposals:
-  - title: Deploy new PublicLock contract (Spam Detector)
+  - title: Deploy new PublicLock contract
     description: To be used for one of the plans
     contract: unlock
     type: deploy
     args:
-      version: 13
+      version: '13'
       initArgs:
         lockName: 'Spam Detector (FORT)'
         lockCreator: '0x874B5d427b2d27F6Ea0ed3BCE4De454824AEC9cC' # this account manages the lock
         tokenAddress: '0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1' # FORT token on Polygon
         keyPrice: '1000000000000000000' # enter in wei: example is 1 wei
-        expirationDuration: '1440' # in seconds
-        maxNumberOfKeys: '100' # set this only if necessary: defaults to unlimited
+        expirationDuration: '86400' # one day in seconds: expires every day
+        #maxNumberOfKeys: '100' # set this only if necessary: defaults to unlimited
   
   - title: Update key pricing
     description: Using a different price for the same token
