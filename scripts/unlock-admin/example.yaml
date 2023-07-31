@@ -6,7 +6,7 @@ config:
     description: Batch deployment of Unlock feed contracts # required if batch=true
     network: matic # set to mumbai if testing
     signer:
-        type: 'EOA' # set to Gnosis Safe if multisig
+        type: 'EOA' # set to 'Gnosis Safe' if multisig
         address: '0x874B5d427b2d27F6Ea0ed3BCE4De454824AEC9cC'
     contracts:
         unlock: '0xE8E5cd156f89F7bdB267EabD5C43Af3d5AF2A78f'
