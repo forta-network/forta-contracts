@@ -12,10 +12,51 @@ const call = require('./call');
 
 async function main() {
     const proposalFile = jsyaml.load(fs.readFileSync(process.argv[2], 'utf8'));
-    for (let i = 0; i < proposalFile.proposals.length; i++) {
-        const proposal = proposalFile.proposals[i];
-        await propose(proposalFile.config, proposal);
+    if (proposalFile.config.batch != true) {
+        // create individual proposals
+        for (let i = 0; i < proposalFile.proposals.length; i++) {
+            const proposal = proposalFile.proposals[i];
+            await propose(proposalFile.config, proposal);
+        }
+    } else {
+        // create one batch proposal
+        await batchPropose(proposalFile.config, proposalFile.proposals);
     }
+}
+
+async function batchPropose(config, proposals) {
+    const network = config.network;
+    const contracts = {};
+    const steps = [];
+    // create steps for batch proposal
+    for (const proposal of proposals) {
+        const { func, inputs } = getCall(proposal);
+        const contractName = proposal.contract;
+        const contractAddress = config.contracts[contractName];
+        steps.push({
+            contractId: `${network}-${contractAddress}`,
+            targetFunction: func,
+            functionInputs: inputs,
+            type: 'custom',
+        });
+        contracts[contractAddress] = {
+            address: contractAddress,
+            name: contractName,
+            network,
+            abi: JSON.stringify(call.ABI[contractName]),
+        };
+    }
+    // create batch proposal
+    await defenderAdmin.createProposal({
+        contract: Object.keys(contracts).map((key) => contracts[key]),
+        title: config.title,
+        description: config.description,
+        type: 'batch',
+        via: config.signer.address,
+        viaType: config.signer.type,
+        metadata: {}, // required field but empty
+        steps,
+    });
 }
 
 async function propose(config, proposal) {
