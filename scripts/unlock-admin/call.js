@@ -1,13 +1,13 @@
 const { ethers } = require('ethers');
 
-const abi = {
+const ABI = {
     unlock: require('./abis/Unlock.json'),
     publicLock: require('./abis/PublicLock.json'),
 };
 
 const contracts = {
-    unlock: new ethers.utils.Interface(abi.unlock),
-    publicLock: new ethers.utils.Interface(abi.publicLock),
+    unlock: new ethers.utils.Interface(ABI.unlock),
+    publicLock: new ethers.utils.Interface(ABI.publicLock),
 };
 
 function createUpgradeableLockAtVersion(initArgs, version) {
@@ -46,4 +46,5 @@ module.exports = {
     createUpgradeableLockAtVersion,
     updateKeyPricing,
     withdraw,
+    ABI,
 };
