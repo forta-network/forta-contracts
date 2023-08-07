@@ -43,3 +43,10 @@ proposals:
           tokenAddress: '0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1' # FORT token on Polygon
           recipient: '0x874B5d427b2d27F6Ea0ed3BCE4De454824AEC9cC'
           amount: '10000000000000000000' # enter in wei: example is 10 wei
+
+    - title: Add lock manager
+      description: Adds a new address as an Unlock lock manager
+      contract: publicLock
+      type: addLockManager
+      args:
+        address: '0x874B5d427b2d27F6Ea0ed3BCE4De454824AEC9cC'
