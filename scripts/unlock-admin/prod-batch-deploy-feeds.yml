@@ -1,0 +1,63 @@
+config:
+    batch: true
+    title: Deploy Unlock Feed Contracts
+    description: Batch deployment of Unlock feed contracts
+    network: matic
+    signer:
+        type: 'Gnosis Safe'
+        address: '0x30ceaeC1d8Ed347B91d45077721c309242db3D6d' # Foundation multisig
+    contracts:
+        unlock: '0xE8E5cd156f89F7bdB267EabD5C43Af3d5AF2A78f' # main Unlock contract on Polygon
+
+proposals:
+    - title: Deploy Scam Detector Feed
+      description: Deploy the Unlock contract that represents membership to the Scam Detector feed
+      contract: unlock
+      type: deploy
+      args:
+          version: '13'
+          initArgs:
+              lockName: 'Scam Detector'
+              lockCreator: '0x30ceaeC1d8Ed347B91d45077721c309242db3D6d'
+              tokenAddress: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174' # USDC token on Polygon
+              keyPrice: '899000000' # 899 USDC
+              expirationDuration: '2635200' # 30.5 days in seconds
+
+    - title: Deploy Spam Detector Feed
+      description: Deploy the Unlock contract that represents membership to the Spam Detector feed
+      contract: unlock
+      type: deploy
+      args:
+          version: '13'
+          initArgs:
+              lockName: 'Spam Detector'
+              lockCreator: '0x30ceaeC1d8Ed347B91d45077721c309242db3D6d'
+              tokenAddress: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174' # USDC token on Polygon
+              keyPrice: '49000000' # 49 USDC
+              expirationDuration: '2635200' # 30.5 days in seconds
+
+    - title: Deploy Rug Pull Detector Feed
+      description: Deploy the Unlock contract that represents membership to the Rug Pull Detector feed
+      contract: unlock
+      type: deploy
+      args:
+          version: '13'
+          initArgs:
+              lockName: 'Rug Pull Detector'
+              lockCreator: '0x30ceaeC1d8Ed347B91d45077721c309242db3D6d'
+              tokenAddress: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174' # USDC token on Polygon
+              keyPrice: '899000000' # 899 USDC
+              expirationDuration: '2635200' # 30.5 days in seconds
+
+    - title: Deploy General Data Feed
+      description: Deploy the Unlock contract that represents membership to the General Data feed
+      contract: unlock
+      type: deploy
+      args:
+          version: '13'
+          initArgs:
+              lockName: 'General Data'
+              lockCreator: '0x30ceaeC1d8Ed347B91d45077721c309242db3D6d'
+              tokenAddress: '0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1' # FORT token on Polygon
+              keyPrice: '250000000000000000000' # 250 FORT
+              expirationDuration: '2635200' # 30.5 days in seconds

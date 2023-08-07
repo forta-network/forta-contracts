@@ -43,7 +43,7 @@ async function batchPropose(config, proposals) {
             address: contractAddress,
             name: contractName,
             network,
-            abi: JSON.stringify(call.ABI[contractName]),
+            abi: JSON.stringify(call.getABI(contractName)),
         };
     }
     // create batch proposal

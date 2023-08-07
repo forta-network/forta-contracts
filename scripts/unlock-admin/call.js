@@ -49,10 +49,17 @@ function simplify(func) {
     };
 }
 
+function getABI(contractName) {
+    if (contractName.startsWith('publicLock')) {
+        contractName = 'publicLock';
+    }
+    return ABI[contractName];
+}
+
 module.exports = {
     createUpgradeableLockAtVersion,
     updateKeyPricing,
     withdraw,
     addLockManager,
-    ABI,
+    getABI,
 };
