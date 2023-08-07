@@ -47,7 +47,7 @@ async function batchPropose(config, proposals) {
         };
     }
     // create batch proposal
-    await defenderAdmin.createProposal({
+    const result = await defenderAdmin.createProposal({
         contract: Object.keys(contracts).map((key) => contracts[key]),
         title: config.title,
         description: config.description,
@@ -57,6 +57,7 @@ async function batchPropose(config, proposals) {
         metadata: {}, // required field but empty
         steps,
     });
+    console.log(result.url);
 }
 
 async function propose(config, proposal) {
@@ -92,6 +93,9 @@ function getCall(proposal) {
 
         case 'withdraw':
             return call.withdraw(args.tokenAddress, args.recipient, args.amount);
+
+        case 'addLockManager':
+            return call.addLockManager(args.address);
 
         default:
             throw `unknown proposal type ${proposal.type}`;

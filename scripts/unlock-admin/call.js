@@ -33,6 +33,13 @@ function withdraw(tokenAddress, recipient, amount) {
     };
 }
 
+function addLockManager(address) {
+    return {
+        func: simplify(contracts.publicLock.getFunction('addLockManager')),
+        inputs: [address],
+    };
+}
+
 function simplify(func) {
     return {
         name: func.name,
@@ -46,5 +53,6 @@ module.exports = {
     createUpgradeableLockAtVersion,
     updateKeyPricing,
     withdraw,
+    addLockManager,
     ABI,
 };
