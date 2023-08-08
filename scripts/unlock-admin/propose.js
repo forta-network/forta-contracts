@@ -12,6 +12,7 @@ const call = require('./call');
 
 async function main() {
     const proposalFile = jsyaml.load(fs.readFileSync(process.argv[2], 'utf8'));
+    // console.log(JSON.stringify(proposalFile));
     if (proposalFile.config.batch != true) {
         // create individual proposals
         for (let i = 0; i < proposalFile.proposals.length; i++) {
@@ -96,6 +97,9 @@ function getCall(proposal) {
 
         case 'addLockManager':
             return call.addLockManager(args.address);
+
+        case 'grantKeys':
+            return call.grantKeys(args.recipients, args.expirationTimestamps, args.keyManagers);
 
         default:
             throw `unknown proposal type ${proposal.type}`;
