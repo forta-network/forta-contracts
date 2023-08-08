@@ -40,6 +40,13 @@ function addLockManager(address) {
     };
 }
 
+function grantKeys(recipients, expirationTimestamps, keyManagers) {
+    return {
+        func: simplify(contracts.publicLock.getFunction('grantKeys')),
+        inputs: [recipients, expirationTimestamps, keyManagers],
+    };
+}
+
 function simplify(func) {
     return {
         name: func.name,
@@ -61,5 +68,6 @@ module.exports = {
     updateKeyPricing,
     withdraw,
     addLockManager,
+    grantKeys,
     getABI,
 };
