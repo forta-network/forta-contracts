@@ -101,6 +101,12 @@ function getCall(proposal) {
         case 'grantKeys':
             return call.grantKeys(args.recipients, args.expirationTimestamps, args.keyManagers);
 
+        case 'updateLockConfig':
+            return call.updateLockConfig(args.expirationDuration, args.maxNumberOfKeys, args.maxNumberOfKeysPerUser);
+
+        case 'expireAndRefundFor':
+            return call.expireAndRefundFor(args.tokenId, args.refundAmount);
+
         default:
             throw `unknown proposal type ${proposal.type}`;
     }

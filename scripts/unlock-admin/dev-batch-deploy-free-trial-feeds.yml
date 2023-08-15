@@ -1,0 +1,63 @@
+config:
+    batch: true
+    title: Deploy Unlock Free Trial Feed Contracts
+    description: Batch deployment of Unlock free trial feed contracts
+    network: mumbai
+    signer:
+        type: 'EOA'
+        address: '0x577022b59D1C25323ab524Fe78d2F6347b5C69f0' # Haseeb's wallet
+    contracts:
+        unlock: '0x1FF7e338d5E582138C46044dc238543Ce555C963' # main Unlock contract on Mumbai
+
+proposals:
+    - title: Deploy Scam Detector Free Trial Feed
+      description: Deploy the Unlock contract that represents membership to the Scam Detector feed
+      contract: unlock
+      type: deploy
+      args:
+          version: '13'
+          initArgs:
+              lockName: 'Scam Detector (Free Trial)'
+              lockCreator: '0x577022b59D1C25323ab524Fe78d2F6347b5C69f0'
+              tokenAddress: '0x0fa8781a83e46826621b3bc094ea2a0212e71b23' # USDC token on Mumbai
+              keyPrice: '0'
+              expirationDuration: '0'
+
+    - title: Deploy Spam Detector Free Trial Feed
+      description: Deploy the Unlock contract that represents membership to the Spam Detector feed
+      contract: unlock
+      type: deploy
+      args:
+          version: '13'
+          initArgs:
+              lockName: 'Spam Detector (Free Trial)'
+              lockCreator: '0x577022b59D1C25323ab524Fe78d2F6347b5C69f0'
+              tokenAddress: '0x0fa8781a83e46826621b3bc094ea2a0212e71b23' # USDC token on Mumbai
+              keyPrice: '0'
+              expirationDuration: '0'
+
+    - title: Deploy Rug Pull Detector Free Trial Feed
+      description: Deploy the Unlock contract that represents membership to the Rug Pull Detector feed
+      contract: unlock
+      type: deploy
+      args:
+          version: '13'
+          initArgs:
+              lockName: 'Rug Pull Detector (Free Trial)'
+              lockCreator: '0x577022b59D1C25323ab524Fe78d2F6347b5C69f0'
+              tokenAddress: '0x0fa8781a83e46826621b3bc094ea2a0212e71b23' # USDC token on Mumbai
+              keyPrice: '0'
+              expirationDuration: '0'
+
+    - title: Deploy General Data Free Trial Feed
+      description: Deploy the Unlock contract that represents membership to the General Data feed
+      contract: unlock
+      type: deploy
+      args:
+          version: '13'
+          initArgs:
+              lockName: 'General Data (Free Trial)'
+              lockCreator: '0x577022b59D1C25323ab524Fe78d2F6347b5C69f0'
+              tokenAddress: '0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3' # FORT token on Mumbai
+              keyPrice: '0'
+              expirationDuration: '0'

@@ -47,6 +47,20 @@ function grantKeys(recipients, expirationTimestamps, keyManagers) {
     };
 }
 
+function updateLockConfig(expirationDuration, maxNumberOfKeys, maxNumberOfKeysPerUser) {
+    return {
+        func: simplify(contracts.publicLock.getFunction('updateLockConfig')),
+        inputs: [expirationDuration, maxNumberOfKeys, maxNumberOfKeysPerUser],
+    };
+}
+
+function expireAndRefundFor(tokenId, refundAmount) {
+    return {
+        func: simplify(contracts.publicLock.getFunction('expireAndRefundFor')),
+        inputs: [tokenId, refundAmount],
+    };
+}
+
 function simplify(func) {
     return {
         name: func.name,
@@ -69,5 +83,7 @@ module.exports = {
     withdraw,
     addLockManager,
     grantKeys,
+    updateLockConfig,
+    expireAndRefundFor,
     getABI,
 };

@@ -1,0 +1,23 @@
+config:
+    batch: true
+    title: Airdrop Keys
+    description: Batch airdrop of Unlock keys
+    network: matic
+    signer:
+        type: 'Gnosis Safe'
+        address: '0x5854E0AbCec28EDead274FEF0ec6516087052E99' # Forta Fees multisig
+    contracts:
+        publicLockGeneral: '0x4E0c80548e67A6E05464E540729222EB9812444d'
+
+proposals:
+    - title: Airdrop General Plan Unlimited Keys
+      description: Airdrop general plan unlimited keys
+      contract: publicLockGeneral
+      type: grantKeys
+      args:
+          recipients:
+              - '0x183d13c4fCb5133EA52345A9037C9c25A5Aa139D'
+          expirationTimestamps:
+              - '33248440764' # 1000 years from Aug 8 2023 unix timestamp in seconds
+          keyManagers:
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'

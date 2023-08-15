@@ -1,0 +1,20 @@
+config:
+    batch: true
+    title: Update Free Trial Feed Contracts Config
+    description: Batch config update of Unlock free trial feed contracts
+    network: matic
+    signer:
+        type: 'Gnosis Safe'
+        address: '0x00184CFFdDc79e9A031b74A90E53634B95783B45' # Haseeb/Steven test multisig
+    contracts:
+        publicLockTest4: '0xedCB86544ae49A72AC33C2017A9bE8A33850369D'
+
+proposals:
+    - title: Update Free Trial Feed Config
+      description: Update config of the free trial Unlock contract
+      contract: publicLockTest4
+      type: updateLockConfig
+      args:
+          expirationDuration: '0' # i.e. expires immediately if purchased
+          maxNumberOfKeys: '0' # i.e. non-purchaseable
+          maxNumberOfKeysPerUser: '1'

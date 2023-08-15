@@ -1,0 +1,156 @@
+config:
+    batch: true
+    title: Airdrop Keys
+    description: Batch airdrop of Unlock keys
+    network: matic
+    signer:
+        type: 'Gnosis Safe'
+        address: '0x5854E0AbCec28EDead274FEF0ec6516087052E99' # Forta Fees multisig
+    contracts:
+        publicLockGeneral: '0x4E0c80548e67A6E05464E540729222EB9812444d'
+        publicLockScamDetector: '0x54089510Aec879CA42e08BC4B166be8362B56BB2'
+
+proposals:
+    - title: Airdrop General Plan 15-day Keys
+      description: Airdrop general plan 15-day keys
+      contract: publicLockGeneral
+      type: grantKeys
+      args:
+          recipients:
+              - '0x6aea36C4a9Cf8AC053c07E662fa27e8BDF047121'
+              - '0xE34dC9DB5F87f1854F687D94FF37db6993ef1441'
+              - '0x51c9e0D122102b7babB647b294CB63DC6af9216E'
+              - '0x9C8ED6c23c26dECE8484D56617f807A32636Df00'
+              - '0x81813Bd41459c0Bb757308C855c0521A4e308E36'
+              - '0x5F799f365Fa8A2B60ac0429C48B153cA5a6f0Cf8'
+              - '0x237C643De19453d2EBEC41a77F4dbf1Db2b67fb0'
+              - '0x5354012663b2e0859e89125AeA2E8317e57f48cc'
+              - '0xaCfE4511CE883C14c4eA40563F176C3C09b4c47C'
+              - '0x9B5715C99d3A9db84cAA904f9f442220651436e8'
+              - '0x02fD3818115955be87a19f83e2568Ca840b93FD3'
+              - '0x7A3556E10A621124a0749F73C481D13ec3A446C6'
+              - '0x421af9aBC87197A917b87f8d2b2D8B0213D47Dbe'
+          expirationTimestamps:
+              - '1692835200' # 15 days from Aug 8 2023 unix timestamp in seconds
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+          keyManagers:
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+
+    - title: Airdrop General Plan 30-day Keys
+      description: Airdrop general plan 30-day keys
+      contract: publicLockGeneral
+      type: grantKeys
+      args:
+          recipients:
+              - '0x5C07cbbD3F74925A362acAB166e9b1C59a5235c3'
+              - '0xe62E022C9dc91CB5F19F0d92F3537C2C69F74b63'
+              - '0xB98dF1e105509aD6F4e40D3AC25989CD591679a5'
+              - '0x22f318a46e02245e7aDb6B6FDd0ce5C3d4330430'
+          expirationTimestamps:
+              - '1694217600' # 30 days from Aug 8 2023 unix timestamp in seconds
+              - '1694217600'
+              - '1694217600'
+              - '1694217600'
+          keyManagers:
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+
+    - title: Airdrop Scam Detector Plan 30-day Keys
+      description: Airdrop scam detector plan 30-day keys
+      contract: publicLockScamDetector
+      type: grantKeys
+      args:
+          recipients:
+              - '0x5C07cbbD3F74925A362acAB166e9b1C59a5235c3'
+              - '0xe62E022C9dc91CB5F19F0d92F3537C2C69F74b63'
+              - '0xB98dF1e105509aD6F4e40D3AC25989CD591679a5'
+              - '0x22f318a46e02245e7aDb6B6FDd0ce5C3d4330430'
+          expirationTimestamps:
+              - '1694217600' # 30 days from Aug 8 2023 unix timestamp in seconds
+              - '1694217600'
+              - '1694217600'
+              - '1694217600'
+          keyManagers:
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+
+    - title: Airdrop General Plan Unlimited Keys
+      description: Airdrop general plan unlimited keys
+      contract: publicLockGeneral
+      type: grantKeys
+      args:
+          recipients:
+              - '0xad7547d09015664943d0A7c1BeA47f28dF298EC0'
+              - '0x466CF86417dd89f5800C64708C407Bda836E5E78'
+              - '0x5075534aFB4b73CbB6744eA8B59d78Ca56059471'
+              - '0xc1b7551c3A01975bbde527f29f7C37566746f0EA'
+              - '0x88dC3a2284FA62e0027d6D6B1fCfDd2141a143b8'
+              - '0x061f191f9a60B3373D3146b1F153c03Ec2C2A05E'
+              - '0x577022b59D1C25323ab524Fe78d2F6347b5C69f0'
+              - '0x7959f8E09D7740c9bd5f828133EbFcc902F8DD6b'
+          expirationTimestamps:
+              - '33248440764' # 1000 years from Aug 8 2023 unix timestamp in seconds
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+          keyManagers:
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+
+    - title: Airdrop Scam Detector Plan Unlimited Keys
+      description: Airdrop scam detector plan unlimited keys
+      contract: publicLockScamDetector
+      type: grantKeys
+      args:
+          recipients:
+              - '0xad7547d09015664943d0A7c1BeA47f28dF298EC0'
+              - '0x466CF86417dd89f5800C64708C407Bda836E5E78'
+              - '0xc1b7551c3A01975bbde527f29f7C37566746f0EA'
+              - '0x88dC3a2284FA62e0027d6D6B1fCfDd2141a143b8'
+          expirationTimestamps:
+              - '33248440764' # 1000 years from Aug 8 2023 unix timestamp in seconds
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+          keyManagers:
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'

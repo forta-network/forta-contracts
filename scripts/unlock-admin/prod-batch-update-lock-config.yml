@@ -1,0 +1,50 @@
+config:
+    batch: true
+    title: Update Free Trial Feeds Config
+    description: Batch config update of Unlock free trial contracts
+    network: matic
+    signer:
+        type: 'Gnosis Safe'
+        address: '0x5854E0AbCec28EDead274FEF0ec6516087052E99' # Forta Fees multisig
+    contracts:
+        publicLockGeneralFreeTrial: '0xB73d7Cb1bB6340adE0bB3D7A2C396EB2551aD20d'
+        publicLockScamDetectorFreeTrial: '0xe4610C8ac8e91978e6319fB1dd64b10d87a46450'
+        publicLockSpamDetectorFreeTrial: '0xf84b294E47bcfd817d7d2B7a317d99AFD01E4cc6'
+        publicLockRugPullDetectorFreeTrial: '0xa7FD423969e923fC7c4D2eF315C0A14361A0b1c4'
+
+proposals:
+    - title: Update General Plan Free Trial Config
+      description: Update config of the General Plan free trial contract
+      contract: publicLockGeneralFreeTrial
+      type: updateLockConfig
+      args:
+          expirationDuration: '0' # i.e. expires immediately (if purchased)
+          maxNumberOfKeys: '0' # i.e. non-purchaseable
+          maxNumberOfKeysPerUser: '1'
+
+    - title: Update Scam Detector Free Trial Config
+      description: Update config of the Scam Detector free trial contract
+      contract: publicLockScamDetectorFreeTrial
+      type: updateLockConfig
+      args:
+          expirationDuration: '0' # i.e. expires immediately (if purchased)
+          maxNumberOfKeys: '0' # i.e. non-purchaseable
+          maxNumberOfKeysPerUser: '1'
+
+    - title: Update Spam Detector Free Trial Config
+      description: Update config of the Spam Detector free trial contract
+      contract: publicLockSpamDetectorFreeTrial
+      type: updateLockConfig
+      args:
+          expirationDuration: '0' # i.e. expires immediately (if purchased)
+          maxNumberOfKeys: '0' # i.e. non-purchaseable
+          maxNumberOfKeysPerUser: '1'
+
+    - title: Update Rug Pull Detector Free Trial Config
+      description: Update config of the Rug Pull Detector free trial contract
+      contract: publicLockRugPullDetectorFreeTrial
+      type: updateLockConfig
+      args:
+          expirationDuration: '0' # i.e. expires immediately (if purchased)
+          maxNumberOfKeys: '0' # i.e. non-purchaseable
+          maxNumberOfKeysPerUser: '1'

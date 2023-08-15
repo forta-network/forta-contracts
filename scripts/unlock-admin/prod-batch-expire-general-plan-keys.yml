@@ -1,0 +1,257 @@
+config:
+    batch: true
+    title: Expire Airdropped General Plan Keys
+    description: Batch expiry of airdropped General Plan Unlock keys
+    network: matic
+    signer:
+        type: 'Gnosis Safe'
+        address: '0x5854E0AbCec28EDead274FEF0ec6516087052E99' # Forta Fees multisig
+    contracts:
+        publicLockGeneral: '0x4E0c80548e67A6E05464E540729222EB9812444d'
+
+proposals:
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '3'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '4'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '5'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '6'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '7'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '8'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '9'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '10'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '11'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '12'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '13'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '14'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '15'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '16'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '17'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '18'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '19'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '20'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '21'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '22'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '23'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '24'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '25'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '26'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '27'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '28'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '29'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '30'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '31'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '32'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '33'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '34'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '35'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '36'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '37'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '38'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '39'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '40'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '41'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '42'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '43'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '44'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '45'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '46'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '47'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '48'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '49'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '50'
+          refundAmount: '0'
+    - contract: publicLockGeneral
+      type: expireAndRefundFor
+      args:
+          tokenId: '53'
+          refundAmount: '0'
