@@ -107,6 +107,9 @@ function getCall(proposal) {
         case 'expireAndRefundFor':
             return call.expireAndRefundFor(args.tokenId, args.refundAmount);
 
+        case 'grantKeyExtension':
+            return call.grantKeyExtension(args.tokenId, args.duration);
+
         default:
             throw `unknown proposal type ${proposal.type}`;
     }

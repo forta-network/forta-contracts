@@ -61,6 +61,13 @@ function expireAndRefundFor(tokenId, refundAmount) {
     };
 }
 
+function grantKeyExtension(tokenId, duration) {
+    return {
+        func: simplify(contracts.publicLock.getFunction('grantKeyExtension')),
+        inputs: [tokenId, duration],
+    };
+}
+
 function simplify(func) {
     return {
         name: func.name,
@@ -85,5 +92,6 @@ module.exports = {
     grantKeys,
     updateLockConfig,
     expireAndRefundFor,
+    grantKeyExtension,
     getABI,
 };
