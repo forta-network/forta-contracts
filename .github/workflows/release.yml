@@ -44,7 +44,7 @@ jobs:
         name: Test release
         if: startsWith(github.head_ref, 'release/')
         runs-on: ubuntu-22.04
-#       timeout-minutes: 20
+        # timeout-minutes: 20
         needs: build
         steps:
             - uses: actions/checkout@v3
@@ -89,7 +89,7 @@ jobs:
     #     name: Prepare release
     #     if: startsWith(github.head_ref, 'release/')
     #     runs-on: ubuntu-22.04
-    #     needs: test
+    #     needs: coverage
     #     outputs:
     #         release_version: ${{ steps.parse.outputs.release_version }}
     #         release_path: ${{ steps.parse.outputs.release_path }}
