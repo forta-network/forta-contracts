@@ -33,3 +33,6 @@ bytes32 constant ALLOCATOR_CONTRACT_ROLE = keccak256("ALLOCATOR_CONTRACT_ROLE");
 // Scanner Node Version
 bytes32 constant SCANNER_VERSION_ROLE = keccak256("SCANNER_VERSION_ROLE");
 bytes32 constant SCANNER_BETA_VERSION_ROLE = keccak256("SCANNER_BETA_VERSION_ROLE");
+
+// Threat Oracles
+bytes32 constant THREAT_ORACLE_ADMIN_ROLE = keccak256("THREAT_ORACLE_ADMIN_ROLE");
