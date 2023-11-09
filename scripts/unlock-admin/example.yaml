@@ -1,0 +1,52 @@
+# This file shows a full example of a propose.yaml to create.
+
+config:
+    batch: false # only set to true if all proposals should be batched into one proposal
+    title: Deploy Unlock Feed Contracts # required if batch=true
+    description: Batch deployment of Unlock feed contracts # required if batch=true
+    network: matic # set to mumbai if testing
+    signer:
+        type: 'EOA' # set to 'Gnosis Safe' if multisig
+        address: '0x874B5d427b2d27F6Ea0ed3BCE4De454824AEC9cC'
+    contracts:
+        unlock: '0xE8E5cd156f89F7bdB267EabD5C43Af3d5AF2A78f'
+        publicLock: '0xbC2B60393e81B1F5399977030ba4e2165A2e213A'
+
+proposals:
+    - title: Deploy new PublicLock contract # not used if batch=true
+      description: To be used for one of the plans # not used if batch=true
+      contract: unlock
+      type: deploy
+      args:
+          version: '13'
+          initArgs:
+              lockName: 'Spam Detector (FORT)'
+              lockCreator: '0x874B5d427b2d27F6Ea0ed3BCE4De454824AEC9cC' # this account manages the lock
+              tokenAddress: '0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1' # FORT token on Polygon
+              keyPrice: '1000000000000000000' # enter in wei: example is 1 wei
+              expirationDuration: '86400' # one day in seconds: expires every day
+              #maxNumberOfKeys: '100' # set this only if necessary: defaults to unlimited
+
+    - title: Update key pricing
+      description: Using a different price for the same token
+      contract: publicLock
+      type: updateKeyPricing
+      args:
+          keyPrice: '10000000000000000000' # enter in wei: example is 10 wei
+          tokenAddress: '0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1' # FORT token on Polygon
+
+    - title: Withdraw from lock
+      description: This is for withdrawing the total amount so far
+      contract: publicLock
+      type: withdraw
+      args:
+          tokenAddress: '0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1' # FORT token on Polygon
+          recipient: '0x874B5d427b2d27F6Ea0ed3BCE4De454824AEC9cC'
+          amount: '10000000000000000000' # enter in wei: example is 10 wei
+
+    - title: Add lock manager
+      description: Adds a new address as an Unlock lock manager
+      contract: publicLock
+      type: addLockManager
+      args:
+        address: '0x874B5d427b2d27F6Ea0ed3BCE4De454824AEC9cC'

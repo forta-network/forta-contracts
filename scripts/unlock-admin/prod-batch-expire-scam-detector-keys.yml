@@ -1,0 +1,172 @@
+config:
+    batch: true
+    title: Expire Airdropped Scam Detector Keys
+    description: Batch expiry of airdropped Scam Detector Unlock keys
+    network: matic
+    signer:
+        type: 'Gnosis Safe'
+        address: '0x5854E0AbCec28EDead274FEF0ec6516087052E99' # Forta Fees multisig
+    contracts:
+        publicLockScamDetector: '0x54089510Aec879CA42e08BC4B166be8362B56BB2'
+
+proposals:
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '1'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '2'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '3'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '4'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '5'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '6'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '7'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '8'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '9'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '10'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '11'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '12'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '13'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '14'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '15'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '16'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '17'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '18'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '19'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '20'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '21'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '22'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '23'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '24'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '25'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '26'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '27'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '28'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '29'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '30'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '31'
+          refundAmount: '0'
+    - contract: publicLockScamDetector
+      type: expireAndRefundFor
+      args:
+          tokenId: '32'
+          refundAmount: '0'

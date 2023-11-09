@@ -1,0 +1,42 @@
+config:
+    batch: true
+    title: Add Free Trial Feeds Lock Manager
+    description: Batch addition of lock manager to free trial feeds
+    network: matic
+    signer:
+        type: 'Gnosis Safe'
+        address: '0x30ceaeC1d8Ed347B91d45077721c309242db3D6d' # Foundation multisig
+    contracts:
+        publicLockGeneralFreeTrial: '0xB73d7Cb1bB6340adE0bB3D7A2C396EB2551aD20d'
+        publicLockScamDetectorFreeTrial: '0xe4610C8ac8e91978e6319fB1dd64b10d87a46450'
+        publicLockSpamDetectorFreeTrial: '0xf84b294E47bcfd817d7d2B7a317d99AFD01E4cc6'
+        publicLockRugPullDetectorFreeTrial: '0xa7FD423969e923fC7c4D2eF315C0A14361A0b1c4'
+
+proposals:
+    - title: Add Lock Manager
+      description: Add a lock manager
+      contract: publicLockGeneralFreeTrial
+      type: addLockManager
+      args:
+          address: '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+
+    - title: Add Lock Manager
+      description: Add a lock manager
+      contract: publicLockRugPullDetectorFreeTrial
+      type: addLockManager
+      args:
+          address: '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+
+    - title: Add Lock Manager
+      description: Add a lock manager
+      contract: publicLockScamDetectorFreeTrial
+      type: addLockManager
+      args:
+          address: '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+
+    - title: Add Lock Manager
+      description: Add a lock manager
+      contract: publicLockSpamDetectorFreeTrial
+      type: addLockManager
+      args:
+          address: '0x5854E0AbCec28EDead274FEF0ec6516087052E99'

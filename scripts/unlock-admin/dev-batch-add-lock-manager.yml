@@ -1,0 +1,42 @@
+config:
+    batch: true
+    title: Batch Add Lock Manager
+    description: Batch addition of lock managers
+    network: mumbai
+    signer:
+        type: 'EOA'
+        address: '0x577022b59D1C25323ab524Fe78d2F6347b5C69f0' # Haseeb's wallet
+    contracts:
+        publicLockScamDetector: '0x685b16Ad7Dc0711B6a49Bc95942228A1aD9369D7' # Scam Detector on Mumbai
+        publicLockSpamDetector: '0x18096Ba5c800FAAbb0d165952656C7FF1E77c059'
+        publicLockGeneral: '0x2B80295681D1c52df0a2D80119baf7639299F489'
+        publicLockRugPullDetector: '0x05871f396F005afeCA6fD52E5452c0DC78060be2'
+
+proposals:
+    - title: Add Lock Manager
+      description: Add a lock manager
+      contract: publicLockScamDetector
+      type: addLockManager
+      args:
+          address: '0xCC274C75959f275c419fA921EBE392D29bF72728'
+
+    - title: Add Lock Manager
+      description: Add a lock manager
+      contract: publicLockSpamDetector
+      type: addLockManager
+      args:
+          address: '0xCC274C75959f275c419fA921EBE392D29bF72728'
+
+    - title: Add Lock Manager
+      description: Add a lock manager
+      contract: publicLockGeneral
+      type: addLockManager
+      args:
+          address: '0xCC274C75959f275c419fA921EBE392D29bF72728'
+
+    - title: Add Lock Manager
+      description: Add a lock manager
+      contract: publicLockRugPullDetector
+      type: addLockManager
+      args:
+          address: '0xCC274C75959f275c419fA921EBE392D29bF72728'

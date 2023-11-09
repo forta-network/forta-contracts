@@ -76,6 +76,6 @@ export function handleScannerEnabled(event: ScannerEnabledEvent): void {
 export function handleTransfer(event: TransferEvent): void {
   const scannerPoolId = event.params.tokenId;
   const scannerPool = fetchScannerPool(scannerPoolId);
-  scannerPool.owner = event.params.to.toHexString();
+  scannerPool.owner = fetchAccount(event.params.to).id;
   scannerPool.save();
 }

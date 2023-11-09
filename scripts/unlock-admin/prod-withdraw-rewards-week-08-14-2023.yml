@@ -1,0 +1,23 @@
+config:
+    batch: true
+    title: Withdraw Bot Rewards Week 08-14-2023
+    description: Withdraw bot rewards for week 08-14-2023
+    network: matic
+    signer:
+        type: 'Gnosis Safe'
+        address: '0x5854E0AbCec28EDead274FEF0ec6516087052E99' # Forta Fees multisig
+    contracts:
+        publicLockGeneral: '0x4E0c80548e67A6E05464E540729222EB9812444d'
+        # publicLockRugPullDetector: '0x525d8d73f11a8586482F4f74C105D9d8B7cf73dA'
+        # publicLockScamDetector: '0x54089510Aec879CA42e08BC4B166be8362B56BB2'
+        # publicLockSpamDetector: '0x6453379CBC14f7a277319B6C8b7577Ae78524968'
+
+proposals:
+    - title: Withdraw General Plan
+      description: Withdraw General Plan
+      contract: publicLockGeneral
+      type: withdraw
+      args:
+          tokenAddress: '0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1' # FORT token on Polygon
+          recipient: '0x15d3c7e811582Be09Bb8673cD603Bb2F22D1e47B' # Polygon relayer
+          amount: '408333333330000000000' # 23.33% of 1750 FORT = 408.33 FORT

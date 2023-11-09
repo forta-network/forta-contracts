@@ -1,0 +1,36 @@
+config:
+    batch: true
+    title: Airdrop Keys
+    description: Batch airdrop of Unlock keys
+    network: matic
+    signer:
+        type: 'Gnosis Safe'
+        address: '0x00184CFFdDc79e9A031b74A90E53634B95783B45' # Haseeb/Steven test multisig
+    contracts:
+        publicLockTest: '0xbC2B60393e81B1F5399977030ba4e2165A2e213A'
+        publicLockTest2: '0x4e988bC6d286Db5453c125b514FF9bd70dE53b95'
+
+proposals:
+    - title: Airdrop General Plan Keys
+      description: Airdrop general plan keys
+      contract: publicLockTest
+      type: grantKeys
+      args:
+          recipients:
+              - '0x167BF1E2885af73610F32D5cc671cB5169F07e2F'
+          expirationTimestamps:
+              - '1691469178' # unix timestamp in seconds
+          keyManagers:
+              - '0x577022b59D1C25323ab524Fe78d2F6347b5C69f0'
+
+    - title: Airdrop Rug Pull Keys
+      description: Airdrop rug pull keys
+      contract: publicLockTest2
+      type: grantKeys
+      args:
+          recipients:
+              - '0x167BF1E2885af73610F32D5cc671cB5169F07e2F'
+          expirationTimestamps:
+              - '1691469178' # unix timestamp in seconds
+          keyManagers:
+              - '0x577022b59D1C25323ab524Fe78d2F6347b5C69f0'

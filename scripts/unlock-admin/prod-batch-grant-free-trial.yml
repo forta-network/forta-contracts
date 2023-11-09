@@ -1,0 +1,192 @@
+config:
+    batch: true
+    title: Batch Airdrop Keys
+    description: Batch airdrop of Unlock keys
+    network: matic
+    signer:
+        type: 'Gnosis Safe'
+        address: '0x5854E0AbCec28EDead274FEF0ec6516087052E99' # Forta Fees multisig
+    contracts:
+        publicLockGeneralFreeTrial: '0xB73d7Cb1bB6340adE0bB3D7A2C396EB2551aD20d'
+        publicLockScamDetectorFreeTrial: '0xe4610C8ac8e91978e6319fB1dd64b10d87a46450'
+
+proposals:
+    - title: Airdrop General Plan 15-day Keys (18)
+      description: Airdrop general plan 15-day keys
+      contract: publicLockGeneralFreeTrial
+      type: grantKeys
+      args:
+          recipients:
+              - '0x6aea36C4a9Cf8AC053c07E662fa27e8BDF047121'
+              - '0xE34dC9DB5F87f1854F687D94FF37db6993ef1441'
+              - '0x51c9e0D122102b7babB647b294CB63DC6af9216E'
+              - '0x9C8ED6c23c26dECE8484D56617f807A32636Df00'
+              - '0x81813Bd41459c0Bb757308C855c0521A4e308E36'
+              - '0x5F799f365Fa8A2B60ac0429C48B153cA5a6f0Cf8'
+              - '0x237C643De19453d2EBEC41a77F4dbf1Db2b67fb0'
+              - '0x5354012663b2e0859e89125AeA2E8317e57f48cc'
+              - '0xaCfE4511CE883C14c4eA40563F176C3C09b4c47C'
+              - '0x9B5715C99d3A9db84cAA904f9f442220651436e8'
+              - '0x02fD3818115955be87a19f83e2568Ca840b93FD3'
+              - '0x7A3556E10A621124a0749F73C481D13ec3A446C6'
+              - '0x421af9aBC87197A917b87f8d2b2D8B0213D47Dbe'
+              - '0xBA35D683D382232488934672CfB9aa19214E228F'
+              - '0x94587a95917188B338C822de2D1e77074131589f'
+              - '0xD03ee5F22C5d46f502fbc42d39354d46540627B0'
+              - '0xb892736038e21B6F4906BD0cC3CfDeC1bc275cb7'
+              - '0xe8Bed3ee8c8B459156aa45BA5ceFF7f3Ac728c3B'
+          expirationTimestamps:
+              - '1692835200' # 15 days from Aug 8 2023 unix timestamp in seconds
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+              - '1692835200'
+          keyManagers:
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+
+    - title: Airdrop General Plan 30-day Keys (6)
+      description: Airdrop general plan 30-day keys
+      contract: publicLockGeneralFreeTrial
+      type: grantKeys
+      args:
+          recipients:
+              - '0x5C07cbbD3F74925A362acAB166e9b1C59a5235c3'
+              - '0xe62E022C9dc91CB5F19F0d92F3537C2C69F74b63'
+              - '0xB98dF1e105509aD6F4e40D3AC25989CD591679a5'
+              - '0x22f318a46e02245e7aDb6B6FDd0ce5C3d4330430'
+              - '0xdd7f5c72C7D24Aae2ddAE28cdce45A1F2469699d'
+              - '0xe3eFcCF966921Ad291fdC31Fa57F9044F105bc98'
+          expirationTimestamps:
+              - '1694217600' # 30 days from Aug 8 2023 unix timestamp in seconds
+              - '1694217600'
+              - '1694217600'
+              - '1694217600'
+              - '1694217600'
+              - '1694217600'
+          keyManagers:
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+
+    - title: Airdrop Scam Detector Plan 30-day Keys (5)
+      description: Airdrop scam detector plan 30-day keys
+      contract: publicLockScamDetectorFreeTrial
+      type: grantKeys
+      args:
+          recipients:
+              - '0x5C07cbbD3F74925A362acAB166e9b1C59a5235c3'
+              - '0xe62E022C9dc91CB5F19F0d92F3537C2C69F74b63'
+              - '0xB98dF1e105509aD6F4e40D3AC25989CD591679a5'
+              - '0x22f318a46e02245e7aDb6B6FDd0ce5C3d4330430'
+              - '0xe3eFcCF966921Ad291fdC31Fa57F9044F105bc98'
+          expirationTimestamps:
+              - '1694217600' # 30 days from Aug 8 2023 unix timestamp in seconds
+              - '1694217600'
+              - '1694217600'
+              - '1694217600'
+              - '1694217600'
+          keyManagers:
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+
+    - title: Airdrop General Plan Unlimited Keys
+      description: Airdrop general plan unlimited keys
+      contract: publicLockGeneralFreeTrial
+      type: grantKeys
+      args:
+          recipients:
+              - '0xad7547d09015664943d0A7c1BeA47f28dF298EC0'
+              - '0x466CF86417dd89f5800C64708C407Bda836E5E78'
+              - '0x5075534aFB4b73CbB6744eA8B59d78Ca56059471'
+              - '0xc1b7551c3A01975bbde527f29f7C37566746f0EA'
+              - '0x88dC3a2284FA62e0027d6D6B1fCfDd2141a143b8'
+              - '0x061f191f9a60B3373D3146b1F153c03Ec2C2A05E'
+              - '0x577022b59D1C25323ab524Fe78d2F6347b5C69f0'
+              - '0x7959f8E09D7740c9bd5f828133EbFcc902F8DD6b'
+              - '0xD65fe9Db69044F97609AFF0810F9C86652DB6452'
+              - '0xebFb85430E23A8593dDB24fE52D9aBD67D357C95'
+              - '0xf77dcB7dbA19d2685bFC51A6eE5c9Cf4f2346E77'
+              - '0x4E2DaaE4725088BF9e21Cf3D4CADfa528a870728'
+              - '0x5006FC70e5E99ACfAd31e3023F0be31d749482ab'
+              - '0x11F6955BC1143920beA9B4c7ff5c27F01F2675ef'
+              - '0x17B45F59dD4F30A5b9FB87f6054e5a885ff6fde5'
+              - '0xb53411097807e19Ab74EF19197B0c0115a8CA081'
+              - '0xab67B1ebe05791127811AC73B3BbF58e53C8D675'
+              - '0x712c88aa093de1d131b41CE4171456b16Acc379a'
+              - '0x906E567A48aA192AC8a95cb09dA4c70984588F81'
+          expirationTimestamps:
+              - '33248440764' # 1000 years from Aug 8 2023 unix timestamp in seconds
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+              - '33248440764'
+          keyManagers:
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
+              - '0x5854E0AbCec28EDead274FEF0ec6516087052E99'
