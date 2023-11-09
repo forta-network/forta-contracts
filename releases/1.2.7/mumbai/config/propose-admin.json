@@ -1,0 +1,10 @@
+{
+    "AccessManager": [
+        {
+            "methodName": "grantRole",
+            "params": [
+                ["roles.SCANNER_BETA_VERSION_ROLE", "0x19AD705930B6695812c921f08b16F7DfAF59A536"]
+            ]
+        }
+    ]
+}
