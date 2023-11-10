@@ -16,7 +16,7 @@ contract ThreatOracle is BaseComponentUpgradeable, ThreatOracleCore {
      * @param __manager address of AccessManager.
      */
     function initialize(
-        address __manager,
+        address __manager
     ) public initializer {
         __BaseComponentUpgradeable_init(__manager);
     }

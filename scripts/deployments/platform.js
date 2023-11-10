@@ -274,6 +274,22 @@ async function migrate(config = {}) {
             CACHE
         );
         DEBUG(`[${Object.keys(contracts).length}] dispatch: ${contracts.dispatch.address}`);
+
+        // Threat Oracle
+
+        DEBUG(`Deploying ThreatOracle...`);
+        contracts.threatOracle = await contractHelpers.tryFetchProxy(
+            hre,
+            'ThreatOracle',
+            'uups',
+            [contracts.access.address],
+            {
+                constructorArgs: [contracts.forwarder.address],
+                unsafeAllow: 'delegatecall',
+            },
+            CACHE
+        );
+        DEBUG(`[${Object.keys(contracts).length}] threat oracle: ${contracts.dispatch.address}`);
     }
 
     // Roles dictionary
