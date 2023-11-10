@@ -31,8 +31,9 @@ abstract contract ThreatOracleCore is BaseComponentUpgradeable {
         emit AddressThreatLevelSet(_address, threatLevel);
     }
 
-    function getThreatLevel(address _address) public view returns (uint) {
-        return _addressThreatLevel.get(_address);
+    function getThreatLevel(address _address) public view returns (uint256) {
+        (,uint256 fetchedThreatLevel) = _addressThreatLevel.tryGet(_address);
+        return fetchedThreatLevel;
     }
 
     function isRegistered(address _address) public view returns (bool) {
