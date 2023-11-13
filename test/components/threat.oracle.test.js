@@ -82,7 +82,7 @@ describe('Threat Oracles', async function () {
         const highThreatLevelsAmount = [...mockThreatLevels, 4, 5];
 
         await expect(this.threatOracle.connect(this.accounts.manager).setThreatLevels(mockAddresses, highThreatLevelsAmount))
-            .to.be.revertedWith(`IncorrectAmounts(${mockAddresses.length}, ${highThreatLevelsAmount.length})`);
+            .to.be.revertedWith(`UnevenAmounts(${mockAddresses.length}, ${highThreatLevelsAmount.length})`);
 
         for(let i = 0; i < mockAddresses.length; i++) {
             const mockAddress = mockAddresses[i];
