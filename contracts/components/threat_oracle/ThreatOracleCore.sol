@@ -26,15 +26,19 @@ abstract contract ThreatOracleCore is BaseComponentUpgradeable {
      * @param threatLevels Array of the addresses' corresponding threat levels.
      */
     function setThreatLevels(address[] calldata addresses, uint256[] calldata threatLevels) external onlyRole(THREAT_ORACLE_ADMIN_ROLE) {
-        if (addresses.length != threatLevels.length) revert UnevenAmounts(addresses.length, threatLevels.length);
+        uint256 addressesAmount = addresses.length;
+        uint256 threatLevelsAmount = threatLevels.length;
 
-        for (uint256 i = 0; i < addresses.length; i++) {
+        if (addressesAmount != threatLevelsAmount) revert UnevenAmounts(addressesAmount, threatLevelsAmount);
+
+        for (uint256 i = 0; i < addressesAmount; i++) {
             _setThreatLevel(addresses[i], threatLevels[i]);
         }
     }
 
     function _setThreatLevel(address _address, uint256 threatLevel) private {
-        if (getThreatLevel(_address) == threatLevel) revert ThreatLevelAlreadySet(_address, threatLevel);
+        (,uint256 fetchedThreatLevel) = _addressThreatLevel.tryGet(_address);
+        if (fetchedThreatLevel == threatLevel) revert ThreatLevelAlreadySet(_address, threatLevel);
 
         _addressThreatLevel.set(_address, threatLevel);
         emit AddressThreatLevelSet(_address, threatLevel);

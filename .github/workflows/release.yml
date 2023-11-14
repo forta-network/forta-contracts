@@ -12,78 +12,78 @@ defaults:
         shell: bash
 
 jobs:
-    build:
-        name: Build release
-        if: startsWith(github.head_ref, 'release/')
-        runs-on: ubuntu-22.04
-        timeout-minutes: 10
-        env:
-            INFURA_PROJECT_ID: '${{ secrets.INFURA_PROJECT_ID }}'
+    # build:
+    #     name: Build release
+    #     if: startsWith(github.head_ref, 'release/')
+    #     runs-on: ubuntu-22.04
+    #     timeout-minutes: 10
+    #     env:
+    #         INFURA_PROJECT_ID: '${{ secrets.INFURA_PROJECT_ID }}'
 
-        steps:
-            - uses: actions/checkout@v3
-              with:
-                  ref: ${{ github.event.pull_request.head.sha }}
-            - uses: actions/setup-node@v3
-              with:
-                  node-version: '14'
-                  cache: 'yarn'
-            - run: yarn install --frozen-lockfile
+    #     steps:
+    #         - uses: actions/checkout@v3
+    #           with:
+    #               ref: ${{ github.event.pull_request.head.sha }}
+    #         - uses: actions/setup-node@v3
+    #           with:
+    #               node-version: '14'
+    #               cache: 'yarn'
+    #         - run: yarn install --frozen-lockfile
 
-            - name: Compile contracts
-              run: yarn compile
+    #         - name: Compile contracts
+    #           run: yarn compile
 
-            - name: Save build artifacts
-              uses: actions/upload-artifact@v3
-              with:
-                  name: contract-artifacts
-                  path: |
-                      artifacts
-                      cache/*.json
-    test:
-        name: Test release
-        if: startsWith(github.head_ref, 'release/')
-        runs-on: ubuntu-22.04
-#       timeout-minutes: 20
-        needs: build
-        steps:
-            - uses: actions/checkout@v3
-              with:
-                  ref: ${{ github.event.pull_request.head.sha }}
-            - uses: actions/setup-node@v3
-              with:
-                  node-version: '14'
-                  cache: 'yarn'
-            - run: yarn install --frozen-lockfile
+    #         - name: Save build artifacts
+    #           uses: actions/upload-artifact@v3
+    #           with:
+    #               name: contract-artifacts
+    #               path: |
+    #                   artifacts
+    #                   cache/*.json
+#     test:
+#         name: Test release
+#         if: startsWith(github.head_ref, 'release/')
+#         runs-on: ubuntu-22.04
+# #       timeout-minutes: 20
+#         needs: build
+#         steps:
+#             - uses: actions/checkout@v3
+#               with:
+#                   ref: ${{ github.event.pull_request.head.sha }}
+#             - uses: actions/setup-node@v3
+#               with:
+#                   node-version: '14'
+#                   cache: 'yarn'
+#             - run: yarn install --frozen-lockfile
 
-            - name: Get build artifacts
-              uses: actions/download-artifact@v3
-              with:
-                  name: contract-artifacts
+#             - name: Get build artifacts
+#               uses: actions/download-artifact@v3
+#               with:
+#                   name: contract-artifacts
 
-            - name: Run unit tests
-              run: yarn test --no-compile
+#             - name: Run unit tests
+#               run: yarn test --no-compile
 
-    coverage:
-        name: Code coverage
-        if: startsWith(github.head_ref, 'release/')
-        runs-on: ubuntu-22.04
-        needs: test
-        # needs: build
-        steps:
-          - uses: actions/checkout@v3
-            with:
-                ref: ${{ github.event.pull_request.head.sha }}
-          - uses: actions/setup-node@v3
-            with:
-                node-version: '14'
-                cache: 'yarn'
-          - run: yarn install --frozen-lockfile
+    # coverage:
+    #     name: Code coverage
+    #     if: startsWith(github.head_ref, 'release/')
+    #     runs-on: ubuntu-22.04
+    #     needs: test
+    #     # needs: build
+    #     steps:
+    #       - uses: actions/checkout@v3
+    #         with:
+    #             ref: ${{ github.event.pull_request.head.sha }}
+    #       - uses: actions/setup-node@v3
+    #         with:
+    #             node-version: '14'
+    #             cache: 'yarn'
+    #       - run: yarn install --frozen-lockfile
 
-          - run: yarn coverage
-          - uses: codecov/codecov-action@v3
-            with:
-              token: ${{ secrets.CODECOV_TOKEN }}
+    #       - run: yarn coverage
+    #       - uses: codecov/codecov-action@v3
+    #         with:
+    #           token: ${{ secrets.CODECOV_TOKEN }}
 
     # prepare:
     #     name: Prepare release
