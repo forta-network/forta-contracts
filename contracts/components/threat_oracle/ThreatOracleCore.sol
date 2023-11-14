@@ -7,76 +7,89 @@ import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "../BaseComponentUpgradeable.sol";
 
 abstract contract ThreatOracleCore is BaseComponentUpgradeable {
-    using EnumerableMap for EnumerableMap.AddressToUintMap;
+    struct ThreatProperties {
+        string category;
+        uint256 confidenceScore;
+    }
+    
+    /// Map of addresses to their corresponding threat properties.
+    mapping (address => ThreatAddressProperties) private _addressThreatProperties;
 
-    /// Map of addresses to their corresponding threat level.
-    EnumerableMap.AddressToUintMap private _addressThreatLevel;
+    event AddressRegistered(address indexed _address, string indexed category, uint256 indexed confidenceScore);
+    event AddressDeregistered(address indexed _address);
 
-    event AddressThreatLevelSet(address indexed _address, uint256 indexed threatLevel);
-
-    error UnevenAmounts(uint256 addressAmount, uint256 threatLevelAmount);
-    error ThreatLevelAlreadySet(address _address, uint256 threatLevel);
+    error UnevenAmounts(uint256 addressesAmount, uint256 categoriesAmount, uint256 confidenceScoresAmount);
 
     /**
-     * @notice Method to register addresses and assign them a threat level.
+     * @notice Method to register addresses with their threat properties.
      * @dev Only accessible to the account that has admin access.
-     * Does not allow setting the threat level to its current value.
-     * Threat level is to be between 0-5.
+     * All three passed arguments must be equal in length.
      * @param addresses Array of addresses to register.
-     * @param threatLevels Array of the addresses' corresponding threat levels.
+     * @param categories Array of the categories, with each corresponding to an
+     * address. E.g. 'exploit'.
+     * @param confidenceScores Array of the corresponding address' confidence score
+     * that it has been correctly categorized.
      */
-    function setThreatLevels(address[] calldata addresses, uint256[] calldata threatLevels) external onlyRole(THREAT_ORACLE_ADMIN_ROLE) {
+    function registerAddresses(
+        address[] calldata addresses,
+        string[] calldata categories,
+        uint256[] calldata confidenceScores
+    ) external onlyRole(THREAT_ORACLE_ADMIN_ROLE) {
         uint256 addressesAmount = addresses.length;
-        uint256 threatLevelsAmount = threatLevels.length;
+        uint256 categoriesAmount = categories.length;
+        uint256 confidenceScoresAmount = confidenceScores.length;
 
-        if (addressesAmount != threatLevelsAmount) revert UnevenAmounts(addressesAmount, threatLevelsAmount);
+        if (
+            addressesAmount != categoriesAmount ||
+            addressesAmount != confidenceScoresAmount ||
+            categoriesAmount != confidenceScoresAmount
+        ) {
+            revert UnevenAmounts(addressesAmount, threatLevelsAmount, confidenceScoresAmount);
+        }
 
         for (uint256 i = 0; i < addressesAmount; i++) {
-            _setThreatLevel(addresses[i], threatLevels[i]);
+            _registerAddress(addresses[i], categories[i], confidenceScores[i]);
         }
     }
 
-    function _setThreatLevel(address _address, uint256 threatLevel) private {
-        (,uint256 fetchedThreatLevel) = _addressThreatLevel.tryGet(_address);
-        if (fetchedThreatLevel == threatLevel) revert ThreatLevelAlreadySet(_address, threatLevel);
+    /**
+     * @notice Method to deregister addresses.
+     * @dev Only accessible to the account that has admin access.
+     * @param addresses Array of addresses to deregister.
+     */
+    function deregisterAddresses(address[] calldata addresses) external onlyRole(THREAT_ORACLE_ADMIN_ROLE) {
+        uint256 addressesAmount = addresses.length;
 
-        _addressThreatLevel.set(_address, threatLevel);
-        emit AddressThreatLevelSet(_address, threatLevel);
+        for(uint256 i = 0; i < addressesAmount; i++) {
+            _deregisterAddress(addresses[i]);
+        }
     }
 
     /**
-     * @notice Get threat level for an address
-     * @dev A return value of '0' does not mean an address is 'no threat',
-     * as it could also mean it has not been registered.
+     * @notice Get threat properties for an address. Properties includes
+     * a category (e.g. 'exploit') and confidence score (0-1.0).
      * @param _address Address of interest.
-     * @return threat level of the given address.
+     * @return category of the given address.
+     * @return confidence score of the given address.
      */
-    function getThreatLevel(address _address) public view returns (uint256) {
-        (,uint256 fetchedThreatLevel) = _addressThreatLevel.tryGet(_address);
-        return fetchedThreatLevel;
+    function getThreatCategoryAndConfidence(address _address) public view returns (string, uint256) {
+        ThreatProperties threatProperties = _addressThreatProperties[_address];
+        return (threatProperties.category, threatProperties.confidenceScore);
     }
 
-    /**
-     * @notice Check if address has been registered.
-     * @param _address Address of interest.
-     * @return true if the address has been registered, false otherwise.
-     */
-    function isRegistered(address _address) public view returns (bool) {
-        return _addressThreatLevel.contains(_address);
+    function _registerAddress(address _address, string category, uint256 confidenceScore) private {
+        _addressThreatProperties[_address] = ThreatProperties({ category: category, confidenceScore: confidenceScore });
+        emit AddressRegistered(_address, threatProperties.category, threatProperties.confidenceScore);
     }
 
-    /**
-     * @notice Gets the total amount of addresses that have been registered.
-     * @dev Amount includes addresses deemed no threat.
-     * @return amount of addresses that have been registered.
-     */
-    function totalAddressesRegistered() public view returns (uint256) {
-        return _addressThreatLevel.length();
+    function _deregisterAddress(address _address) private {
+        delete _addressThreatProperties[_address];
+        emit AddressDeregistered(_address);
     }
 
     /**
      *  50
-     * - 1 _addressThreatLevel
+     * - 1 _addressThreatProperties
      * --------------------------
      *  49 __gap
      */

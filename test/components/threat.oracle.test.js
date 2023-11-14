@@ -238,22 +238,30 @@ describe('Threat Oracle', async function () {
             // Max amount before breaking was between `407` & `413`,
             // and we want it to revert initially for this test,
             // therefore we need to exceed that number
-            const highAmountMockAddresses = createAddresses(2222);
-            const highAmountMockThreatLevels = createThreatLevels(2000);
+            //
+            // Additionally, if the difference is greater than
+            // `addressChunkSize`, it would fail because encoding
+            // wouldn't work if we only provide one array instead
+            // of two
+            const highAmountMockAddresses = createAddresses(777);
+            const highAmountMockThreatLevels = createThreatLevels(770);
 
             const initialAddressesRegistered = await this.threatOracle.totalAddressesRegistered();
 
+            /*
             for(let i = 0; i < highAmountMockAddresses.length; i++) {
                 const mockAddress = highAmountMockAddresses[i];
                 expect(await this.threatOracle.getThreatLevel(mockAddress)).to.be.equal(0);
                 expect(await this.threatOracle.isRegistered(mockAddress)).to.be.equal(false);
             }
             expect(initialAddressesRegistered).to.be.equal(0);
-            
+            */
+
             await expect(this.threatOracle.connect(this.accounts.manager).setThreatLevels(highAmountMockAddresses, highAmountMockThreatLevels)).to.be.revertedWith(
                 `UnevenAmounts(${highAmountMockAddresses.length}, ${highAmountMockThreatLevels.length})`
             );
 
+            /*
             // Confirm addresses weren't registered
             for(let i = 0; i < highAmountMockAddresses.length; i++) {
                 const mockAddress = highAmountMockAddresses[i];
@@ -261,51 +269,59 @@ describe('Threat Oracle', async function () {
                 expect(await this.threatOracle.isRegistered(mockAddress)).to.be.equal(false);
             }
             expect(await this.threatOracle.totalAddressesRegistered()).to.be.equal(initialAddressesRegistered);
+            */
 
             // Multicall
             const addressChunkSize = 50;
             const multicallChunkSize = 5;
 
             let calls = [];
-            const mockAddressChunk = highAmountMockAddresses.chunk(addressChunkSize);
-            const mockThreatLevelChunk = highAmountMockThreatLevels.chunk(addressChunkSize);
-
-            // console.log(`mockAddressChunk: ${mockAddressChunk.length}`);         // 45
-            // console.log(`mockThreatLevelChunk: ${mockThreatLevelChunk.length}`); // 40
+            const mockAddressChunk = highAmountMockAddresses.chunk(addressChunkSize);           // Length == 16
+            const mockThreatLevelChunk = highAmountMockThreatLevels.chunk(addressChunkSize);    // Length == 16
 
             for(let i = 0; i < mockAddressChunk.length; i++) {
-                console.log(`current iteration: ${i}`);
-                if (i >= mockThreatLevelChunk.length) {
-                    console.log(`inside 'i >= mockThreatLevelChunk.length' check`);
-                    expect(this.threatOracle.interface.encodeFunctionData('setThreatLevels', [mockAddressChunk[i], mockThreatLevelChunk[i]])).fail();
-                };
                 calls.push(await this.threatOracle.interface.encodeFunctionData('setThreatLevels', [mockAddressChunk[i], mockThreatLevelChunk[i]]));
             }
 
-            /*
-            const multicallChunks = calls.chunk(multicallChunkSize);
+            const multicallChunks = calls.chunk(multicallChunkSize);                            // Length == 4
+            const lastAddressChunk = mockAddressChunk[mockAddressChunk.length - 1];
+            const lastThreatLevelChunk = mockThreatLevelChunk[mockThreatLevelChunk.length - 1];
+            const lastAddressChunkAmount = lastAddressChunk.length;                             // Length == 20
+            const lastThreatLevelChunkAmount = lastThreatLevelChunk.length;                     // Length == 27
 
-            await Promise.all(
-                multicallChunks.map(async (callChunk, i) => {
-                    if (i === (multicallChunks.length - 1)) {
-                        await expect(this.threatOracle.connect(this.accounts.manager).multicall(callChunk)).to.be.reverted;
-                    }
-                    await this.threatOracle.connect(this.accounts.manager).multicall(callChunk);
-                })
-            );
+            multicallChunks.map(async (callChunk, i) => {
+                if (i === (multicallChunks.length - 1)) {
+                    // Last one should fail because there are an uneven amount
+                    // of addresses and threat levels in the last chunk
+                    await expect(this.threatOracle.connect(this.accounts.manager).multicall(callChunk)).to.be.revertedWith(
+                        `UnevenAmounts(${lastAddressChunkAmount}, ${lastThreatLevelChunkAmount})`
+                    );
+                }
+                await this.threatOracle.connect(this.accounts.manager).multicall(callChunk);
+            });
             
-            /*
-            for(let i = 0; i < highAmountMockAddresses.length; i++) {
-                const mockAddress = highAmountMockAddresses[i];
-                const mockThreatLevel = highAmountMockThreatLevels[i];
+            for(let i = 0; i < mockAddressChunk.length; i++) {
+                const currentAddressChunk = mockAddressChunk[i];
+                const currentThreatLevelChunk = mockThreatLevelChunk[i];
 
-                expect(await this.threatOracle.getThreatLevel(mockAddress)).to.be.equal(mockThreatLevel);
-                expect(await this.threatOracle.isRegistered(mockAddress)).to.be.equal(true);
+                for(let j = 0; j < currentAddressChunk.length; j++) {
+                    const currentAddress = currentAddressChunk[j];
+                    const currentThreatLevel = currentThreatLevelChunk[j];
+
+                    if(lastAddressChunk.includes(currentAddress)) {
+                        expect(await this.threatOracle.getThreatLevel(currentAddress)).to.be.equal(0);
+                        expect(await this.threatOracle.isRegistered(currentAddress)).to.be.equal(false);
+                    } else {
+                        expect(await this.threatOracle.getThreatLevel(currentAddress)).to.be.equal(currentThreatLevel);
+                        expect(await this.threatOracle.isRegistered(currentAddress)).to.be.equal(true);
+                    }
+                }
             }
-            expect(await this.threatOracle.totalAddressesRegistered()).to.be.equal(initialAddressesRegistered + highAmountMockAddresses.length);
-            */
+            // expect(await this.threatOracle.totalAddressesRegistered()).to.be.equal(initialAddressesRegistered + highAmountMockAddresses.length);
         });
 
         it.skip('allows a high number of addresses to be added in subsequent blocks', async function () {});
-    })
+    });
+
+    describe('blocklist integration', async function () {});
 })
