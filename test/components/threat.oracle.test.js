@@ -2,6 +2,8 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 
+const THREAT_CATEGORIES = ["exploit", "MEV"];
+
 function createAddress(address) {
     const paddedAddress = ethers.utils.hexZeroPad(address, 20);
     return paddedAddress.toLowerCase();
@@ -15,6 +17,7 @@ function createAddresses(addressAmount) {
     return generatedAddresses;
 }
 
+// TODO: Delete as this will be unnecessary.
 function createThreatLevels(threatLevelAmount) {
     const generatedThreatLevels = [];
     for (let i = 0; i < threatLevelAmount; i++) {
@@ -24,91 +27,100 @@ function createThreatLevels(threatLevelAmount) {
     return generatedThreatLevels;
 }
 
+function createThreatCategories(categoriesAmount) {
+    const generatedThreatCategories = [];
+    for (let i = 0; i < categoriesAmount; i++) {
+        const randomInt = Math.floor(Math.random() * THREAT_CATEGORIES.length);
+        const category = THREAT_CATEGORIES[randomInt];
+        generatedThreatCategories.push(category);
+    }
+    return generatedThreatCategories;
+}
+
+function createConfidenceScores(scoresAmount) {
+    const generatedConfidenceScores = [];
+    for (let i = 0; i < scoresAmount; i++) {
+        const randomFloat = Math.floor(Math.random() * 100);
+        const confidenceScore = randomFloat + 1;
+        generatedConfidenceScores.push(confidenceScore);
+    }
+    return generatedConfidenceScores;
+}
+
 const mockAddresses = createAddresses(10);
-const mockThreatLevels = createThreatLevels(10);
+const mockCategories = createThreatCategories(10);
+const mockConfidenceScores = createConfidenceScores(10);
 
 describe('Threat Oracle', async function () {
     prepare(/*{ stake: { agents: { min: '100', max: '500', activated: true } } }*/);
 
     it('registers a single address', async function () {
-        const initialAddressesRegistered = await this.threatOracle.totalAddressesRegistered();
+        let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(mockAddresses[0]);
+        expect(category).to.be.equal("");
+        expect(confidenceScore).to.be.equal(0);
 
-        expect(await this.threatOracle.getThreatLevel(mockAddresses[0])).to.be.equal(0);
-        expect(await this.threatOracle.isRegistered(mockAddresses[0])).to.be.equal(false);
-        expect(initialAddressesRegistered).to.be.equal(0);
+        await expect(this.threatOracle.connect(this.accounts.manager).registerAddresses([mockAddresses[0]], [mockCategories[0]], [mockConfidenceScores[0]]))
+            .to.emit(this.threatOracle, 'AddressRegistered')
+            .withArgs(mockAddresses[0], mockCategories[0], mockConfidenceScores[0]);
 
-        await expect(this.threatOracle.connect(this.accounts.manager).setThreatLevels([mockAddresses[0]], [mockThreatLevels[0]]))
-            .to.emit(this.threatOracle, 'AddressThreatLevelSet')
-            .withArgs(mockAddresses[0], mockThreatLevels[0]);
-
-        expect(await this.threatOracle.getThreatLevel(mockAddresses[0])).to.be.equal(mockThreatLevels[0]);
-        expect(await this.threatOracle.isRegistered(mockAddresses[0])).to.be.equal(true);
-        expect(await this.threatOracle.totalAddressesRegistered()).to.be.equal(initialAddressesRegistered + 1);
+        ({ category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(mockAddresses[0]));
+        expect(category).to.be.equal(mockCategories[0]);
+        expect(confidenceScore).to.be.equal(mockConfidenceScores[0]);
     });
 
     it('registers multiple addresses', async function () {
-        const initialAddressesRegistered = await this.threatOracle.totalAddressesRegistered();
-
-        for(let i = 0; i < mockAddresses.length; i++) {
-            const mockAddress = mockAddresses[i];
-            expect(await this.threatOracle.getThreatLevel(mockAddress)).to.be.equal(0);
-            expect(await this.threatOracle.isRegistered(mockAddress)).to.be.equal(false);
+        for (let i = 0; i < mockAddresses.length; i++) {
+            let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(mockAddresses[i]);
+            expect(category).to.be.equal("");
+            expect(confidenceScore).to.be.equal(0);
         }
-        expect(initialAddressesRegistered).to.be.equal(0);
 
-        await this.threatOracle.connect(this.accounts.manager).setThreatLevels(mockAddresses, mockThreatLevels);
-        
-        for(let i = 0; i < mockAddresses.length; i++) {
-            const mockAddress = mockAddresses[i];
-            const mockThreatLevel = mockThreatLevels[i];
+        await expect(this.threatOracle.connect(this.accounts.manager).registerAddresses(mockAddresses, mockCategories, mockConfidenceScores));
 
-            expect(await this.threatOracle.getThreatLevel(mockAddress)).to.be.equal(mockThreatLevel);
-            expect(await this.threatOracle.isRegistered(mockAddress)).to.be.equal(true);
+        for (let i = 0; i < mockAddresses.length; i++) {
+            ({ category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(mockAddresses[i]));
+            expect(category).to.be.equal(mockCategories[i]);
+            expect(confidenceScore).to.be.equal(mockConfidenceScores[i]);
         }
-        expect(await this.threatOracle.totalAddressesRegistered()).to.be.equal(initialAddressesRegistered + mockAddresses.length);
     });
 
     it('does not allow to register addresses and threat levels if they are not equal in amount', async function () {
-        const initialAddressesRegistered = await this.threatOracle.totalAddressesRegistered();
+        for (let i = 0; i < mockAddresses.length; i++) {
+            let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(mockAddresses[i]);
+            expect(category).to.be.equal("");
+            expect(confidenceScore).to.be.equal(0);
+        }
+
+        const highConfidenceScoresAmount = [...mockConfidenceScores, 40, 50];
+
+        await expect(this.threatOracle.connect(this.accounts.manager).registerAddresses(mockAddresses, mockCategories, highConfidenceScoresAmount))
+            .to.be.revertedWith(`UnevenAmounts(${mockAddresses.length}, ${mockCategories.length}, ${highConfidenceScoresAmount.length})`);
 
         for(let i = 0; i < mockAddresses.length; i++) {
-            const mockAddress = mockAddresses[i];
-
-            expect(await this.threatOracle.getThreatLevel(mockAddress)).to.be.equal(0);
-            expect(await this.threatOracle.isRegistered(mockAddress)).to.be.equal(false);
+            let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(mockAddresses[i]);
+            expect(category).to.be.equal("");
+            expect(confidenceScore).to.be.equal(0);
         }
-        expect(initialAddressesRegistered).to.be.equal(0);
-
-        const highThreatLevelsAmount = [...mockThreatLevels, 4, 5];
-
-        await expect(this.threatOracle.connect(this.accounts.manager).setThreatLevels(mockAddresses, highThreatLevelsAmount))
-            .to.be.revertedWith(`UnevenAmounts(${mockAddresses.length}, ${highThreatLevelsAmount.length})`);
-
-        for(let i = 0; i < mockAddresses.length; i++) {
-            const mockAddress = mockAddresses[i];
-            
-            expect(await this.threatOracle.getThreatLevel(mockAddress)).to.be.equal(0);
-            expect(await this.threatOracle.isRegistered(mockAddress)).to.be.equal(false);
-        }
-        expect(initialAddressesRegistered).to.be.equal(0);
     });
 
     it('does not allow an account without access control to register addresses', async function () {
-        const initialAddressesRegistered = await this.threatOracle.totalAddressesRegistered();
+        for (let i = 0; i < mockAddresses.length; i++) {
+            let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(mockAddresses[i]);
+            expect(category).to.be.equal("");
+            expect(confidenceScore).to.be.equal(0);
+        }
 
-        expect(await this.threatOracle.getThreatLevel(mockAddresses[0])).to.be.equal(0);
-        expect(await this.threatOracle.isRegistered(mockAddresses[0])).to.be.equal(false);
-        expect(initialAddressesRegistered).to.be.equal(0);
-
-        await expect(this.threatOracle.connect(this.accounts.other).setThreatLevels([mockAddresses[0]], [mockThreatLevels[0]]))
+        await expect(this.threatOracle.connect(this.accounts.other).registerAddresses(mockAddresses, mockCategories, mockConfidenceScores))
             .to.be.revertedWith(`MissingRole("${this.roles.THREAT_ORACLE_ADMIN}", "${this.accounts.other.address}")`);
 
-        expect(await this.threatOracle.getThreatLevel(mockAddresses[0])).to.be.equal(0);
-        expect(await this.threatOracle.isRegistered(mockAddresses[0])).to.be.equal(false);
-        expect(initialAddressesRegistered).to.be.equal(0);
+        for (let i = 0; i < mockAddresses.length; i++) {
+            let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(mockAddresses[i]);
+            expect(category).to.be.equal("");
+            expect(confidenceScore).to.be.equal(0);
+        }
     });
 
-    it('allows FP to be corrected - lower existing threat level to zero', async function () {
+    it.only('allows FP to be corrected, i.e. remove address from block list', async function () {
         const initialAddressesRegistered = await this.threatOracle.totalAddressesRegistered();
 
         expect(await this.threatOracle.getThreatLevel(mockAddresses[0])).to.be.equal(0);
@@ -132,6 +144,9 @@ describe('Threat Oracle', async function () {
         expect(await this.threatOracle.isRegistered(mockAddresses[0])).to.be.equal(true);
         expect(await this.threatOracle.totalAddressesRegistered()).to.be.equal(initialAddressesRegistered + 1);
     });
+
+    // Come back to this one once others have been updated
+    it('does not allow a confidence score that is too high to be registered', async function () {});
 
     describe('Multicall', async function () {
         it('allows to register a high number of addresses via multicall', async function () {
@@ -234,6 +249,7 @@ describe('Threat Oracle', async function () {
             );
         });
 
+        // Was testing this before course correcting
         it.only('does not allow addresses to be registered if they and threat levels are uneven in amount - with multicall', async function () {
             // Max amount before breaking was between `407` & `413`,
             // and we want it to revert initially for this test,

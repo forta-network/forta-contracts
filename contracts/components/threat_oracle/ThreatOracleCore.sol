@@ -3,22 +3,26 @@
 
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "../BaseComponentUpgradeable.sol";
 
 abstract contract ThreatOracleCore is BaseComponentUpgradeable {
     struct ThreatProperties {
         string category;
-        uint256 confidenceScore;
+        uint8 confidenceScore;
     }
+
+    /// Confidence scores will be between 0-1.00,
+    // converted to unsigned integers
+    uint8 constant MAX_CONFIDENCE_SCORE = 100;
     
     /// Map of addresses to their corresponding threat properties.
-    mapping (address => ThreatAddressProperties) private _addressThreatProperties;
+    mapping (address => ThreatProperties) private _addressThreatProperties;
 
-    event AddressRegistered(address indexed _address, string indexed category, uint256 indexed confidenceScore);
+    event AddressRegistered(address indexed _address, string indexed category, uint8 indexed confidenceScore);
     event AddressDeregistered(address indexed _address);
 
     error UnevenAmounts(uint256 addressesAmount, uint256 categoriesAmount, uint256 confidenceScoresAmount);
+    error ConfidenceScoreExceedsMax(uint8 maxLimit, uint8 exceedingScore);
 
     /**
      * @notice Method to register addresses with their threat properties.
@@ -33,7 +37,7 @@ abstract contract ThreatOracleCore is BaseComponentUpgradeable {
     function registerAddresses(
         address[] calldata addresses,
         string[] calldata categories,
-        uint256[] calldata confidenceScores
+        uint8[] calldata confidenceScores
     ) external onlyRole(THREAT_ORACLE_ADMIN_ROLE) {
         uint256 addressesAmount = addresses.length;
         uint256 categoriesAmount = categories.length;
@@ -44,7 +48,7 @@ abstract contract ThreatOracleCore is BaseComponentUpgradeable {
             addressesAmount != confidenceScoresAmount ||
             categoriesAmount != confidenceScoresAmount
         ) {
-            revert UnevenAmounts(addressesAmount, threatLevelsAmount, confidenceScoresAmount);
+            revert UnevenAmounts(addressesAmount, categoriesAmount, confidenceScoresAmount);
         }
 
         for (uint256 i = 0; i < addressesAmount; i++) {
@@ -70,16 +74,18 @@ abstract contract ThreatOracleCore is BaseComponentUpgradeable {
      * a category (e.g. 'exploit') and confidence score (0-1.0).
      * @param _address Address of interest.
      * @return category of the given address.
-     * @return confidence score of the given address.
+     * @return confidenceScore of the given address.
      */
-    function getThreatCategoryAndConfidence(address _address) public view returns (string, uint256) {
-        ThreatProperties threatProperties = _addressThreatProperties[_address];
+    function getThreatCategoryAndConfidence(address _address) public view returns (string memory category, uint8 confidenceScore) {
+        ThreatProperties memory threatProperties = _addressThreatProperties[_address];
         return (threatProperties.category, threatProperties.confidenceScore);
     }
 
-    function _registerAddress(address _address, string category, uint256 confidenceScore) private {
+    function _registerAddress(address _address, string calldata category, uint8 confidenceScore) private {
+        if(confidenceScore > MAX_CONFIDENCE_SCORE) revert ConfidenceScoreExceedsMax(MAX_CONFIDENCE_SCORE, confidenceScore);
+
         _addressThreatProperties[_address] = ThreatProperties({ category: category, confidenceScore: confidenceScore });
-        emit AddressRegistered(_address, threatProperties.category, threatProperties.confidenceScore);
+        emit AddressRegistered(_address, category, confidenceScore);
     }
 
     function _deregisterAddress(address _address) private {
