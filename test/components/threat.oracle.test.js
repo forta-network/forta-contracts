@@ -1,5 +1,6 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
+const helpers = require('@nomicfoundation/hardhat-network-helpers');
 const { prepare } = require('../fixture');
 
 const THREAT_CATEGORIES = ["exploit", "MEV"];
@@ -346,7 +347,72 @@ describe('Threat Oracle', async function () {
             }
         });
 
-        it('allows a high number of addresses to be added in subsequent blocks', async function () {});
+        it.only('allows a high number of addresses to be added in subsequent blocks', async function () {
+            const totalHighAmountMockAddresses = createAddresses(3500);
+            const totalHighAmountMockCategories = createThreatCategories(3500);
+            const totalHighAmountMockConfidenceScores = createConfidenceScores(3500);
+
+            const highAmountMockAddresses = totalHighAmountMockAddresses.slice(0, 2000);
+            const highAmountMockCategories = totalHighAmountMockCategories.slice(0, 2000);
+            const highAmountMockConfidenceScores = totalHighAmountMockConfidenceScores.slice(0, 2000);
+
+            // Multicall
+            const argumentChunkSize = 50;
+            const multicallChunkSize = 5;
+
+            let calls = [];
+            const mockAddressChunks = highAmountMockAddresses.chunk(argumentChunkSize);
+            const mockCategoryChunks = highAmountMockCategories.chunk(argumentChunkSize);
+            const mockConfidenceScores = highAmountMockConfidenceScores.chunk(argumentChunkSize);
+
+            for(let i = 0; i < mockAddressChunks.length; i++) {
+                calls.push(await this.threatOracle.interface.encodeFunctionData('registerAddresses', [mockAddressChunks[i], mockCategoryChunks[i], mockConfidenceScores[i]]));
+            }
+
+            await Promise.all(
+                calls.chunk(multicallChunkSize).map(async (callChunk) => {
+                    await this.threatOracle.connect(this.accounts.manager).multicall(callChunk);
+                })
+            );
+            
+            for(let i = 0; i < highAmountMockAddresses.length; i++) {
+                let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(highAmountMockAddresses[i]);
+                expect(category).to.be.equal(highAmountMockCategories[i]);
+                expect(confidenceScore).to.be.equal(highAmountMockConfidenceScores[i]);
+            }
+
+
+            // Increase one block
+            const currentBlock = await helpers.time.latestBlock();
+            await network.provider.send('evm_mine');
+            expect(await helpers.time.latestBlock()).to.be.equal(currentBlock + 1);
+
+
+            const highAmountMockAddressesTwo = totalHighAmountMockAddresses.slice(2000);
+            const highAmountMockCategoriesTwo = totalHighAmountMockCategories.slice(2000);
+            const highAmountMockConfidenceScoresTwo = totalHighAmountMockConfidenceScores.slice(2000);
+
+            calls = [];
+            const mockAddressChunksTwo = highAmountMockAddressesTwo.chunk(argumentChunkSize);
+            const mockCategoryChunksTwo = highAmountMockCategoriesTwo.chunk(argumentChunkSize);
+            const mockConfidenceScoresTwo = highAmountMockConfidenceScoresTwo.chunk(argumentChunkSize);
+
+            for(let i = 0; i < mockAddressChunksTwo.length; i++) {
+                calls.push(await this.threatOracle.interface.encodeFunctionData('registerAddresses', [mockAddressChunksTwo[i], mockCategoryChunksTwo[i], mockConfidenceScoresTwo[i]]));
+            }
+
+            await Promise.all(
+                calls.chunk(multicallChunkSize).map(async (callChunk) => {
+                    await this.threatOracle.connect(this.accounts.manager).multicall(callChunk);
+                })
+            );
+            
+            for(let i = 0; i < totalHighAmountMockAddresses.length; i++) {
+                ({ category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(totalHighAmountMockAddresses[i]));
+                expect(category).to.be.equal(totalHighAmountMockCategories[i]);
+                expect(confidenceScore).to.be.equal(totalHighAmountMockConfidenceScores[i]);
+            }
+        });
     });
 
     describe.skip('blocklist integration', async function () {});
