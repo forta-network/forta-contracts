@@ -133,11 +133,26 @@ describe('Threat Oracle', async function () {
         expect(confidenceScore).to.be.equal(0);
     });
 
-    // Come back to this one once others have been updated
-    it.skip('does not allow a confidence score that is too high to be registered', async function () {});
+    it('does not allow a confidence score that is too high to be registered', async function () {
+        let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(mockAddresses[0]);
+        expect(category).to.be.equal("");
+        expect(confidenceScore).to.be.equal(0);
+
+        const maxConfidenceScore = 100;
+        // Has to be between `100` (i.e. `MAX_CONFIDENCE_SCORE`)
+        // and `255` since the argument is `uint8`.
+        const tooHighConfidenceScore = 243;
+
+        await expect(this.threatOracle.connect(this.accounts.manager).registerAddresses([mockAddresses[0]], [mockCategories[0]], [tooHighConfidenceScore]))
+            .to.be.revertedWith(`ConfidenceScoreExceedsMax(${maxConfidenceScore}, ${tooHighConfidenceScore})`);
+
+        ({ category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(mockAddresses[0]));
+        expect(category).to.be.equal("");
+        expect(confidenceScore).to.be.equal(0);
+    });
 
     describe('Multicall', async function () {
-        it('allows to register a high number of addresses via multicall', async function () {
+        it('allows to register a high number of addresses', async function () {
             const highAmountMockAddresses = createAddresses(2000);
             const highAmountMockCategories = createThreatCategories(2000);
             const highAmountMockConfidenceScores = createConfidenceScores(2000);
@@ -188,7 +203,7 @@ describe('Threat Oracle', async function () {
             }
         });
         
-        it('does not allow an account without access to register addresses - with multicall', async function () {
+        it('does not allow an account without access to register addresses', async function () {
             const highAmountMockAddresses = createAddresses(2000);
             const highAmountMockCategories = createThreatCategories(2000);
             const highAmountMockConfidenceScores = createConfidenceScores(2000);
@@ -234,7 +249,8 @@ describe('Threat Oracle', async function () {
             );
         });
 
-        it.only('does not allow addresses to be registered if they and threat levels are uneven in amount - with multicall', async function () {
+        // TODO: Possible state leak when running all tests together causing this test to fail?
+        it('does not allow addresses to be registered if they and threat levels are uneven in amount', async function () {
             // If the difference is greater than
             // `argumentChunkSize`, it would fail because encoding
             // wouldn't work if we only provide one array instead
@@ -316,6 +332,7 @@ describe('Threat Oracle', async function () {
                     // should not have a value since that last
                     // multicall failed due to uneven arrays
                     // of the three arguments
+                    console.log(`i: ${i} | j: ${j}`);
                     if(i >= (mockAddressChunk.length - multicallChunkSize + 1)) {
                         const { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(currentAddress);
                         expect(category).to.be.equal("");
@@ -329,7 +346,7 @@ describe('Threat Oracle', async function () {
             }
         });
 
-        it.skip('allows a high number of addresses to be added in subsequent blocks', async function () {});
+        it('allows a high number of addresses to be added in subsequent blocks', async function () {});
     });
 
     describe.skip('blocklist integration', async function () {});
