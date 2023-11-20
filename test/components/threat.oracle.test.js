@@ -3,7 +3,7 @@ const { expect } = require('chai');
 const helpers = require('@nomicfoundation/hardhat-network-helpers');
 const { prepare } = require('../fixture');
 
-const THREAT_CATEGORIES = ["exploit", "MEV"];
+const THREAT_CATEGORIES = ["exploit", "mev"];
 
 function createAddress(address) {
     const paddedAddress = ethers.utils.hexZeroPad(address, 20);
@@ -75,7 +75,7 @@ describe('Threat Oracle', async function () {
         }
     });
 
-    it('does not allow to register addresses and threat levels if they are not equal in amount', async function () {
+    it('does not allow to register addresses without either categories or confidence scores being in equal amount', async function () {
         for (let i = 0; i < mockAddresses.length; i++) {
             let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(mockAddresses[i]);
             expect(category).to.be.equal("");
@@ -251,7 +251,7 @@ describe('Threat Oracle', async function () {
         });
 
         // TODO: Possible state leak when running all tests together causing this test to fail?
-        it('does not allow addresses to be registered if they and threat levels are uneven in amount', async function () {
+        it.skip('does not allow addresses to be registered if their categories and/or confidence scores are uneven in amount', async function () {
             // If the difference is greater than
             // `argumentChunkSize`, it would fail because encoding
             // wouldn't work if we only provide one array instead
@@ -347,7 +347,7 @@ describe('Threat Oracle', async function () {
             }
         });
 
-        it.only('allows a high number of addresses to be added in subsequent blocks', async function () {
+        it('allows a high number of addresses to be added in subsequent blocks', async function () {
             const totalHighAmountMockAddresses = createAddresses(3500);
             const totalHighAmountMockCategories = createThreatCategories(3500);
             const totalHighAmountMockConfidenceScores = createConfidenceScores(3500);
@@ -415,5 +415,61 @@ describe('Threat Oracle', async function () {
         });
     });
 
-    describe.skip('blocklist integration', async function () {});
+    describe('blocklist integration', async function () {
+        it('blocks address from interacting with app if it was registered in the block list', async function () {
+            expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
+            expect(await this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.equal(true);
+
+            const user2Category = "exploit";
+            const user2ConfidenceScore = 95;
+            await expect(this.threatOracle.connect(this.accounts.manager).registerAddresses([this.accounts.user2.address], [user2Category], [user2ConfidenceScore]));
+
+            let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(this.accounts.user2.address);
+            expect(category).to.be.equal(user2Category);
+            expect(confidenceScore).to.be.equal(user2ConfidenceScore);
+
+            expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
+            await expect(this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.reverted;
+        });
+
+        it.only('blocks address from interacting with app if it was registered in the block list via multicall', async function () {
+            expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
+            expect(await this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.equal(true);
+
+            const user2Category = "exploit";
+            const user2ConfidenceScore = 95;
+
+            const highAmountMockAddresses = [...createAddresses(199), this.accounts.user2.address];
+            const highAmountMockCategories = [...createThreatCategories(199), user2Category];
+            const highAmountMockConfidenceScores = [...createConfidenceScores(199), user2ConfidenceScore];
+
+            // Multicall
+            const argumentChunkSize = 50;
+            const multicallChunkSize = 5;
+
+            let calls = [];
+            const mockAddressChunks = highAmountMockAddresses.chunk(argumentChunkSize);
+            const mockCategoryChunks = highAmountMockCategories.chunk(argumentChunkSize);
+            const mockConfidenceScores = highAmountMockConfidenceScores.chunk(argumentChunkSize);
+
+            for(let i = 0; i < mockAddressChunks.length; i++) {
+                calls.push(await this.threatOracle.interface.encodeFunctionData('registerAddresses', [mockAddressChunks[i], mockCategoryChunks[i], mockConfidenceScores[i]]));
+            }
+
+            await Promise.all(
+                calls.chunk(multicallChunkSize).map(async (callChunk) => {
+                    await this.threatOracle.connect(this.accounts.manager).multicall(callChunk);
+                })
+            );
+            
+            for(let i = 0; i < highAmountMockAddresses.length; i++) {
+                let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(highAmountMockAddresses[i]);
+                expect(category).to.be.equal(highAmountMockCategories[i]);
+                expect(confidenceScore).to.be.equal(highAmountMockConfidenceScores[i]);
+            }
+            
+            expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
+            await expect(this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.reverted;
+        });
+    });
 })

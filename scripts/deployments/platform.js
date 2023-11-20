@@ -275,7 +275,7 @@ async function migrate(config = {}) {
         );
         DEBUG(`[${Object.keys(contracts).length}] dispatch: ${contracts.dispatch.address}`);
 
-        // Threat Oracle
+        /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Threat Oracle ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
         DEBUG(`Deploying ThreatOracle...`);
         contracts.threatOracle = await contractHelpers.tryFetchProxy(
@@ -289,7 +289,18 @@ async function migrate(config = {}) {
             },
             CACHE
         );
-        DEBUG(`[${Object.keys(contracts).length}] threat oracle: ${contracts.dispatch.address}`);
+        DEBUG(`[${Object.keys(contracts).length}] threat oracle: ${contracts.threatOracle.address}`);
+
+        contracts.oracleConsumer = await contractHelpers.tryFetchContract(
+            hre,
+            'MockThreatOracleConsumer',
+            [contracts.threatOracle.address], 
+            CACHE
+        );
+
+        DEBUG(`[${Object.keys(contracts).length}] oracleConsumer: ${contracts.oracleConsumer.address}`);
+
+        /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     }
 
     // Roles dictionary
