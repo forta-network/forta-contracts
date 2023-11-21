@@ -51,8 +51,12 @@ abstract contract ThreatOracleCore is BaseComponentUpgradeable {
             revert UnevenAmounts(accountsAmount, categoriesAmount, confidenceScoresAmount);
         }
 
-        for (uint256 i = 0; i < accountsAmount; i++) {
+        for (uint256 i = 0; i < accountsAmount;) {
             _registerAccount(accounts[i], categories[i], confidenceScores[i]);
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
