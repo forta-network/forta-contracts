@@ -43,7 +43,9 @@ const mockCategories = createThreatCategories(10);
 const mockConfidenceScores = createConfidenceScores(10);
 
 describe('Threat Oracle', async function () {
-    prepare(/*{ stake: { agents: { min: '100', max: '500', activated: true } } }*/);
+    // Unlike other test suites, this one doesn't
+    // require staking, hence the lack of arguments
+    prepare();
 
     it('registers a single address', async function () {
         let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(mockAddresses[0]);
@@ -152,7 +154,7 @@ describe('Threat Oracle', async function () {
         expect(confidenceScore).to.be.equal(0);
     });
 
-    describe.only('Multicall', async function () {
+    describe('Multicall', async function () {
         it('allows to register a high number of addresses', async function () {
             const highAmountMockAddresses = createAddresses(2000);
             const highAmountMockCategories = createThreatCategories(2000);
@@ -372,15 +374,14 @@ describe('Threat Oracle', async function () {
         });
     });
 
-    describe.only('blocklist integration', async function () {
-        // TODO: Possible state leak when running all tests together causing this test to fail?
+    describe('blocklist integration', async function () {
         it('blocks address from interacting with app if it was registered in the block list', async function () {
             expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
             expect(await this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.equal(true);
 
             const user2Category = "exploit";
             const user2ConfidenceScore = 95;
-            await expect(this.threatOracle.connect(this.accounts.manager).registerAddresses([this.accounts.user2.address], [user2Category], [user2ConfidenceScore]));
+            await this.threatOracle.connect(this.accounts.manager).registerAddresses([this.accounts.user2.address], [user2Category], [user2ConfidenceScore]);
 
             let { category, confidenceScore } = await this.threatOracle.getThreatCategoryAndConfidence(this.accounts.user2.address);
             expect(category).to.be.equal(user2Category);
@@ -397,9 +398,9 @@ describe('Threat Oracle', async function () {
             const user2Category = "exploit";
             const user2ConfidenceScore = 95;
 
-            const highAmountMockAddresses = [...createAddresses(199), this.accounts.user2.address];
-            const highAmountMockCategories = [...createThreatCategories(199), user2Category];
-            const highAmountMockConfidenceScores = [...createConfidenceScores(199), user2ConfidenceScore];
+            const highAmountMockAddresses = [...createAddresses(899), this.accounts.user2.address];
+            const highAmountMockCategories = [...createThreatCategories(899), user2Category];
+            const highAmountMockConfidenceScores = [...createConfidenceScores(899), user2ConfidenceScore];
 
             // Multicall
             const argumentChunkSize = 50;
