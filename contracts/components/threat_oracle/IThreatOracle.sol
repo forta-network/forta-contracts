@@ -6,7 +6,7 @@ pragma solidity ^0.8.9;
 interface IThreatOracle {
     struct ThreatProperties { string category; uint8 confidenceScore; }
 
-    function registerAddresses(address[] calldata addresses, string[] calldata categories, uint8[] calldata confidenceScores) external;
-    function deregisterAddresses(address[] calldata addresses) external;
-    function getThreatCategoryAndConfidence(address _address) external view returns (string memory category, uint8 confidenceScore);
+    function registerAccounts(address[] calldata accounts, string[] calldata categories, uint8[] calldata confidenceScores) external;
+    function deregisterAccounts(address[] calldata accounts) external;
+    function getThreatProperties(address account) external view returns (string memory category, uint8 confidenceScore);
 }

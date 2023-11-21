@@ -12,15 +12,15 @@ contract MockThreatOracleConsumer {
 
     IThreatOracle private _threatOracle;
 
-    error ThreatAddressIdentified(address account, string threatCategory, uint8 confidenceScore);
+    error ThreatAccountIdentified(address account, string threatCategory, uint8 confidenceScore);
 
-    modifier checkAddress(address account) {
-        (string memory category, uint8 confidenceScore) = _threatOracle.getThreatCategoryAndConfidence(account);
+    modifier checkAccount(address account) {
+        (string memory category, uint8 confidenceScore) = _threatOracle.getThreatProperties(account);
         if (
             (keccak256(abi.encodePacked(category)) == EXPLOIT_CATEGORY ||
             keccak256(abi.encodePacked(category)) == MEV_CATEGORY) && 
             confidenceScore >= MIN_CONFIDENCESCORE
-        ) revert ThreatAddressIdentified(account, category, confidenceScore);
+        ) revert ThreatAccountIdentified(account, category, confidenceScore);
         _;
     }
 
@@ -28,7 +28,7 @@ contract MockThreatOracleConsumer {
         _threatOracle = IThreatOracle(__threatOracle);
     }
 
-    function foo() public view checkAddress(msg.sender) returns (bool) {
+    function foo() public view checkAccount(msg.sender) returns (bool) {
         return true;
     }
 }
