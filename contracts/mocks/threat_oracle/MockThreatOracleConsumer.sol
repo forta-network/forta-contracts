@@ -3,32 +3,24 @@
 
 pragma solidity ^0.8.9;
 
-import "../../components/threat_oracle/IThreatOracle.sol";
+import "../../components/threat_oracle/ThreatOracleProvider.sol";
 
-contract MockThreatOracleConsumer {
-    bytes32 constant private EXPLOIT_CATEGORY = keccak256("exploit");
-    bytes32 constant private MEV_CATEGORY = keccak256("mev");
-    uint8 constant MIN_CONFIDENCESCORE = 90;
+contract MockThreatOracleConsumer is ThreatOracleProvider {
 
-    IThreatOracle private _threatOracle;
+    constructor(address __threatOracle) ThreatOracleProvider(__threatOracle) {}
 
-    error ThreatAccountIdentified(address account, string threatCategory, uint8 confidenceScore);
-
-    modifier checkAccount(address account) {
-        (string memory category, uint8 confidenceScore) = _threatOracle.getThreatProperties(account);
-        if (
-            (keccak256(abi.encodePacked(category)) == EXPLOIT_CATEGORY ||
-            keccak256(abi.encodePacked(category)) == MEV_CATEGORY) && 
-            confidenceScore >= MIN_CONFIDENCESCORE
-        ) revert ThreatAccountIdentified(account, category, confidenceScore);
-        _;
+    function foo() public view onlyNonExploitAccount(msg.sender) onlyNonExploitAccount(tx.origin) returns (bool) {
+        return true;
     }
 
-    constructor(address __threatOracle) {
-        _threatOracle = IThreatOracle(__threatOracle);
-    }
-
-    function foo() public view checkAccount(msg.sender) returns (bool) {
+    function bar(address _account)
+        public
+        view
+        onlyNonExploitAccount(msg.sender)
+        onlyNonExploitAccount(tx.origin)
+        onlyNonExploitAccount(_account)
+        returns (bool)
+    {
         return true;
     }
 }

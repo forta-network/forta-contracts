@@ -445,5 +445,9 @@ describe('Threat Oracle', async function () {
             expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
             expect(await this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.equal(true);
         });
+
+        it('blocks account from interacting with app if it was registered, even as the tx.origin');
+
+        it('blocks account from interacting with app if argument to function is in the block list');
     });
 })
