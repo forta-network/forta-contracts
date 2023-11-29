@@ -291,14 +291,25 @@ async function migrate(config = {}) {
         );
         DEBUG(`[${Object.keys(contracts).length}] threat oracle: ${contracts.threatOracle.address}`);
 
+        const minConfidenceScore = 90;
+        const maxAddressArgumentAmount = 50;
         contracts.oracleConsumer = await contractHelpers.tryFetchContract(
             hre,
             'MockThreatOracleConsumer',
-            [contracts.threatOracle.address], 
+            [contracts.threatOracle.address, minConfidenceScore, maxAddressArgumentAmount],
             CACHE
         );
 
         DEBUG(`[${Object.keys(contracts).length}] oracleConsumer: ${contracts.oracleConsumer.address}`);
+
+        contracts.oracleConsumerCaller = await contractHelpers.tryFetchContract(
+            hre,
+            'ThreatOracleConsumerCaller',
+            [],
+            CACHE
+        );
+
+        DEBUG(`[${Object.keys(contracts).length}] oracleConsumerCaller: ${contracts.oracleConsumerCaller.address}`);
 
         /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     }

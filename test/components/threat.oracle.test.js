@@ -68,7 +68,7 @@ describe('Threat Oracle', async function () {
             expect(confidenceScore).to.be.equal(0);
         }
 
-        await expect(this.threatOracle.connect(this.accounts.manager).registerAccounts(mockAccounts, mockCategories, mockConfidenceScores));
+        await this.threatOracle.connect(this.accounts.manager).registerAccounts(mockAccounts, mockCategories, mockConfidenceScores);
 
         for (let i = 0; i < mockAccounts.length; i++) {
             ({ category, confidenceScore } = await this.threatOracle.getThreatProperties(mockAccounts[i]));
@@ -371,7 +371,7 @@ describe('Threat Oracle', async function () {
         });
     });
 
-    describe('blocklist integration', async function () {
+    describe.only('blocklist integration', async function () {
         it('blocks account from interacting with app if it was registered in the block list', async function () {
             expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
             expect(await this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.equal(true);
@@ -446,8 +446,94 @@ describe('Threat Oracle', async function () {
             expect(await this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.equal(true);
         });
 
-        it('blocks account from interacting with app if it was registered, even as the tx.origin');
+        it('blocks EOA account from interacting with app if it was registered, even as the tx.origin', async function () {
+            expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
+            expect(await this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.equal(true);
 
-        it('blocks account from interacting with app if argument to function is in the block list');
+            // tx.origin
+            expect(await this.oracleConsumerCaller.connect(this.accounts.user2).callFoo(this.oracleConsumer.address)).to.be.equal(true);
+
+            const user2Category = "exploit";
+            const user2ConfidenceScore = 95;
+            await this.threatOracle.connect(this.accounts.manager).registerAccounts([this.accounts.user2.address], [user2Category], [user2ConfidenceScore]);
+
+            let { category, confidenceScore } = await this.threatOracle.getThreatProperties(this.accounts.user2.address);
+            expect(category).to.be.equal(user2Category);
+            expect(confidenceScore).to.be.equal(user2ConfidenceScore);
+
+            expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
+            await expect(this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.reverted;
+
+            // tx.origin mitigation check
+            await expect(this.oracleConsumerCaller.connect(this.accounts.user2).callFoo(this.oracleConsumer.address)).to.be.reverted;
+
+            // Non-blocked address as tx.origin
+            expect(await this.oracleConsumerCaller.connect(this.accounts.user1).callFoo(this.oracleConsumer.address)).to.be.equal(true);
+        });
+
+        it('blocks a flagged contract account, as msg.sender, even if tx.origin is not a threat account', async function () {
+            expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
+            expect(await this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.equal(true);
+
+            // tx.origin
+            expect(await this.oracleConsumerCaller.connect(this.accounts.user2).callFoo(this.oracleConsumer.address)).to.be.equal(true);
+
+            const callerContractCategory = "exploit";
+            const callerContractConfidenceScore = 95;
+            await this.threatOracle.connect(this.accounts.manager).registerAccounts([this.oracleConsumerCaller.address], [callerContractCategory], [callerContractConfidenceScore]);
+
+            let { category, confidenceScore } = await this.threatOracle.getThreatProperties(this.oracleConsumerCaller.address);
+            expect(category).to.be.equal(callerContractCategory);
+            expect(confidenceScore).to.be.equal(callerContractConfidenceScore);
+
+            expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
+            expect(await this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.equal(true);
+
+            // tx.origin mitigation check
+            await expect(this.oracleConsumerCaller.connect(this.accounts.user1).callFoo(this.oracleConsumer.address)).to.be.reverted;
+            await expect(this.oracleConsumerCaller.connect(this.accounts.user2).callFoo(this.oracleConsumer.address)).to.be.reverted;
+        });
+
+        it('blocks both tx.origin EOA and contract msg.sender if they were both registered on the block list', async function () {
+            expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
+            expect(await this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.equal(true);
+
+            // tx.origin
+            expect(await this.oracleConsumerCaller.connect(this.accounts.user2).callFoo(this.oracleConsumer.address)).to.be.equal(true);
+
+            const callerContractCategory = "exploit";
+            const callerContractConfidenceScore = 95;
+            const user2Category = "exploit";
+            const user2ConfidenceScore = 96;
+
+            await this.threatOracle.connect(this.accounts.manager).registerAccounts(
+                [this.oracleConsumerCaller.address, this.accounts.user2.address],
+                [callerContractCategory, user2Category],
+                [callerContractConfidenceScore, user2ConfidenceScore]
+            );
+
+            let { category: fetchedCallerCategory, confidenceScore: fetchedCallerConfidenceScore } = await this.threatOracle.getThreatProperties(this.oracleConsumerCaller.address);
+
+            expect(fetchedCallerCategory).to.be.equal(callerContractCategory);
+            expect(fetchedCallerConfidenceScore).to.be.equal(callerContractConfidenceScore);
+
+            let { category: fetchedUser2Category, confidenceScore: fetchedUser2ConfidenceScore } = await this.threatOracle.getThreatProperties(this.accounts.user2.address);
+
+            expect(fetchedUser2Category).to.be.equal(user2Category);
+            expect(fetchedUser2ConfidenceScore).to.be.equal(user2ConfidenceScore);
+
+            expect(await this.oracleConsumer.connect(this.accounts.user1).foo()).to.be.equal(true);
+            await expect(this.oracleConsumer.connect(this.accounts.user2).foo()).to.be.reverted;
+
+            // tx.origin mitigation check
+            await expect(this.oracleConsumerCaller.connect(this.accounts.user1).callFoo(this.oracleConsumer.address)).to.be.reverted;
+            await expect(this.oracleConsumerCaller.connect(this.accounts.user2).callFoo(this.oracleConsumer.address)).to.be.reverted;
+        });
+
+        it('blocks account from interacting with app if address type argument to function is in the block list');
+
+        it('blocks account from interacting with app if address in address[] type argument to function is in the block list');
+
+        it('reverts if user tries to input too many addresses as a address[] argument');
     });
 })
