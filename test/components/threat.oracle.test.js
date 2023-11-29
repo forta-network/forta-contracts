@@ -178,19 +178,6 @@ describe('Threat Oracle', async function () {
                 expect(confidenceScore).to.be.equal(0);
             }
 
-            // Hardhat is not allowing this check to pass, though it is expectedly running out of gas
-            // await expect(this.threatOracle.connect(this.accounts.manager).registerAccounts(highAmountMockAccounts, highAmountMockCategories, highAmountMockConfidenceScores)).to.be.reverted;
-
-            /*
-            // Confirm Accounts weren't registered
-            for(let i = 0; i < highAmountMockAccounts.length; i++) {
-                ({ category, confidenceScore } = await this.threatOracle.getThreatProperties(highAmountMockAccounts[i]));
-                expect(category).to.be.equal("");
-                expect(confidenceScore).to.be.equal(0);
-            }
-            */
-
-            // Multicall
             const argumentChunkSize = 50;
             const multicallChunkSize = 5;
 
@@ -227,19 +214,6 @@ describe('Threat Oracle', async function () {
                 expect(confidenceScore).to.be.equal(0);
             }
 
-            // Hardhat is not allowing this check to pass, though it is expectedly running out of gas
-            // await expect(this.threatOracle.connect(this.accounts.manager).registerAccounts(highAmountMockAccounts, highAmountMockCategories, highAmountMockConfidenceScores)).to.be.reverted;
-
-            /*
-            // Confirm accounts weren't registered
-            for(let i = 0; i < highAmountMockAccounts.length; i++) {
-                ({ category, confidenceScore } = await this.threatOracle.getThreatProperties(highAmountMockAccounts[i]));
-                expect(category).to.be.equal("");
-                expect(confidenceScore).to.be.equal(0);
-            }
-            */
-
-            // Multicall
             const argumentChunkSize = 50;
             const multicallChunkSize = 5;
 
