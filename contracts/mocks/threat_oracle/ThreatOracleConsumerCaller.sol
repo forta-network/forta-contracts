@@ -16,4 +16,13 @@ contract ThreatOracleConsumerCaller {
         bool success = IMockThreatOracleConsumer(_threatOracleConsumer).foo();
         return success;
     }
+
+    function callfoobarTwo(
+        address _threatOracleConsumer,
+        address[] memory _accountsOne,
+        address[] calldata _accountsTwo
+    ) public view returns (bool) {
+        bool success = IMockThreatOracleConsumer(_threatOracleConsumer).foobarTwo(_accountsOne, _accountsTwo);
+        return success;
+    }
 }
