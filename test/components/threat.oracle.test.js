@@ -584,4 +584,33 @@ describe('Threat Oracle', async function () {
                 .to.be.revertedWith(`${MaxAddressArgumentAmountExceededSig}`);
         });
     });
+
+    describe.only('mock app suite', async function () {
+        it('allows contract owner to update the address for the ThreatOracle', async function () {
+            expect(await this.oracleConsumer.connect(this.accounts.user1).getThreatOracleAddress()).to.be.equal(this.threatOracle.address);
+
+            await expect(this.oracleConsumer.connect(this.accounts.manager).updateThreatOracleContractAddress(mockAccounts[0]))
+                .to.emit(this.oracleConsumer, 'ThreatOracleContractUpdated')
+                .withArgs(this.threatOracle.address, mockAccounts[0]);
+            
+            expect(await this.oracleConsumer.connect(this.accounts.user1).getThreatOracleAddress()).to.be.equal(mockAccounts[0]);
+
+            // Change it back
+            await expect(this.oracleConsumer.connect(this.accounts.manager).updateThreatOracleContractAddress(this.threatOracle.address))
+                .to.emit(this.oracleConsumer, 'ThreatOracleContractUpdated')
+                .withArgs(mockAccounts[0], this.threatOracle.address);
+            
+            expect(await this.oracleConsumer.connect(this.accounts.user1).getThreatOracleAddress()).to.be.equal(this.threatOracle.address);
+        });
+
+        it.only('blocks non-owner accounts from updating the address for the ThreatOracle', async function () {
+            expect(await this.oracleConsumer.connect(this.accounts.user1).getThreatOracleAddress()).to.be.equal(this.threatOracle.address);
+
+            await expect(this.oracleConsumer.connect(this.accounts.other).updateThreatOracleContractAddress(mockAccounts[0]))
+                .to.be.revertedWith(`MsgSenderNotOwner("${this.accounts.other.address}")`);
+
+            // Confirm it wasn't changed
+            expect(await this.oracleConsumer.connect(this.accounts.user1).getThreatOracleAddress()).to.be.equal(this.threatOracle.address);
+        });
+    });
 })

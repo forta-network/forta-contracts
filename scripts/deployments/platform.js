@@ -293,10 +293,12 @@ async function migrate(config = {}) {
 
         const minConfidenceScore = 90;
         const maxAddressArgumentAmount = 50;
+        const managerAddress = (await ethers.getSigners())[1];
+
         contracts.oracleConsumer = await contractHelpers.tryFetchContract(
             hre,
             'MockThreatOracleConsumer',
-            [contracts.threatOracle.address, minConfidenceScore, maxAddressArgumentAmount],
+            [contracts.threatOracle.address, minConfidenceScore, maxAddressArgumentAmount, managerAddress.address],
             CACHE
         );
 
