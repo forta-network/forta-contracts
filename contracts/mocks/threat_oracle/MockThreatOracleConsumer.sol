@@ -7,9 +7,25 @@ import "../../components/threat_oracle/ThreatOracleProvider.sol";
 
 contract MockThreatOracleConsumer is ThreatOracleProvider {
 
-    constructor(address _threatOracle, uint8 _minConfidenceScore, uint8 __maxAddressArgumentAmount)
+    address public owner;
+
+    error MsgSenderNotOwner(address msgSender);
+
+    modifier onlyOwner(address account) {
+        if (account != owner) revert MsgSenderNotOwner(account);
+        _;
+    }
+
+    constructor(
+        address _threatOracle,
+        uint8 _minConfidenceScore,
+        uint8 __maxAddressArgumentAmount,
+        address __owner
+    )
         ThreatOracleProvider(_threatOracle, _minConfidenceScore, __maxAddressArgumentAmount)
-    {}
+    {
+        owner = __owner;
+    }
 
     function foo() public view onlyNonThreatMsgSenderAndTxOrigin() returns (bool) {
         return true;
@@ -45,6 +61,13 @@ contract MockThreatOracleConsumer is ThreatOracleProvider {
         returns (bool)
     {
         return true;
+    }
+
+    function updateThreatOracleContractAddress(address newThreatOracleAddress)
+        external
+        onlyOwner(msg.sender)
+    {
+        _updateThreatOracleContractAddress(newThreatOracleAddress);
     }
 
 }

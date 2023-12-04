@@ -37,7 +37,7 @@ import "./IThreatOracle.sol";
  *          { ... }
  *       ```
  *     - `onlyNonThreatAccounts(address[] memory)` is intended to check arguments
- *     - of type `address[]`. If the function has multiple arguments of this type,
+ *       of type `address[]`. If the function has multiple arguments of this type,
  *       then the modifier can be used multiple times. For example:
  *       ```
  *          function foobar(
@@ -51,6 +51,10 @@ import "./IThreatOracle.sol";
  *       Additionally, this modifier implements a upper bound on `address[]` amount
  *       as a preventative technique for potential DoS attacks
  *
+ * Lastly, this contract implements an `internal` function to update the contract
+ * that is serving as the `ThreatOracle` for testing. This function should be called by another
+ * function with either `public` or `external` visibility WITH access control to only
+ * allow a privelaged account to update the used `ThreatOracle` contract.
  */
 abstract contract ThreatOracleProvider {
     bytes32 constant private EXPLOIT_CATEGORY = keccak256("exploit");
@@ -61,6 +65,8 @@ abstract contract ThreatOracleProvider {
     // Upper bound of addresses allowed in `address[]` argument
     // (DoS prevention)
     uint8 private _maxAddressArgumentAmount;
+
+    event ThreatOracleContractUpdated(address indexed previousAddress, address indexed newAddress);
 
     error ThreatAccountIdentified(address account, string threatCategory, uint8 confidenceScore);
     error MaxAddressArgumentAmountExceeded(uint8 maxAddressArgumentAmount, uint exceedingAmount);
@@ -98,6 +104,10 @@ abstract contract ThreatOracleProvider {
         _maxAddressArgumentAmount = __maxAddressArgumentAmount;
     }
 
+    function getThreatOracleAddress() public view returns (address) {
+        return address(_threatOracle);
+    }
+
     function _confirmNonThreatAccount(address account) internal view {
         (string memory category, uint8 confidenceScore) = _threatOracle.getThreatProperties(account);
         bytes32 categoryHashed = keccak256(abi.encodePacked(category));
@@ -105,5 +115,12 @@ abstract contract ThreatOracleProvider {
         if ((categoryHashed == EXPLOIT_CATEGORY || categoryHashed == MEV_CATEGORY) && 
             confidenceScore >= _minConfidenceScore
         ) revert ThreatAccountIdentified(account, category, confidenceScore);
+    }
+
+    function _updateThreatOracleContractAddress(address newThreatOracleAddress) internal {
+        address prevThreatOracleAddress = address(_threatOracle);
+        _threatOracle = IThreatOracle(newThreatOracleAddress);
+
+        emit ThreatOracleContractUpdated(prevThreatOracleAddress, newThreatOracleAddress);
     }
 }
