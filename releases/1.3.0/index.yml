@@ -1,0 +1,15 @@
+title: Threat Oracle
+network: optimism
+deploy: deploy-and-prepare-upgrade 1.3.0 # Need to create a deploy command for ThreatOracle?
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deployed contracts:
+  - ThreatOracle
+
+  ## Output tx:
+  - Upgrade implementations
+  - Grant required roles
+  - Set managed stake thresholds for pools
+  - Wires together staking contracts
+  - Configures migration in ScannerRegistry (sunsetting time included)
