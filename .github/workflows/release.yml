@@ -259,8 +259,8 @@ jobs:
         timeout-minutes: 20
         environment: production
         needs:
-            - prepare
-            # - deploy
+            # - prepare
+            - deploy
         steps:
             - uses: actions/checkout@v3
               with:

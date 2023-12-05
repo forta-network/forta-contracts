@@ -74,18 +74,6 @@
             
         }
     },
-    "SlashingController": {
-        "impl": {
-            "opts": {
-                "unsafe-allow": [
-                    "delegatecall"
-                ],
-                "constructor-args": [
-                    "deployment.forwarder", "deployment.forta"
-                ]
-            }
-        }
-    },
     "StakeSubjectGateway": {
         "impl": {
             "opts": {
