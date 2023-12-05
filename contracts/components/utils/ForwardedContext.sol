@@ -10,6 +10,7 @@ abstract contract ForwardedContext is ContextUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address private immutable _trustedForwarder;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address trustedForwarder) {
         // WARNING: do not set this address to other than a deployed Forwarder instance.
         // Forwarder is critical infrastructure with priviledged address, it is safe for the limited
