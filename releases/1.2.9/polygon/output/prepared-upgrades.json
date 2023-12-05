@@ -75,5 +75,29 @@
 			"timeout": 1200000,
 			"version": "0.1.0"
 		}
+	},
+	"stake-subject-gateway": {
+		"impl": {
+			"address": "0x6C85A754F9c79178D9701e91C29C995f227D7551",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "StakeSubjectGateway",
+			"timeout": 1200000,
+			"version": "0.1.1"
+		}
+	},
+	"forta-staking": {
+		"impl": {
+			"address": "0xeA359707f17Aeb000c9385b4Bfd1cC7be62d4Bc7",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "FortaStaking",
+			"timeout": 1200000,
+			"version": "0.1.2"
+		}
 	}
 }
