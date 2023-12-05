@@ -2,7 +2,8 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
 
-describe('Forwarder', function () {
+// Skipped since removing forwarder/metatx functionality
+describe.skip('Forwarder', function () {
     prepare();
 
     describe('forward transactions', async function () {
