@@ -2,7 +2,7 @@
 name: Release
 
 on:
-    push:
+    pull_request:
         branches:
             - 'master'
             - 'release/**'
@@ -14,7 +14,7 @@ defaults:
 jobs:
     build:
         name: Build release
-        # if: startsWith(github.head_ref, 'release/')
+        if: startsWith(github.head_ref, 'release/')
         runs-on: ubuntu-22.04
         timeout-minutes: 10
         env:
@@ -88,7 +88,7 @@ jobs:
 
     prepare:
         name: Prepare release
-        # if: startsWith(github.head_ref, 'release/')
+        if: startsWith(github.head_ref, 'release/')
         runs-on: ubuntu-22.04
         # needs: coverage
         needs: build
@@ -167,7 +167,7 @@ jobs:
 
     deploy:
         name: Deploy contracts
-        # if: startsWith(github.head_ref, 'release/')
+        if: startsWith(github.head_ref, 'release/')
         runs-on: ubuntu-22.04
         timeout-minutes: 20
         needs: prepare
@@ -255,7 +255,7 @@ jobs:
 
     finish-release:
         name: Finish release
-        # if: "startsWith(github.head_ref, 'release/')"
+        if: "startsWith(github.head_ref, 'release/')"
         runs-on: ubuntu-22.04
         timeout-minutes: 20
         environment: production
