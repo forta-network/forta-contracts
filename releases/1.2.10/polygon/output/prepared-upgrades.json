@@ -99,5 +99,18 @@
 			"timeout": 1200000,
 			"version": "0.1.2"
 		}
+	},
+	"slashing-controller": {
+		"impl": {
+			"address": "0x525a90638330473bE7bB756465ca443a03b53068",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1"
+			],
+			"init-args": [],
+			"name": "SlashingController",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
 	}
 }
