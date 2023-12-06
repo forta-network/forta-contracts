@@ -1,5 +1,5 @@
 title: Scanner Pool Default Fee Fix
-network: polygon
+network: mumbai
 deploy: prepare-upgrade 1.15
 verify: verify-deployed
 finish: propose-admin
