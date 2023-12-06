@@ -349,4 +349,8 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     function isCurrentEpoch(uint256 timestamp) external view returns (bool) {
         return Accumulators.isCurrentEpoch(timestamp);
     }
+    
+    function foo() public view returns (bool) {
+        return true;
+    }
 }
