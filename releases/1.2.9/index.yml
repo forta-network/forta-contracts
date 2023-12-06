@@ -1,21 +1,7 @@
-title: Remove metatransaction functionality
+title: Release 
 network: polygon
 deploy: prepare-upgrade 1.2.9
 verify: verify-deployed
 finish: propose-admin
 description: |
-  ## Deployed new implementations:
-  - AccessManager
-  - AgentRegistry
-  - ScannerPoolRegistry
-  - Dispatch
-  - StakeAllocator
-  - RewardsDistributor
-  - StakeSubjectGateway
-  - FortaStaking
-
-  ## Output tx:
-  - `ForwardedContext` no longer checks for valid forwarder
-    - New implementations all inherited `BaseComponentUpgradeable`,
-      which in turn inherited `ForwardedContext`. Hence the
-      number of new implementations.
+  Release/1.9.0
