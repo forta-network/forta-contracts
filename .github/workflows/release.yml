@@ -251,6 +251,7 @@ jobs:
     #             POLYSCAN: '${{ secrets.POLYSCAN }}'
     #             RELEASE_PATH: '${{ needs.prepare.outputs.release_path }}'
     #             ARTIFACT_REFERENCE_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+    #
 
     finish-release:
         name: Finish release
