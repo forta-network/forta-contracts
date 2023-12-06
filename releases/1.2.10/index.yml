@@ -1,6 +1,6 @@
 title: Release 
 network: polygon
-deploy: prepare-upgrade 1.2.9
+deploy: prepare-upgrade 1.2.10
 verify: verify-deployed
 finish: propose-admin
 description: |
