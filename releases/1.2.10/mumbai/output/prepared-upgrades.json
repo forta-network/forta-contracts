@@ -10,5 +10,20 @@
 			"timeout": 1200000,
 			"version": "0.1.1"
 		}
+	},
+	"scanner-to-scanner-pool-migration": {
+		"impl": {
+			"address": "0x84D8F29994983768d698C71f6816F61B6a42DE49",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x569c785b4744E582c65A12827726FC03C8D08A4a",
+				"0x9BBEBf9CB94666464D8a5978363B4943D36A05E4",
+				"0x64d5192F03bD98dB1De2AA8B4abAC5419eaC32CE"
+			],
+			"init-args": [],
+			"name": "ScannerToScannerPoolMigration",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
 	}
 }
