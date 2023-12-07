@@ -28496,6 +28496,319 @@
           }
         }
       }
+    },
+    "e14530da37d2da627bc06d2281f83293c5e21e6d2da53fc4686d4c6d3d6d15d9": {
+      "address": "0xC43E5C075e4081209F337f0431D8c488Cd61B522",
+      "txHash": "0x855f50e75b87b7764a04ec86d4b1f74cc55ae1c07cec07147d95036b42ee7b2d",
+      "layout": {
+        "solcVersion": "0.8.9",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_accessControl",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_contract(IAccessControl)15000",
+            "contract": "AccessManagedUpgradeable",
+            "src": "contracts/components/utils/AccessManaged.sol:16"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "AccessManagedUpgradeable",
+            "src": "contracts/components/utils/AccessManaged.sol:68"
+          },
+          {
+            "label": "_deprecated_router",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_address",
+            "contract": "RoutedUpgradeable",
+            "src": "contracts/components/utils/Routed.sol:16",
+            "retypedFrom": "contract IRouter",
+            "renamedFrom": "_router"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "RoutedUpgradeable",
+            "src": "contracts/components/utils/Routed.sol:35"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC1967UpgradeUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:211"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "201",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "UUPSUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:107"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "251",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "BaseComponentUpgradeable",
+            "src": "contracts/components/BaseComponentUpgradeable.sol:62"
+          },
+          {
+            "label": "_machines",
+            "offset": 0,
+            "slot": "301",
+            "type": "t_mapping(t_uint256,t_enum(State)132713)",
+            "contract": "StateMachineController",
+            "src": "contracts/components/utils/StateMachines.sol:51"
+          },
+          {
+            "label": "_proposalIds",
+            "offset": 0,
+            "slot": "302",
+            "type": "t_struct(Counter)17504_storage",
+            "contract": "SlashingController",
+            "src": "contracts/components/staking/slashing/SlashingController.sol:48"
+          },
+          {
+            "label": "proposals",
+            "offset": 0,
+            "slot": "303",
+            "type": "t_mapping(t_uint256,t_struct(Proposal)130008_storage)",
+            "contract": "SlashingController",
+            "src": "contracts/components/staking/slashing/SlashingController.sol:49"
+          },
+          {
+            "label": "deposits",
+            "offset": 0,
+            "slot": "304",
+            "type": "t_mapping(t_uint256,t_uint256)",
+            "contract": "SlashingController",
+            "src": "contracts/components/staking/slashing/SlashingController.sol:50"
+          },
+          {
+            "label": "penalties",
+            "offset": 0,
+            "slot": "305",
+            "type": "t_mapping(t_bytes32,t_struct(SlashPenalty)129994_storage)",
+            "contract": "SlashingController",
+            "src": "contracts/components/staking/slashing/SlashingController.sol:51"
+          },
+          {
+            "label": "slashingExecutor",
+            "offset": 0,
+            "slot": "306",
+            "type": "t_contract(ISlashingExecutor)129903",
+            "contract": "SlashingController",
+            "src": "contracts/components/staking/slashing/SlashingController.sol:52"
+          },
+          {
+            "label": "subjectGateway",
+            "offset": 0,
+            "slot": "307",
+            "type": "t_contract(StakeSubjectGateway)132385",
+            "contract": "SlashingController",
+            "src": "contracts/components/staking/slashing/SlashingController.sol:53"
+          },
+          {
+            "label": "depositAmount",
+            "offset": 0,
+            "slot": "308",
+            "type": "t_uint256",
+            "contract": "SlashingController",
+            "src": "contracts/components/staking/slashing/SlashingController.sol:54"
+          },
+          {
+            "label": "slashPercentToProposer",
+            "offset": 0,
+            "slot": "309",
+            "type": "t_uint256",
+            "contract": "SlashingController",
+            "src": "contracts/components/staking/slashing/SlashingController.sol:55"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IAccessControl)15000": {
+            "label": "contract IAccessControl",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ISlashingExecutor)129903": {
+            "label": "contract ISlashingExecutor",
+            "numberOfBytes": "20"
+          },
+          "t_contract(StakeSubjectGateway)132385": {
+            "label": "contract StakeSubjectGateway",
+            "numberOfBytes": "20"
+          },
+          "t_enum(PenaltyMode)129988": {
+            "label": "enum SlashingController.PenaltyMode",
+            "members": [
+              "UNDEFINED",
+              "MIN_STAKE",
+              "CURRENT_STAKE"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(State)132713": {
+            "label": "enum StateMachines.State",
+            "members": [
+              "_00",
+              "_01",
+              "_02",
+              "_03",
+              "_04",
+              "_05",
+              "_06",
+              "_07",
+              "_08",
+              "_09",
+              "_10",
+              "_11",
+              "_12",
+              "_13",
+              "_14",
+              "_15"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_bytes32,t_struct(SlashPenalty)129994_storage)": {
+            "label": "mapping(bytes32 => struct SlashingController.SlashPenalty)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_enum(State)132713)": {
+            "label": "mapping(uint256 => enum StateMachines.State)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Proposal)130008_storage)": {
+            "label": "mapping(uint256 => struct SlashingController.Proposal)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Counter)17504_storage": {
+            "label": "struct Counters.Counter",
+            "members": [
+              {
+                "label": "_value",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(Proposal)130008_storage": {
+            "label": "struct SlashingController.Proposal",
+            "members": [
+              {
+                "label": "subjectId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "proposer",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "penaltyId",
+                "type": "t_bytes32",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "subjectType",
+                "type": "t_uint8",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_struct(SlashPenalty)129994_storage": {
+            "label": "struct SlashingController.SlashPenalty",
+            "members": [
+              {
+                "label": "percentSlashed",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "mode",
+                "type": "t_enum(PenaltyMode)129988",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
     }
   }
 }
