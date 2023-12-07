@@ -1,3 +1,27 @@
 {
-	
+	"scanner-node-version": {
+		"impl": {
+			"address": "0xAA42d92242eA0a6195452C6B64B4Dc5D4282e0a5",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
+			],
+			"init-args": [],
+			"name": "ScannerNodeVersion",
+			"timeout": 1200000,
+			"version": "0.1.1"
+		}
+	},
+	"scanner-pool-registry": {
+		"impl": {
+			"address": "0x72eaaBB3f5908D5Ac4Fce00285B5af120BA3EcAC",
+			"constructor-args": [
+				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
+				"0x698A6400dE3865fC9E8A6dB22302AAb3372Cebd9"
+			],
+			"init-args": [],
+			"name": "ScannerPoolRegistry",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	}
 }
