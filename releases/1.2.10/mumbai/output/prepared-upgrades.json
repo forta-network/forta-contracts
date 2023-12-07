@@ -1,27 +1,3 @@
 {
-	"slashing-controller": {
-		"impl": {
-			"address": "0xC43E5C075e4081209F337f0431D8c488Cd61B522",
-			"constructor-args": [
-				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6",
-				"0x107Ac13567b1b5D84691f890A5bA07EdaE1a11c3"
-			],
-			"init-args": [],
-			"name": "SlashingController",
-			"timeout": 1200000,
-			"version": "0.1.1"
-		}
-	},
-	"scanner-node-version": {
-		"impl": {
-			"address": "0xAA42d92242eA0a6195452C6B64B4Dc5D4282e0a5",
-			"constructor-args": [
-				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
-			],
-			"init-args": [],
-			"name": "ScannerNodeVersion",
-			"timeout": 1200000,
-			"version": "0.1.1"
-		}
-	}
+	
 }
