@@ -10,18 +10,5 @@
 			"timeout": 1200000,
 			"version": "0.1.1"
 		}
-	},
-	"scanner-pool-registry": {
-		"impl": {
-			"address": "0x92FA117c7c071cC11b544931c46c9e3096d6FcB1",
-			"constructor-args": [
-				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
-				"0x5B73756e637A77Fa52e5Ce71EC6189A4C775c6FA"
-			],
-			"init-args": [],
-			"name": "ScannerPoolRegistry",
-			"timeout": 1200000,
-			"version": "0.1.0"
-		}
 	}
 }

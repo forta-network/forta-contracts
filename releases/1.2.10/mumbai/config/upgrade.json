@@ -11,14 +11,14 @@
             }
         }
     },
-    "ScannerPoolRegistry": {
+    "ScannerToScannerPoolMigration": {
         "impl": {
             "opts": {
                 "unsafe-allow": [
                     "delegatecall"
                 ],
                 "constructor-args": [
-                    "deployment.forwarder", "deployment.stake-allocator"
+                    "deployment.forwarder", "deployment.scanner-registry", "deployment.scanner-pool-registry", "deployment.forta-staking"
                 ]
             }
             
