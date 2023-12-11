@@ -6,10 +6,3 @@ finish: propose-admin
 description: |
   ## Deployed contracts:
   - ThreatOracle
-
-  ## Output tx:
-  - Upgrade implementations
-  - Grant required roles
-  - Set managed stake thresholds for pools
-  - Wires together staking contracts
-  - Configures migration in ScannerRegistry (sunsetting time included)
