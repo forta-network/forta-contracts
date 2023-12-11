@@ -1,5 +1,5 @@
 title: Threat Oracle
-network: optimism
+network: mumbai
 deploy: deploy-and-prepare-upgrade 1.3.0 # Need to create a deploy command for ThreatOracle?
 verify: verify-deployed
 finish: propose-admin

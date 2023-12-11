@@ -585,7 +585,7 @@ describe('Threat Oracle', async function () {
         });
     });
 
-    describe.only('mock app suite', async function () {
+    describe('mock app suite', async function () {
         it('allows contract owner to update the address for the ThreatOracle', async function () {
             expect(await this.oracleConsumer.connect(this.accounts.user1).getThreatOracleAddress()).to.be.equal(this.threatOracle.address);
 
@@ -603,7 +603,7 @@ describe('Threat Oracle', async function () {
             expect(await this.oracleConsumer.connect(this.accounts.user1).getThreatOracleAddress()).to.be.equal(this.threatOracle.address);
         });
 
-        it.only('blocks non-owner accounts from updating the address for the ThreatOracle', async function () {
+        it('blocks non-owner accounts from updating the address for the ThreatOracle', async function () {
             expect(await this.oracleConsumer.connect(this.accounts.user1).getThreatOracleAddress()).to.be.equal(this.threatOracle.address);
 
             await expect(this.oracleConsumer.connect(this.accounts.other).updateThreatOracleContractAddress(mockAccounts[0]))
