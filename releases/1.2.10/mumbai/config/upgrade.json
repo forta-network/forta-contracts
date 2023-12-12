@@ -97,5 +97,42 @@
                 ]
             }
         }
+    },
+    "SlashingController": {
+        "impl": {
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.forta"
+                ]
+            }
+        }
+    },
+    "ScannerNodeVersion": {
+        "impl": {
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+        }
+    },
+    "ScannerToScannerPoolMigration": {
+        "impl": {
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.scanner-registry", "deployment.scanner-pool-registry", "deployment.forta-staking"
+                ]
+            }
+            
+        }
     }
 }

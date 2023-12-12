@@ -1,0 +1,10 @@
+{
+    "AccessManager": [
+        {
+            "methodName": "grantRole",
+            "params": [
+                ["roles.SLASHER_ROLE", "deployment.slashing-controller"]
+            ]
+        }
+    ]
+}

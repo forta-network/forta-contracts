@@ -68,8 +68,8 @@ jobs:
         name: Code coverage
         if: startsWith(github.head_ref, 'release/')
         runs-on: ubuntu-22.04
-        # needs: test
-        needs: build
+        needs: test
+        # needs: build
         steps:
           - uses: actions/checkout@v3
             with:
@@ -84,12 +84,14 @@ jobs:
           - uses: codecov/codecov-action@v3
             with:
               token: ${{ secrets.CODECOV_TOKEN }}
+    
 
     # prepare:
     #     name: Prepare release
     #     if: startsWith(github.head_ref, 'release/')
     #     runs-on: ubuntu-22.04
-    #     needs: coverage
+    #     # needs: coverage
+    #     needs: build
     #     outputs:
     #         release_version: ${{ steps.parse.outputs.release_version }}
     #         release_path: ${{ steps.parse.outputs.release_path }}
@@ -259,7 +261,7 @@ jobs:
     #     environment: production
     #     needs:
     #         - prepare
-    #         # - deploy
+    #         - deploy
     #     steps:
     #         - uses: actions/checkout@v3
     #           with:

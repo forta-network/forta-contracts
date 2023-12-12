@@ -1,0 +1,143 @@
+{
+	"access-manager": {
+		"impl": {
+			"address": "0x739707848131F41aCd1d78A56FE0eA02052811Df",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "AccessManager",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"agent-registry": {
+		"impl": {
+			"address": "0xE7e6c9A579eF43FfE629F9B99a9e4585ae69ED9c",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "AgentRegistry",
+			"timeout": 1200000,
+			"version": "0.1.6"
+		}
+	},
+	"scanner-pool-registry": {
+		"impl": {
+			"address": "0x92FA117c7c071cC11b544931c46c9e3096d6FcB1",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0x5B73756e637A77Fa52e5Ce71EC6189A4C775c6FA"
+			],
+			"init-args": [],
+			"name": "ScannerPoolRegistry",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"dispatch": {
+		"impl": {
+			"address": "0xB5F1A9C329924Fe8203A91aa891182d4E331fF0A",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "Dispatch",
+			"timeout": 1200000,
+			"version": "0.1.5"
+		}
+	},
+	"stake-allocator": {
+		"impl": {
+			"address": "0x8A9B40aE0cCa4f602CA3E4f68114b69C794571F0",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0x587969Add789c13F64Bcc34Ff253BD9BFB78f38a",
+				"0xf7239f26b79145297737166b0C66F4919af9c507"
+			],
+			"init-args": [],
+			"name": "StakeAllocator",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"rewards-distributor": {
+		"impl": {
+			"address": "0xfc3642038a312Ff983BdBC1F5C900eEC20AaFfB6",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1",
+				"0x587969Add789c13F64Bcc34Ff253BD9BFB78f38a"
+			],
+			"init-args": [],
+			"name": "RewardsDistributor",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"stake-subject-gateway": {
+		"impl": {
+			"address": "0x6C85A754F9c79178D9701e91C29C995f227D7551",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "StakeSubjectGateway",
+			"timeout": 1200000,
+			"version": "0.1.1"
+		}
+	},
+	"forta-staking": {
+		"impl": {
+			"address": "0xeA359707f17Aeb000c9385b4Bfd1cC7be62d4Bc7",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "FortaStaking",
+			"timeout": 1200000,
+			"version": "0.1.2"
+		}
+	},
+	"slashing-controller": {
+		"impl": {
+			"address": "0x525a90638330473bE7bB756465ca443a03b53068",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0x9ff62d1FC52A907B6DCbA8077c2DDCA6E6a9d3e1"
+			],
+			"init-args": [],
+			"name": "SlashingController",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"scanner-node-version": {
+		"impl": {
+			"address": "0x61dE69E421d50F7290373fc38751f694ff1e1984",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2"
+			],
+			"init-args": [],
+			"name": "ScannerNodeVersion",
+			"timeout": 1200000,
+			"version": "0.1.1"
+		}
+	},
+	"scanner-to-scanner-pool-migration": {
+		"impl": {
+			"address": "0xAb94300F91DA64637C94b6c4159AC805d23C7cF8",
+			"constructor-args": [
+				"0xff771084D7C2e54C0F9cA79dA23656514D2c5dd2",
+				"0xbF2920129f83d75DeC95D97A879942cCe3DcD387",
+				"0x90FF9C193D6714E0e7a923b2Bd481Fb73FEC731d",
+				"0xd2863157539b1D11F39ce23fC4834B62082F6874"
+			],
+			"init-args": [],
+			"name": "ScannerToScannerPoolMigration",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	}
+}
