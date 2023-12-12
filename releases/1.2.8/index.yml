@@ -1,0 +1,15 @@
+title: Delegation fee update (live after two epochs)
+network: mumbai
+deploy: prepare-upgrade 1.2.8
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deployed new implementations:
+  - RewardsDistributor
+
+  ## Output tx:
+  - Upgrade implementations
+    - Delegation fee updates will be live after two epochs, instead of one
+  - Call to update delegationParamsEpochDelay
+    - Decrease from two to one, so time when delegation fees can be updated remains the same
+    - Passing the same value for the default fee bps, as we don't want to change it

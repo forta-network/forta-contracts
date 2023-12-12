@@ -244,7 +244,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
     /**
      * Sets delegation fee for a ScannerPool (required to own the ScannerPoolRegistry NFT).
-     * Change in fees will start having an effect in the beginning of the next reward epoch.
+     * Change in fees will start having an effect two epochs from now (i.e. current epoch + 2).
      * After the first time setting the parameter, it cannot be set again until delegationParamsEpochDelay epochs pass.
      * @param subjectType a DELEGATED subject type.
      * @param subjectId the DELEGATED subject id.
@@ -260,7 +260,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
             if (Accumulators.getCurrentEpochNumber() < fees[1].sinceEpoch + delegationParamsEpochDelay) revert SetDelegationFeeNotReady();
             fees[0] = fees[1];
         }
-        fees[1] = DelegationFee({ feeBps: feeBps, sinceEpoch: Accumulators.getCurrentEpochNumber() + 1 });
+        fees[1] = DelegationFee({ feeBps: feeBps, sinceEpoch: Accumulators.getCurrentEpochNumber() + 2 });
         emit SetDelegationFee(subjectType, subjectId, fees[1].sinceEpoch, feeBps);
     }
 

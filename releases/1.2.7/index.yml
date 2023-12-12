@@ -1,0 +1,10 @@
+title: Granting New Role, Revoking One Role
+network: polygon
+deploy: prepare-upgrade 1.2.7
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Output tx:
+  - Grant Core Dev multisig role of SCANNER_BETA_VERSION_ROLE
+  - Revoke SCANNER_POOL_ADMIN_ROLE role from Core Dev multisig
+    - Previously granted to fix broken enabled scanner counts
