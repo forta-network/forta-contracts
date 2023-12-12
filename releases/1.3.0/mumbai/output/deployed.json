@@ -1,18 +1,3 @@
 {
-	"threat-oracle-deploy-tx": "0xa370d049b11c3b2fbed00c285b11b0ef9ac10b02cd38dc3a1ee80b815ff8cde9",
-	"threat-oracle": {
-		"address": "0x761B07e3c4D091971192eBe3A057c167BD6170F6",
-		"impl": {
-			"address": "0x20B4fcf4F2C9D63E0CE44531F5985edd8f621679",
-			"constructor-args": [
-				"0x4E29Cea6D64be860f5eAba110686DcB585f393D6"
-			],
-			"init-args": [
-				"0xbb12476ab9f27d3b441964B0aFC03D14a82e1D64"
-			],
-			"name": "ThreatOracle",
-			"timeout": 1200000,
-			"version": "0.1.0"
-		}
-	}
+
 }
