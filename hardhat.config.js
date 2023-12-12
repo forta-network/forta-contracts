@@ -88,7 +88,7 @@ const accountsForNetwork = (name) => [argv[`${name}Mnemonic`] && { mnemonic: arg
 Object.assign(
     module.exports.networks,
     Object.fromEntries(
-        ['mainnet', 'ropsten', 'rinkeby', 'goerli', 'kovan', 'polygon', 'mumbai', 'local']
+        ['mainnet', 'ropsten', 'rinkeby', 'goerli', 'kovan', 'polygon', 'mumbai', 'optimism', 'local']
             .map((name) => [name, { url: argv[`${name}Node`], accounts: accountsForNetwork(name), gasPrice: argv[`${name}GasPrice`] || 'auto' }])
             .filter(([, { url }]) => url)
     ),

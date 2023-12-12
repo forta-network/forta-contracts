@@ -146,6 +146,8 @@ const getBlockExplorerDomain = (hre) => {
             return 'polygonscan.com';
         case 'mumbai':
             return 'mumbai.polygonscan.com';
+        case 'optimism':
+            return 'optimistic.etherscan.io';
     }
 };
 

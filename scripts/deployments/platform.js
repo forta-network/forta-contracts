@@ -274,6 +274,46 @@ async function migrate(config = {}) {
             CACHE
         );
         DEBUG(`[${Object.keys(contracts).length}] dispatch: ${contracts.dispatch.address}`);
+
+        /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Threat Oracle ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+        DEBUG(`Deploying ThreatOracle...`);
+        contracts.threatOracle = await contractHelpers.tryFetchProxy(
+            hre,
+            'ThreatOracle',
+            'uups',
+            [contracts.access.address],
+            {
+                constructorArgs: [contracts.forwarder.address],
+                unsafeAllow: 'delegatecall',
+            },
+            CACHE
+        );
+        DEBUG(`[${Object.keys(contracts).length}] threat oracle: ${contracts.threatOracle.address}`);
+
+        const minConfidenceScore = 90;
+        const maxAddressArgumentAmount = 50;
+        const managerAddress = (await ethers.getSigners())[1];
+
+        contracts.oracleConsumer = await contractHelpers.tryFetchContract(
+            hre,
+            'MockThreatOracleConsumer',
+            [contracts.threatOracle.address, minConfidenceScore, maxAddressArgumentAmount, managerAddress.address],
+            CACHE
+        );
+
+        DEBUG(`[${Object.keys(contracts).length}] oracleConsumer: ${contracts.oracleConsumer.address}`);
+
+        contracts.oracleConsumerCaller = await contractHelpers.tryFetchContract(
+            hre,
+            'ThreatOracleConsumerCaller',
+            [],
+            CACHE
+        );
+
+        DEBUG(`[${Object.keys(contracts).length}] oracleConsumerCaller: ${contracts.oracleConsumerCaller.address}`);
+
+        /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     }
 
     // Roles dictionary

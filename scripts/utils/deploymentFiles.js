@@ -36,6 +36,7 @@ async function saveToDeployment(releaseWriter, deploymentWriter, contractName) {
 const CHAIN_NAME = {
     1: 'mainnet',
     5: 'goerli',
+    10: 'optimism',
     137: 'polygon',
     80001: 'mumbai',
     31337: 'local',

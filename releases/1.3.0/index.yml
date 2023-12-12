@@ -1,0 +1,8 @@
+title: Threat Oracle
+network: mumbai
+deploy: deploy 1.3.0
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deployed contracts:
+  - ThreatOracle
