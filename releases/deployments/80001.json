@@ -283,7 +283,7 @@
 	},
 	"scanner-to-scanner-pool-migration-deploy-tx": "0x51c452c8abe63bb504565e889623d000ca4076702ff3d300cc6cf7f1b868da27",
 	"threat-oracle": {
-		"address": "0x761B07e3c4D091971192eBe3A057c167BD6170F6",
+		"address": "0xC0E51d006Ae7e007520848A191d25D8c294cd28f",
 		"impl": {
 			"address": "0x20B4fcf4F2C9D63E0CE44531F5985edd8f621679",
 			"constructor-args": [
@@ -297,5 +297,5 @@
 			"version": "0.1.0"
 		}
 	},
-	"threat-oracle-deploy-tx": "0xa370d049b11c3b2fbed00c285b11b0ef9ac10b02cd38dc3a1ee80b815ff8cde9"
+	"threat-oracle-deploy-tx": "0x3674229c97e506c957d3fe242d0586a9cf3971cb3336a5f745e55df786142a47"
 }

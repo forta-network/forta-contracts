@@ -290,6 +290,11 @@
       "address": "0x761B07e3c4D091971192eBe3A057c167BD6170F6",
       "txHash": "0xa370d049b11c3b2fbed00c285b11b0ef9ac10b02cd38dc3a1ee80b815ff8cde9",
       "kind": "uups"
+    },
+    {
+      "address": "0xC0E51d006Ae7e007520848A191d25D8c294cd28f",
+      "txHash": "0x3674229c97e506c957d3fe242d0586a9cf3971cb3336a5f745e55df786142a47",
+      "kind": "uups"
     }
   ],
   "impls": {
