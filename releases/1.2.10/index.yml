@@ -4,4 +4,15 @@ deploy: prepare-upgrade 1.2.10
 verify: verify-deployed
 finish: propose-admin
 description: |
-  release/1.2.10
+  ## Deployed new implementations:
+  - AccessManager
+  - AgentRegistry
+  - ScannerPoolRegistry
+  - Dispatch
+  - StakeAllocator
+  - RewardsDistributor
+  - StakeSubjectGateway
+  - SlashingController
+  - FortaStaking
+  - ScannerNodeVersion
+  - ScannerToScannerPoolMigration

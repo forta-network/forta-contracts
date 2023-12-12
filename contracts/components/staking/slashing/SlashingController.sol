@@ -50,6 +50,7 @@ contract SlashingController is BaseComponentUpgradeable, StateMachineController,
     mapping(uint256 => uint256) public deposits; // proposalId --> tokenAmount
     mapping(bytes32 => SlashPenalty) public penalties; // penaltyId --> SlashPenalty
     ISlashingExecutor public slashingExecutor;
+    /// @custom:oz-renamed-from stakingParameters
     StakeSubjectGateway public subjectGateway; // Should be immutable, but it's already deployed.
     uint256 public depositAmount;
     uint256 public slashPercentToProposer;
