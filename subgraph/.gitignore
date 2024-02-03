@@ -4,3 +4,6 @@ node_modules
 schema.graphql
 .bin
 tests/.bin
+
+.idea
+.vscode
