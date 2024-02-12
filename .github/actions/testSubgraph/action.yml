@@ -9,12 +9,6 @@ runs:
       with:
         node-version: "16"
 
-    - name: Install Git
-      shell: bash
-      run: |
-        apt-get update
-        apt-get install -y git
-
     - name: Install subgraph dependencies
       working-directory: ./subgraph
       shell: bash
