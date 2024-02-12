@@ -101,9 +101,7 @@ describe("Rewards distributor", () => {
   test("should handle a reward event on a pool with one delegator and return the correct APY", () => {
     //Given
     delegatorOne = new Staker(mockDelegatorStakerIdOne);
-    (delegatorOne as any).account = mockDelegatorStakerIdOne;
-    (delegatorOne as any).aggregateActiveStake = "";
-    (delegatorOne as any).aggregateTotalStake = "";
+    delegatorOne.account = mockDelegatorStakerIdOne;
     delegatorOne.nodePools = [mockPoolId];
     delegatorOne.save();
 
@@ -164,15 +162,11 @@ describe("Rewards distributor", () => {
     //Given
     delegatorOne = new Staker(mockDelegatorStakerIdOne);
     delegatorOne.account = mockDelegatorStakerIdOne;
-    (delegatorOne as any).aggregateActiveStake = "";
-    (delegatorOne as any).aggregateTotalStake = "";
     delegatorOne.nodePools = [mockPoolId];
     delegatorOne.save();
 
     delegatorTwo = new Staker(mockDelegatorStakerIdTwo);
     delegatorTwo.account = mockDelegatorStakerIdTwo;
-    (delegatorTwo as any).aggregateActiveStake = "";
-    (delegatorTwo as any).aggregateTotalStake = "";
     delegatorTwo.nodePools = [mockPoolId];
     delegatorTwo.save();
 
