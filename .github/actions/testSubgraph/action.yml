@@ -12,9 +12,9 @@ runs:
     - name: Install subgraph dependencies
       working-directory: ./subgraph
       shell: bash
-      run: yarn install
+      run: npm install
 
     - name: Run test
       working-directory: ./subgraph
       shell: bash
-      run: yarn run test
+      run: npm run test
