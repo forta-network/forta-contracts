@@ -1,0 +1,348 @@
+# Entities from @amxx/graphprotocol-utils
+# -------------------
+
+type DecimalValue @entity {
+  id: ID!
+  value: BigDecimal!
+  exact: BigInt!
+  decimals: Int!
+}
+
+interface Event {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+}
+
+type Transaction @entity(immutable: true) {
+  id: ID!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  events: [Event!]! @derivedFrom(field: "transaction")
+}
+
+type PersistentString @entity {
+  id: ID!
+  value: String!
+}
+
+type PersistentStringArray @entity {
+  id: ID!
+  values: [String!]!
+}
+
+# -----------------
+
+type Account @entity {
+  id: ID!
+  bots: [Bot!]! @derivedFrom(field: "owner")
+  scanners: [Scanner!]! @derivedFrom(field: "owner")
+  managerOf: [ScannerManager!]! @derivedFrom(field: "account")
+  botTransferFromEvents: [BotTransfer!]! @derivedFrom(field: "from")
+  botTransferToEvents: [BotTransfer!]! @derivedFrom(field: "to")
+  botUpdatedEvents: [BotUpdated!]! @derivedFrom(field: "by")
+  scannerTransferFromEvents: [ScannerTransfer!]! @derivedFrom(field: "from")
+  scannerTransferToEvents: [ScannerTransfer!]! @derivedFrom(field: "to")
+  claimedRewardEvents: [RewardClaimedEvent!] @derivedFrom(field: "to")
+  scannerManagerEnabledEvents: [ScannerManagerEnabled!]!
+    @derivedFrom(field: "manager")
+  staker: Staker @derivedFrom(field: "account")
+}
+
+type Bot @entity {
+  id: ID!
+  owner: Account!
+  enabled: Boolean!
+  disableFlags: Int!
+  metadata: String!
+  chainIds: [BigInt!]
+  links: [Link!]! @derivedFrom(field: "bot")
+
+  botTransferEvents: [BotTransfer!]! @derivedFrom(field: "bot")
+  botUpdatedEvents: [BotUpdated!]! @derivedFrom(field: "bot")
+  botEnabledEvents: [BotEnabled!]! @derivedFrom(field: "bot")
+  linkEnabledEvents: [LinkEnabled!]! @derivedFrom(field: "bot")
+}
+
+# Being deprecated with Scanner Registry contract
+type Scanner @entity {
+  id: ID!
+  owner: Account!
+  enabled: Boolean!
+  disableFlags: Int!
+  managers: [ScannerManager!]! @derivedFrom(field: "scanner")
+  links: [Link!]! @derivedFrom(field: "scanner")
+  stakeThreshold: StakeThreshold! @derivedFrom(field: "scanner")
+  subject: Subject
+  metadata: String!
+  chainId: BigInt
+
+  scannerTransferEvents: [ScannerTransfer!]! @derivedFrom(field: "scanner")
+  scannerUpdatedEvents: [ScannerUpdated!]! @derivedFrom(field: "scanner")
+  scannerEnabledEvents: [ScannerEnabled!]! @derivedFrom(field: "scanner")
+  scannerManagerEnabledEvents: [ScannerManagerEnabled!]!
+    @derivedFrom(field: "scanner")
+  linkEnabledEvents: [LinkEnabled!]! @derivedFrom(field: "scanner")
+}
+
+type ScannerManager @entity {
+  id: ID!
+  scanner: Scanner!
+  account: Account!
+  active: Boolean!
+  scannerManagerEnabledEvents: [ScannerManagerEnabled!]!
+    @derivedFrom(field: "scannermanager")
+}
+
+type Link @entity {
+  id: ID!
+  bot: Bot!
+  scanner: Scanner!
+  active: Boolean!
+  linkEnabledEvents: [LinkEnabled!]! @derivedFrom(field: "link")
+}
+
+type BotTransfer implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  bot: Bot!
+  from: Account!
+  to: Account!
+}
+
+type BotUpdated implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  bot: Bot!
+  by: Account!
+  metadata: String!
+  chains: [BigInt!]!
+}
+
+type BotEnabled implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  bot: Bot!
+  enabled: Boolean!
+  permission: Int!
+  value: Boolean!
+}
+
+type ScannerTransfer implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  scanner: Scanner!
+  from: Account!
+  to: Account!
+}
+
+type ScannerEnabled implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  scanner: Scanner!
+  enabled: Boolean!
+  permission: Int!
+  value: Boolean!
+}
+
+type ScannerUpdated implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  scanner: Scanner!
+  metadata: String!
+  chainId: BigInt!
+}
+
+type ScannerManagerEnabled implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  scanner: Scanner!
+  manager: Account!
+  scannermanager: ScannerManager!
+  enabled: Boolean!
+}
+
+type LinkEnabled implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  scanner: Scanner!
+  bot: Bot!
+  link: Link!
+  enabled: Boolean!
+}
+
+type StakeThreshold @entity {
+  id: ID!
+  scanner: Scanner!
+  activated: Boolean!
+  min: BigInt
+  max: BigInt
+}
+
+type Subject @entity {
+  id: ID!
+  subjectId: BigInt
+  subjectType: Int
+  activeSharesId: String
+  activeShares: BigInt
+  activeStake: BigInt
+  inactiveSharesId: String
+  inactiveShares: BigInt
+  inactiveStake: BigInt
+  isFrozen: Boolean
+  slashedTotal: Int
+  stakes: [Stake!]! @derivedFrom(field: "subject")
+  stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "subject")
+  withdrawalExecutedEvents: [WithdrawalExecutedEvent!] @derivedFrom(field: "subject")
+}
+
+type SharesID @entity {
+  id: ID!
+  subject: Subject!
+}
+
+type Slash @entity {
+  id: ID!
+  subjectType: Int
+  subjectId: String
+  stakeValue: Int
+  by: Account
+}
+
+type Reward @entity {
+  id: ID!
+  activeSharesId: String
+  subjectType: Int
+  subjectId: String
+  staker: Staker!
+}
+
+type Staker @entity {
+  id: ID!
+  account: Account!
+  stakes: [Stake!]! @derivedFrom(field: "staker")
+  aggregateActiveStake: AggregateActiveStake! @derivedFrom(field: "staker")
+  aggregateTotalStake: AggregateTotalStake! @derivedFrom(field: "staker")
+  nodePools: [ScannerPool!]
+}
+
+type Stake @entity {
+  id: ID!
+  subject: Subject!
+  staker: Staker!
+  isActive: Boolean
+  shares: BigInt
+  inactiveShares: BigInt
+  stakeDepositedEvents: [StakeDepositEvent!] @derivedFrom(field: "stake")
+  withdrawalExecutedEvents: [WithdrawalExecutedEvent!] @derivedFrom(field: "stake")
+  withdrawalInitiatedEvents: [WithdrawalInitiatedEvent!] @derivedFrom(field: "stake")
+  pendingWithdrawalQueue: [WithdrawalInitiatedEvent!]
+}
+
+type AggregateActiveStake @entity {
+  id: ID!
+  activeStake: BigInt!
+  staker: Staker!
+}
+
+type AggregateTotalStake @entity {
+  id: ID!
+  totalStake: BigInt!
+  staker: Staker!
+}
+
+type StakeDepositEvent implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  subject: Subject!
+  amount: BigInt!
+  stake: Stake!
+}
+
+type WithdrawalInitiatedEvent implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  subject: Subject!
+  stake: Stake!
+  amount: BigInt!
+}
+
+type WithdrawalExecutedEvent implements Event @entity {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+  subject: Subject!
+  stake: Stake!
+  amount: BigInt
+}
+
+type RewardEvent implements Event @entity {
+  id: ID!
+  subject: Subject!
+  epochNumber: Int!
+  amount: BigInt!
+  transaction: Transaction!
+  timestamp: BigInt!
+  apyForLastEpoch: BigDecimal
+}
+
+type RewardClaimedEvent implements Event @entity {
+  id: ID!
+  subject: Subject!
+  epochNumber: BigInt!
+  to: Account!
+  value: BigInt!
+  transaction: Transaction!
+  timestamp: BigInt!
+}
+
+type NodePoolRewardMetaData @entity{
+  id: ID!
+  nodePoolId: String
+  epochNumber: BigInt
+  totalDelegatorStakesAtStartOfEpoch: BigInt
+}
+
+type ScannerPool @entity {
+  id: ID!
+  owner: Account!
+  registered: Boolean!
+  chainId: Int!
+  apr: BigDecimal
+  apyForLastEpoch: BigDecimal!
+  commission: BigDecimal!
+  commissionSinceEpoch: Int!
+  oldCommission: BigDecimal!
+  status: String
+  stakeOwned: BigInt!
+  stakeDelegated: BigInt!
+  stakeAllocated: BigInt!
+  stakeOwnedAllocated: BigInt!
+  latestRewardMetaData: NodePoolRewardMetaData!
+  previousRewardMetaData: NodePoolRewardMetaData!
+  scanNodes: [ScanNode!] @derivedFrom(field: "scannerPool")
+  rewardedEvents: [RewardEvent!]
+  stakers: [Staker!]
+}
+
+#  New entity to handle scanNodes inside of pools
+type ScanNode @entity {
+  id: ID!
+  address: String
+  owner: Account!
+  enabled: Boolean!
+  disableFlags: Int!
+  metadata: String!
+  chainId: BigInt
+  scannerPool: ScannerPool!
+}
