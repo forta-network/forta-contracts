@@ -22,12 +22,12 @@ jobs:
 
       - name: Install subgraph dependencies
         working-directory: ./subgraph
-        run: npm install
+        run: yarn install
 
       - name: Prepare for subgraph deployment
         working-directory: ./subgraph
-        run: npm run prepare
+        run: yarn run prepare
 
       - name: Deploy subgraph
         working-directory: ./subgraph
-        run: npm run deploy-theGraph-b
+        run: yarn run deploy-theGraph-b
