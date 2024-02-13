@@ -1,3 +1,38 @@
+# Entities from @amxx/graphprotocol-utils
+# -------------------
+
+type DecimalValue @entity {
+  id: ID!
+  value: BigDecimal!
+  exact: BigInt!
+  decimals: Int!
+}
+
+interface Event {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt!
+}
+
+type Transaction @entity(immutable: true) {
+  id: ID!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  events: [Event!]! @derivedFrom(field: "transaction")
+}
+
+type PersistentString @entity {
+  id: ID!
+  value: String!
+}
+
+type PersistentStringArray @entity {
+  id: ID!
+  values: [String!]!
+}
+
+# -----------------
+
 type Account @entity {
   id: ID!
   bots: [Bot!]! @derivedFrom(field: "owner")

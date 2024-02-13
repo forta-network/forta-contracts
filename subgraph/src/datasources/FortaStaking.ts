@@ -71,8 +71,8 @@ function findStakeInactiveShares(_subjectType: i32, _subject: BigInt, _staker: A
 
   if(!previousStake) {
     return null
-  } 
-  
+  }
+
   return previousStake.inactiveShares;
 }
 
@@ -136,7 +136,7 @@ function updateStake(
   _subjectType: i32,
   _subject: BigInt,
   _staker: Address): string {
-  
+
   const _subjectId = formatSubjectId(_subject, _subjectType);
   const _stakerId = addressToHex(_staker);
   let subject = Subject.load(_subjectId);
@@ -266,12 +266,11 @@ export function handleStakeDeposited(event: StakeDepositedEvent): void {
 }
 
 export function handleWithdrawalInitiated(event: WithdrawalInitiated): void {
-
   // Find number of inactive shares stored on stake entity before update
   const _staker = event.params.account;
   const _subjectType = event.params.subjectType;
   const _subject = event.params.subject
-   
+
   const previousInactiveShares = findStakeInactiveShares(_subjectType, _subject, _staker)
 
   const stakeId = updateStake(
@@ -292,7 +291,7 @@ export function handleWithdrawalInitiated(event: WithdrawalInitiated): void {
   withdrawalInitiatedEvent.timestamp = event.block.timestamp;
   withdrawalInitiatedEvent.stake = stakeId;
   withdrawalInitiatedEvent.subject = formatSubjectId(event.params.subject, event.params.subjectType);
-  
+
     if(previousInactiveShares) {
       withdrawalInitiatedEvent.amount = (currentInActiveShares as BigInt).minus(previousInactiveShares)
     } else {
@@ -314,7 +313,7 @@ export function handleWithdrawalInitiated(event: WithdrawalInitiated): void {
   currentStake.save()
 }
 
-export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {  
+export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {
   const stakeId = updateStake(
     event.address,
     event.params.subjectType,
@@ -341,15 +340,6 @@ export function handleWithdrawalExecuted(event: WithdrawalExecuted): void {
   withdrawalExecutedEvent.subject = formatSubjectId(event.params.subject, event.params.subjectType);
   withdrawalExecutedEvent.amount = withdrawalInitiatedEvent.amount;
   withdrawalExecutedEvent.save();
-
-  if (
-    currentStake.shares &&
-    currentStake.inactiveShares &&
-    (currentStake.shares as BigInt).isZero() && 
-    (currentStake.inactiveShares as BigInt).isZero()
-  ) {
-    store.remove("Stake", currentStake.id);
-  }
 }
 
 export function handleRewarded(event: RewardedEvent): void {
@@ -408,7 +398,7 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
   // Update withdrawal executed event with value
 
   if(event.params.to.toHex() != ZERO_ADDRESS) {
-    const account = Account.load(event.params.to.toString()) // Get account of receiver 
+    const account = Account.load(event.params.to.toString()) // Get account of receiver
 
 
     if(account && account.staker) {
@@ -435,12 +425,12 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
       }
     }
   }
-  
+
   if (sharesId) {
     let subject = Subject.load(sharesId.subject);
     if(subject && subject.subjectId) {
       const _subjectId: BigInt | null = subject.subjectId;
-      const subjectId: BigInt = _subjectId ? _subjectId : BigInt.zero(); 
+      const subjectId: BigInt = _subjectId ? _subjectId : BigInt.zero();
       if (
         !subjectId.isZero() &&
         event.params.from.toHex() != ZERO_ADDRESS &&
@@ -457,7 +447,7 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
           subject.subjectType,
           subjectId,
           event.params.to,
-        );  
+        );
       }
     }
   }

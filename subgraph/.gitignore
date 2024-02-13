@@ -1,6 +1,8 @@
 generated
 old_subgraph
 node_modules
-schema.graphql
 .bin
 tests/.bin
+
+.idea
+.vscode

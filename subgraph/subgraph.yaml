@@ -1,6 +1,6 @@
 specVersion: 0.0.5
 schema:
-  file: ./schema.graphql
+  file: ./src/schema.graphql
 dataSources:
   - kind: ethereum
     name: ScannerRegistry
