@@ -1,4 +1,4 @@
-name: Prod Deploy Subgraph
+name: Prod Deploy Subgraph to TheGraph B
 on:
   workflow_dispatch:
 jobs:
@@ -12,7 +12,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
-      
+
       - name: Install the graph cli
         run: npm install @graphprotocol/graph-cli
 
@@ -28,6 +28,6 @@ jobs:
         working-directory: ./subgraph
         run: npm run prepare
 
-      - name: Deploy subgraph 
+      - name: Deploy subgraph
         working-directory: ./subgraph
-        run: npm run deploy-theGraph
+        run: npm run deploy-theGraph-b
