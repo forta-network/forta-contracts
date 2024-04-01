@@ -67,7 +67,11 @@ function toEIP3770(chainId, address) {
 }
 
 function networkName(chainId) {
-    return chainsMini.find((c) => c.chainId === chainId)?.name;
+    if(chainId === 80002) {
+        return "amoy"
+    } else {
+        return chainsMini.find((c) => c.chainId === chainId)?.name;
+    }
 }
 
 /*********************************************************************************************************************

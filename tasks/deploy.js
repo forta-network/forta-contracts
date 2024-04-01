@@ -28,7 +28,9 @@ async function deployNonUpgradeable(params, deploymentInfo, contract, hre, name,
     console.log('Non upgradeable');
     console.log(name);
     console.log('constructorArgs', constructorArgs);
-    console.log('opts', params.impl.opts);
+    // NOTE: If `params` would've had a `.impl` property,
+    // `deployUpgradeable()` would've been called instead
+    // console.log('opts', params.impl.opts);
     contract = await tryFetchContract(hre, name, constructorArgs, releaseWriter);
     console.log('Saving output...');
     await saveNonUpgradeable(releaseWriter, name, constructorArgs, contract.address, await getContractVersion(hre, contract));
