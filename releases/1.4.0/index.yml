@@ -1,11 +1,11 @@
-title: Amoy Migration
-network: amoy
+title: Base Sepolia Migration
+network: basesepolia
 # network: sepolia (for Sepolia FORT)
 deploy: deploy-and-prepare-upgrade 1.4.0
 verify: verify-deployed
 finish: propose-admin
 description: |
-  ## Deployed new implementations on new Polygon testnet:
+  ## Deployed new implementations on Base Sepolia testnet:
   - Forwarder
   - AccessManager
   - FORT token
