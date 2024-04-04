@@ -67,6 +67,7 @@ const SCANNER_REGISTRATION_DELAY = (chainId) => {
         case 5:
         case 80001:
         case 80002:
+        case 84532:
         case 31337:
             return 1000;
         default:
@@ -91,6 +92,7 @@ const FEE_PARAMS = (chainId) => {
         case 5:
         case 80001:
         case 80002:
+        case 84532:
         case 31337:
             return [2, 1000];
         default:

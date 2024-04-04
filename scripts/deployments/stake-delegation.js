@@ -58,11 +58,15 @@ const registerNode = async (name, owner, opts = {}) => {
 
 const reverseRegister = async (contract, name) => {
     const reverseResolved = await contract.provider.lookupAddress(contract.address);
+    // console.log(`\ncontract.signer: ${contract.signer.address}`);
+    // console.log(`contract.address: ${contract.address} | reverseResolved: ${reverseResolved}`);
     if (reverseResolved != name) {
+        // console.log(`contract.provider.network.ensAddress: ${contract.provider.network.ensAddress} | name: ${name}`);
         await contract
             .setName(contract.provider.network.ensAddress, name)
             .then((tx) => tx.wait())
             .catch((e) => DEBUG(e));
+            // .catch((e) => console.log(e))
     }
 };
 
@@ -83,8 +87,8 @@ async function migrate(config = {}) {
     if (config?.force) {
         CACHE.clear();
     }
-    config.childChain = config.childChain ? config.childChain : !!deployEnv.CHILD_CHAIN_MANAGER_PROXY[chainId];
-    config.childChainManagerProxy = config.childChainManagerProxy ?? deployEnv.CHILD_CHAIN_MANAGER_PROXY[chainId];
+    // config.childChain = config.childChain ? config.childChain : !!deployEnv.CHILD_CHAIN_MANAGER_PROXY[chainId];
+    // config.childChainManagerProxy = config.childChainManagerProxy ?? deployEnv.CHILD_CHAIN_MANAGER_PROXY[chainId];
     config.chainsToDeploy = config.chainsToDeploy ?? ['L1', 'L2'];
     const contracts = {};
     const slashParams = {};
@@ -92,8 +96,8 @@ async function migrate(config = {}) {
     const hardhatDeployment = chainId === 31337;
 
     const fortaConstructorArgs = [];
-    DEBUG('config.childChain', config.childChain);
-    DEBUG('config.childChainManagerProxy', config.childChainManagerProxy);
+    // DEBUG('config.childChain', config.childChain);
+    // DEBUG('config.childChainManagerProxy', config.childChainManagerProxy);
 
     // For test compatibility: since we need to mint and FortaBridgedPolygon does not mint(), we base our decision to deploy
     // FortaBridgedPolygon is based on the existence of childChainManagerProxy, not childChain
@@ -134,18 +138,24 @@ async function migrate(config = {}) {
 
     DEBUG(`[${Object.keys(contracts).length}] scannerPools: ${contracts.scannerPools.address}`);
 
-    contracts.registryMigration = await utils.tryFetchProxy('ScannerToScannerPoolMigration', 'uups', [deployment["access-manager"].address], {
-        constructorArgs: [deployment.forwarder.address, deployment["scanner-registry"].address, contracts.scannerPools.address, deployment["forta-staking"].address],
-        unsafeAllow: 'delegatecall',
+    contracts.subjectGateway = await utils.tryFetchProxy('StakeSubjectGateway', 'uups', [deployment["access-manager"].address, deployment["forta-staking"].address], {
+        constructorArgs: [deployment.forwarder.address],
+        unsafeAllow: ['delegatecall'],
     }, CACHE);
+
+    DEBUG(`[${Object.keys(contracts).length}.1] stake allocator: ${contracts.subjectGateway.address}`);
+
+    // contracts.registryMigration = await utils.tryFetchProxy('ScannerToScannerPoolMigration', 'uups', [deployment["access-manager"].address], {
+    //     constructorArgs: [deployment.forwarder.address, deployment["scanner-registry"].address, contracts.scannerPools.address, deployment["forta-staking"].address],
+    //     unsafeAllow: 'delegatecall',
+    // }, CACHE);
 
     DEBUG(`roles fetched`);
 
     if (!hardhatDeployment) {
-        if (!provider.network.ensAddress) {
+        // if (!provider.network.ensAddress) {
             contracts.ens = {};
 
-            // (hre, contractName, args = [], cache)
             contracts.ens.registry = await ethers.getContractFactory('ENSRegistry', deployer).then((factory) => utils.tryFetchContract('ENSRegistry', [], CACHE));
 
             DEBUG(`registry: ${contracts.ens.registry.address}`);
@@ -167,31 +177,31 @@ async function migrate(config = {}) {
 
             // ens registration
 
-            if (config.childChain) {
+    // if (config.childChain) {
                 await Promise.all([
                     registerNode('staking-subjects.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.subjectGateway.address, chainId: chainId }),
                     registerNode('scanner-pools.registries.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.scannerPools.address, chainId: chainId }),
                     registerNode('rewards.forta.eth', deployer.address, { ...contracts.ens, resolved: contracts.rewardsDistributor.address, chainId: chainId }),
                 ]);
-            }
+            // }
 
             DEBUG('ens configuration');
-        } else {
-            contracts.ens = {};
-            const ensRegistryAddress = await CACHE.get('ens-registry');
-            contracts.ens.registry = ensRegistryAddress ? await utils.attach('ENSRegistry', ensRegistryAddress) : null;
-            const ensResolverAddress = await CACHE.get('ens-resolver');
-            contracts.ens.resolver = ensRegistryAddress ? await utils.attach('PublicResolver', ensResolverAddress) : null;
-        }
+        // } else {
+        //     contracts.ens = {};
+        //     const ensRegistryAddress = await CACHE.get('ens-registry');
+        //     contracts.ens.registry = ensRegistryAddress ? await utils.attach('ENSRegistry', ensRegistryAddress) : null;
+        //     const ensResolverAddress = await CACHE.get('ens-resolver');
+        //     contracts.ens.resolver = ensRegistryAddress ? await utils.attach('PublicResolver', ensResolverAddress) : null;
+        // }
         DEBUG('Starting reverse registration...');
         var reverseRegisters = [];
-        if (config.childChain) {
+        // if (config.childChain) {
             reverseRegisters = reverseRegisters.concat([
                 reverseRegister(contracts.subjectGateway, 'staking-subjects.forta.eth'),
                 reverseRegister(contracts.scannerPools, 'scanner-pools.registries.forta.eth'),
                 reverseRegister(contracts.rewardsDistributor, 'rewards.forta.eth'),
             ]);
-        }
+        // }
         await Promise.all(reverseRegisters);
 
         DEBUG('reverse registration');

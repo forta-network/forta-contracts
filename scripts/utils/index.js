@@ -1,7 +1,7 @@
 const DEBUG = require('debug')('forta:utils');
 const EthDater = require('block-by-date-ethers');
 const process = require('process');
-// const contractHelpers = require('./contractHelpers');
+const contractHelpers = require('./contractHelpers');
 require('./arrays');
 const chainsMini = require('./chainsMini.json');
 
@@ -69,6 +69,8 @@ function toEIP3770(chainId, address) {
 function networkName(chainId) {
     if(chainId === 80002) {
         return "amoy"
+    } else if(chainId === 84532) {
+        return "basesepolia"
     } else {
         return chainsMini.find((c) => c.chainId === chainId)?.name;
     }
@@ -104,7 +106,7 @@ function durationToSeconds(duration) {
 }
 
 module.exports = {
-    /*
+    // /*
     getDefaultProvider: (baseProvider, feeData) => contractHelpers.getDefaultProvider(hre, baseProvider, feeData),
     getDefaultDeployer: (provider, baseDeployer, network) => contractHelpers.getDefaultDeployer(hre, provider, baseDeployer, network),
     getFactory: (name) => contractHelpers.getFactory(hre, name),
@@ -117,7 +119,7 @@ module.exports = {
     tryFetchProxy: (contractName, kind, args, opts, cache) => contractHelpers.tryFetchProxy(hre, contractName, kind, args, opts, cache),
     getContractVersion: (contract, deployParams) => contractHelpers.getContractVersion(hre, contract, deployParams),
     getBlockExplorerDomain: () => contractHelpers.getBlockExplorerDomain(hre),
-    */
+    // */
     dateToTimestamp,
     durationToSeconds,
     getEventsFromTx,
