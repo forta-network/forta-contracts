@@ -57,5 +57,13 @@
                 ["1", "10000"]
             ]
         }
+    ],
+    "AgentRegistry": [
+        {
+            "methodName": "setStakeThreshold",
+            "params": [
+                [{ "min": "100000000000000000000", "max": "3000000000000000000000", "activated": true }]
+            ]
+        }
     ]
 }
