@@ -14,6 +14,7 @@ const ROOT_CHAIN_MANAGER = {
 const CHILD_CHAIN_MANAGER_PROXY = {
     137: '0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa',
     80001: '0xb5505a6d998549090530911180f38aC5130101c6',
+    80002: '0xb991E39a401136348Dee93C75143B159FabF483f'
 };
 
 const CHAIN_TYPE = {
@@ -65,6 +66,8 @@ const SCANNER_REGISTRATION_DELAY = (chainId) => {
     switch (chainId) {
         case 5:
         case 80001:
+        case 80002:
+        case 84532:
         case 31337:
             return 1000;
         default:
@@ -88,6 +91,8 @@ const FEE_PARAMS = (chainId) => {
     switch (chainId) {
         case 5:
         case 80001:
+        case 80002:
+        case 84532:
         case 31337:
             return [2, 1000];
         default:

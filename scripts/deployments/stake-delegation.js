@@ -100,46 +100,51 @@ async function migrate(config = {}) {
     config.childChainManagerProxy ? fortaConstructorArgs.push(config.childChainManagerProxy) : null;
 
     contracts.rewardsDistributor = await utils.tryFetchProxy(
-        CACHE,
-        'staking-rewards',
         'RewardsDistributor',
         'uups',
-        [deployment.access.address, ...deployEnv.FEE_PARAMS(chainId)],
+        [deployment["access-manager"].address, ...deployEnv.FEE_PARAMS(chainId)],
         {
-            constructorArgs: [deployment.forwarder.address, deployment.token.address, deployment['stake-subject-gateway'].address],
+            constructorArgs: [deployment.forwarder.address, deployment["token"].address, deployment['stake-subject-gateway'].address],
             unsafeAllow: ['delegatecall'],
-        }
+        },
+        CACHE
     );
 
     DEBUG(`[${Object.keys(contracts).length}.1] rewardsDistributor ${contracts.rewardsDistributor.address}`);
 
-    contracts.stakeAllocator = await utils.tryFetchProxy(CACHE, 'staking-allocator', 'StakeAllocator', 'uups', [deployment.access.address], {
+    contracts.stakeAllocator = await utils.tryFetchProxy('StakeAllocator', 'uups', [deployment["access-manager"].address], {
         constructorArgs: [deployment.forwarder.address, deployment['stake-subject-gateway'].address, contracts.rewardsDistributor.address],
         unsafeAllow: ['delegatecall'],
-    });
+    }, CACHE);
 
     DEBUG(`[${Object.keys(contracts).length}.1] stake allocator: ${contracts.stakeAllocator.address}`);
 
     DEBUG(`Deploying ScannerPool registry...`);
 
     contracts.scannerPools = await utils.tryFetchProxy(
-        CACHE,
-        'scanner-pools',
         'ScannerPoolRegistry',
         'uups',
-        [deployment.access.address, 'Forta Scanner Pools', 'FScannerPools', deployment['stake-subject-gateway'].address, deployEnv.SCANNER_REGISTRATION_DELAY(chainId)],
+        [deployment["access-manager"].address, 'Forta Scanner Pools', 'FScannerPools', deployment['stake-subject-gateway'].address, deployEnv.SCANNER_REGISTRATION_DELAY(chainId)],
         {
             constructorArgs: [deployment.forwarder.address, contracts.stakeAllocator.address],
             unsafeAllow: 'delegatecall',
-        }
+        },
+        CACHE
     );
 
     DEBUG(`[${Object.keys(contracts).length}] scannerPools: ${contracts.scannerPools.address}`);
 
-    contracts.registryMigration = await utils.tryFetchProxy(CACHE, 'scanner-to-scanner-pool-migration', 'ScannerToScannerPoolMigration', 'uups', [deployment.access.address], {
-        constructorArgs: [deployment.forwarder.address, deployment.scanners.address, contracts.scannerPools.address, deployment.staking.address],
-        unsafeAllow: 'delegatecall',
-    });
+    contracts.subjectGateway = await utils.tryFetchProxy('StakeSubjectGateway', 'uups', [deployment["access-manager"].address, deployment["forta-staking"].address], {
+        constructorArgs: [deployment.forwarder.address],
+        unsafeAllow: ['delegatecall'],
+    }, CACHE);
+
+    DEBUG(`[${Object.keys(contracts).length}.1] stake allocator: ${contracts.subjectGateway.address}`);
+
+    // contracts.registryMigration = await utils.tryFetchProxy('ScannerToScannerPoolMigration', 'uups', [deployment["access-manager"].address], {
+    //     constructorArgs: [deployment.forwarder.address, deployment["scanner-registry"].address, contracts.scannerPools.address, deployment["forta-staking"].address],
+    //     unsafeAllow: 'delegatecall',
+    // }, CACHE);
 
     DEBUG(`roles fetched`);
 
@@ -147,19 +152,19 @@ async function migrate(config = {}) {
         if (!provider.network.ensAddress) {
             contracts.ens = {};
 
-            contracts.ens.registry = await ethers.getContractFactory('ENSRegistry', deployer).then((factory) => utils.tryFetchContract(CACHE, 'ens-registry', factory, []));
+            contracts.ens.registry = await ethers.getContractFactory('ENSRegistry', deployer).then((factory) => utils.tryFetchContract('ENSRegistry', [], CACHE));
 
             DEBUG(`registry: ${contracts.ens.registry.address}`);
 
             contracts.ens.resolver = await ethers
                 .getContractFactory('PublicResolver', deployer)
-                .then((factory) => utils.tryFetchContract(CACHE, 'ens-resolver', factory, [contracts.ens.registry.address, ethers.constants.AddressZero]));
+                .then((factory) => utils.tryFetchContract('PublicResolver', [contracts.ens.registry.address, ethers.constants.AddressZero], CACHE));
 
             DEBUG(`resolver: ${contracts.ens.resolver.address}`);
 
             contracts.ens.reverse = await ethers
                 .getContractFactory('ReverseRegistrar', deployer)
-                .then((factory) => utils.tryFetchContract(CACHE, 'ens-reverse', factory, [contracts.ens.registry.address, contracts.ens.resolver.address]));
+                .then((factory) => utils.tryFetchContract('ReverseRegistrar', [contracts.ens.registry.address, contracts.ens.resolver.address], CACHE));
 
             DEBUG(`reverse: ${contracts.ens.reverse.address}`);
 

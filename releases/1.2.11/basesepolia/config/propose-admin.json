@@ -1,0 +1,69 @@
+{
+    "AccessManager": [
+        {
+            "methodName": "grantRole",
+            "params": [
+                ["roles.SCANNER_POOL_ADMIN_ROLE", "deployment.multisig"],
+                ["roles.ALLOCATOR_CONTRACT_ROLE", "deployment.stake-allocator"],
+                ["roles.STAKING_CONTRACT_ROLE", "deployment.forta-staking"],
+                ["roles.STAKING_ADMIN_ROLE", "deployment.multisig"],
+                ["roles.REWARDER_ROLE", "deployment.relayer"],
+                ["roles.SLASHER_ROLE", "deployment.slashing-controller"]
+            ]
+        }
+    ],
+    "ScannerPoolRegistry": [
+        {
+            "methodName": "setManagedStakeThreshold",
+            "params": [
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "1"],
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "10"],
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "137"],
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "56"],
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "42161"],
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "43114"],
+                [{ "min": "2500000000000000000000", "max": "15000000000000000000000", "activated": true }, "250"]
+            ]
+        }
+    ],
+    "StakeSubjectGateway": [
+        {
+            "methodName": "setStakeSubject",
+            "params": [
+                ["2", "deployment.scanner-pool-registry"]
+            ]
+        }
+    ],
+    "FortaStaking": [
+        {
+            "methodName": "configureStakeHelpers",
+            "params": [
+                ["deployment.stake-subject-gateway", "deployment.stake-allocator"]
+            ]
+        }
+    ],
+    "Dispatch": [
+        {
+            "methodName": "setScannerPoolRegistry",
+            "params": [
+                ["deployment.scanner-pool-registry"]
+            ]
+        }
+    ],
+    "RewardsDistributor": [
+        {
+            "methodName": "setDelegationParams",
+            "params": [
+                ["1", "10000"]
+            ]
+        }
+    ],
+    "AgentRegistry": [
+        {
+            "methodName": "setStakeThreshold",
+            "params": [
+                [{ "min": "100000000000000000000", "max": "3000000000000000000000", "activated": true }]
+            ]
+        }
+    ]
+}

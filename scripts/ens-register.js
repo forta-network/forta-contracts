@@ -5,6 +5,21 @@ const { getDeploymentOutputWriter } = require('./utils/deploymentFiles');
 const deployEnv = require('./loadEnv');
 const { networkName } = require('./utils');
 
+// Note:
+// If deploying the three ENS contracts on a new network (ENSRegistry, PublicResolver, ReverseRegistrar),
+// you will have to update this script, or use `../deployments/stake-delegation.js` to deploy them.
+// You will also need to register the "parent" nodes for the ENS names. Namely ".eth", ".forta.eth",
+// and ".registries.forta.eth", as the desired names are children of either ".forta.eth" or ".registries.forta.eth".
+// This would be done by first registering ".eth", then ".forta.eth", and then ".registris.forta.eth", so they have
+// the correct 'owner'.
+//
+// Additionally, to properly set up the ReverseRegistrar, you will need to register ".reverse". Then register
+// ".addr.reverse" TO HAVE THE ReverseRegistrar CONTRACT AS ITS OWNER.
+//
+// Resources:
+// - https://docs.ens.domains/resolution/names
+// - https://docs.ens.domains/registry/reverse
+
 const registerNode = async (hre, name, owner, opts = {}) => {
     const { ethers } = hre;
     const resolved = opts.resolved;
@@ -65,6 +80,7 @@ const reverseRegister = async (contract, name) => {
     console.log(reverseResolved);
     if (reverseResolved != name) {
         await contract
+            .connect(contract.signer)
             .setName(contract.provider.network.ensAddress, name)
             .then((tx) => tx.wait())
             .catch((e) => DEBUG(e));
@@ -118,15 +134,15 @@ async function main() {
     DEBUG('ens configuration');
 
     DEBUG('Starting reverse registration...');
-    // await reverseRegister(contracts.dispatch, 'dispatch.forta.eth');
-    // await reverseRegister(contracts.fortaStaking, 'staking.forta.eth');
-    // await reverseRegister(contracts.slashingController, 'slashing.forta.eth');
-    // await reverseRegister(contracts.agentRegistry, 'agents.registries.forta.eth');
-    // await reverseRegister(contracts.scannerRegistry, 'scanners.registries.forta.eth');
-    // await reverseRegister(contracts.scannerPoolRegistry, 'pools.registries.forta.eth');
-    // await reverseRegister(contracts.rewardsDistributor, 'rewards.forta.eth');
-    // await reverseRegister(contracts.stakeAllocator, 'allocator.forta.eth');
-    // await reverseRegister(contracts.scannerToScannerPoolMigration, 'migration.forta.eth');
+    // await reverseRegister(contracts.dispatch, 'dispatch.forta.eth', deployer);
+    // await reverseRegister(contracts.fortaStaking, 'staking.forta.eth', deployer);
+    // await reverseRegister(contracts.slashingController, 'slashing.forta.eth', deployer);
+    // await reverseRegister(contracts.agentRegistry, 'agents.registries.forta.eth', deployer);
+    // await reverseRegister(contracts.scannerRegistry, 'scanners.registries.forta.eth', deployer);
+    // await reverseRegister(contracts.scannerPoolRegistry, 'pools.registries.forta.eth', deployer);
+    // await reverseRegister(contracts.rewardsDistributor, 'rewards.forta.eth', deployer);
+    // await reverseRegister(contracts.stakeAllocator, 'allocator.forta.eth', deployer);
+    // await reverseRegister(contracts.scannerToScannerPoolMigration, 'migration.forta.eth', deployer);
 
 }
 

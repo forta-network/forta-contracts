@@ -1,0 +1,16 @@
+{
+	"forta-deploy-tx": "0xe6630a9172a655398a5df198ab4534a7e108d590ea3974243e030a42a6f177ec",
+	"forta": {
+		"address": "0x95d9a757ad9C25999ffE93f3067221F04ce1Cc79",
+		"impl": {
+			"address": "0x6A434647A4a3De2F915Bb49B6227444EBbE67Aed",
+			"constructor-args": [],
+			"init-args": [
+				"0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24"
+			],
+			"name": "Forta",
+			"timeout": 1200000,
+			"version": "0.2.0"
+		}
+	}
+}

@@ -38,7 +38,10 @@ const CHAIN_NAME = {
     5: 'goerli',
     137: 'polygon',
     80001: 'mumbai',
+    80002: 'amoy',
+    84532: 'basesepolia',
     31337: 'local',
+    11155111: 'sepolia'
 };
 
 function validateInput(chainId, releaseVersion) {

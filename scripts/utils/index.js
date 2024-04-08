@@ -1,7 +1,7 @@
 const DEBUG = require('debug')('forta:utils');
 const EthDater = require('block-by-date-ethers');
 const process = require('process');
-// const contractHelpers = require('./contractHelpers');
+const contractHelpers = require('./contractHelpers');
 require('./arrays');
 const chainsMini = require('./chainsMini.json');
 
@@ -67,7 +67,13 @@ function toEIP3770(chainId, address) {
 }
 
 function networkName(chainId) {
-    return chainsMini.find((c) => c.chainId === chainId)?.name;
+    if(chainId === 80002) {
+        return "amoy"
+    } else if(chainId === 84532) {
+        return "basesepolia"
+    } else {
+        return chainsMini.find((c) => c.chainId === chainId)?.name;
+    }
 }
 
 /*********************************************************************************************************************

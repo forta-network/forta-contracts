@@ -1,0 +1,22 @@
+title: Base Sepolia Migration
+network: basesepolia
+# network: sepolia (for Sepolia FORT)
+deploy: deploy-and-prepare-upgrade 1.2.11
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deployed new implementations on Base Sepolia testnet:
+  - Forwarder
+  - AccessManager
+  - FORT token
+  - FortaStaking
+  - StakeSubjectGateway
+  - RewardsDistributor
+  - StakeAllocator
+  - ScannerRegistry
+  - ScannerPoolRegistry
+  - AgentRegistry
+  - Dispatch
+  - ScannerNodeVersion
+  - SlashingController
+  - ScannerToScannerPoolMigration

@@ -13,7 +13,7 @@ async function main(args, hre) {
     const client = new AdminClient({ apiKey: process.env.DEFENDER_API_KEY, apiSecret: process.env.DEFENDER_API_SECRET });
     const { ethers } = hre;
     const chainId = await ethers.provider.getNetwork().then((n) => n.chainId);
-    const network = fromChainId(chainId);
+    const network = chainId != 84532 ? fromChainId(chainId) : "base-sepolia";
     const prepared = getDeployedImplementations(chainId, args.release);
     const adminProposed = getProposedAdminActions(chainId, args.release);
     const deploymentInfo = getDeploymentInfo(chainId);
@@ -30,11 +30,10 @@ async function main(args, hre) {
         console.log('No upgrades were prepared in previous steps.');
     }
 
-    const adminProposala = await parseAdminProposals(hre, adminProposed, deploymentInfo, network);
-    if (adminProposala.steps.length > 0) {
-        console.log(`Proposing ${adminProposala.steps.length} admin actons`);
-        contracts.push(...adminProposala.contracts);
-        steps.push(...adminProposala.steps);
+    const adminProposals = await parseAdminProposals(hre, adminProposed, deploymentInfo, network);
+    if (adminProposals.steps.length > 0) {
+        contracts.push(...adminProposals.contracts);
+        steps.push(...adminProposals.steps);
     } else {
         console.log('No admin actions.');
     }
@@ -50,7 +49,7 @@ async function main(args, hre) {
         steps,
     });
 
-    const multisigLink = `https://app.safe.global/${toEIP3770(chainId, deploymentInfo.multisig)}/home`;
+    const multisigLink = `https://app.safe.global/home?safe=${toEIP3770(chainId, deploymentInfo.multisig)}`;
     const outputText = `## Approval\n\n[Approval required](${proposal.url}) by multisig [\`${deploymentInfo.multisig}\`](${multisigLink}) signers.`;
 
     if (summaryPath) {

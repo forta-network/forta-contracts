@@ -61,7 +61,21 @@ module.exports = {
         timeout: 300000,
     },
     etherscan: {
-        apiKey: argv.etherscan ?? argv.polyscan,
+        apiKey: { 
+            mainnet: argv.etherscan,
+            polygon: argv.polyscan,
+            basesepolia: argv.basescan
+        },
+        customChains: [
+          {
+            network: "basesepolia",
+            chainId: 84532,
+            urls: {
+              apiURL: "https://api-sepolia.basescan.org/api",
+              browserURL: "https://sepolia.basescan.org/"
+            }
+          }
+        ]
     },
     defender: {
         apiKey: process.env.DEFENDER_API_KEY ?? '',
@@ -88,7 +102,7 @@ const accountsForNetwork = (name) => [argv[`${name}Mnemonic`] && { mnemonic: arg
 Object.assign(
     module.exports.networks,
     Object.fromEntries(
-        ['mainnet', 'ropsten', 'rinkeby', 'goerli', 'kovan', 'polygon', 'mumbai', 'local']
+        ['mainnet', 'ropsten', 'rinkeby', 'goerli', 'kovan', 'polygon', 'mumbai', 'amoy', 'sepolia', 'basesepolia', 'local']
             .map((name) => [name, { url: argv[`${name}Node`], accounts: accountsForNetwork(name), gasPrice: argv[`${name}GasPrice`] || 'auto' }])
             .filter(([, { url }]) => url)
     ),

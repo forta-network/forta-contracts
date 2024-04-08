@@ -1,0 +1,194 @@
+{
+    "Forwarder": {
+        "constructor-args": []
+    },
+    "AccessManager": {
+        "impl": {
+            "init-args": ["0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+        }
+    },
+    "Forta": {
+        "impl": {
+            "init-args": ["0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": []
+            }
+        }
+    },
+    "FortaStaking": {
+        "impl": {
+            "init-args": [
+                "deployment.access-manager",
+                "deployment.forta",
+                "60",
+                "0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24"
+            ],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+        }
+    },
+    "StakeSubjectGateway": {
+        "impl": {
+            "init-args": [
+                "deployment.access-manager",
+                "deployment.forta-staking"
+            ],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+        }
+    },
+    "RewardsDistributor": {
+        "impl": {
+            "init-args": ["deployment.access-manager", "2", "10000"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.forta", "deployment.stake-subject-gateway"
+                ]
+            }
+            
+        }
+    },
+    "StakeAllocator": {
+        "impl": {
+            "init-args": ["deployment.access-manager"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.stake-subject-gateway", "deployment.rewards-distributor"
+                ]
+            }
+            
+        }
+    },
+    "ScannerRegistry": {
+        "impl": {
+            "init-args": ["deployment.access-manager", "Forta Scanners", "FScanners"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+            
+        }
+    },
+    "ScannerPoolRegistry": {
+        "impl": {
+            "init-args": ["deployment.access-manager", "FScannerPools", "FSP", "deployment.stake-subject-gateway", "3600"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.stake-allocator"
+                ]
+            }
+            
+        }
+    },
+    "AgentRegistry": {
+        "impl": {
+            "init-args": ["deployment.access-manager", "Forta Agents", "FAgents"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+        }
+    },
+    "Dispatch": {
+        "impl": {
+            "init-args": ["deployment.access-manager", "deployment.agent-registry", "deployment.scanner-registry", "deployment.scanner-pool-registry"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+        }
+    },
+    "ScannerNodeVersion": {
+        "impl": {
+            "init-args": ["deployment.access-manager"],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder"
+                ]
+            }
+        }
+    },
+    "SlashingController": {
+        "impl": {
+            "init-args": [
+                "deployment.access-manager",
+                "deployment.forta-staking",
+                "deployment.stake-subject-gateway",
+                {
+                    "type": "BigNumber",
+                    "hex": "0x3635c9adc5dea00000"
+                },
+                "10",
+                [
+                    "0x602d37be0dfc88daa6b674e3c42ff4efabf3e86cef482bce18b643e8c0a1b33c",
+                    "0xe147df3b4755943b8e7219d7acfd0fd67879bdbf5f62537886a5e2acd476ee7d"
+                ],
+                [
+                    {
+                        "mode": "1",
+                        "percentSlashed": "15"
+                    },
+                    {
+                        "mode": "2",
+                        "percentSlashed": "90"
+                    }
+                ]
+            ],
+            "opts": {
+                "unsafe-allow": [
+                    "delegatecall"
+                ],
+                "constructor-args": [
+                    "deployment.forwarder", "deployment.forta"
+                ]
+            }
+        }
+    }
+}
