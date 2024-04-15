@@ -63,6 +63,7 @@ module.exports = {
     etherscan: {
         apiKey: { 
             mainnet: argv.etherscan,
+            sepolia: argv.etherscan,
             polygon: argv.polyscan,
             basesepolia: argv.basescan
         },
