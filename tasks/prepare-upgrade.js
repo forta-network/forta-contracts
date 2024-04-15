@@ -22,12 +22,21 @@ function getNewImplementation(prepareUpgradeResult) {
     return typeof prepareUpgradeResult === 'string' ? prepareUpgradeResult : getContractAddress(prepareUpgradeResult);
 }
 
-async function prepareUpgrade(hre, name, upgradesConfig, deploymentInfo, multisigAddress, outputWriter) {
+async function prepareUpgrade(hre, name, upgradesConfig, deploymentInfo, multisigAddress, outputWriter, chainId) {
     console.log(`Deploying new implementation for contract ${name} ...`);
     const { opts } = prepareParams(upgradesConfig, name, deploymentInfo, multisigAddress);
     const proxyAddress = parseAddress(deploymentInfo, kebabize(name));
 
-    const cf = await hre.ethers.getContractFactory(name)
+    // Use correct FORT token name depending on whether
+    // it is Polygon mainnet or the Base Sepolia testnet
+    let cf;
+    if(name === "Forta" && chainId === 84532) {
+        baseSepoliaName = "FortaBridgedBaseSepolia";
+        cf = await hre.ethers.getContractFactory(baseSepoliaName)
+    } else {
+        cf = await hre.ethers.getContractFactory(name)
+    }
+
     console.group("Summary for prepareUpgrade")
     console.log({
         proxyAddress,
@@ -116,7 +125,7 @@ async function main(args, hre) {
 
     try {
         for (const name of contractNames) {
-            await prepareUpgrade(hre, name, upgradesConfig, deploymentInfo, multisigAddress, outputWriter);
+            await prepareUpgrade(hre, name, upgradesConfig, deploymentInfo, multisigAddress, outputWriter, chainId);
         }
     } finally {
         saveResults(hre, chainId, args);

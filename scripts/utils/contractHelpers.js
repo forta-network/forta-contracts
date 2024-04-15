@@ -150,6 +150,8 @@ const getBlockExplorerDomain = (hre) => {
             return 'www.oklink.com/amoy';
         case 'sepolia':
             return 'sepolia.etherscan.io';
+        case 'basesepolia':
+            return 'sepolia.basescan.org'
     }
 };
 
