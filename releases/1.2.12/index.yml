@@ -1,0 +1,7 @@
+title: Base Sepolia FORT Token Upgrade
+network: basesepolia
+deploy: deploy-and-prepare-upgrade 1.2.12
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deployed new implementation of Base Sepolia FORT to adhere to OP stack bridging.

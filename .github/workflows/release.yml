@@ -26,7 +26,7 @@ jobs:
                   ref: ${{ github.event.pull_request.head.sha }}
             - uses: actions/setup-node@v3
               with:
-                  node-version: '14'
+                  node-version: '18.16.1'
                   cache: 'yarn'
             - run: yarn install --frozen-lockfile
 
@@ -52,7 +52,7 @@ jobs:
                   ref: ${{ github.event.pull_request.head.sha }}
             - uses: actions/setup-node@v3
               with:
-                  node-version: '14'
+                  node-version: '18.16.1'
                   cache: 'yarn'
             - run: yarn install --frozen-lockfile
 
@@ -76,7 +76,7 @@ jobs:
                 ref: ${{ github.event.pull_request.head.sha }}
           - uses: actions/setup-node@v3
             with:
-                node-version: '14'
+                node-version: '18.16.1'
                 cache: 'yarn'
           - run: yarn install --frozen-lockfile
 
@@ -180,7 +180,7 @@ jobs:
     #               ref: ${{ github.event.pull_request.head.sha }}
     #         - uses: actions/setup-node@v3
     #           with:
-    #               node-version: '14'
+    #               node-version: '18.16.1'
     #               cache: 'yarn'
     #         - run: yarn install --frozen-lockfile
 
@@ -229,7 +229,7 @@ jobs:
     #               ref: ${{ needs.deploy.outputs.deploy_commit || github.event.pull_request.head.sha }}
     #         - uses: actions/setup-node@v3
     #           with:
-    #               node-version: '14'
+    #               node-version: '18.16.1'
     #               cache: 'yarn'
     #         - run: yarn install --frozen-lockfile
 
@@ -268,7 +268,7 @@ jobs:
     #               ref: ${{ needs.deploy.outputs.deploy_commit || github.event.pull_request.head.sha }}
     #         - uses: actions/setup-node@v3
     #           with:
-    #               node-version: '14'
+    #               node-version: '18.16.1'
     #               cache: 'yarn'
     #         - run: yarn install --frozen-lockfile
 

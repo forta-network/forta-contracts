@@ -25,7 +25,7 @@
 	"forta": {
 		"address": "0x38C0F07ECA98b87757Fb76C56Be779b79C676062",
 		"impl": {
-			"address": "0xfED0d6639653C1533BD55F7E196C6B0AA38647EF",
+			"address": "0xcB31e349c6229cDC3560d80368092aC89095Ca38",
 			"constructor-args": [],
 			"init-args": [
 				"0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24"
