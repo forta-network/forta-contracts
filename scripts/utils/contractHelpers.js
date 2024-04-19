@@ -147,7 +147,7 @@ const getBlockExplorerDomain = (hre) => {
         case 'mumbai':
             return 'mumbai.polygonscan.com';
         case 'amoy':
-            return 'www.oklink.com/amoy';
+            return 'amoy.polygonscan.com';
         case 'sepolia':
             return 'sepolia.etherscan.io';
     }
