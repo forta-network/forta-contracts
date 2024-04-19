@@ -63,8 +63,9 @@ module.exports = {
     etherscan: {
         apiKey: { 
             mainnet: argv.etherscan,
+            basesepolia: argv.basescan,
             polygon: argv.polyscan,
-            basesepolia: argv.basescan
+            amoy: argv.polyscan
         },
         customChains: [
           {
@@ -73,6 +74,14 @@ module.exports = {
             urls: {
               apiURL: "https://api-sepolia.basescan.org/api",
               browserURL: "https://sepolia.basescan.org/"
+            }
+          },
+          {
+            network: "amoy",
+            chainId: 80002,
+            urls: {
+              apiURL: "https://api-amoy.polygonscan.com/api",
+              browserURL: "https://amoy.polygonscan.com//"
             }
           }
         ]
