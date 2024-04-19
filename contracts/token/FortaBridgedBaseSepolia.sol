@@ -3,8 +3,25 @@
 
 pragma solidity ^0.8.9;
 
-import "@eth-optimism/contracts-bedrock/src/universal/IOptimismMintableERC20.sol";
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "./FortaCommon.sol";
+
+/**
+ * Interface necessary to implement for successful bridging
+ * from Ethereum mainnet to OP-stack chains, which for us
+ * would be the Base Sepolia testnet.
+ * Detailed here:
+ * https://docs.optimism.io/builders/app-developers/bridging/standard-bridge#bridged-tokens
+ */
+interface IOptimismMintableERC20 is IERC165 {
+    function remoteToken() external view returns (address);
+
+    function bridge() external returns (address);
+
+    function mint(address _to, uint256 _amount) external;
+
+    function burn(address _from, uint256 _amount) external;
+}
 
 /**
  * This version of the Forta token is living on the Base Sepolia Layer 2 testnet.

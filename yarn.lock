@@ -407,11 +407,6 @@
   "resolved" "https://registry.npmjs.org/@eslint/js/-/js-8.41.0.tgz"
   "version" "8.41.0"
 
-"@eth-optimism/contracts-bedrock@^0.17.2":
-  "integrity" "sha512-YVwPHpBZgFwFX9qY8+iToVAAH7mSnVIVmih+YfHhqjAhlLvLZfYjvj+hRNgcB9eRyl1SOOB0jevp4JOOV1v2BA=="
-  "resolved" "https://registry.npmjs.org/@eth-optimism/contracts-bedrock/-/contracts-bedrock-0.17.2.tgz"
-  "version" "0.17.2"
-
 "@ethereum-waffle/chai@^3.4.4":
   "integrity" "sha512-/K8czydBtXXkcM9X6q29EqEkc5dN3oYenyH2a9hF7rGAApAJUpH8QBtojxOY/xQ2up5W332jqgxwp0yPiYug1g=="
   "resolved" "https://registry.npmjs.org/@ethereum-waffle/chai/-/chai-3.4.4.tgz"
