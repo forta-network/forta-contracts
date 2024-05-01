@@ -8,11 +8,17 @@ import "./FortaCommon.sol";
 /**
  * This version of the Forta token is living on the child chain. That would be:
  * - Polygon for production
- * - Mumbai for testing
+ * - Amoy for testing
  *
- * When tokens are deposited from the root chain, the `childChainManagerProxy` will call the
- * {deposit} function, which will mint corresponding tokens on the child chain. The total supply
- * on the side chain is expected to match the amount of locked tokens on the parent chain.
+ * When tokens are deposited from the root chain using the Polygon Portal, the `childChainManagerProxy`
+ * will call the {deposit} function, which will mint corresponding tokens on the child chain.
+ * 
+ * When a user decides to bridge the token using the `FortaStakingVaultRootTunnel` on Ethereum,
+ * the `FortaStakingVaultChildTunnel` contract will receive its message and call the {deposit} function,
+ * minting the corresponding tokens on the child chain.
+ * 
+ * The total supply on the side chain is expected to match the amount of locked tokens on the parent chain,
+ * whether that be on the `RootChainManagerProxy` or in the `FortaStakingVaultRootTunnel` contract.
  *
  * In order to bridge tokens back from the child chain to the parent chain, any user
  * can call either the {withdraw} or the {withdrawTo} function. This will burn tokens here,
@@ -22,8 +28,12 @@ import "./FortaCommon.sol";
 contract FortaBridgedPolygon is FortaCommon {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable childChainManagerProxy;
+    // Polygon-side StakingVaultChildTunnel contract receiving Ethereum messages
+    address public stakingVaultChildTunnel;
 
-    error DepositOnlyByChildChainManager();
+    event StakingVaultChildTunnelSet(address indexed childTunnel);
+
+    error DepositOnlyByChildChainManagerOrStakingVaultChildTunnel();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address _childChainManagerProxy) {
@@ -46,7 +56,7 @@ contract FortaBridgedPolygon is FortaCommon {
      * @param depositData encoded data sent by the bridge.
      */
     function deposit(address user, bytes calldata depositData) external {
-        if (msg.sender != childChainManagerProxy) revert DepositOnlyByChildChainManager();
+        if (msg.sender != childChainManagerProxy || msg.sender != stakingVaultChildTunnel) revert DepositOnlyByChildChainManagerOrStakingVaultChildTunnel();
 
         uint256 amount = abi.decode(depositData, (uint256));
         _mint(user, amount);
@@ -73,6 +83,19 @@ contract FortaBridgedPolygon is FortaCommon {
     }
 
     /**
+     * @notice Storage variable etter function for the StakingVaultChildTunnel contract address
+     * @dev Only to be called by the ADMIN role holder.
+     * @param _childTunnel Address of StakingVaultChildTunnel contract, which will receive
+     * messages from the StakingVaultRootTunnel on Ethereum mainnet.
+     */
+    function setStakingVaultChildTunnel(address _childTunnel) external onlyRole(ADMIN_ROLE) {
+        if (_childTunnel == address(0)) revert ZeroAddress("__childTunnel");
+
+        stakingVaultChildTunnel = _childTunnel;
+        emit StakingVaultChildTunnelSet(_childTunnel);
+    }
+
+    /**
      * @notice Contract version
      * @dev Since FortaCommon is IVersioned, Forta is deployed in L1 and FortaBridgedPolygon in L2,
      * we need to implement the interface with a method instead of immutable variable.
@@ -85,8 +108,9 @@ contract FortaBridgedPolygon is FortaCommon {
     /**
      *  50
      * - 1 childChainManagerProxy (on error, since it is immutable, but deployed);
+     * - 1 childTunnel
      * --------------------------
-     *  49 __gap
+     *  48 __gap
      */
-    uint256[49] private __gap; 
+    uint256[48] private __gap; 
 }
