@@ -87,6 +87,10 @@ contract VestingWalletV1 is OwnableUpgradeable, UUPSUpgradeable {
         return _released[token];
     }
 
+    function _setBeneficiary(address newBeneficiary) internal {
+        _beneficiary = newBeneficiary;
+    }
+
     /**
     * @dev Release the tokens that have vested by the specified timestamp.
     */
