@@ -6,7 +6,7 @@ pragma solidity ^0.8.9;
 import "./VestingWalletV1.sol";
 
 /**
- * This contract is designed for recovering the in case the beneficiary was lost.
+ * This contract is designed for recovery in case the beneficiary was lost.
  */
 contract VestingWalletRecovery is VestingWalletV1 {
     event BeneficiaryUpdate(address newBeneficiary);

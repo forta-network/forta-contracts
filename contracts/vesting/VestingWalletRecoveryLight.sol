@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/StorageSlot.sol";
 
 /**
- * This contract is designed for recovering the in case the beneficiary was lost.
+ * This contract is designed for recovery in case the beneficiary was lost.
  */
 contract VestingWalletRecoveryLight {
     /// Storage
