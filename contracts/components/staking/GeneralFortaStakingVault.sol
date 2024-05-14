@@ -3,13 +3,15 @@
 
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/utils/Multicall.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "openzeppelin-contracts-4.9/utils/Multicall.sol";
+import "openzeppelin-contracts-4.9/token/ERC20/IERC20.sol";
+import "openzeppelin-contracts-4.9/token/ERC20/utils/SafeERC20.sol";
+
+import "openzeppelin-contracts-upgradeable-4.9/proxy/utils/UUPSUpgradeable.sol";
+import "openzeppelin-contracts-upgradeable-4.9/token/ERC20/IERC20Upgradeable.sol";
+import "openzeppelin-contracts-upgradeable-4.9/access/AccessControlUpgradeable.sol";
+import "openzeppelin-contracts-upgradeable-4.9/token/ERC20/extensions/ERC4626Upgradeable.sol";
+
 import "../../errors/GeneralErrors.sol";
 import "../utils/IVersioned.sol";
 
@@ -39,7 +41,7 @@ contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeabl
         if (__treasury == address(0)) revert ZeroAddress("__treasury");
 
         __ERC20_init("General FORT Staking Vault", "vFORTGeneral");
-        __ERC4626_init(IERC20MetadataUpgradeable(__asset));
+        __ERC4626_init(IERC20Upgradeable(__asset));
         __AccessControl_init();
         __UUPSUpgradeable_init();
         _grantRole(DEFAULT_ADMIN_ROLE, __admin);
