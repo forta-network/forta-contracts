@@ -1,7 +1,6 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { prepare } = require('../fixture');
-const { subjectToActive, subjectToInactive } = require('../../scripts/utils/staking.js');
 
 const oneThousandTokens = ethers.utils.parseUnits('1000');
 
@@ -31,7 +30,7 @@ describe('General Forta Staking Vault on Ethereum', function () {
         expect(await this.generalStaking.hasRole(this.roles.SLASHER, this.accounts.slasher.address));
     });
 
-    describe.skip('Staking', async function () {
+    describe('Staking', async function () {
         it('single depositor stakes and receives vault shares', async function () {
             const twoHundredTokens = ethers.utils.parseUnits('200');
             expect(await this.generalStaking.balanceOf(this.accounts.user1.address)).to.equal(ethers.constants.Zero);
@@ -155,7 +154,7 @@ describe('General Forta Staking Vault on Ethereum', function () {
         });
     });
 
-    describe.skip('Rewards', async function () {
+    describe('Rewards', async function () {
         it('single depositor stakes, receives vault shares, and redeems for assets plus rewards', async function () {
             const twoHundredTokens = ethers.utils.parseUnits('200');
             expect(await this.generalStaking.balanceOf(this.accounts.user1.address)).to.equal(ethers.constants.Zero);
@@ -329,5 +328,5 @@ describe('General Forta Staking Vault on Ethereum', function () {
         });
     });
 
-    describe.skip('Access Control', async function () {});
+    describe('Access Control', async function () {});
 });
