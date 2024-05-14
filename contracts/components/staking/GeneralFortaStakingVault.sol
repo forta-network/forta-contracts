@@ -27,11 +27,6 @@ contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeabl
 
     string public constant version = "0.1.0";
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {
-        _disableInitializers();
-    }
-
     /**
      * @notice Initializer method, access point to initialize inheritance tree.
      * @param __admin Granted DEFAULT_ADMIN_ROLE.
@@ -62,8 +57,13 @@ contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeabl
         uint256 stakeValue
     ) external onlyRole(SLASHER_ROLE) {
         if (stakeValue == 0) revert ZeroAmount("stakeValue");
-        SafeERC20.safeTransferFrom(IERC20(asset()), address(this), _treasury, stakeValue);
+        SafeERC20.safeTransfer(IERC20(asset()), _treasury, stakeValue);
         emit Slashed(_msgSender(), stakeValue);
+    }
+
+    /// Returns treasury address (slashed tokens destination)
+    function treasury() public view returns (address) {
+        return _treasury;
     }
 
     /**
