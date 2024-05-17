@@ -69,11 +69,12 @@ async function migrate(config = {}) {
 
     DEBUG(`[${Object.keys(contracts).length}] forta: ${contracts.token.address}`);
 
+    const tenDaysInSeconds = 60 * 60 * 24 * 10;
     contracts.generalStaking = await contractHelpers.tryFetchProxy(
         hre,
         'GeneralFortaStakingVault',
         'uups',
-        [deployer.address, contracts.token.address, deployEnv.TREASURY(chainId, deployer)],
+        [deployer.address, contracts.token.address, deployEnv.TREASURY(chainId, deployer), tenDaysInSeconds],
         {
             constructorArgs: [],
             unsafeAllow: ['delegatecall'],
