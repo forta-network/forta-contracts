@@ -18,14 +18,22 @@ import "../utils/IVersioned.sol";
 contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeable, UUPSUpgradeable, Multicall, IVersioned {
     using SafeERC20 for IERC20;
 
-    bytes32 constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
-    bytes32 constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
+    uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
 
     // treasury for slashing
     address private _treasury;
+    uint64 private _withdrawalDelay;
+    // depositor => time of deposit
+    mapping(address => uint256) private _depositTimes;
 
     event Slashed(address indexed by, uint256 indexed value);
+    event DelaySet(uint256 newWithdrawalDelay);
     event TreasurySet(address newTreasury);
+
+    error WithdrawalNotReady();
 
     string public constant version = "0.1.0";
 
@@ -34,11 +42,13 @@ contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeabl
      * @param __admin Granted DEFAULT_ADMIN_ROLE.
      * @param __asset Asset to stake (FORT).
      * @param __treasury address where the slashed tokens go to.
+     * @param __withdrawalDelay minimum delay between depositing/minting and withdraw/redeem (in seconds).
      */
-    function initialize(address __admin, address __asset, address __treasury) public initializer {
+    function initialize(address __admin, address __asset, address __treasury, uint64 __withdrawalDelay) public initializer {
         if (__admin == address(0)) revert ZeroAddress("__admin");
         if (__asset == address(0)) revert ZeroAddress("__asset");
         if (__treasury == address(0)) revert ZeroAddress("__treasury");
+        if(__withdrawalDelay == 0) revert ZeroAmount("__withdrawalDelay");
 
         __ERC20_init("General FORT Staking Vault", "vFORTGeneral");
         __ERC4626_init(IERC20Upgradeable(__asset));
@@ -46,6 +56,7 @@ contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeabl
         __UUPSUpgradeable_init();
         _grantRole(DEFAULT_ADMIN_ROLE, __admin);
         _treasury = __treasury;
+        _withdrawalDelay = __withdrawalDelay;
     }
 
     /**
@@ -68,6 +79,22 @@ contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeabl
         return _treasury;
     }
 
+    /// Returns withdrawal delays need to wait before exiting vault (in seconds)
+    function withdrawalDelay() public view returns (uint64) {
+        return _withdrawalDelay;
+    }
+
+    /**
+     * @notice Sets withdrawal delay. Restricted to DEFAULT_ADMIN_ROLE
+     * @param newDelay in seconds.
+     */
+    function setDelay(uint64 newDelay) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (newDelay < MIN_WITHDRAWAL_DELAY) revert AmountTooSmall(newDelay, MIN_WITHDRAWAL_DELAY);
+        if (newDelay > MAX_WITHDRAWAL_DELAY) revert AmountTooLarge(newDelay, MAX_WITHDRAWAL_DELAY);
+        _withdrawalDelay = newDelay;
+        emit DelaySet(newDelay);
+    }
+
     /**
      * @notice Sets destination of slashed tokens. Restricted to DEFAULT_ADMIN_ROLE
      * @param newTreasury address.
@@ -81,12 +108,29 @@ contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeabl
     // Access control for the upgrade process
     function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(UPGRADER_ROLE) {
     }
+
+    function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal override {
+        _depositTimes[caller] = block.timestamp;
+        super._deposit(caller, receiver, assets, shares);
+    }
+
+    function _withdraw(
+        address caller,
+        address receiver,
+        address owner,
+        uint256 assets,
+        uint256 shares
+    ) internal override {
+        if(_depositTimes[caller] + _withdrawalDelay > block.timestamp) revert WithdrawalNotReady();
+        super._withdraw(caller, receiver, owner, assets, shares);
+    }
     
     /**
      *  50
-     * - 1 _treasury
+     * - 1 _treasury + _withdrawalDelay
+     * - 1 _depositTimes
      * --------------------------
-     *  49 __gap
+     *  48 __gap
      */
-    uint256[49] private __gap;
+    uint256[48] private __gap;
 }
