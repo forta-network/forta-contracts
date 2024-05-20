@@ -5,6 +5,7 @@ const { expect } = require('chai');
 const { prepare } = require('../fixture');
 
 const oneThousandTokens = ethers.utils.parseUnits('1000');
+const tenThousandTokens = ethers.utils.parseUnits('10000');
 
 async function mineDaysWorthOfBlocks(amountOfDays) {
     const twelveSecBlockTime = 12;
@@ -20,7 +21,7 @@ describe('General Forta Staking Vault on Ethereum', function () {
         await this.token.connect(this.accounts.minter).mint(this.accounts.user2.address, oneThousandTokens);
         await this.token.connect(this.accounts.minter).mint(this.accounts.user3.address, oneThousandTokens);
         // `admin` serves as the account transferring tokens into the vault as rewards
-        await this.token.connect(this.accounts.minter).mint(this.accounts.admin.address, oneThousandTokens);
+        await this.token.connect(this.accounts.minter).mint(this.accounts.admin.address, tenThousandTokens);
         
         expect(await this.token.balanceOf(this.accounts.user1.address)).to.equal(oneThousandTokens);
         expect(await this.token.balanceOf(this.accounts.user2.address)).to.equal(oneThousandTokens);
@@ -321,46 +322,6 @@ describe('General Forta Staking Vault on Ethereum', function () {
             // No stakers remaining
             expect(await this.generalStaking.totalSupply()).to.equal(ethers.constants.Zero);
         });
-
-        it.skip('checks if an earlier depositor get diluted by later depositors into the General Staking Vault', async function () {
-            await expect(this.generalStaking.connect(this.accounts.user1).deposit(ethers.utils.parseUnits('200'), this.accounts.user1.address)).to.be.not.reverted;
-
-            let user1MaxRedeemShares = await this.generalStaking.connect(this.accounts.user1).maxRedeem(this.accounts.user1.address);
-            let user1PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user1).previewRedeem(user1MaxRedeemShares);
-            console.log(`\nuser1PreviewRedeemReturnedAssets - after deposit: ${user1PreviewRedeemReturnedAssets}`);                                           // 200.000000000000000000 (shares amount: 200)
-
-            await this.token.connect(this.accounts.admin).transfer(this.generalStaking.address, ethers.utils.parseUnits('500'));
-
-            user1MaxRedeemShares = await this.generalStaking.connect(this.accounts.user1).maxRedeem(this.accounts.user1.address);
-            user1PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user1).previewRedeem(user1MaxRedeemShares);
-            console.log(`\nuser1PreviewRedeemReturnedAssets - right after reward: ${user1PreviewRedeemReturnedAssets}`);                                      // 699.999999999999999997 (shares amount: 200)
-
-
-            console.log(`time BEFORE block mining: ${await helpers.time.latest()}`);
-            // Mine one week's worth of blocks with a block time of 12 seconds
-            await hre.network.provider.send("hardhat_mine", ["0xc4e0", "0xc"]);
-            console.log(`time AFTER block mining: ${await helpers.time.latest()}`);
-
-
-            user1MaxRedeemShares = await this.generalStaking.connect(this.accounts.user1).maxRedeem(this.accounts.user1.address);
-            user1PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user1).previewRedeem(user1MaxRedeemShares);
-            console.log(`\nuser1PreviewRedeemReturnedAssets - after 1000 blocks mined: ${user1PreviewRedeemReturnedAssets}`);                                 // 699.999999999999999997 (shares amount: 200)
-
-            await expect(this.generalStaking.connect(this.accounts.user2).deposit(ethers.utils.parseUnits('200'), this.accounts.user2.address)).to.be.not.reverted;
-            await expect(this.generalStaking.connect(this.accounts.user3).deposit(ethers.utils.parseUnits('200'), this.accounts.user3.address)).to.be.not.reverted;
-
-            user1MaxRedeemShares = await this.generalStaking.connect(this.accounts.user1).maxRedeem(this.accounts.user1.address);
-            user1PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user1).previewRedeem(user1MaxRedeemShares);
-            console.log(`\nuser1PreviewRedeemReturnedAssets - after users 1 & 2 deposit: ${user1PreviewRedeemReturnedAssets}`);                                 // 699.999999999999999997 (shares amount: 200)
-
-            let user2MaxRedeemShares = await this.generalStaking.connect(this.accounts.user2).maxRedeem(this.accounts.user2.address);
-            let user2PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user2).previewRedeem(user2MaxRedeemShares);
-            console.log(`\nuser2PreviewRedeemReturnedAssets - after deposit & reward: ${user2PreviewRedeemReturnedAssets}`);                                    // 199.999999999999999999 (shares amount: 200)
-
-            let user3MaxRedeemShares = await this.generalStaking.connect(this.accounts.user3).maxRedeem(this.accounts.user3.address);
-            let user3PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user3).previewRedeem(user3MaxRedeemShares);
-            console.log(`\nuser3PreviewRedeemReturnedAssets - after deposit & reward : ${user3PreviewRedeemReturnedAssets}`);                                   // 199.999999999999999999 (shares amount: 200)
-        });
     });
 
     describe('Slashing', async function () {
@@ -506,5 +467,101 @@ describe('General Forta Staking Vault on Ethereum', function () {
             // No stakers remaining
             expect(await this.generalStaking.totalSupply()).to.equal(ethers.constants.Zero);
         })
+    });
+
+    // Not a test, per se, but used to check changes
+    // in FORT-vFORT exchange rate after various actions.
+    it.skip('lifecycle - deposits, rewards transfers, and slashing', async function () {
+        await expect(this.generalStaking.connect(this.accounts.user1).deposit(ethers.utils.parseUnits('200'), this.accounts.user1.address)).to.be.not.reverted;
+
+        let user1MaxRedeemShares = await this.generalStaking.connect(this.accounts.user1).maxRedeem(this.accounts.user1.address);
+        let user1PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user1).previewRedeem(user1MaxRedeemShares);                  // 200.000000000000000000 redeemable FORT
+        let user1vFortBalance = await this.generalStaking.connect(this.accounts.user1).balanceOf(this.accounts.user1.address);                              // 200.000000000000000000 vFORT
+
+
+        await this.token.connect(this.accounts.admin).transfer(this.generalStaking.address, ethers.utils.parseUnits('500'));
+
+
+        user1MaxRedeemShares = await this.generalStaking.connect(this.accounts.user1).maxRedeem(this.accounts.user1.address);
+        user1PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user1).previewRedeem(user1MaxRedeemShares);                      // 699.999999999999999997 redeemable FORT
+
+
+        await expect(this.generalStaking.connect(this.accounts.user2).deposit(ethers.utils.parseUnits('200'), this.accounts.user2.address)).to.be.not.reverted;
+
+
+        user1MaxRedeemShares = await this.generalStaking.connect(this.accounts.user1).maxRedeem(this.accounts.user1.address);
+        user1PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user1).previewRedeem(user1MaxRedeemShares);                      // 699.999999999999999997 redeemable FORT
+        user1vFortBalance = await this.generalStaking.connect(this.accounts.user1).balanceOf(this.accounts.user1.address);                                  // 200.000000000000000000 vFORT
+
+        let user2MaxRedeemShares = await this.generalStaking.connect(this.accounts.user2).maxRedeem(this.accounts.user2.address);
+        let user2PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user2).previewRedeem(user2MaxRedeemShares);                  // 199.999999999999999999 redeemable FORT
+        let user2vFortBalance = await this.generalStaking.connect(this.accounts.user2).balanceOf(this.accounts.user2.address);                              // 57.142857142857142857 vFORT
+
+
+        await this.token.connect(this.accounts.admin).transfer(this.generalStaking.address, ethers.utils.parseUnits('500'));
+
+
+        user1MaxRedeemShares = await this.generalStaking.connect(this.accounts.user1).maxRedeem(this.accounts.user1.address);
+        user1PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user1).previewRedeem(user1MaxRedeemShares);                      // 1,088.888888888888888886 redeemable FORT
+        user1vFortBalance = await this.generalStaking.connect(this.accounts.user1).balanceOf(this.accounts.user1.address);                                  // 200.000000000000000000 vFORT                                                     
+
+        user2MaxRedeemShares = await this.generalStaking.connect(this.accounts.user2).maxRedeem(this.accounts.user2.address);
+        user2PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user2).previewRedeem(user2MaxRedeemShares);                      // 311.111111111111111109 redeemable FORT
+        user2vFortBalance = await this.generalStaking.connect(this.accounts.user2).balanceOf(this.accounts.user2.address);                                  // 57.142857142857142857 vFORT                                                                        
+
+
+        await expect(this.generalStaking.connect(this.accounts.user3).deposit(ethers.utils.parseUnits('200'), this.accounts.user3.address)).to.be.not.reverted;
+        
+
+        user1MaxRedeemShares = await this.generalStaking.connect(this.accounts.user1).maxRedeem(this.accounts.user1.address);
+        user1PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user1).previewRedeem(user1MaxRedeemShares);                      // 1,088.888888888888888886 redeemable FORT
+        user1vFortBalance = await this.generalStaking.connect(this.accounts.user1).balanceOf(this.accounts.user1.address);                                  // 200.000000000000000000 vFORT                                                         
+
+        user2MaxRedeemShares = await this.generalStaking.connect(this.accounts.user2).maxRedeem(this.accounts.user2.address);
+        user2PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user2).previewRedeem(user2MaxRedeemShares);                      // 311.111111111111111109 redeemable FORT
+        user2vFortBalance = await this.generalStaking.connect(this.accounts.user2).balanceOf(this.accounts.user2.address);                                  // 57.142857142857142857 vFORT                                                                          
+
+        let user3MaxRedeemShares = await this.generalStaking.connect(this.accounts.user3).maxRedeem(this.accounts.user3.address);
+        let user3PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user3).previewRedeem(user3MaxRedeemShares);                  // 199.999999999999999998 redeemable FORT      
+        let user3vFortBalance = await this.generalStaking.connect(this.accounts.user3).balanceOf(this.accounts.user3.address);                              // 36.734693877551020408 vFORT
+                                                                 
+
+        await this.token.connect(this.accounts.admin).transfer(this.generalStaking.address, ethers.utils.parseUnits('500'));
+        
+
+        user1MaxRedeemShares = await this.generalStaking.connect(this.accounts.user1).maxRedeem(this.accounts.user1.address);
+        user1PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user1).previewRedeem(user1MaxRedeemShares);                      // 1,429.166666666666666663 redeemable FORT
+        user1vFortBalance = await this.generalStaking.connect(this.accounts.user1).balanceOf(this.accounts.user1.address);                                  // 200.000000000000000000 vFORT      
+
+        user2MaxRedeemShares = await this.generalStaking.connect(this.accounts.user2).maxRedeem(this.accounts.user2.address);
+        user2PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user2).previewRedeem(user2MaxRedeemShares);                      // 408.333333333333333331 redeemable FORT
+        user2vFortBalance = await this.generalStaking.connect(this.accounts.user2).balanceOf(this.accounts.user2.address);                                  // 57.142857142857142857 vFORT                                                                       
+
+        user3MaxRedeemShares = await this.generalStaking.connect(this.accounts.user3).maxRedeem(this.accounts.user3.address);
+        user3PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user3).previewRedeem(user3MaxRedeemShares);                      // 262.499999999999999998 redeemable FORT
+        user3vFortBalance = await this.generalStaking.connect(this.accounts.user3).balanceOf(this.accounts.user3.address);                                  // 36.734693877551020408 vFORT
+
+
+        const threeHundredFiftyTokensSlashed = ethers.utils.parseUnits('350');
+        await this.generalStaking.connect(this.accounts.slasher).slash(threeHundredFiftyTokensSlashed);
+        
+
+        user1MaxRedeemShares = await this.generalStaking.connect(this.accounts.user1).maxRedeem(this.accounts.user1.address);
+        user1PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user1).previewRedeem(user1MaxRedeemShares);                      // 1,190.972222222222222220 redeemable FORT
+        user1vFortBalance = await this.generalStaking.connect(this.accounts.user1).balanceOf(this.accounts.user1.address);                                  // 200.000000000000000000 vFORT
+        console.log(`\nuser1PreviewRedeemReturnedAssets - after second reward: ${user1PreviewRedeemReturnedAssets}`);                                           
+        console.log(`\nuser1vFortBalance - after second : ${user1vFortBalance}`);                                                                               
+
+        user2MaxRedeemShares = await this.generalStaking.connect(this.accounts.user2).maxRedeem(this.accounts.user2.address);
+        user2PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user2).previewRedeem(user2MaxRedeemShares);                      // 340.277777777777777776 redeemable FORT
+        user2vFortBalance = await this.generalStaking.connect(this.accounts.user2).balanceOf(this.accounts.user2.address);                                  // 57.142857142857142857 vFORT  
+        console.log(`\nuser2PreviewRedeemReturnedAssets - after second reward: ${user2PreviewRedeemReturnedAssets}`);                                           
+        console.log(`\nuser2vFortBalance - after second : ${user2vFortBalance}`);                                                                                                
+
+        user3MaxRedeemShares = await this.generalStaking.connect(this.accounts.user3).maxRedeem(this.accounts.user3.address);
+        user3PreviewRedeemReturnedAssets = await this.generalStaking.connect(this.accounts.user3).previewRedeem(user3MaxRedeemShares);                      // 218.749999999999999998 redeemable FORT
+        user3vFortBalance = await this.generalStaking.connect(this.accounts.user3).balanceOf(this.accounts.user3.address);                                  // 36.734693877551020408 vFORT
+        console.log(`\nuser3PreviewRedeemReturnedAssets - after second : ${user3PreviewRedeemReturnedAssets}`);                                                 
+        console.log(`\nuser3vFortBalance - after second : ${user3vFortBalance}`);                                                                               
     });
 });
