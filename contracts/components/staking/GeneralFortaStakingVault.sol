@@ -20,6 +20,7 @@ contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeabl
 
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+
     uint256 public constant MIN_WITHDRAWAL_DELAY = 1 days;
     uint256 public constant MAX_WITHDRAWAL_DELAY = 90 days;
 
@@ -79,7 +80,7 @@ contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeabl
         return _treasury;
     }
 
-    /// Returns withdrawal delays need to wait before exiting vault (in seconds)
+    /// Returns withdrawal delay needed to wait before exiting vault (in seconds)
     function withdrawalDelay() public view returns (uint64) {
         return _withdrawalDelay;
     }
@@ -109,11 +110,19 @@ contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeabl
     function _authorizeUpgrade(address newImplementation) internal virtual override onlyRole(UPGRADER_ROLE) {
     }
 
+    /**
+     * @inheritdoc ERC4626Upgradeable
+     * @dev Modified to track user deposits' timestamp for withdrawal delay
+     */
     function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal override {
         _depositTimes[caller] = block.timestamp;
         super._deposit(caller, receiver, assets, shares);
     }
 
+    /**
+     * @inheritdoc ERC4626Upgradeable
+     * @dev Modified to check user deposits' timestamp for lapse of their withdrawal delay
+     */
     function _withdraw(
         address caller,
         address receiver,
