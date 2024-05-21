@@ -27,7 +27,7 @@ contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeabl
     // treasury for slashing
     address private _treasury;
     uint64 private _withdrawalDelay;
-    // depositor => time of deposit
+    // depositor => deposit timestamp
     mapping(address => uint256) private _depositTimes;
 
     event Slashed(address indexed by, uint256 indexed value);
@@ -90,8 +90,9 @@ contract GeneralFortaStakingVault is ERC4626Upgradeable, AccessControlUpgradeabl
      * @param newDelay in seconds.
      */
     function setDelay(uint64 newDelay) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (newDelay < MIN_WITHDRAWAL_DELAY) revert AmountTooSmall(newDelay, MIN_WITHDRAWAL_DELAY);
-        if (newDelay > MAX_WITHDRAWAL_DELAY) revert AmountTooLarge(newDelay, MAX_WITHDRAWAL_DELAY);
+        // TODO: Uncomment for PROD
+        // if (newDelay < MIN_WITHDRAWAL_DELAY) revert AmountTooSmall(newDelay, MIN_WITHDRAWAL_DELAY);
+        // if (newDelay > MAX_WITHDRAWAL_DELAY) revert AmountTooLarge(newDelay, MAX_WITHDRAWAL_DELAY);
         _withdrawalDelay = newDelay;
         emit DelaySet(newDelay);
     }
