@@ -9,7 +9,7 @@ function prepare(config = {}) {
         // list signers
         this.accounts = await ethers.getSigners();
         this.accounts.getAccount = (name) => this.accounts[name] || (this.accounts[name] = this.accounts.shift());
-        ['admin', 'manager', 'minter', 'treasure', 'user1', 'user2', 'user3', 'other'].map((name) => this.accounts.getAccount(name));
+        ['admin', 'manager', 'minter', 'treasure', 'user1', 'user2', 'user3', 'other', 'slasher'].map((name) => this.accounts.getAccount(name));
 
         // migrate
         await migrate(
@@ -50,6 +50,7 @@ function prepare(config = {}) {
                 this.access.connect(this.accounts.admin).grantRole(this.roles.MIGRATION_EXECUTOR, this.accounts.manager.address),
                 this.token.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
                 this.otherToken.connect(this.accounts.admin).grantRole(this.roles.MINTER, this.accounts.minter.address),
+                this.generalStaking.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address),
             ].map((txPromise) => txPromise.then((tx) => tx.wait()).catch(() => {}))
         );
 

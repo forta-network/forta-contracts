@@ -1,0 +1,8 @@
+title: General FORT Staking Vault deployment
+network: ethereum
+deploy: deploy-and-prepare-upgrade 1.2.13
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deployed new General FORT Staking Vault on Ethereum mainnet.
+
