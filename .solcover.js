@@ -16,6 +16,6 @@ module.exports = {
         'components/_old/staking/FortaStaking_0_1_1.sol',
         'components/_old/staking/FortaStakingParameters_0_1_0.sol',
         'components/_old/staking/FortaStakingParameters_0_1_1.sol',
-        'token/FortaBridgedBaseSepolia.sol', // Only on testnet
+        'token/FortaBridgedBaseSepolia.sol' // Only on testnet
     ]
 };
