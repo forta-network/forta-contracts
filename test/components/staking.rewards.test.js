@@ -131,10 +131,80 @@ describe('Staking Rewards', function () {
             expect(await this.rewardsDistributor.availableReward(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.equal('0');
 
             await expect(this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch])).to.be.revertedWith(
-                'AlreadyClaimed()'
+                'AlreadyClaimedByOwner()'
             );
             await expect(this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch])).to.be.revertedWith(
                 'AlreadyClaimed()'
+            );
+        });
+
+        it('should fail to reclaim for same pool and epoch even if pool ownership is transferred', async function () {
+            // disable automine so deposits are instantaneous to simplify math
+            await network.provider.send('evm_setAutomine', [false]);
+            await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
+            await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
+            await network.provider.send('evm_setAutomine', [true]);
+            await network.provider.send('evm_mine');
+
+            expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('100');
+
+            const latestTimestamp = await helpers.time.latest();
+            const timeToNextEpoch = EPOCH_LENGTH - ((latestTimestamp - OFFSET) % EPOCH_LENGTH);
+            await helpers.time.increase(Math.floor(timeToNextEpoch / 2));
+
+            const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
+
+            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
+
+            await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2000', epoch);
+
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.equal('2000');
+
+            const balanceBefore1 = await this.token.balanceOf(this.accounts.user1.address);
+
+            await this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
+
+            expect(await this.token.balanceOf(this.accounts.user1.address)).to.eq(balanceBefore1.add('2000'));
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user1.address)).to.be.equal('0');
+
+            await expect(this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch])).to.be.revertedWith(
+                'AlreadyClaimedByOwner()'
+            );
+
+            expect(await this.scannerPools.ownerOf(SCANNER_POOL_ID)).to.eq(this.accounts.user1.address);
+            await this.scannerPools.connect(this.accounts.user1).transferFrom(this.accounts.user1.address, this.accounts.user2.address, SCANNER_POOL_ID);
+            expect(await this.scannerPools.ownerOf(SCANNER_POOL_ID)).to.eq(this.accounts.user2.address);
+
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epoch, this.accounts.user2.address)).to.be.equal('0');
+
+            await expect(this.rewardsDistributor.connect(this.accounts.user2).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch])).to.be.revertedWith(
+                'AlreadyClaimedByOwner()'
+            );
+
+            const epochTwo = await this.rewardsDistributor.getCurrentEpochNumber();
+
+            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epochTwo, this.accounts.user1.address)).to.be.equal('0');
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epochTwo, this.accounts.user2.address)).to.be.equal('0');
+
+            await this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '2000', epochTwo);
+
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epochTwo, this.accounts.user1.address)).to.be.equal('0');
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, epochTwo, this.accounts.user2.address)).to.be.equal('2000');
+            await expect(this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epochTwo])).to.be.revertedWith(
+                `SenderNotOwner("${this.accounts.user1.address}", ${SCANNER_POOL_ID})`
+            );
+
+            const balanceBefore2 = await this.token.balanceOf(this.accounts.user2.address);
+
+            await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epochTwo]);
+
+            expect(await this.token.balanceOf(this.accounts.user2.address)).to.eq(balanceBefore2.add('2000'));
+            await expect(this.rewardsDistributor.connect(this.accounts.user2).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epochTwo])).to.be.revertedWith(
+                'AlreadyClaimedByOwner()'
             );
         });
 

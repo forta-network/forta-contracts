@@ -53,6 +53,9 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     uint256 public delegationParamsEpochDelay;
     uint256 public defaultFeeBps;
 
+    // subject => epoch => claimedByPoolOwner
+    mapping(uint256 => mapping(uint256 => bool)) public poolRewardsAtEpochClaimedByOwner;
+
     event DidAccumulateRate(uint8 indexed subjectType, uint256 indexed subject, address indexed staker, uint256 stakeAmount, uint256 sharesAmount);
     event DidReduceRate(uint8 indexed subjectType, uint256 indexed subject, address indexed staker, uint256 stakeAmount, uint256 sharesAmount);
     event Rewarded(uint8 indexed subjectType, uint256 indexed subject, uint256 amount, uint256 epochNumber);
@@ -63,6 +66,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     event TokensSwept(address indexed token, address to, uint256 amount);
 
     error RewardingNonRegisteredSubject(uint8 subjectType, uint256 subject);
+    error AlreadyClaimedByOwner();
     error AlreadyClaimed();
     error AlreadyRewarded(uint256 epochNumber);
     error SetDelegationFeeNotReady();
@@ -153,6 +157,9 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
 
     function availableReward(uint8 subjectType, uint256 subjectId, uint256 epochNumber, address staker) public view returns (uint256) {
         (uint256 shareId, bool isDelegator) = _getShareId(subjectType, subjectId);
+        if (!isDelegator && (_subjectGateway.ownerOf(subjectType, subjectId) != staker || poolRewardsAtEpochClaimedByOwner[subjectId][epochNumber])) {
+            return 0;
+        }
         if (claimedRewardsPerEpoch[shareId][epochNumber][staker]) {
             return 0;
         }
@@ -221,7 +228,11 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
             if (_subjectGateway.ownerOf(subjectType, subjectId) != _msgSender()) revert SenderNotOwner(_msgSender(), subjectId);
         }
         for (uint256 i = 0; i < epochNumbers.length; i++) {
+            if (!isDelegator && poolRewardsAtEpochClaimedByOwner[subjectId][epochNumbers[i]]) {
+                revert AlreadyClaimedByOwner();
+            }
             if (claimedRewardsPerEpoch[shareId][epochNumbers[i]][_msgSender()]) revert AlreadyClaimed();
+            if (!isDelegator) poolRewardsAtEpochClaimedByOwner[subjectId][epochNumbers[i]] = true;
             claimedRewardsPerEpoch[shareId][epochNumbers[i]][_msgSender()] = true;
             uint256 epochRewards = _availableReward(shareId, isDelegator, epochNumbers[i], _msgSender());
             if (epochRewards == 0) revert ZeroAmount("epochRewards");
