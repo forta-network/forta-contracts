@@ -1,0 +1,9 @@
+title: FORT Arbitrum deployment
+network: arbitrumsepolia
+# network: arbitrum (for mainnet)
+deploy: deploy-and-prepare-upgrade 1.2.15
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deployed new implementations on Arbitrum testnet:
+  - FORT token

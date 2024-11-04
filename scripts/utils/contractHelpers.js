@@ -144,6 +144,8 @@ const getBlockExplorerDomain = (hre) => {
         case 'polygon':
         case 'matic':
             return 'polygonscan.com';
+        case 'arbitrum':
+            return 'arbiscan.io';
         case 'mumbai':
             return 'mumbai.polygonscan.com';
         case 'amoy':
@@ -152,6 +154,8 @@ const getBlockExplorerDomain = (hre) => {
             return 'sepolia.etherscan.io';
         case 'basesepolia':
             return 'sepolia.basescan.org'
+        case 'arbitrumsepolia':
+            return 'sepolia.arbiscan.io';
     }
 };
 

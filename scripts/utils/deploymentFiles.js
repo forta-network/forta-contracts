@@ -37,10 +37,12 @@ const CHAIN_NAME = {
     1: 'mainnet',
     5: 'goerli',
     137: 'polygon',
+    42161: 'arbitrum',
     80001: 'mumbai',
     80002: 'amoy',
     84532: 'basesepolia',
     31337: 'local',
+    421614: 'arbitrumsepolia',
     11155111: 'sepolia'
 };
 

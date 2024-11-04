@@ -65,7 +65,9 @@ module.exports = {
             mainnet: argv.etherscan,
             sepolia: argv.etherscan,
             polygon: argv.polyscan,
-            basesepolia: argv.basescan
+            arbitrumOne: argv.arbiscan,
+            basesepolia: argv.basescan,
+            arbitrumsepolia: argv.arbiscan
         },
         customChains: [
           {
@@ -74,6 +76,14 @@ module.exports = {
             urls: {
               apiURL: "https://api-sepolia.basescan.org/api",
               browserURL: "https://sepolia.basescan.org/"
+            }
+          },
+          {
+            network: "arbitrumsepolia",
+            chainId: 421614,
+            urls: {
+              apiURL: "https://api-sepolia.arbiscan.io/api",
+              browserURL: "https://sepolia.arbiscan.io/"
             }
           }
         ]
@@ -103,7 +113,7 @@ const accountsForNetwork = (name) => [argv[`${name}Mnemonic`] && { mnemonic: arg
 Object.assign(
     module.exports.networks,
     Object.fromEntries(
-        ['mainnet', 'ropsten', 'rinkeby', 'goerli', 'kovan', 'polygon', 'mumbai', 'amoy', 'sepolia', 'basesepolia', 'local']
+        ['mainnet', 'ropsten', 'rinkeby', 'goerli', 'kovan', 'polygon', 'arbitrum', 'mumbai', 'amoy', 'sepolia', 'basesepolia', 'arbitrumsepolia', 'local']
             .map((name) => [name, { url: argv[`${name}Node`], accounts: accountsForNetwork(name), gasPrice: argv[`${name}GasPrice`] || 'auto' }])
             .filter(([, { url }]) => url)
     ),
