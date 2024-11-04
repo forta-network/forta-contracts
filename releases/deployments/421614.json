@@ -1,0 +1,18 @@
+{
+	"forta-bridged-arbitrum": {
+		"address": "0x2441Ce5eB269505f30F6F434D21E039438aaC342",
+		"impl": {
+			"address": "0x95d9a757ad9C25999ffE93f3067221F04ce1Cc79",
+			"constructor-args": [],
+			"init-args": [
+				"0x233BAc002bF01DA9FEb9DE57Ff7De5B3820C1a24",
+				"0x95d9a757ad9C25999ffE93f3067221F04ce1Cc79",
+				"0x6e244cD02BBB8a6dbd7F626f05B2ef82151Ab502"
+			],
+			"name": "FortaBridgedArbitrum",
+			"timeout": 1200000,
+			"version": "0.1.0"
+		}
+	},
+	"forta-bridged-arbitrum-deploy-tx": "0xbfd0cb53f6ae0d50834da210d5803b21ec2fad53f7685527a575ea137691e09e"
+}
