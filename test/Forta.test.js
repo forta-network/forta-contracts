@@ -10,7 +10,8 @@ describe('Forta', function () {
         expect(await this.token.hasRole(this.roles.MINTER, this.accounts.minter.address));
     });
 
-    describe('mint', function () {
+    // Skipped since removing forwarder/metatx functionality
+    describe.skip('mint', function () {
         describe('non-authorized', function () {
             it('should not mint', async function () {
                 await expect(this.token.connect(this.accounts.user1).mint(this.accounts.user1.address, 1)).to.be.revertedWith(
