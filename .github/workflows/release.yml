@@ -34,7 +34,7 @@ jobs:
               run: yarn compile
 
             - name: Save build artifacts
-              uses: actions/upload-artifact@v3
+              uses: actions/upload-artifact@v4
               with:
                   name: contract-artifacts
                   path: |
@@ -57,7 +57,7 @@ jobs:
             - run: yarn install --frozen-lockfile
 
             - name: Get build artifacts
-              uses: actions/download-artifact@v3
+              uses: actions/download-artifact@v4
               with:
                   name: contract-artifacts
 
@@ -185,7 +185,7 @@ jobs:
     #         - run: yarn install --frozen-lockfile
 
     #         - name: Get build artifacts
-    #           uses: actions/download-artifact@v3
+    #           uses: actions/download-artifact@v4
     #           with:
     #               name: contract-artifacts
 
@@ -234,7 +234,7 @@ jobs:
     #         - run: yarn install --frozen-lockfile
 
     #         - name: Get build artifacts
-    #           uses: actions/download-artifact@v3
+    #           uses: actions/download-artifact@v4
     #           with:
     #               name: contract-artifacts
 
@@ -273,7 +273,7 @@ jobs:
     #         - run: yarn install --frozen-lockfile
 
     #         - name: Get build artifacts
-    #           uses: actions/download-artifact@v3
+    #           uses: actions/download-artifact@v4
     #           with:
     #               name: contract-artifacts
 
