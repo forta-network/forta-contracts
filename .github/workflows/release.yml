@@ -34,15 +34,7 @@ jobs:
               run: yarn hardhat clean
 
             - name: Compile contracts
-              run: |
-                yarn compile
-                if [ ! -d "artifacts" ]; then
-                  echo "Artifacts directory is missing!"
-                  exit 1
-                fi
-
-            - name: Debug artifacts before upload
-              run: ls -R artifacts || echo "No artifacts found"
+              run: yarn compile
 
             - name: Save build artifacts
               uses: actions/upload-artifact@v4
