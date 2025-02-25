@@ -3,7 +3,7 @@ on: push
 jobs:
   test-subgraph:
     name: Run Unit Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     environment: development
     steps:
       - name: Checkout

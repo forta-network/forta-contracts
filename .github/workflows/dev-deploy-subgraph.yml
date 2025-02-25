@@ -6,7 +6,7 @@ on:
 jobs:
   test-subgraph:
     name: Run Unit Test Workflow
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     environment: development
     steps:
       - name: Checkout
