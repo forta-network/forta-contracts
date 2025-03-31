@@ -30,11 +30,19 @@ jobs:
                   cache: 'yarn'
             - run: yarn install --frozen-lockfile
 
+            - name: Clean Hardhat Cache
+              run: yarn hardhat clean
+
             - name: Compile contracts
-              run: yarn compile
+              run: |
+                yarn compile
+                if [ ! -d "artifacts" ]; then
+                  echo "Artifacts directory is missing!"
+                  exit 1
+                fi
 
             - name: Save build artifacts
-              uses: actions/upload-artifact@v3
+              uses: actions/upload-artifact@v4
               with:
                   name: contract-artifacts
                   path: |
@@ -57,7 +65,7 @@ jobs:
             - run: yarn install --frozen-lockfile
 
             - name: Get build artifacts
-              uses: actions/download-artifact@v3
+              uses: actions/download-artifact@v4
               with:
                   name: contract-artifacts
 
@@ -185,7 +193,7 @@ jobs:
     #         - run: yarn install --frozen-lockfile
 
     #         - name: Get build artifacts
-    #           uses: actions/download-artifact@v3
+    #           uses: actions/download-artifact@v4
     #           with:
     #               name: contract-artifacts
 
@@ -234,7 +242,7 @@ jobs:
     #         - run: yarn install --frozen-lockfile
 
     #         - name: Get build artifacts
-    #           uses: actions/download-artifact@v3
+    #           uses: actions/download-artifact@v4
     #           with:
     #               name: contract-artifacts
 
@@ -273,7 +281,7 @@ jobs:
     #         - run: yarn install --frozen-lockfile
 
     #         - name: Get build artifacts
-    #           uses: actions/download-artifact@v3
+    #           uses: actions/download-artifact@v4
     #           with:
     #               name: contract-artifacts
 
