@@ -307,7 +307,8 @@ describe('Forta Staking General', function () {
         });
 
         it('sweep unrelated token', async function () {
-            await contractHelpers.overwriteUserTokenBalance(this.staking.address, ethers.utils.parseUnits('42', 'wei'), this.otherToken.address);
+            await contractHelpers.overwriteUserTokenBalance(this.accounts.user1.address, ethers.utils.parseUnits('42', 'wei'), this.otherToken.address);
+            await this.otherToken.connect(this.accounts.user1).transfer(this.staking.address, ethers.utils.parseUnits('42', 'wei'));
 
             expect(await this.token.balanceOf(this.staking.address)).to.be.equal('120');
             expect(await this.otherToken.balanceOf(this.staking.address)).to.be.equal('42');

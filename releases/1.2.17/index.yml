@@ -1,0 +1,7 @@
+title: Prevent claiming of rewards for old epochs
+network: basesepolia
+deploy: deploy-and-prepare-upgrade 1.2.17
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deploy new implementation of RewardsDistributor to disallow claiming rewards for old epochs
