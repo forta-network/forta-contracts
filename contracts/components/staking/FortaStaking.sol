@@ -440,7 +440,7 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         uint256 activeSharesId = FortaStakingUtils.subjectToActive(subjectType, subject);
 
         if (getSubjectTypeAgency(subjectType) == SubjectStakeAgency.DELEGATED) {
-            uint256 delegatorSlashValue = Math.mulDiv(stakeValue, slashDelegatorsPercent, HUNDRED_PERCENT);
+            uint256 delegatorSlashValue = _calculateDelegatorSlashValue(subjectType, subject, stakeValue);
             uint256 delegatedSlashValue = stakeValue - delegatorSlashValue;
 
             _slash(activeSharesId, subjectType, subject, delegatedSlashValue);
@@ -465,6 +465,30 @@ contract FortaStaking is BaseComponentUpgradeable, ERC1155SupplyUpgradeable, Sub
         emit SlashedShareSent(subjectType, subject, proposer, proposerShare);
 
         return stakeValue;
+    }
+
+    /**
+     * @notice Calculates delegators' stake to be slashed so that it doesn't exceed
+     * the max allowable amount.
+     * @param subjectType type id of Stake Subject. See SubjectTypeValidator.sol
+     * @param subject id identifying subject (external to FortaStaking).
+     * @param stakeValue amount of staked token to be slashed.
+     * @return Amount of delegators' stake to be slashed, capped to max allowable amount.
+     */
+    function _calculateDelegatorSlashValue(
+        uint8 subjectType,
+        uint256 subject,
+        uint256 stakeValue
+    ) private view returns (uint256) {
+        uint256 delegatorSlashValue = Math.mulDiv(stakeValue, slashDelegatorsPercent, HUNDRED_PERCENT);
+
+        uint8 delegatorType = getDelegatorSubjectType(subjectType);
+        uint256 activeStake = _activeStake.balanceOf(FortaStakingUtils.subjectToActive(delegatorType, subject));
+        uint256 inactiveStake = _inactiveStake.balanceOf(FortaStakingUtils.subjectToInactive(delegatorType, subject));
+
+        uint256 maxSlashableStake = Math.mulDiv(activeStake + inactiveStake, MAX_SLASHABLE_PERCENT, HUNDRED_PERCENT);
+
+        return Math.min(delegatorSlashValue, maxSlashableStake);
     }
 
     /**

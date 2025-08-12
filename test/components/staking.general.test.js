@@ -91,6 +91,7 @@ describe('Forta Staking General', function () {
         beforeEach(async function () {
             this.accounts.getAccount('slasher');
             await this.access.connect(this.accounts.admin).grantRole(this.roles.SLASHER, this.accounts.slasher.address);
+            await this.staking.connect(this.accounts.admin).setSlashDelegatorsPercent('20');
         });
 
         it('slashing split shares', async function () {
@@ -162,6 +163,48 @@ describe('Forta Staking General', function () {
             expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user1.address)).to.be.equal('0');
             expect(await this.staking.sharesOf(subjectType1, subject1, this.accounts.user2.address)).to.be.equal('0');
             expect(await this.staking.totalShares(subjectType1, subject1)).to.be.equal('0');
+        });
+
+        it('slashing → withdraw - scanner pool with no delegators', async function () {
+            await expect(this.staking.connect(this.accounts.user1).deposit(subjectType2, subject2, '100')).to.be.not.reverted;
+
+            this.accounts.getAccount('scanner');
+            const network = await ethers.provider.getNetwork();
+            verifyingContractInfo = {
+                address: this.contracts.scannerPools.address,
+                chainId: network.chainId,
+            };
+            scanner1Registration = {
+                scanner: this.accounts.scanner.address,
+                scannerPoolId: subject2,
+                chainId: 1,
+                metadata: 'metadata',
+                timestamp: (await ethers.provider.getBlock('latest')).timestamp,
+            };
+            scanner1Signature = await signERC712ScannerRegistration(verifyingContractInfo, scanner1Registration, this.accounts.scanner);
+            await this.scannerPools.connect(this.accounts.user1).registerScannerNode(scanner1Registration, scanner1Signature)
+
+            expect(await this.staking.activeStakeFor(subjectType2, subject2)).to.be.equal('100');
+            expect(await this.staking.totalActiveStake()).to.be.equal('100');
+            expect(await this.staking.sharesOf(subjectType2, subject2, this.accounts.user1.address)).to.be.equal('100');
+            expect(await this.staking.totalShares(subjectType2, subject2)).to.be.equal('100');
+
+            await expect(this.staking.connect(this.accounts.slasher).slash(subjectType2, subject2, '30', ethers.constants.AddressZero, '0'))
+                .to.emit(this.staking, 'Slashed')
+                .withArgs(subjectType2, subject2, this.accounts.slasher.address, '30')
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.staking.address, this.accounts.treasure.address, '30');
+
+            // Ratio of stake and shares has altered after slashing
+            expect(await this.staking.activeStakeFor(subjectType2, subject2)).to.be.equal('70');
+            expect(await this.staking.totalActiveStake()).to.be.equal('70');
+            expect(await this.staking.sharesOf(subjectType2, subject2, this.accounts.user1.address)).to.be.equal('100');
+            expect(await this.staking.totalShares(subjectType2, subject2)).to.be.equal('100');
+
+            await expect(this.staking.connect(this.accounts.user1).initiateWithdrawal(subjectType2, subject2, '100')).to.be.not.reverted;
+            await expect(this.staking.connect(this.accounts.user1).withdraw(subjectType2, subject2))
+                .to.emit(this.token, 'Transfer')
+                .withArgs(this.staking.address, this.accounts.user1.address, '70');
         });
 
         it('slashing → deposit', async function () {
@@ -307,7 +350,8 @@ describe('Forta Staking General', function () {
         });
 
         it('sweep unrelated token', async function () {
-            await contractHelpers.overwriteUserTokenBalance(this.staking.address, ethers.utils.parseUnits('42', 'wei'), this.otherToken.address);
+            await contractHelpers.overwriteUserTokenBalance(this.accounts.user1.address, ethers.utils.parseUnits('42', 'wei'), this.otherToken.address);
+            await this.otherToken.connect(this.accounts.user1).transfer(this.staking.address, ethers.utils.parseUnits('42', 'wei'));
 
             expect(await this.token.balanceOf(this.staking.address)).to.be.equal('120');
             expect(await this.otherToken.balanceOf(this.staking.address)).to.be.equal('42');
