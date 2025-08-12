@@ -210,9 +210,64 @@ describe('Staking Rewards', function () {
         });
 
         it('should fail to reclaim if no rewards available', async function () {
-            await expect(this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [1])).to.be.revertedWith(
+            const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            await expect(this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch - 1])).to.be.revertedWith(
                 'ZeroAmount("epochRewards")'
             );
+        });
+
+        it('should not allow claiming rewards for an epoch that is too old', async function () {
+            const tooOldEpoch = 2845
+            await expect(this.rewardsDistributor.connect(this.accounts.user1).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, [tooOldEpoch])).to.be.revertedWith(
+                `EpochTooOld(${tooOldEpoch})`
+            );
+        });
+
+        it('should not allow claiming rewards for a scanner pool that has been burned (i.e. sent to 0xdead)', async function () {
+            await this.scannerPools.connect(this.accounts.user3).registerScannerPool(1337);
+            // Pool id minted in `registerScannerPool()` call above
+            const SCANNER_POOL_ID_3 = 3;
+
+            expect(await this.scannerPools.ownerOf(SCANNER_POOL_ID_3)).to.eq(this.accounts.user3.address);
+
+            // Transfer to `0xdead` to burn Pool NFT
+            await expect(this.scannerPools.connect(this.accounts.user3).transferFrom(this.accounts.user3.address, "0x000000000000000000000000000000000000dEaD", SCANNER_POOL_ID_3))
+                .to.emit(this.scannerPools, 'Transfer')
+                .withArgs(this.accounts.user3.address, "0x000000000000000000000000000000000000dEaD", SCANNER_POOL_ID_3);
+
+            expect(await this.scannerPools.ownerOf(SCANNER_POOL_ID_3)).to.eq("0x000000000000000000000000000000000000dEaD");
+
+            await expect(this.staking.connect(this.accounts.user3).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, '100')).to.be.revertedWith(
+                `SenderCannotAllocateFor(${SCANNER_POOL_SUBJECT_TYPE}, ${SCANNER_POOL_ID_3})`
+            );
+
+            await expect(this.staking.connect(this.accounts.user3).deposit(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, '100')).to.be.revertedWith(
+                `CannotDelegateNoEnabledSubjects(${SCANNER_POOL_SUBJECT_TYPE}, ${SCANNER_POOL_ID_3})`
+            );
+
+            const epoch = await this.rewardsDistributor.getCurrentEpochNumber();
+            await helpers.time.increase(1 + EPOCH_LENGTH /* 1 week */);
+
+            expect(await this.rewardsDistributor.unclaimedRewards()).to.eq('0');
+
+            await expect(this.rewardsDistributor.connect(this.accounts.manager).reward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, '744000000000000000000000', epoch))
+                .to.emit(this.rewardsDistributor, 'Rewarded')
+                .withArgs(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, '744000000000000000000000', epoch);
+
+            expect(await this.rewardsDistributor.unclaimedRewards()).to.eq('744000000000000000000000');
+
+            // Confirm neither original owner nor 0xDead have avaible rewards
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, epoch, this.accounts.user3.address)).to.eq('0');
+            expect(await this.rewardsDistributor.availableReward(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, epoch, "0x000000000000000000000000000000000000dEaD")).to.eq('0');
+
+            await expect(this.rewardsDistributor.connect(this.accounts.user3).claimRewards(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID_3, [epoch])).to.be.revertedWith(
+                `SenderNotOwner("${this.accounts.user3.address}", ${SCANNER_POOL_ID_3})`
+            );
+
+            await expect(this.rewardsDistributor.connect(this.accounts.user3).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID_3, [epoch])).to.be.revertedWith(
+                `ZeroAmount("epochRewards")`
+            );
+            
         });
 
         it('remove stake', async function () {

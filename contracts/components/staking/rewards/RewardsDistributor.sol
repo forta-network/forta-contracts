@@ -13,6 +13,9 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
 
 uint256 constant MAX_BPS = 10000;
+// Epoch at which Upgrade transaction executed:
+// 0xc34004f6fd9bd6fdaee56b071b1a94bff95aba54c1aa7a7f8ddb7876b3de6e76
+uint256 constant EPOCH_AGE_LIMIT = 2847;
 
 contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, IRewardsDistributor {
     using Timers for Timers.Timestamp;
@@ -70,6 +73,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
     error AlreadyClaimed();
     error AlreadyRewarded(uint256 epochNumber);
     error SetDelegationFeeNotReady();
+    error EpochTooOld(uint256 epochNumber);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address _forwarder, address _rewardsToken, address __subjectGateway) initializer ForwardedContext(_forwarder) {
@@ -228,6 +232,7 @@ contract RewardsDistributor is BaseComponentUpgradeable, SubjectTypeValidator, I
             if (_subjectGateway.ownerOf(subjectType, subjectId) != _msgSender()) revert SenderNotOwner(_msgSender(), subjectId);
         }
         for (uint256 i = 0; i < epochNumbers.length; i++) {
+            if (epochNumbers[i] < EPOCH_AGE_LIMIT) revert EpochTooOld(epochNumbers[i]);
             if (!isDelegator && poolRewardsAtEpochClaimedByOwner[subjectId][epochNumbers[i]]) {
                 revert AlreadyClaimedByOwner();
             }

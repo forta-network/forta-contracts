@@ -26,5 +26,8 @@
   },
   "devDependencies": {
     "typescript": "^4.9.5"
+  },
+  "resolutions": {
+    "gluegun": "npm:gluegun@4.3.1"
   }
 }
