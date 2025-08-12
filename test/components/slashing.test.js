@@ -76,8 +76,8 @@ describe('Slashing Proposals', function () {
         await this.agents.connect(this.accounts.other).createAgent(...args);
         await this.scannerPools.connect(this.accounts.user2).registerScannerPool(1);
 
-        await this.staking.connect(this.accounts.user2).deposit(2, '1', STAKING_DEPOSIT);
-        await this.staking.connect(this.accounts.user2).deposit(1, subjects[1].id, STAKING_DEPOSIT);
+        await this.staking.connect(this.accounts.user2).deposit(subjects[0].type, subjects[0].id, STAKING_DEPOSIT);
+        await this.staking.connect(this.accounts.user2).deposit(subjects[1].type, subjects[1].id, STAKING_DEPOSIT);
 
         slashTreasuryAddress = await this.staking.treasury();
         proposerPercent = await this.slashing.slashPercentToProposer();
@@ -85,6 +85,8 @@ describe('Slashing Proposals', function () {
 
     describe('Correct Proposal Lifecycle', function () {
         it('From CREATED to EXECUTED', async function () {
+            await this.staking.connect(this.accounts.admin).setSlashDelegatorsPercent('20');
+
             const initialDepositorBalance = await this.token.balanceOf(this.accounts.user2.address);
             const initialTreasuryBalance = await this.token.balanceOf(slashTreasuryAddress);
 
