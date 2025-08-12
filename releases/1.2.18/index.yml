@@ -1,0 +1,7 @@
+title: Updated calculations for delegated stake to be slashed
+network: basesepolia
+deploy: deploy-and-prepare-upgrade 1.2.18
+verify: verify-deployed
+finish: propose-admin
+description: |
+  ## Deploy new implementation of FortaStaking to better calculate the amount of delegated stake to be slashed during slashing execution
