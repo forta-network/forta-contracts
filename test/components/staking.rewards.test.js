@@ -343,6 +343,22 @@ describe('Staking Rewards', function () {
             await this.rewardsDistributor.connect(this.accounts.user2).claimRewards(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID, [epoch]);
         });
 
+        it('slash stake with no delegators', async function () {
+            await this.staking.connect(this.accounts.user1).deposit(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '100');
+            await this.scannerPools.connect(this.accounts.user1).registerScannerNode(registration, signature);
+
+            expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('100');
+            expect(await this.stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('100');
+            expect(await this.stakeAllocator.allocatedStakeFor(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('0');
+
+            await this.staking.connect(this.accounts.admin).setSlashDelegatorsPercent('20');
+            await this.staking.connect(this.accounts.slasher).slash(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID, '10', ethers.constants.AddressZero, '0');
+
+            expect(await this.stakeAllocator.allocatedManagedStake(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('90');
+            expect(await this.stakeAllocator.allocatedStakeFor(SCANNER_POOL_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('90');
+            expect(await this.stakeAllocator.allocatedStakeFor(DELEGATOR_SUBJECT_TYPE, SCANNER_POOL_ID)).to.be.equal('0');
+        });
+
         it('unallocate stake', async function () {
             // disable automine so deposits are instantaneous to simplify math
             await network.provider.send('evm_setAutomine', [false]);
